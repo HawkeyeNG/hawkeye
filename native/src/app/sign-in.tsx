@@ -5,6 +5,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,8 +16,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PasswordField } from '@/components/password-field';
+import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import {
   accountHasPassword,
+  orgSignup,
   passwordLogin,
   requestOtp,
   setPassword as savePassword,
@@ -25,6 +28,7 @@ import {
   type RegisterResult,
 } from '@/lib/auth';
 import { BASE, BRAND, api } from '@/lib/api';
+import { ORG_ERROR_KEYS, authT, codeKind, looksLikeOrgCode, typedOrgCode } from '@/lib/auth-copy';
 import { typedInviteCode } from '@/lib/invite-parse';
 import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
 import { useUi } from '@/lib/theme';
@@ -123,6 +127,18 @@ export default function SignIn() {
    */
   const [inviteCode, setInviteCode] = useState('');
   const [inviteBad, setInviteBad] = useState(false);
+
+  /**
+   * ONE FIELD, TWO KINDS OF CODE (owner decision, 2026-09-28), told apart by
+   * FORMAT: a friend's invite is six characters; a party's or civic partner's
+   * organisation code is ORG-XXXX-XXXX-XXXX, and no invite can start "ORG". An
+   * ORG- code REPLACES the one-time code (D4): the channel chips go, the button
+   * says "Create account", nothing is sent, and /org-signup creates the account
+   * on this number. Organisation mode starts at the prefix, so the form does not
+   * flip back and forth mid-typing. Twin of app/observe.html #ref-input.
+   */
+  const kind = codeKind(inviteCode);
+  const withOrgCode = purpose === 'signup' && looksLikeOrgCode(inviteCode);
   useEffect(() => {
     let alive = true;
     pendingInviteCode().then((c) => {
@@ -208,7 +224,59 @@ export default function SignIn() {
     setStep('request');
   };
 
+  /** Sign up with an organisation code: no OTP, then the usual password step. */
+  const onOrgSignup = () => {
+    if (!typedOrgCode(inviteCode)) {
+      setInviteBad(true);
+      return;
+    }
+    setInviteBad(false);
+    // No code comes back to prove the number, so the number is the one thing
+    // to get right: the organisation code is tied to it for good.
+    Alert.alert(
+      authT('n.auth.org-confirm-title'),
+      authT('n.auth.org-confirm-body', { phone: phone.trim() }),
+      [
+        { text: authT('n.auth.org-confirm-no'), style: 'cancel' },
+        { text: authT('n.auth.org-confirm-yes'), onPress: () => { void runOrgSignup(); } },
+      ],
+    );
+  };
+  const runOrgSignup = async () => {
+    setBusy(true);
+    setLine(null);
+    try {
+      // One field: an organisation code carries no separate invite.
+      const r = await orgSignup(phone.trim(), typedOrgCode(inviteCode) || '', { referralCode: null });
+      if (!r.ok) {
+        const key = r.error ? ORG_ERROR_KEYS[r.error] : undefined;
+        setLine(
+          key ? authT(key)
+          : r.error === 'invalid_phone' ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+          : (r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again')),
+        );
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      // A new account, like an OTP sign-up: the password step, then the unit.
+      setIsNewAccount(r.isNew === true || r.needsUnit === true);
+      setHasPw(false);
+      setNewPw('');
+      setNewPw2('');
+      setInviteCode('');
+      setStep('set-password');
+    } catch {
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const onRequest = () => {
+    if (withOrgCode) {
+      onOrgSignup();
+      return;
+    }
     // A typed invite code that is not one stops here, before a paid code goes
     // out. Empty is fine: the field is optional.
     if (purpose === 'signup' && typedInviteCode(inviteCode) === null) {
@@ -442,13 +510,15 @@ export default function SignIn() {
     router.replace('/welcome');
   };
 
+  // TELEGRAM FIRST, WHATSAPP SECOND, SMS LAST (owner decision D2): cheapest
+  // first, the same order as the web form (app/observe.html #channel-pick).
   // SMS appears only when /api/health says the server can send it, so the
   // sender-ID approval that turned it on did not need an app release — and a
   // future suspension takes it away the same way. Appended last: it costs per
   // message, so it is the fallback, not the first thing under the thumb.
   const CHANNELS: { key: Channel; label: string }[] = [
-    { key: 'whatsapp', label: 'WhatsApp' },
     { key: 'telegram', label: 'Telegram' },
+    { key: 'whatsapp', label: 'WhatsApp' },
     ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),
   ];
 
@@ -511,6 +581,7 @@ export default function SignIn() {
         <View className="px-5 pt-6">
           {step === 'password' ? (
             <>
+              <SignedOutElsewhereNote />
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.welcome-back')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
                 {i18nT('n.app.sign-in.your-phone-number-and-password-your')}
@@ -564,6 +635,7 @@ export default function SignIn() {
             </>
           ) : step === 'request' ? (
             <>
+              <SignedOutElsewhereNote />
               <Text className="text-2xl font-bold text-ink">{requestCopy.title}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{requestCopy.body}</Text>
               <TextInput
@@ -576,7 +648,8 @@ export default function SignIn() {
                 onChangeText={setPhone}
                 editable={!busy}
               />
-              <View className="flex-row gap-2 pt-3">
+              {/* No channel with an organisation code: nothing is sent. */}
+              <View className="flex-row gap-2 pt-3" style={withOrgCode ? { display: 'none' } : undefined}>
                 {CHANNELS.map((c) => (
                   <Pressable
                     key={c.key}
@@ -596,29 +669,35 @@ export default function SignIn() {
                 ))}
               </View>
               {/* Sign-up only: reset and rescue are for accounts that exist,
-                  and a referral can only attach to a new one. */}
+                  and a referral or an organisation code can only make a new one.
+                  ONE field for both; the line under it names the kind. */}
               {purpose === 'signup' ? (
                 <View className="pt-4">
                   <Text className="pb-1 text-sm font-semibold text-muted">
-                    {i18nT('n.app.sign-in.invite-code-optional')}
+                    {authT('n.auth.code-label')}
                   </Text>
                   <TextInput
                     className="rounded-2xl bg-card px-4 py-3 text-lg text-ink"
                     autoCapitalize="characters"
                     autoCorrect={false}
                     autoComplete="off"
-                    maxLength={12}
+                    maxLength={24}
                     value={inviteCode}
                     onChangeText={(v) => {
                       setInviteCode(v);
                       setInviteBad(false);
                     }}
                     editable={!busy}
-                    accessibilityLabel={i18nT('n.app.sign-in.invite-code-optional')}
+                    accessibilityLabel={authT('n.auth.code-label')}
                   />
+                  <Text className="pt-1 text-xs text-muted">
+                    {kind === 'invite' ? authT('n.auth.code-kind-invite')
+                      : kind === 'org' ? authT('n.auth.code-kind-org')
+                      : authT('n.auth.code-hint')}
+                  </Text>
                   {inviteBad ? (
                     <Text className="pt-1 text-sm text-bad-ink" accessibilityRole="alert">
-                      {i18nT('n.app.sign-in.invite-code-invalid')}
+                      {authT('n.auth.code-invalid')}
                     </Text>
                   ) : null}
                 </View>
@@ -633,7 +712,9 @@ export default function SignIn() {
                 {busy ? (
                   <ActivityIndicator color={BRAND.gold} />
                 ) : (
-                  <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.profile.send-code')}</Text>
+                  <Text className="text-base font-bold text-hawk-gold">
+                    {withOrgCode ? authT('n.auth.org-create-account') : i18nT('n.app.profile.send-code')}
+                  </Text>
                 )}
               </Pressable>
               <Pressable

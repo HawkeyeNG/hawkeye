@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193">
-  <script src="native.js?v=120"></script>
+  <script src="native.js?v=121"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
@@ -29,7 +29,7 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <script src="authgate.js?v=3"></script>
+  <script src="authgate.js?v=4"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -224,7 +224,9 @@
           <div class="ec-top"><strong>#${e.id}</strong><span class="ec-time">${timeAgo(e.created_at)}</span></div>
           <div class="ec-line">${e.pu_code} · ${e.contest}</div>
           <div class="ec-sub"><code>${e.entry_hash.slice(0, 24)}…</code></div>
-          <div class="ec-ev"><a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a></div>
+          <div class="ec-ev">${e.photos_on_device
+            ? T('ledger.sheet-kept-on-phone', 'sheet kept on phone')
+            : `<a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a>`}</div>
         </div>`).join('') || `<div class="meta">${T('ledger.no-entries-yet', 'No entries yet.')}</div>`;
       };
       paintChain();
@@ -307,7 +309,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=184"></script>
+  <script src="menu.js?v=185"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

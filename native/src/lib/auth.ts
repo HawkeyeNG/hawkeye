@@ -15,6 +15,44 @@ const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const K_TOKEN = 'hawkeye.auth.token';
 const K_OBSERVER = 'hawkeye.auth.observer';
 const K_OPTED_OUT = 'hawkeye.auth.optedOut';
+const K_ELSEWHERE = 'hawkeye.auth.signedOutElsewhere';
+
+/**
+ * SIGNED OUT BECAUSE THE ACCOUNT SIGNED IN ON ANOTHER DEVICE (owner decision D3).
+ *
+ * One device at a time: the server revokes this device's session when the
+ * account signs in anywhere else, and says so — 401 `signed_in_elsewhere` on a
+ * request, `signedInElsewhere` on /resume. Every 401 path in the app already
+ * funnels into renewSession()/bootstrapAuth() (authedGet, push, certificate,
+ * and the outbox/submit re-mint), so this is caught HERE rather than at forty
+ * call sites. The flag is persisted so the explanation survives the app being
+ * closed, and it is cleared by the next successful sign-in on this device.
+ * components/signed-out-elsewhere.tsx shows it on welcome and sign-in.
+ */
+let elsewhere = false;
+const elsewhereListeners = new Set<() => void>();
+function setElsewhere(v: boolean) {
+  if (elsewhere === v) return;
+  elsewhere = v;
+  elsewhereListeners.forEach((l) => l());
+}
+export function useSignedOutElsewhere(): boolean {
+  return useSyncExternalStore(
+    (l) => {
+      elsewhereListeners.add(l);
+      return () => elsewhereListeners.delete(l);
+    },
+    () => elsewhere,
+  );
+}
+async function markSignedOutElsewhere(): Promise<void> {
+  setElsewhere(true);
+  try { await SecureStore.setItemAsync(K_ELSEWHERE, String(Date.now())); } catch { /* the notice is a courtesy */ }
+}
+async function clearSignedOutElsewhere(): Promise<void> {
+  setElsewhere(false);
+  try { await SecureStore.deleteItemAsync(K_ELSEWHERE); } catch { /* nothing to clear */ }
+}
 
 export type AuthState = {
   status: 'loading' | 'signedOut' | 'signedIn';
@@ -63,10 +101,14 @@ export type RegisterResult = {
   hint?: string;
 };
 
+// x-device-class: the native app is always a PHONE session — one of the two
+// slots an account has (backend services/sessions.js: one phone and one
+// computer). React Native's own user agent (okhttp / CFNetwork) says the same,
+// so an app still on an older bundle is classed correctly without it.
 async function post<T>(path: string, body: object, headers: Record<string, string> = {}): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: 'POST',
-    headers: { 'content-type': 'application/json', ...headers },
+    headers: { 'content-type': 'application/json', 'x-device-class': 'phone', ...headers },
     body: JSON.stringify(body),
   });
   return (await res.json()) as T;
@@ -137,6 +179,7 @@ export async function verifyOtp(
     await SecureStore.setItemAsync(K_TOKEN, r.token);
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
     await SecureStore.deleteItemAsync(K_OPTED_OUT);
+    await clearSignedOutElsewhere();
     await settleInviteAfterVerify(r);
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
     // An older server sends neither field. `undefined` then means "not stated",
@@ -147,6 +190,41 @@ export async function verifyOtp(
   return { ok: false, error: r.error, hint: r.hint };
 }
 
+
+/**
+ * SIGN UP WITH AN ORGANISATION CODE INSTEAD OF AN OTP (owner decision D4).
+ *
+ * A party's or civic partner's single-use code stands in for the one-time
+ * code, so nothing is sent to the phone. The server binds the code to this
+ * number at first use and only ever CREATES an account with it — an existing
+ * number is refused (backend services/orgCodes.js). Same storage as verifyOtp
+ * on success; the caller then runs the ordinary set-password step.
+ */
+export async function orgSignup(
+  phone: string,
+  orgCode: string,
+  opts: { referralCode?: string | null } = {},
+): Promise<{ ok: boolean; error?: string; hint?: string; isNew?: boolean; needsUnit?: boolean }> {
+  const id = await getIdentity();
+  const referralCode = opts.referralCode === undefined ? await pendingInviteCode() : opts.referralCode || undefined;
+  const r = await post<{
+    ok?: boolean; observerId?: number; token?: string; error?: string; hint?: string; isNew?: boolean; needsUnit?: boolean;
+  }>(
+    '/api/observers/org-signup',
+    { phone, orgCode, publicKeyJwk: id.publicKeyJwk, referralCode, lang: currentLangForOtp() },
+    { 'x-device-id': id.deviceId },
+  );
+  if (r.ok && r.token && r.observerId) {
+    await SecureStore.setItemAsync(K_TOKEN, r.token);
+    await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+    await SecureStore.deleteItemAsync(K_OPTED_OUT);
+    await clearSignedOutElsewhere();
+    await settleInviteAfterVerify(r);
+    set({ status: 'signedIn', observerId: r.observerId, token: r.token });
+    return { ok: true, isNew: r.isNew, needsUnit: r.needsUnit };
+  }
+  return { ok: false, error: r.error, hint: r.hint };
+}
 
 /**
  * Password sign-in — phone + password on any device, no OTP. The server treats
@@ -167,6 +245,7 @@ export async function passwordLogin(
     await SecureStore.setItemAsync(K_TOKEN, r.token);
     await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
     await SecureStore.deleteItemAsync(K_OPTED_OUT);
+    await clearSignedOutElsewhere();
     set({ status: 'signedIn', observerId: r.observerId, token: r.token });
     return { ok: true };
   }
@@ -278,10 +357,18 @@ export function renewSession(): Promise<boolean> {
     try {
       if (await SecureStore.getItemAsync(K_OPTED_OUT)) return false;
       const id = await getIdentity();
-      const r = await post<{ ok: boolean; observerId?: number; token?: string }>(
+      const r = await post<{ ok: boolean; observerId?: number; token?: string; signedInElsewhere?: boolean }>(
         '/api/observers/resume',
         { deviceId: id.deviceId, publicKeyJwk: id.publicKeyJwk },
       );
+      if (r.signedInElsewhere) {
+        // Definitive, not a blip: this device is no longer the account's. End
+        // the session here so every caller (push, certificate, not only
+        // authedGet) lands on the explained sign-in, and say why.
+        await markSignedOutElsewhere();
+        await expireSession();
+        return false;
+      }
       if (!r.ok || !r.token || !r.observerId) return false;
       await SecureStore.setItemAsync(K_TOKEN, r.token);
       await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
@@ -303,6 +390,12 @@ export function renewSession(): Promise<boolean> {
 /** App-start session restore: stored token first, then silent device resume. */
 export async function bootstrapAuth(): Promise<void> {
   try {
+    // A sign-out explained last session is still explained after a restart.
+    if (await SecureStore.getItemAsync(K_ELSEWHERE)) setElsewhere(true);
+  } catch {
+    /* the notice is a courtesy */
+  }
+  try {
     const token = await SecureStore.getItemAsync(K_TOKEN);
     const observer = await SecureStore.getItemAsync(K_OBSERVER);
     if (token && observer) {
@@ -314,16 +407,20 @@ export async function bootstrapAuth(): Promise<void> {
       return;
     }
     const id = await getIdentity();
-    const r = await post<{ ok: boolean; observerId?: number; token?: string }>('/api/observers/resume', {
+    const r = await post<{ ok: boolean; observerId?: number; token?: string; signedInElsewhere?: boolean }>('/api/observers/resume', {
       deviceId: id.deviceId,
       publicKeyJwk: id.publicKeyJwk,
     });
     if (r.ok && r.token && r.observerId) {
       await SecureStore.setItemAsync(K_TOKEN, r.token);
       await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+      await clearSignedOutElsewhere();
       set({ status: 'signedIn', observerId: r.observerId, token: r.token });
       return;
     }
+    // The outbox and submit re-mint through here (submit.ts remintSession), so
+    // a report parked on a 401 is explained the same way as everything else.
+    if (r.signedInElsewhere) await markSignedOutElsewhere();
   } catch {
     // network down — signed-out UI still works
   }
@@ -376,6 +473,7 @@ export async function authedGet<T>(
   // spinner with the account already created. Same 12s deadline api.ts uses.
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), 12_000);
+  const sentToken = state.token;
   let res: Response;
   try {
     res = await fetch(`${BASE}${path}`, {
@@ -386,6 +484,21 @@ export async function authedGet<T>(
     clearTimeout(timer);
   }
   if (res.status === 401) {
+    /**
+     * SIGNED IN ON ANOTHER DEVICE is not an expiry, and a resume cannot fix it:
+     * say why and end the session — even for `signOutOn401: false` callers,
+     * because this answer is definitive rather than a blip. Only if the token
+     * that was refused is STILL the current one: a request in flight from
+     * before a fresh sign-in on this device must not end the new session.
+     */
+    const b = await res.clone().json().catch(() => null) as { error?: string } | null;
+    if (b?.error === 'signed_in_elsewhere') {
+      if (state.token === sentToken) {
+        await markSignedOutElsewhere();
+        await expireSession();
+      }
+      throw new Error('signed_in_elsewhere');
+    }
     /**
      * TRY TO RENEW BEFORE GIVING UP. A 7-day token expiring is the ordinary
      * case here, not a revoked session, and the device can prove itself without

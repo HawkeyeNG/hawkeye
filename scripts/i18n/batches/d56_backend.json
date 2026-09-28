@@ -1,0 +1,38 @@
+{
+  "tgch.header": {
+    "en": "🦅 Hawkeye — live race update",
+    "ha": "🦅 Hawkeye — sabuntawar gasa kai tsaye",
+    "ig": "🦅 Hawkeye — ozi asọmpi ozugbo",
+    "yo": "🦅 Hawkeye — ìròyìn ìdíje lójú ẹsẹ̀"
+  },
+  "tgch.raceTally": {
+    "en": "{label}: running total across {units} units — {tally}",
+    "ha": "{label}: jimillar da ake da ita a rumfuna {units} — {tally}",
+    "ig": "{label}: ngụkọta dị ugbu a n’ebe {units} — {tally}",
+    "yo": "{label}: àpapọ̀ lọ́wọ́lọ́wọ́ ní ibùdó {units} — {tally}"
+  },
+  "tgch.raceNoTally": {
+    "en": "{label}: new results are in; there is no total to show yet.",
+    "ha": "{label}: sababbin sakamako sun shigo; babu jimillar da za a nuna tukuna.",
+    "ig": "{label}: nsonaazụ ọhụrụ abatala; enweghị ngụkọta a ga-egosi ugbu a.",
+    "yo": "{label}: àbájáde tuntun ti dé; kò sí àpapọ̀ láti fi hàn síbẹ̀."
+  },
+  "tgch.footer": {
+    "en": "Every result, with its photos: {url}",
+    "ha": "Kowane sakamako, tare da hotunansa: {url}",
+    "ig": "Nsonaazụ ọ bụla, ya na foto ya: {url}",
+    "yo": "Gbogbo àbájáde, pẹ̀lú àwọn fọ́tò rẹ̀: {url}"
+  },
+  "tgch.following": {
+    "en": "🔔 You're now following {race} ({where}). Every new report lands in your Alerts and on your phone. On Telegram, race updates are posted in our channel: {channel}",
+    "ha": "🔔 Yanzu kana bin {race} ({where}). Kowane sabon rahoto zai shigo a Sanarwarka da kuma a wayarka. A Telegram, ana wallafa sabuntawar gasa a tasharmu: {channel}",
+    "ig": "🔔 Ị na-eso {race} ({where}) ugbu a. Akụkọ ọhụrụ ọ bụla ga-abịa n'Ọkwa gị na n'ekwentị gị. Na Telegram, anyị na-ebipụta ozi asọmpi n'ọwa anyị: {channel}",
+    "yo": "🔔 O ti ń tẹ̀lé {race} ({where}) báyìí. Gbogbo ìròyìn tuntun yóò dé inú Ìkìlọ̀ rẹ àti lórí fóònù rẹ. Lórí Telegram, a ń fi ìròyìn ìdíje sí ìkànnì wa: {channel}"
+  },
+  "tgch.moved": {
+    "en": "📣 Race alerts on Telegram have moved to our channel: {channel}\n\nJoin it to keep getting them. One post reaches everyone at once, so updates arrive faster on election night.\n\nYour verification codes and alerts for your own polling unit still come here.",
+    "ha": "📣 Sanarwar gasa a Telegram ta koma tasharmu: {channel}\n\nKa shiga tashar don ci gaba da samun su. Saƙo ɗaya yana isa ga kowa a lokaci ɗaya, don haka sabuntawa za ta iso da sauri a daren zaɓe.\n\nLambobin tabbatarwa naka da sanarwar rukunin zaɓenka za su ci gaba da zuwa nan.",
+    "ig": "📣 Ọkwa asọmpi na Telegram akwagala n'ọwa anyị: {channel}\n\nSonye na ya ka ị na-anata ha. Otu ozi na-eru mmadụ niile n'otu oge, ya mere ozi ga-abịa ngwa ngwa n’abalị ntuli aka.\n\nKoodu nyocha gị na ọkwa maka ngalaba ntuli aka gị ka ga-abịa ebe a.",
+    "yo": "📣 Ìkìlọ̀ ìdíje lórí Telegram ti kó lọ sí ìkànnì wa: {channel}\n\nDarapọ̀ mọ́ ọn láti máa rí wọn gbà. Ìfiránṣẹ́ kan ń dé ọ̀dọ̀ gbogbo ènìyàn lẹ́ẹ̀kan náà, nítorí náà ìròyìn yóò yára dé ní alẹ́ ọjọ́ ìdìbò.\n\nKóòdù ìfẹ̀rí rẹ àti ìkìlọ̀ fún ẹ̀ka ìdìbò rẹ yóò ṣì máa wá síbí."
+  }
+}

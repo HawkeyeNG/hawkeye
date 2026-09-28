@@ -17,6 +17,9 @@
  */
 import { BASE } from '@/lib/api';
 import { authedGet, getToken } from '@/lib/auth';
+import { bust, fresh } from '@/lib/signed-in-cache';
+
+const ROOMS_KEY = '/api/my/rooms';
 
 export type RoomAssignment = {
   pu_code: string;
@@ -42,7 +45,11 @@ export type MyRoom = {
  */
 export async function myRooms(): Promise<MyRoom[]> {
   try {
-    const r = await authedGet<{ rooms: MyRoom[] }>('/api/my/rooms', { signOutOn401: false });
+    /* D6: kept 120 s (lib/signed-in-cache.ts) — three races filed at one unit
+       were three identical lookups. checkIn() below drops it on success, so the
+       card re-reads what it just changed; a push drops it too. */
+    const r = await fresh(ROOMS_KEY, getToken(), () =>
+      authedGet<{ rooms: MyRoom[] }>('/api/my/rooms', { signOutOn401: false }));
     return Array.isArray(r?.rooms) ? r.rooms : [];
   } catch {
     return [];
@@ -76,6 +83,7 @@ export async function checkIn(
     });
     const body = await res.json().catch(() => ({}));
     if (res.status !== 200) return { ok: false, error: String(body?.error || 'failed') };
+    bust(ROOMS_KEY);
     return { ok: true, standing: body.standing };
   } catch {
     return { ok: false, error: 'network' };

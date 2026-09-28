@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193" />
-  <script src="native.js?v=120"></script>
+  <script src="native.js?v=121"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -76,11 +76,11 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <script src="authgate.js?v=3"></script>
+  <script src="authgate.js?v=4"></script>
   <script src="map-label.js?v=2"></script>
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
-  <script src="follow.js?v=4"></script>
+  <script src="follow.js?v=5"></script>
   <script src="race-picker.js?v=13"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
@@ -932,9 +932,28 @@
       refresh();
     });
 
-    /** The 30s refresh, started at most once. */
+    /**
+     * The 30s refresh, started at most once — and FOREGROUND ONLY, like native's
+     * useForegroundInterval. It used to keep going with the page hidden, and in
+     * Lite with the app in a pocket: mobile data and origin capacity spent on a
+     * board nobody was looking at. A tick while hidden does nothing; coming back
+     * refreshes at once if the last one is older than the interval.
+     * HAWKEYE.isForeground (native.js) also knows when Lite's app has left the
+     * screen, which the WebView does not reliably say.
+     */
     let POLL = null;
-    const startPolling = () => { POLL = POLL || setInterval(refresh, 30000); };
+    let lastPoll = 0;
+    const POLL_MS = 30000;
+    const inFront = () => (window.HAWKEYE && window.HAWKEYE.isForeground ? window.HAWKEYE.isForeground() : !document.hidden);
+    const pollTick = () => { if (!inFront()) return; lastPoll = Date.now(); refresh(); };
+    const startPolling = () => {
+      if (POLL) return;
+      lastPoll = Date.now();
+      POLL = setInterval(pollTick, POLL_MS);
+      const back = () => { if (inFront() && Date.now() - lastPoll >= POLL_MS) pollTick(); };
+      document.addEventListener('hawkeye-foreground', back);
+      document.addEventListener('visibilitychange', back);
+    };
 
     // Choosing a state on a state-level board crops it; "← All states" undoes
     // that. On a board that is already cropped (or one whose regions are
@@ -1401,7 +1420,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=184"></script>
+  <script src="menu.js?v=185"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

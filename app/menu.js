@@ -705,6 +705,40 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   }
   window.hawkeyeSetUnread = setUnreadEverywhere;
 
+  /**
+   * THE UNREAD FEED: ONE REQUEST PER 120 s, NOT ONE PER SURFACE PER PAGE (D6).
+   *
+   * The bell, the tab dot and Home each fetched /api/notifications on every
+   * page view — twice per page in the app shell before Home added a third.
+   * Through HAWKEYE.authGet (native.js) they share one answer, which a push, any
+   * write from the page, or 120 s ends. A plain fetch if native.js is older.
+   */
+  function unreadFeed() {
+    const H = window.HAWKEYE;
+    if (H && H.authGet) return H.authGet('/api/notifications').then((x) => (x.status === 200 ? x.body : null));
+    return fetch('/api/notifications', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
+      .then((r) => (r.ok ? r.json() : null));
+  }
+  /**
+   * ...and the backstop for a push that never arrives: while this page is in
+   * front and signed in, look again every 120 s, at once when a push lands, and
+   * when the page comes back to the front (answered locally inside the 120 s).
+   * Not on the Alerts page, which reads the full feed itself.
+   */
+  (function unreadBackstop() {
+    if (/notifications\.html/.test(location.pathname)) return;
+    const H = window.HAWKEYE || {};
+    const fg = () => (H.isForeground ? H.isForeground() : !document.hidden);
+    const repaint = () => {
+      // No bell or tab dot on this page, nothing to keep current: no request.
+      if (!localStorage.getItem('hawkeye_token') || !fg() || !document.querySelector('.bell-dot, .tab-dot')) return;
+      unreadFeed().then((d) => { if (d) setUnreadEverywhere(d.unread); }).catch(() => {});
+    };
+    setInterval(repaint, H.FRESH_MS || 120000);
+    document.addEventListener('hawkeye-push', repaint);
+    document.addEventListener('hawkeye-foreground', repaint);
+  })();
+
   //   signed in  -> notifications bell + unread badge
   //   signed out -> "Sign in" for returning observers
   // A bell is meaningless before an account exists, and a first-time visitor has
@@ -726,8 +760,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       i18nAttr(a, 'aria-label', 'profile.notifications', 'Notifications');
       a.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9a6 6 0 1 1 12 0c0 4.5 2 5.5 2 5.5H4S6 13.5 6 9"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="bell-dot" hidden></span>';
       btn.parentNode.insertBefore(a, slot());
-      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
-        .then((r) => (r.ok ? r.json() : null))
+      unreadFeed()
         .then((d) => {
           if (d && d.unread > 0) { const dot = a.querySelector('.bell-dot'); dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; }
           appBadge(d);
@@ -1216,8 +1249,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !sheet.hidden) openSheet(false); });
     const tk = localStorage.getItem('hawkeye_token');
     if (tk && !/notifications\.html/.test(location.pathname)) {
-      fetch('/api/notifications', { headers: { authorization: 'Bearer ' + tk } })
-        .then((r) => (r.ok ? r.json() : null))
+      unreadFeed()
         .then((d) => {
           if (d && d.unread > 0) { const dot = nav.querySelector('.tab-dot'); if (dot) { dot.textContent = d.unread > 9 ? '9+' : d.unread; dot.hidden = false; } }
           appBadge(d);

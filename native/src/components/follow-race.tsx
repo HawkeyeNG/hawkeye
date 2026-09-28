@@ -6,7 +6,8 @@ import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { BRAND } from '@/lib/api';
-import { authedGet, useAuth } from '@/lib/auth';
+import { authedGet, getToken, useAuth } from '@/lib/auth';
+import { bust, fresh } from '@/lib/signed-in-cache';
 import { useUi } from '@/lib/theme';
 import { getIdentity } from '@/lib/identity';
 import { t as i18nT } from '@/lib/i18n';
@@ -137,7 +138,9 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
   useEffect(() => {
     if (auth.status !== 'signedIn') return;
     let live = true;
-    authedGet<{ subscriptions?: Sub[] }>('/api/observers/me')
+    // D6: kept 120 s across every Follow control (lib/signed-in-cache.ts);
+    // toggle() below drops it after its own write, and a push drops it too.
+    fresh('/api/observers/me', getToken(), () => authedGet<{ subscriptions?: Sub[] }>('/api/observers/me'))
       .then((me) => live && setSubs(me.subscriptions ?? []))
       .catch(() => {});
     return () => {
@@ -202,6 +205,7 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
         notice.show(i18nT('n.components.follow-race.could-not-update'), i18nT('n.components.follow-race.try-again-http', { v0: res.status }));
         return;
       }
+      bust('/api/observers/me');
       setSubs((s) =>
         following
           ? s.filter((x) => !(x.contest === contest && (x.state ?? '') === state))

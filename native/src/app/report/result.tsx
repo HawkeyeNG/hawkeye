@@ -1643,7 +1643,10 @@ export default function ReportResult() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.result.report-filed'),
-          line: i18nT('n.app.report.result.it-is-now-queued-for-review'),
+          // D1 hash-only: the photos stayed on this phone (lib/evidence.ts). Say so.
+          line: r.photosOnDevice
+            ? `${i18nT('n.app.report.result.it-is-now-queued-for-review')}\n${i18nT('n.app.report.result.photos-kept-as-evidence')}`
+            : i18nT('n.app.report.result.it-is-now-queued-for-review'),
         });
         setStep('done');
       } else if (r.queued) {

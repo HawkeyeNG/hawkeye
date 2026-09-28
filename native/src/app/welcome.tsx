@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useUi } from '@/lib/theme';
@@ -106,6 +107,9 @@ export default function Welcome() {
       </View>
 
       <View className="px-6 pb-6">
+        {/* One device at a time: the root layout lands a displaced observer
+            here, so this is where they learn why (renders nothing otherwise). */}
+        <SignedOutElsewhereNote tone="onGreen" />
         <Pressable
           className="items-center rounded-2xl bg-hawk-gold py-4 active:opacity-80"
           onPress={() => router.push('/sign-in?intent=signup')}

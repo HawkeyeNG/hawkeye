@@ -1,0 +1,18 @@
+# Hawkeye native OTA manifest dispatcher (design D9). See docs/OTA-SELF-HOSTED.md.
+# Deploy (owner, once, after the bucket and its custom domain exist):
+#   cd scripts/ota_worker && npx wrangler@4 deploy
+# It runs only on /manifest. Everything else on updates.hawkeye.com.ng (the assets) is served by
+# the bucket's public custom domain, without this Worker.
+name = "hawkeye-ota-manifest"
+main = "worker.js"
+compatibility_date = "2026-09-01"
+workers_dev = false
+
+routes = [
+  { pattern = "updates.hawkeye.com.ng/manifest*", zone_name = "hawkeye.com.ng" },
+]
+
+# The OTA bucket ONLY. Never the evidence bucket, never hawkeye-tiles.
+[[r2_buckets]]
+binding = "OTA_BUCKET"
+bucket_name = "hawkeye-updates"

@@ -1,0 +1,20 @@
+{
+  "observe.photos-kept-as-evidence": {
+    "en": "Your photos were kept on this phone as evidence.",
+    "ha": "An ajiye hotunanka a wannan wayar a matsayin shaida.",
+    "ig": "Echekwara foto gị n'ekwentị a dị ka ihe akaebe.",
+    "yo": "A ti fi àwọn fọ́tò rẹ pamọ́ sórí fóònù yìí gẹ́gẹ́ bí ẹ̀rí."
+  },
+  "case.photo-kept-on-observer-phone": {
+    "en": "Photo kept on the observer's phone. The report is on the ledger.",
+    "ha": "An ajiye hoton a wayar Mai Lura. Rahoton yana a littafin.",
+    "ig": "Echekwara foto ahụ n'ekwentị Onye Na-ekiri Ihe. Akụkọ ahụ dị n'akwụkwọ ndekọ.",
+    "yo": "A fi fọ́tò náà pamọ́ sórí fóònù Olùwòran. Ìròyìn náà wà lórí ìwé àkọsílẹ̀."
+  },
+  "ledger.sheet-kept-on-phone": {
+    "en": "sheet kept on phone",
+    "ha": "an ajiye takardar a waya",
+    "ig": "e chekwara mpempe akwụkwọ n'ekwentị",
+    "yo": "a fi ìwé pamọ́ sórí fóònù"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "n.auth.signed-out-elsewhere": {
+    "en": "You were signed out because this account signed in on another device.",
+    "ha": "An fitar da kai saboda an shiga wannan asusun a wata na'ura.",
+    "ig": "E mere ka ị pụọ n'ihi na e ji akaụntụ a banye na ngwaọrụ ọzọ.",
+    "yo": "A mú ọ jáde nítorí pé àkàǹtì yìí wọlé lórí ẹ̀rọ mìíràn."
+  },
+  "n.auth.signed-out-elsewhere-queued": {
+    "en": "Signed reports waiting on this phone: {n}. Sign in again here to send them.",
+    "ha": "Rahotanni masu sa hannu da ke jira a wannan wayar: {n}. Sake shiga a nan domin aika su.",
+    "ig": "Akụkọ e binyere aka na-eche n'ekwentị a: {n}. Banye ọzọ ebe a iji zipu ha.",
+    "yo": "Àwọn ìròyìn tí o fọwọ́sí tí ń dúró lórí fóònù yìí: {n}. Wọlé padà níbí láti fi wọ́n ránṣẹ́."
+  },
+  "n.auth.code-label": {
+    "en": "Invite or organisation code (optional)",
+    "ha": "Lambar gayyata ko ta ƙungiya (ba dole ba)",
+    "ig": "Koodu ọkpụkpọ ma ọ bụ koodu nzukọ (nhọrọ)",
+    "yo": "Kóòdù ìpè tàbí kóòdù àjọ (àṣàyàn)"
+  },
+  "n.auth.code-hint": {
+    "en": "A friend's invite code, or an ORG- code from your party or civic group.",
+    "ha": "Lambar gayyata daga aboki, ko lambar ORG- daga jam'iyyarka ko ƙungiyar farar hularka.",
+    "ig": "Koodu ọkpụkpọ sitere n'aka enyi, ma ọ bụ koodu ORG- sitere na pati gị ma ọ bụ otu obodo gị.",
+    "yo": "Kóòdù ìpè láti ọ̀dọ̀ ọ̀rẹ́, tàbí kóòdù ORG- láti ọ̀dọ̀ ẹgbẹ́ òṣèlú rẹ tàbí àjọ aráàlú rẹ."
+  },
+  "n.auth.code-kind-invite": {
+    "en": "Invite from a friend.",
+    "ha": "Gayyata daga aboki.",
+    "ig": "Ọkpụkpọ sitere n'aka enyi.",
+    "yo": "Ìpè láti ọ̀dọ̀ ọ̀rẹ́."
+  },
+  "n.auth.code-kind-org": {
+    "en": "Organisation code: no one-time code will be sent.",
+    "ha": "Lambar ƙungiya: ba za a aika lambar sirri ba.",
+    "ig": "Koodu nzukọ: a gaghị eziga koodu otu oge.",
+    "yo": "Kóòdù àjọ: a kò ní fi kóòdù ìgbà-kan ránṣẹ́."
+  },
+  "n.auth.code-invalid": {
+    "en": "Not a code we recognise. A friend's invite has 6 letters and numbers; an organisation code looks like ORG-ABCD-EFGH-JKMN.",
+    "ha": "Ba lambar da muka sani ba ce. Gayyatar aboki tana da haruffa da lambobi 6; lambar ƙungiya tana kama da ORG-ABCD-EFGH-JKMN.",
+    "ig": "Ọ bụghị koodu anyị maara. Ọkpụkpọ enyi nwere mkpụrụedemede na ọnụọgụ 6; koodu nzukọ dị ka ORG-ABCD-EFGH-JKMN.",
+    "yo": "Kì í ṣe kóòdù tí a mọ̀. Ìpè ọ̀rẹ́ ní lẹ́tà àti nọ́mbà 6; kóòdù àjọ rí bí ORG-ABCD-EFGH-JKMN."
+  },
+  "n.auth.org-create-account": {
+    "en": "Create account",
+    "ha": "Buɗe asusu",
+    "ig": "Mepee akaụntụ",
+    "yo": "Ṣí àkàǹtì"
+  },
+  "n.auth.org-code-unknown": {
+    "en": "That organisation code is not valid. Check it with your organisation, or leave the box empty to sign up with a one-time code.",
+    "ha": "Wannan lambar ƙungiya ba ta da inganci. Tabbatar da ita daga ƙungiyarka, ko ka bar akwatin fanko domin yin rijista da lambar sirri.",
+    "ig": "Koodu nzukọ ahụ ezighị ezi. Lelee ya na nzukọ gị, ma ọ bụ hapụ igbe ahụ oghere iji debanye aha site na koodu otu oge.",
+    "yo": "Kóòdù àjọ yẹn kò wúlò. Ṣàyẹ̀wò rẹ̀ lọ́dọ̀ àjọ rẹ, tàbí fi àpótí náà sílẹ̀ ní òfìfo láti forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  },
+  "n.auth.org-code-used": {
+    "en": "This organisation code has already been used. Ask your organisation for another one, or sign up with a one-time code.",
+    "ha": "An riga an yi amfani da wannan lambar ƙungiya. Nemi wata daga ƙungiyarka, ko ka yi rijista da lambar sirri.",
+    "ig": "E jirila koodu nzukọ a mee ihe. Rịọ nzukọ gị ka o nye gị ọzọ, ma ọ bụ debanye aha site na koodu otu oge.",
+    "yo": "A ti lo kóòdù àjọ yìí tẹ́lẹ̀. Béèrè òmíràn lọ́wọ́ àjọ rẹ, tàbí forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  },
+  "n.auth.org-code-revoked": {
+    "en": "This organisation code has been withdrawn. Ask your organisation for another one, or sign up with a one-time code.",
+    "ha": "An janye wannan lambar ƙungiya. Nemi wata daga ƙungiyarka, ko ka yi rijista da lambar sirri.",
+    "ig": "A wepụla koodu nzukọ a. Rịọ nzukọ gị ka o nye gị ọzọ, ma ọ bụ debanye aha site na koodu otu oge.",
+    "yo": "A ti fagi kóòdù àjọ yìí. Béèrè òmíràn lọ́wọ́ àjọ rẹ, tàbí forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  },
+  "n.auth.org-code-number-taken": {
+    "en": "An organisation code can only create a new account, and this code is now used up. If this number already has an account, sign in with a one-time code. If you deleted your account, signing in that way restores it.",
+    "ha": "Lambar ƙungiya tana iya buɗe sabon asusu ne kawai, kuma yanzu an gama amfani da wannan lambar. Idan wannan lambar waya tana da asusu tuni, ka shiga da lambar sirri. Idan ka share asusunka, shiga ta wannan hanya yana dawo da shi.",
+    "ig": "Koodu nzukọ nwere ike imepe naanị akaụntụ ọhụrụ, e jirilakwa koodu a mee ihe ugbu a. Ọ bụrụ na nọmba a enweelarị akaụntụ, banye site na koodu otu oge. Ọ bụrụ na i hichapụrụ akaụntụ gị, ịbanye n'ụzọ ahụ na-eweghachi ya.",
+    "yo": "Kóòdù àjọ lè ṣí àkàǹtì tuntun nìkan, a sì ti lo kóòdù yìí tán báyìí. Tí nọ́mbà yìí bá ti ní àkàǹtì tẹ́lẹ̀, wọlé pẹ̀lú kóòdù ìgbà-kan. Tí o bá ti pa àkàǹtì rẹ rẹ́, wíwọlé lọ́nà yẹn yóò dá a padà."
+  },
+  "n.auth.org-code-too-many": {
+    "en": "Too many attempts from this network. Wait an hour and try again.",
+    "ha": "Ƙoƙari ya yi yawa daga wannan hanyar sadarwa. Jira awa ɗaya ka sake gwadawa.",
+    "ig": "Mgbalị karịrị akarị site na netwọkụ a. Chere otu awa ka i nwaa ọzọ.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù láti orí nẹ́tíwọ́kì yìí. Dúró fún wákàtí kan kí o tún gbìyànjú."
+  },
+  "n.auth.org-confirm-title": {
+    "en": "Is this your number?",
+    "ha": "Wannan lambar wayarka ce?",
+    "ig": "Nke a ọ bụ nọmba gị?",
+    "yo": "Ṣé nọ́mbà rẹ nìyí?"
+  },
+  "n.auth.org-confirm-body": {
+    "en": "This code will be tied to {phone} for good.",
+    "ha": "Za a haɗa wannan lambar ƙungiya da {phone} har abada.",
+    "ig": "A ga-ejikọ koodu a na {phone} ruo mgbe ebighị ebi.",
+    "yo": "Kóòdù yìí yóò so mọ́ {phone} títí láé."
+  },
+  "n.auth.org-confirm-yes": {
+    "en": "Yes, create my account",
+    "ha": "Ee, buɗe asusuna",
+    "ig": "Ee, mepee akaụntụ m",
+    "yo": "Bẹ́ẹ̀ ni, ṣí àkàǹtì mi"
+  },
+  "n.auth.org-confirm-no": {
+    "en": "Change number",
+    "ha": "Canza lamba",
+    "ig": "Gbanwee nọmba",
+    "yo": "Yí nọ́mbà padà"
+  }
+}

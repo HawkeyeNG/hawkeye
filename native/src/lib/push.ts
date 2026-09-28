@@ -12,12 +12,14 @@ import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import * as SecureStore from '@/lib/secure-store';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useSyncExternalStore } from 'react';
-import { AppState, Platform } from 'react-native';
+import { useCallback, useEffect, useSyncExternalStore } from 'react';
+import { Platform } from 'react-native';
 
+import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { BRAND } from '@/lib/api';
 import { authedGet, renewSession, useAuth } from '@/lib/auth';
 import { t as i18nT } from '@/lib/i18n';
+import { FRESH_MS, bust as bustSignedIn, notePush } from '@/lib/signed-in-cache';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -77,6 +79,11 @@ export function useUnread(): number {
   );
 }
 
+/** When refreshUnread last had the server's answer; 0 = never, or signed out. */
+let unreadAt = 0;
+/** The request in flight, so launch's two callers (sign-in, the backstop) share it. */
+let unreadInflight: Promise<void> | null = null;
+
 /** The server's count is authoritative — callers pass what /api/notifications said. */
 export function setUnread(next: number) {
   const n = Math.max(0, next);
@@ -122,9 +129,18 @@ export function setUnread(next: number) {
  * request; the Alerts screen sets the count from its own load instead of
  * calling this, and pays for the round trip once.
  */
-export async function refreshUnread(): Promise<void> {
+export async function refreshUnread(opts: { ifStale?: boolean } = {}): Promise<void> {
+  /* D6: coming back to the front, and the 120 s backstop, ask only when the
+     last answer is older than FRESH_MS. Everything else — a push, a tap, sign-in,
+     a failed receipt — still asks at once (the default). */
+  if (opts.ifStale && (Date.now() - unreadAt < FRESH_MS || unreadInflight)) return unreadInflight ?? undefined;
+  const p = authedGet<{ unread: number }>('/api/notifications');
+  const mine: Promise<void> = p.then(() => undefined, () => undefined);
+  unreadInflight = mine;
+  void mine.finally(() => { if (unreadInflight === mine) unreadInflight = null; });
   try {
-    const r = await authedGet<{ unread: number }>('/api/notifications');
+    const r = await p;
+    unreadAt = Date.now();
     setUnread(r.unread);
   } catch {
     // A stale badge is not worth a visible failure. The Alerts screen reports
@@ -377,6 +393,8 @@ export function usePushNotifications(): void {
 
   useEffect(() => {
     if (auth.status !== 'signedIn') {
+      unreadAt = 0;
+      bustSignedIn();
       setUnread(0);
       return;
     }
@@ -391,6 +409,7 @@ export function usePushNotifications(): void {
     handled = id;
     Notifications.clearLastNotificationResponse();
     const url = response.notification.request.content.data?.url;
+    notePush();
     openNotificationTarget(typeof url === 'string' ? url : null);
     // The push carries a url and nothing else (backend/src/services/push.js), so
     // there is no row id to mark read here — but the feed has moved since the
@@ -398,15 +417,27 @@ export function usePushNotifications(): void {
     refreshUnread();
   }, [response]);
 
+  /**
+   * PUSH-DRIVEN, PLUS 120 s (D6). Coming back to the front used to re-read the
+   * feed EVERY time; on election night people flick in and out of the app
+   * constantly, and each flick was an uncacheable request. Now: a push re-reads
+   * at once (and drops lib/signed-in-cache.ts); coming back re-reads only if the
+   * count is older than 120 s; and while in front, a 120 s tick catches a push
+   * that never arrived. useForegroundInterval runs it on mount, on returning to
+   * the front, and every FRESH_MS until the app goes to the background.
+   */
+  const signedIn = auth.status === 'signedIn';
+  const backstop = useCallback(() => {
+    if (signedIn) return refreshUnread({ ifStale: true });
+  }, [signedIn]);
+  useForegroundInterval(backstop, FRESH_MS);
+
   useEffect(() => {
-    // Notifications arrive while the app is away. The badge should be right the
-    // moment it comes back, not only once Alerts is opened.
-    const sub = AppState.addEventListener('change', (s) => {
-      if (s === 'active') refreshUnread();
+    const received = Notifications.addNotificationReceivedListener(() => {
+      notePush();
+      refreshUnread();
     });
-    const received = Notifications.addNotificationReceivedListener(() => refreshUnread());
     return () => {
-      sub.remove();
       received.remove();
     };
   }, []);

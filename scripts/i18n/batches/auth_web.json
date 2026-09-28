@@ -1,0 +1,254 @@
+{
+  "auth.signed-out-elsewhere": {
+    "en": "You were signed out because this account signed in on another device.",
+    "ha": "An fitar da kai saboda an shiga wannan asusun a wata na'ura.",
+    "ig": "E mere ka ị pụọ n'ihi na e ji akaụntụ a banye na ngwaọrụ ọzọ.",
+    "yo": "A mú ọ jáde nítorí pé àkàǹtì yìí wọlé lórí ẹ̀rọ mìíràn."
+  },
+  "auth.signed-out-elsewhere-queued": {
+    "en": "Signed reports waiting on this phone: {n}. Sign in again here to send them.",
+    "ha": "Rahotanni masu sa hannu da ke jira a wannan wayar: {n}. Sake shiga a nan domin aika su.",
+    "ig": "Akụkọ e binyere aka na-eche n'ekwentị a: {n}. Banye ọzọ ebe a iji zipu ha.",
+    "yo": "Àwọn ìròyìn tí o fọwọ́sí tí ń dúró lórí fóònù yìí: {n}. Wọlé padà níbí láti fi wọ́n ránṣẹ́."
+  },
+  "auth.report-kept-elsewhere": {
+    "en": "You were signed out because this account signed in on another device. Your signed report is saved on this phone and sends when you sign in here again.",
+    "ha": "An fitar da kai saboda an shiga wannan asusun a wata na'ura. An ajiye rahotonka mai sa hannu a wannan wayar, kuma zai tafi idan ka sake shiga a nan.",
+    "ig": "E mere ka ị pụọ n'ihi na e ji akaụntụ a banye na ngwaọrụ ọzọ. Echekwara akụkọ gị e binyere aka n'ekwentị a, ọ ga-eziga mgbe ị banyere ọzọ ebe a.",
+    "yo": "A mú ọ jáde nítorí pé àkàǹtì yìí wọlé lórí ẹ̀rọ mìíràn. A ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì ránṣẹ́ nígbà tí o bá wọlé padà níbí."
+  },
+  "auth.report-kept-signed-out": {
+    "en": "You are signed out. Your signed report is saved on this phone and sends when you sign in again.",
+    "ha": "Ba ka cikin asusunka yanzu. An ajiye rahotonka mai sa hannu a wannan wayar, kuma zai tafi idan ka sake shiga.",
+    "ig": "Ị nọghị n'akaụntụ gị ugbu a. Echekwara akụkọ gị e binyere aka n'ekwentị a, ọ ga-eziga mgbe ị banyere ọzọ.",
+    "yo": "O kò sí nínú àkàǹtì rẹ báyìí. A ti fi ìròyìn rẹ tí o fọwọ́sí pamọ́ sórí fóònù yìí, yóò sì ránṣẹ́ nígbà tí o bá wọlé padà."
+  },
+  "auth.org-create-account": {
+    "en": "Create account",
+    "ha": "Buɗe asusu",
+    "ig": "Mepee akaụntụ",
+    "yo": "Ṣí àkàǹtì"
+  },
+  "auth.org-confirm-number": {
+    "en": "This code will be tied to {phone} for good. Is this your number?",
+    "ha": "Za a haɗa wannan lambar ƙungiya da {phone} har abada. Wannan lambar wayarka ce?",
+    "ig": "A ga-ejikọ koodu a na {phone} ruo mgbe ebighị ebi. Nke a ọ bụ nọmba gị?",
+    "yo": "Kóòdù yìí yóò so mọ́ {phone} títí láé. Ṣé nọ́mbà rẹ nìyí?"
+  },
+  "auth.org-code-used": {
+    "en": "This organisation code has already been used. Ask your organisation for another one, or sign up with a one-time code.",
+    "ha": "An riga an yi amfani da wannan lambar ƙungiya. Nemi wata daga ƙungiyarka, ko ka yi rijista da lambar sirri.",
+    "ig": "E jirila koodu nzukọ a mee ihe. Rịọ nzukọ gị ka o nye gị ọzọ, ma ọ bụ debanye aha site na koodu otu oge.",
+    "yo": "A ti lo kóòdù àjọ yìí tẹ́lẹ̀. Béèrè òmíràn lọ́wọ́ àjọ rẹ, tàbí forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  },
+  "auth.org-code-revoked": {
+    "en": "This organisation code has been withdrawn. Ask your organisation for another one, or sign up with a one-time code.",
+    "ha": "An janye wannan lambar ƙungiya. Nemi wata daga ƙungiyarka, ko ka yi rijista da lambar sirri.",
+    "ig": "A wepụla koodu nzukọ a. Rịọ nzukọ gị ka o nye gị ọzọ, ma ọ bụ debanye aha site na koodu otu oge.",
+    "yo": "A ti fagi kóòdù àjọ yìí. Béèrè òmíràn lọ́wọ́ àjọ rẹ, tàbí forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  },
+  "auth.org-code-number-taken": {
+    "en": "An organisation code can only create a new account, and this code is now used up. If this number already has an account, sign in with a one-time code. If you deleted your account, signing in that way restores it.",
+    "ha": "Lambar ƙungiya tana iya buɗe sabon asusu ne kawai, kuma yanzu an gama amfani da wannan lambar. Idan wannan lambar waya tana da asusu tuni, ka shiga da lambar sirri. Idan ka share asusunka, shiga ta wannan hanya yana dawo da shi.",
+    "ig": "Koodu nzukọ nwere ike imepe naanị akaụntụ ọhụrụ, e jirilakwa koodu a mee ihe ugbu a. Ọ bụrụ na nọmba a enweelarị akaụntụ, banye site na koodu otu oge. Ọ bụrụ na i hichapụrụ akaụntụ gị, ịbanye n'ụzọ ahụ na-eweghachi ya.",
+    "yo": "Kóòdù àjọ lè ṣí àkàǹtì tuntun nìkan, a sì ti lo kóòdù yìí tán báyìí. Tí nọ́mbà yìí bá ti ní àkàǹtì tẹ́lẹ̀, wọlé pẹ̀lú kóòdù ìgbà-kan. Tí o bá ti pa àkàǹtì rẹ rẹ́, wíwọlé lọ́nà yẹn yóò dá a padà."
+  },
+  "auth.org-code-too-many": {
+    "en": "Too many attempts from this network. Wait an hour and try again.",
+    "ha": "Ƙoƙari ya yi yawa daga wannan hanyar sadarwa. Jira awa ɗaya ka sake gwadawa.",
+    "ig": "Mgbalị karịrị akarị site na netwọkụ a. Chere otu awa ka i nwaa ọzọ.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù láti orí nẹ́tíwọ́kì yìí. Dúró fún wákàtí kan kí o tún gbìyànjú."
+  },
+  "orgcode.admin.title": {
+    "en": "Organisation codes",
+    "ha": "Lambobin ƙungiya",
+    "ig": "Koodu nzukọ",
+    "yo": "Àwọn kóòdù àjọ"
+  },
+  "orgcode.admin.intro": {
+    "en": "Single-use codes that replace the one-time code at sign-up. Every organisation gets the same terms: at most {batch} codes per batch and {cap} in total. Which organisation a code came from is never shown publicly and never weighs a result.",
+    "ha": "Lambobin amfani sau ɗaya da ke maye gurbin lambar sirri wajen rijista. Kowace ƙungiya tana samun sharuɗɗa iri ɗaya: lambobi {batch} a kowane rukuni a mafi yawa, da {cap} gaba ɗaya. Ba a taɓa nuna a bainar jama'a daga wace ƙungiya lamba ta fito ba, kuma ba ta taɓa yin tasiri a kan sakamako.",
+    "ig": "Koodu a na-eji otu ugboro nke na-anọchi koodu otu oge mgbe a na-edebanye aha. Nzukọ ọ bụla na-enweta otu usoro: koodu {batch} kacha na mkpokọta ọ bụla, na {cap} n'ozuzu. A naghị egosi ọha nzukọ koodu si na ya, ọ dịghịkwa mgbe ọ na-emetụta nsonaazụ.",
+    "yo": "Àwọn kóòdù ìlò-ẹ̀ẹ̀kan tí ń rọ́pò kóòdù ìgbà-kan nígbà ìforúkọsílẹ̀. Gbogbo àjọ ní ìlànà kan náà: kóòdù tí kò ju {batch} lọ nínú ìdìpọ̀ kọ̀ọ̀kan, àti tí kò ju {cap} lọ lápapọ̀. A kì í fi hàn ní gbangba àjọ tí kóòdù kan ti wá, kò sì ní ipa lórí àbájáde kankan."
+  },
+  "orgcode.admin.name": {
+    "en": "Name",
+    "ha": "Suna",
+    "ig": "Aha",
+    "yo": "Orúkọ"
+  },
+  "orgcode.admin.kind": {
+    "en": "Kind",
+    "ha": "Iri",
+    "ig": "Ụdị",
+    "yo": "Irú"
+  },
+  "orgcode.admin.kind-party": {
+    "en": "Party",
+    "ha": "Jam'iyya",
+    "ig": "Pati",
+    "yo": "Ẹgbẹ́ òṣèlú"
+  },
+  "orgcode.admin.kind-partner": {
+    "en": "Civic partner",
+    "ha": "Abokin hulɗa na farar hula",
+    "ig": "Onye mmekọ obodo",
+    "yo": "Alábàáṣiṣẹ́pọ̀ aráàlú"
+  },
+  "orgcode.admin.create": {
+    "en": "Create organisation",
+    "ha": "Ƙirƙiri ƙungiya",
+    "ig": "Mepụta nzukọ",
+    "yo": "Ṣẹ̀dá àjọ"
+  },
+  "orgcode.admin.created": {
+    "en": "Created.",
+    "ha": "An ƙirƙira.",
+    "ig": "E mepụtala ya.",
+    "yo": "A ti ṣẹ̀dá rẹ̀."
+  },
+  "orgcode.admin.name-required": {
+    "en": "Type the organisation's name first.",
+    "ha": "Rubuta sunan ƙungiyar tukuna.",
+    "ig": "Buru ụzọ dee aha nzukọ ahụ.",
+    "yo": "Kọ́kọ́ tẹ orúkọ àjọ náà."
+  },
+  "orgcode.admin.exists": {
+    "en": "An organisation with this name already exists.",
+    "ha": "Akwai ƙungiya mai wannan suna tuni.",
+    "ig": "Nzukọ nwere aha a adịlarị.",
+    "yo": "Àjọ tí ó ní orúkọ yìí ti wà tẹ́lẹ̀."
+  },
+  "orgcode.admin.none": {
+    "en": "No organisations yet.",
+    "ha": "Babu ƙungiya tukuna.",
+    "ig": "Enweghị nzukọ ọ bụla ka ugbu a.",
+    "yo": "Kò sí àjọ kankan síbẹ̀."
+  },
+  "orgcode.admin.usage": {
+    "en": "{created} accounts · {used} codes used · {issued} issued · {committed} of {cap} committed",
+    "ha": "Asusu {created} · lambobi {used} da aka yi amfani da su · {issued} da aka bayar · {committed} cikin {cap} da aka ware",
+    "ig": "Akaụntụ {created} · koodu {used} e jiri mee ihe · {issued} e nyere · {committed} n'ime {cap} e kenyere",
+    "yo": "Àkàǹtì {created} · kóòdù {used} tí a ti lò · {issued} tí a ti pín · {committed} nínú {cap} tí a ti yà sọ́tọ̀"
+  },
+  "orgcode.admin.refused": {
+    "en": "{n} spent on numbers that already had an account",
+    "ha": "{n} an kashe a kan lambobin waya da suke da asusu tuni",
+    "ig": "{n} e jiri mee ihe na nọmba ndị nweelarị akaụntụ",
+    "yo": "{n} ni a lò lórí àwọn nọ́mbà tí ó ti ní àkàǹtì tẹ́lẹ̀"
+  },
+  "orgcode.admin.batch": {
+    "en": "Batch {id} · {size} codes · {date}",
+    "ha": "Rukuni {id} · lambobi {size} · {date}",
+    "ig": "Mkpokọta {id} · koodu {size} · {date}",
+    "yo": "Ìdìpọ̀ {id} · kóòdù {size} · {date}"
+  },
+  "orgcode.admin.batch-usage": {
+    "en": "{created} accounts · {unused} unused",
+    "ha": "Asusu {created} · {unused} ba a yi amfani da su ba",
+    "ig": "Akaụntụ {created} · {unused} a na-ejibeghị mee ihe",
+    "yo": "Àkàǹtì {created} · {unused} tí a kò tíì lò"
+  },
+  "orgcode.admin.revoked": {
+    "en": "Withdrawn {date}",
+    "ha": "An janye {date}",
+    "ig": "E wepụrụ ya {date}",
+    "yo": "A fagi rẹ̀ {date}"
+  },
+  "orgcode.admin.size-label": {
+    "en": "Codes in the next batch",
+    "ha": "Lambobi a rukuni na gaba",
+    "ig": "Koodu dị na mkpokọta na-esote",
+    "yo": "Kóòdù nínú ìdìpọ̀ tó kàn"
+  },
+  "orgcode.admin.issue": {
+    "en": "Issue batch",
+    "ha": "Bayar da rukuni",
+    "ig": "Nye mkpokọta",
+    "yo": "Pín ìdìpọ̀"
+  },
+  "orgcode.admin.issued": {
+    "en": "Batch {id} issued. The CSV has downloaded: it is the only copy of these codes.",
+    "ha": "An bayar da rukuni {id}. An sauke fayil ɗin CSV: shi ne kaɗai kwafin waɗannan lambobi.",
+    "ig": "E nyela mkpokọta {id}. E budatala faịlụ CSV ahụ: ọ bụ naanị ya bụ nnomi koodu ndị a.",
+    "yo": "A ti pín ìdìpọ̀ {id}. Fáìlì CSV ti wọlé: òun nìkan ni ẹ̀dà àwọn kóòdù wọ̀nyí."
+  },
+  "orgcode.admin.download": {
+    "en": "Download CSV again",
+    "ha": "Sake sauke CSV",
+    "ig": "Budata CSV ọzọ",
+    "yo": "Tún gba CSV sílẹ̀"
+  },
+  "orgcode.admin.revoke": {
+    "en": "Withdraw batch",
+    "ha": "Janye rukuni",
+    "ig": "Wepụ mkpokọta",
+    "yo": "Fagi ìdìpọ̀"
+  },
+  "orgcode.admin.revoke-confirm": {
+    "en": "Withdraw batch {id}? Its unused codes stop working at once. Accounts already created stay.",
+    "ha": "A janye rukuni {id}? Lambobinsa da ba a yi amfani da su ba za su daina aiki nan take. Asusun da aka riga aka buɗe za su ci gaba da kasancewa.",
+    "ig": "Wepụ mkpokọta {id}? Koodu ya a na-ejibeghị mee ihe ga-akwụsị ịrụ ọrụ ozugbo. Akaụntụ e meelarị ga-anọgide.",
+    "yo": "Fagi ìdìpọ̀ {id}? Àwọn kóòdù rẹ̀ tí a kò tíì lò yóò dáwọ́ iṣẹ́ dúró lẹ́sẹ̀kẹsẹ̀. Àwọn àkàǹtì tí a ti ṣí yóò wà níbẹ̀."
+  },
+  "orgcode.admin.cap-exceeded": {
+    "en": "That would take this organisation past its cap of {cap} codes ({committed} committed).",
+    "ha": "Hakan zai sa wannan ƙungiya ta wuce iyakarta ta lambobi {cap} ({committed} an riga an ware).",
+    "ig": "Nke ahụ ga-eme ka nzukọ a gafere oke ya nke koodu {cap} ({committed} e kenyelarị).",
+    "yo": "Ìyẹn yóò mú kí àjọ yìí kọjá ààlà rẹ̀ tí ó jẹ́ kóòdù {cap} ({committed} ti yà sọ́tọ̀ tẹ́lẹ̀)."
+  },
+  "orgcode.admin.invalid-size": {
+    "en": "A batch is 1 to {max} codes.",
+    "ha": "Rukuni yana da lamba 1 zuwa {max}.",
+    "ig": "Otu mkpokọta bụ koodu 1 ruo {max}.",
+    "yo": "Ìdìpọ̀ kan jẹ́ kóòdù 1 sí {max}."
+  },
+  "orgcode.admin.error": {
+    "en": "Could not complete ({error}).",
+    "ha": "Ba a iya kammalawa ba ({error}).",
+    "ig": "Enweghị ike imecha ya ({error}).",
+    "yo": "Kò ṣeé parí ({error})."
+  },
+  "orgcode.admin.load-error": {
+    "en": "Could not load organisation codes ({error}).",
+    "ha": "Ba a iya loda lambobin ƙungiya ba ({error}).",
+    "ig": "Enweghị ike ibugo koodu nzukọ ({error}).",
+    "yo": "Kò ṣeé gbé àwọn kóòdù àjọ wá ({error})."
+  },
+  "auth.code-label": {
+    "en": "Invite or organisation code (optional)",
+    "ha": "Lambar gayyata ko ta ƙungiya (ba dole ba)",
+    "ig": "Koodu ọkpụkpọ ma ọ bụ koodu nzukọ (nhọrọ)",
+    "yo": "Kóòdù ìpè tàbí kóòdù àjọ (àṣàyàn)"
+  },
+  "auth.code-hint": {
+    "en": "A friend's invite code, or an ORG- code from your party or civic group.",
+    "ha": "Lambar gayyata daga aboki, ko lambar ORG- daga jam'iyyarka ko ƙungiyar farar hularka.",
+    "ig": "Koodu ọkpụkpọ sitere n'aka enyi, ma ọ bụ koodu ORG- sitere na pati gị ma ọ bụ otu obodo gị.",
+    "yo": "Kóòdù ìpè láti ọ̀dọ̀ ọ̀rẹ́, tàbí kóòdù ORG- láti ọ̀dọ̀ ẹgbẹ́ òṣèlú rẹ tàbí àjọ aráàlú rẹ."
+  },
+  "auth.code-kind-invite": {
+    "en": "Invite from a friend.",
+    "ha": "Gayyata daga aboki.",
+    "ig": "Ọkpụkpọ sitere n'aka enyi.",
+    "yo": "Ìpè láti ọ̀dọ̀ ọ̀rẹ́."
+  },
+  "auth.code-kind-org": {
+    "en": "Organisation code: no one-time code will be sent.",
+    "ha": "Lambar ƙungiya: ba za a aika lambar sirri ba.",
+    "ig": "Koodu nzukọ: a gaghị eziga koodu otu oge.",
+    "yo": "Kóòdù àjọ: a kò ní fi kóòdù ìgbà-kan ránṣẹ́."
+  },
+  "auth.code-invalid": {
+    "en": "Not a code we recognise. A friend's invite has 6 letters and numbers; an organisation code looks like ORG-ABCD-EFGH-JKMN.",
+    "ha": "Ba lambar da muka sani ba ce. Gayyatar aboki tana da haruffa da lambobi 6; lambar ƙungiya tana kama da ORG-ABCD-EFGH-JKMN.",
+    "ig": "Ọ bụghị koodu anyị maara. Ọkpụkpọ enyi nwere mkpụrụedemede na ọnụọgụ 6; koodu nzukọ dị ka ORG-ABCD-EFGH-JKMN.",
+    "yo": "Kì í ṣe kóòdù tí a mọ̀. Ìpè ọ̀rẹ́ ní lẹ́tà àti nọ́mbà 6; kóòdù àjọ rí bí ORG-ABCD-EFGH-JKMN."
+  },
+  "auth.org-code-unknown": {
+    "en": "That organisation code is not valid. Check it with your organisation, or leave the box empty to sign up with a one-time code.",
+    "ha": "Wannan lambar ƙungiya ba ta da inganci. Tabbatar da ita daga ƙungiyarka, ko ka bar akwatin fanko domin yin rijista da lambar sirri.",
+    "ig": "Koodu nzukọ ahụ ezighị ezi. Lelee ya na nzukọ gị, ma ọ bụ hapụ igbe ahụ oghere iji debanye aha site na koodu otu oge.",
+    "yo": "Kóòdù àjọ yẹn kò wúlò. Ṣàyẹ̀wò rẹ̀ lọ́dọ̀ àjọ rẹ, tàbí fi àpótí náà sílẹ̀ ní òfìfo láti forúkọ sílẹ̀ pẹ̀lú kóòdù ìgbà-kan."
+  }
+}

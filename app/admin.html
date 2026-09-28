@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193" />
-  <script src="native.js?v=120"></script>
+  <script src="native.js?v=121"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
 /* ---- from review.html ---- */
@@ -309,7 +309,7 @@
     .cap-adm-compose button, .cap-adm-item .cap-adm-msg { width: auto; margin: 6px 8px 0 0; }
     .cap-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
-  <script src="authgate.js?v=3"></script>
+  <script src="authgate.js?v=4"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -403,6 +403,27 @@
           <button data-i18n="coverage.admin.refresh" id="cap-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
         </div>
         <div id="cap-out"></div>
+      </details>
+      <!-- ORGANISATION CODES (owner decision D4; routes/orgCodes.js). Inside
+           Reach beside captain applications: both are how people arrive through
+           an organisation. Single-use codes that replace the sign-up OTP, issued
+           in batches to a party or civic partner on identical terms. The CSV is
+           the ONLY copy of a batch's codes — the server keeps hashes. Loads on
+           first open. -->
+      <details id="org-wrap" style="margin-top:10px">
+        <summary data-i18n="orgcode.admin.title" style="cursor:pointer;font-weight:700">Organisation codes</summary>
+        <p class="hint" id="org-adm-intro"></p>
+        <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
+          <label data-i18n="orgcode.admin.name" for="org-adm-name" style="margin:0">Name</label>
+          <input id="org-adm-name" type="text" maxlength="80" autocomplete="off" style="flex:1;min-width:160px;margin:0" />
+          <label data-i18n="orgcode.admin.kind" for="org-adm-kind" style="margin:0">Kind</label>
+          <!-- Options painted by the Organisation codes script (and on a language change). -->
+          <select id="org-adm-kind" style="width:auto;margin:0"></select>
+          <button data-i18n="orgcode.admin.create" id="org-adm-create" class="secondary" style="width:auto;margin:0">Create organisation</button>
+          <button data-i18n="coverage.admin.refresh" id="org-adm-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+        </div>
+        <p id="org-adm-status" class="status" role="status"></p>
+        <div id="org-adm-out"></div>
       </details>
 
       </div><div class="panel" data-p="incidents" hidden><h1 data-i18n="common.incident-review" style="margin-top:34px">Incident Review</h1>
@@ -2399,6 +2420,205 @@
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
     document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintFilter(); });
     paintFilter();
+  })();
+  </script>
+
+  <script>
+  /**
+   * ORGANISATION CODES — GET /api/admin/org-codes, POST …/issuers,
+   * POST …/issuers/:id/batches (the ONLY response that carries plain codes; it
+   * becomes a CSV download at once) and POST …/batches/:id/revoke. Counts only:
+   * the server never sends a phone hash or an observer id here. Own <script>
+   * and helpers, like Captains above; loads the first time the <details> opens
+   * and repaints without refetching on a language change.
+   */
+  (function () {
+    const panel = document.getElementById('org-wrap');
+    const out = document.getElementById('org-adm-out');
+    const intro = document.getElementById('org-adm-intro');
+    const status = document.getElementById('org-adm-status');
+    const nameIn = document.getElementById('org-adm-name');
+    const kindSel = document.getElementById('org-adm-kind');
+    const createBtn = document.getElementById('org-adm-create');
+    const refresh = document.getElementById('org-adm-refresh');
+    if (!panel || !out) return;
+
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const secret = () => sessionStorage.getItem('hawkeye_admin') || '';
+    const day = (ms) => new Date(ms).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    const kindLabel = (k) => (k === 'party' ? T('orgcode.admin.kind-party', 'Party') : T('orgcode.admin.kind-partner', 'Civic partner'));
+
+    let data = null;
+    let err = null;
+    let loaded = false;
+    let seq = 0;
+    let msg = null;                 // { ok, text } — the last action's outcome
+    const fresh = {};               // batch id → { codes, issuer } for this page visit only
+
+    function paintStatic() {
+      const cur = kindSel.value || 'party';
+      kindSel.innerHTML = ['party', 'partner'].map((k) => '<option value="' + k + '">' + esc(kindLabel(k)) + '</option>').join('');
+      kindSel.value = cur;
+      intro.textContent = fill(T('orgcode.admin.intro', 'Single-use codes that replace the one-time code at sign-up. Every organisation gets the same terms: at most {batch} codes per batch and {cap} in total. Which organisation a code came from is never shown publicly and never weighs a result.'),
+        { batch: data ? data.batchMax : '…', cap: data ? data.issuerCap : '…' });
+      status.textContent = msg ? msg.text : '';
+      status.className = 'status' + (msg ? (msg.ok ? ' ok' : ' bad') : '');
+    }
+
+    function batchRow(b, issuer) {
+      const line = fill(T('orgcode.admin.batch', 'Batch {id} · {size} codes · {date}'), { id: b.id, size: b.size, date: day(b.createdAt) })
+        + ' — ' + fill(T('orgcode.admin.batch-usage', '{created} accounts · {unused} unused'), { created: b.created, unused: b.unused })
+        + (b.refused ? ' · ' + fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: b.refused }) : '');
+      const action = b.revokedAt
+        ? '<span class="meta">' + esc(fill(T('orgcode.admin.revoked', 'Withdrawn {date}'), { date: day(b.revokedAt) })) + '</span>'
+        : '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-revoke="' + b.id + '">' + esc(T('orgcode.admin.revoke', 'Withdraw batch')) + '</button>';
+      const again = fresh[b.id]
+        ? '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-csv="' + b.id + '">' + esc(T('orgcode.admin.download', 'Download CSV again')) + '</button>'
+        : '';
+      return '<li><span>' + esc(line) + '</span>' + action + again + '</li>';
+    }
+
+    function issuerCard(i) {
+      const usage = fill(T('orgcode.admin.usage', '{created} accounts · {used} codes used · {issued} issued · {committed} of {cap} committed'),
+        { created: i.created, used: i.used, issued: i.issued, committed: i.committed, cap: data.issuerCap });
+      return '<div class="card" style="margin:10px 0;padding:10px 12px">'
+        + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + '</span></p>'
+        + '<p class="meta">' + esc(usage) + (i.refused ? ' · ' + esc(fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: i.refused })) : '') + '</p>'
+        + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<label for="org-adm-size-' + i.id + '" style="margin:0">' + esc(T('orgcode.admin.size-label', 'Codes in the next batch')) + '</label>'
+        + '<input id="org-adm-size-' + i.id + '" type="number" min="1" max="' + data.batchMax + '" value="' + Math.min(100, data.batchMax) + '" style="width:110px;margin:0" />'
+        + '<button type="button" style="width:auto;margin:0" data-issue="' + i.id + '">' + esc(T('orgcode.admin.issue', 'Issue batch')) + '</button>'
+        + '</div>'
+        + (i.batches.length ? '<ul class="cap-adm-list">' + i.batches.map((b) => batchRow(b, i)).join('') + '</ul>' : '')
+        + '</div>';
+    }
+
+    function paint() {
+      paintStatic();
+      if (err) {
+        out.innerHTML = '<p class="status bad">' + esc(err === 'unlock'
+          ? T('coverage.admin.unlock-first', 'Unlock the console first.')
+          : fill(T('orgcode.admin.load-error', 'Could not load organisation codes ({error}).'), { error: err })) + '</p>';
+        return;
+      }
+      if (!data) { out.innerHTML = '<p class="empty">' + esc(T('index.loading', 'Loading…')) + '</p>'; return; }
+      out.innerHTML = data.issuers.length
+        ? data.issuers.map(issuerCard).join('')
+        : '<p class="empty">' + esc(T('orgcode.admin.none', 'No organisations yet.')) + '</p>';
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      err = secret() ? null : 'unlock';
+      paint();
+      if (err) return;
+      try {
+        const r = await fetch('/api/admin/org-codes', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body || !Array.isArray(body.issuers)) err = (body && body.error) || ('HTTP ' + r.status);
+        else data = body;
+      } catch (e) {
+        if (mine !== seq) return;
+        err = e.message || String(e);
+      }
+      paint();
+    }
+
+    async function post(path, body) {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+        body: JSON.stringify(body || {}),
+      });
+      return { status: r.status, body: await r.json().catch(() => null) };
+    }
+    const failText = (b, status) => {
+      const code = (b && b.error) || ('HTTP ' + status);
+      if (code === 'issuer_exists') return T('orgcode.admin.exists', 'An organisation with this name already exists.');
+      if (code === 'name_required') return T('orgcode.admin.name-required', "Type the organisation's name first.");
+      if (code === 'cap_exceeded') return fill(T('orgcode.admin.cap-exceeded', 'That would take this organisation past its cap of {cap} codes ({committed} committed).'), { cap: b.cap, committed: b.committed });
+      if (code === 'invalid_size') return fill(T('orgcode.admin.invalid-size', 'A batch is 1 to {max} codes.'), { max: b.batchMax });
+      return fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
+    };
+
+    /* The download is built HERE from the one response that carried the codes.
+       Nothing is written to storage: close the tab and only the CSV remains. */
+    function downloadCsv(batchId) {
+      const f = fresh[batchId];
+      if (!f) return;
+      const csv = 'code,batch,issued\n' + f.codes.map((c) => c + ',' + batchId + ',' + f.issued).join('\n') + '\n';
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+      a.download = 'hawkeye-codes-' + String(f.issuer).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') + '-batch-' + batchId + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
+    createBtn.addEventListener('click', async () => {
+      const name = nameIn.value.trim();
+      if (!name) { msg = { ok: false, text: T('orgcode.admin.name-required', "Type the organisation's name first.") }; paintStatic(); return; }
+      createBtn.disabled = true;
+      try {
+        const r = await post('/api/admin/org-codes/issuers', { name, kind: kindSel.value });
+        msg = r.status === 200 ? { ok: true, text: T('orgcode.admin.created', 'Created.') } : { ok: false, text: failText(r.body, r.status) };
+        if (r.status === 200) { nameIn.value = ''; await load(); }
+      } catch (e) {
+        msg = { ok: false, text: fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: e.message || String(e) }) };
+      }
+      createBtn.disabled = false;
+      paintStatic();
+    });
+
+    out.addEventListener('click', async (e) => {
+      const issue = e.target.closest('[data-issue]');
+      const revoke = e.target.closest('[data-revoke]');
+      const csv = e.target.closest('[data-csv]');
+      if (csv) { downloadCsv(Number(csv.getAttribute('data-csv'))); return; }
+      if (issue) {
+        const id = Number(issue.getAttribute('data-issue'));
+        const size = Number((document.getElementById('org-adm-size-' + id) || {}).value);
+        const issuer = (data.issuers.find((i) => i.id === id) || {}).name || 'organisation';
+        issue.disabled = true;
+        try {
+          const r = await post('/api/admin/org-codes/issuers/' + id + '/batches', { size });
+          if (r.status === 200 && r.body && Array.isArray(r.body.codes)) {
+            fresh[r.body.batch.id] = { codes: r.body.codes, issuer, issued: new Date(r.body.batch.createdAt).toISOString().slice(0, 10) };
+            downloadCsv(r.body.batch.id);
+            msg = { ok: true, text: fill(T('orgcode.admin.issued', 'Batch {id} issued. The CSV has downloaded: it is the only copy of these codes.'), { id: r.body.batch.id }) };
+            await load();
+          } else msg = { ok: false, text: failText(r.body, r.status) };
+        } catch (er) {
+          msg = { ok: false, text: fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: er.message || String(er) }) };
+        }
+        issue.disabled = false;
+        paint();
+        return;
+      }
+      if (revoke) {
+        const id = Number(revoke.getAttribute('data-revoke'));
+        if (!confirm(fill(T('orgcode.admin.revoke-confirm', 'Withdraw batch {id}? Its unused codes stop working at once. Accounts already created stay.'), { id }))) return;
+        revoke.disabled = true;
+        try {
+          const r = await post('/api/admin/org-codes/batches/' + id + '/revoke');
+          msg = r.status === 200
+            ? { ok: true, text: fill(T('orgcode.admin.revoked', 'Withdrawn {date}'), { date: day(Date.now()) }) }
+            : { ok: false, text: failText(r.body, r.status) };
+          if (r.status === 200) await load();
+        } catch (er) {
+          msg = { ok: false, text: fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: er.message || String(er) }) };
+        }
+        paint();
+      }
+    });
+    refresh.addEventListener('click', load);
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
+    document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintStatic(); });
+    paintStatic();
   })();
   </script>
 <script src="/i18n.js?v=10"></script>

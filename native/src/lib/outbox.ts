@@ -32,7 +32,8 @@ import { getIdentity } from '@/lib/identity';
 // with submit's multipart + session helpers. Both directions are function calls
 // made at runtime, never at module-evaluation time, so the cycle resolves.
 import { filePart, remintSession } from '@/lib/submit';
-import { isDirectBusy, uploadDirect, type DirectBusy } from '@/lib/direct-upload';
+import { isDirectBusy, isHashOnly, uploadDirect, type DirectBusy } from '@/lib/direct-upload';
+import { keepEvidence } from '@/lib/evidence';
 import { t as i18nT } from '@/lib/i18n';
 import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
 
@@ -361,35 +362,74 @@ function buildForm(job: StoredJob): FormData {
   return form;
 }
 
-async function post(job: StoredJob, token: string, deviceId: string): Promise<Response | DirectBusy> {
+async function attempt(
+  job: StoredJob,
+  token: string,
+  deviceId: string,
+  withFigures: boolean,
+): Promise<{ res: Response | DirectBusy; hashOnly: boolean }> {
   // The mode is decided HERE, not when the report was queued. A report captured
   // with no signal and flushed hours later should use whatever the server
   // offers now, and a job queued before direct upload existed still flushes
   // because it carries its files either way.
   let json: string | null = null;
+  let hashOnly = false;
   const sheet = job.files.find((f) => f.field === 'photo');
   const venue = job.files.find((f) => f.field === 'venuePhoto');
-  if (job.kind === 'result' && sheet && venue && job.body.imageSha256 && job.body.venueImageSha256) {
+  const b = job.body;
+  if (job.kind === 'result' && sheet && venue && b.imageSha256 && b.venueImageSha256) {
     const ok = await uploadDirect({
       token,
       deviceId,
       sheetUri: sheet.uri,
       venueUri: venue.uri,
-      sheetSha256: job.body.imageSha256,
-      venueSha256: job.body.venueImageSha256,
+      sheetSha256: b.imageSha256,
+      venueSha256: b.venueImageSha256,
+      // D1: offer the figures; on "hash-only" the photos are copied into the
+      // evidence store (lib/evidence.ts) before the job's own copy is retired.
+      ...(withFigures && b.puCode && b.contest && b.votes
+        ? {
+            figures: { puCode: b.puCode, contest: b.contest, votes: b.votes },
+            keep: () =>
+              keepEvidence({
+                puCode: b.puCode,
+                contest: b.contest,
+                photos: [
+                  { slot: 'sheet' as const, uri: sheet.uri, sha256: b.imageSha256 },
+                  { slot: 'venue' as const, uri: venue.uri, sha256: b.venueImageSha256 },
+                ],
+              }),
+          }
+        : {}),
     }).catch(() => null);
     // Presign refused as busy: hand that back rather than post the photos
     // multipart THROUGH the origin that just asked for less.
-    if (isDirectBusy(ok)) return ok;
-    if (ok === true) json = JSON.stringify(job.body);
+    if (isDirectBusy(ok)) return { res: ok, hashOnly: false };
+    if (ok === true) json = JSON.stringify(b);
+    else if (isHashOnly(ok)) {
+      hashOnly = true;
+      json = JSON.stringify({ ...b, hashOnly: '1' });
+    }
   }
-  return fetch(`${BASE}${PATHS[job.kind]}`, {
+  const res = await fetch(`${BASE}${PATHS[job.kind]}`, {
     method: 'POST',
     headers: json
       ? { authorization: `Bearer ${token}`, 'x-device-id': deviceId, 'content-type': 'application/json' }
       : { authorization: `Bearer ${token}`, 'x-device-id': deviceId },
     body: json ?? buildForm(job),
   });
+  return { res, hashOnly };
+}
+
+async function post(job: StoredJob, token: string, deviceId: string): Promise<Response | DirectBusy> {
+  const first = await attempt(job, token, deviceId, true);
+  // D1: the quorum moved since the presign. The photos are still in the job:
+  // upload them the ordinary way and resend now, once, instead of deferring
+  // to a later flush that could hear "hash-only" again.
+  if (first.hashOnly && !isDirectBusy(first.res) && first.res.status === 409 && (await isRetryable409(first.res))) {
+    return (await attempt(job, token, deviceId, false)).res;
+  }
+  return first.res;
 }
 
 /** Can the device still read this part? A copy that was evicted anyway is unsendable. */

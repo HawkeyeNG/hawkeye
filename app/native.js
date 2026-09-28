@@ -1,5 +1,6 @@
-/* Hawkeye native bridge. STRICT NO-OP on the web — everything here activates
-   only inside the Capacitor shell (window.Capacitor present). Keeps ONE
+/* Hawkeye native bridge. A NO-OP on the web except for window.HAWKEYE and the
+   signed-in read cache (signedInReads, D6), which both need — everything else
+   activates only inside the Capacitor shell (window.Capacitor present). Keeps ONE
    codebase: web and app run the same app/ bundle; native features light up
    when wrapped. Loaded first in <head> so it runs before any page fetch. */
 (function () {
@@ -7,7 +8,169 @@
   const native = !!(Cap && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform());
   const BASE = 'https://hawkeye.com.ng';
   window.HAWKEYE = { native, apiBase: native ? BASE : '' };
+
+  /**
+   * SIGNED-IN READS: PUSH-DRIVEN, PLUS 120 s (D6, docs/private/CHEAPEST-ELECTION-NIGHT.html).
+   * The one block above the web/native split, because both need it and this is
+   * the first script on every page.
+   *
+   * /api/notifications, /api/observers/me and /api/my/rooms can never be cached
+   * at the edge, and every page view asked again: the unread badge alone was
+   * fetched twice per page in the app shell (bell + tab dot) and a third time
+   * on Home. authGet() answers from this tab's sessionStorage for 120 s and asks
+   * the server otherwise. What makes the answer stale ends the 120 s early:
+   *   - a push arriving (sw.js on the web, the push plugin in Lite) — hawkeye-push;
+   *   - ANY non-GET to /api/ from this page (filing, following, marking read,
+   *     checking in, editing the profile): the fetch wrapper below drops every
+   *     entry before and after, so no write path has to remember to;
+   *   - a different token (sign-out, another account): entries carry its print.
+   * The worst case the plan accepts: a push that is lost leaves a badge up to
+   * 2 minutes behind. Nothing here ever caches a failure.
+   *
+   * isForeground() + 'hawkeye-foreground' are for pages that poll (results.html):
+   * visible AND, in Lite, the app in front — the WebView does not reliably say
+   * it went to the background, the App plugin does.
+   */
+  (function signedInReads() {
+    const FRESH_MS = 120000;
+    const PREFIX = 'hk_ag:';
+    const PUSH_KEY = 'hk_push_at';
+    const WRITE_KEY = 'hk_write_at';
+    // Written by sw.js on every web push, so a push that landed while no page
+    // was open (the one you tap) still ends the 120 s.
+    const PUSH_CACHE = 'hawkeye-push-mark';
+    const PUSH_URL = '/__hawkeye/push-at';
+    const inflight = {};
+    const ss = () => { try { return window.sessionStorage || null; } catch (_) { return null; } };
+    const token = () => { try { return localStorage.getItem('hawkeye_token') || ''; } catch (_) { return ''; } };
+    // A hash of the WHOLE token (cyrb53), not a slice of it: two tokens that
+    // share an ending must never share an answer.
+    const print = (t) => {
+      if (!t) return '';
+      let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
+      for (let i = 0; i < t.length; i++) {
+        const c = t.charCodeAt(i);
+        h1 = Math.imul(h1 ^ c, 2654435761); h2 = Math.imul(h2 ^ c, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return t.length + ':' + (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+    };
+    // An explicit reload asks the server again: someone pulling to refresh
+    // wants the server's answer, not this tab's.
+    let reloaded = false;
+    try { reloaded = performance.getEntriesByType('navigation')[0].type === 'reload'; } catch (_) { /* old engine */ }
+    const askedThisLoad = {};
+    function bust(path) {
+      const s = ss();
+      if (!s) return;
+      try {
+        if (path) { s.removeItem(PREFIX + path); return; }
+        for (let i = s.length - 1; i >= 0; i--) {
+          const k = s.key(i);
+          if (k && k.indexOf(PREFIX) === 0) s.removeItem(k);
+        }
+      } catch (_) { /* storage off: nothing cached either */ }
+    }
+    async function pushAt() {
+      let at = 0;
+      try { at = Number(ss() && ss().getItem(PUSH_KEY)) || 0; } catch (_) { /* no storage */ }
+      try {
+        if (window.caches) {
+          const r = await caches.match(PUSH_URL, { cacheName: PUSH_CACHE });
+          if (r) at = Math.max(at, Number(await r.text()) || 0);
+        }
+      } catch (_) { /* no Cache Storage: the tab's own marker is all there is */ }
+      return at;
+    }
+    function notePush(at) {
+      try { const s = ss(); if (s) s.setItem(PUSH_KEY, String(Number(at) || Date.now())); } catch (_) { /* ignore */ }
+      bust();
+      try { document.dispatchEvent(new CustomEvent('hawkeye-push')); } catch (_) { /* ignore */ }
+    }
+    /** GET a signed-in endpoint as { status, body }. `force` skips the 120 s. */
+    async function authGet(path, opts) {
+      const tk = token();
+      if (!tk) return { status: 401, body: null };
+      const key = PREFIX + path;
+      const force = (opts && opts.force) || (reloaded && !askedThisLoad[path]);
+      askedThisLoad[path] = true;
+      // Forcing drops the kept answer first, so a second caller on this page
+      // joins the request below instead of reading the old one.
+      if (force) bust(path);
+      else {
+        let hit = null;
+        try { hit = JSON.parse(ss().getItem(key)); } catch (_) { hit = null; }
+        if (hit && hit.fp === print(tk) && Date.now() - hit.at < FRESH_MS && (await pushAt()) < hit.at) {
+          return { status: 200, body: hit.body, cached: true };
+        }
+      }
+      // Two callers on one page (bell + tab dot + Home) share ONE request.
+      if (inflight[key]) return inflight[key];
+      inflight[key] = (async () => {
+        try {
+          const at = Date.now();
+          const r = await window.fetch(path, { headers: { authorization: 'Bearer ' + tk } });
+          const body = r.ok ? await r.json().catch(() => null) : null;
+          // Not kept if a write left this tab in the last 5 s: a keepalive
+          // "mark read" sent as the page navigated may not have landed yet, and
+          // keeping the answer would hold the old count for 120 s.
+          let wroteAt = 0;
+          try { wroteAt = Number(ss().getItem(WRITE_KEY)) || 0; } catch (_) { /* no storage */ }
+          if (r.status === 200 && body != null && at - wroteAt > 5000) {
+            try { ss().setItem(key, JSON.stringify({ fp: print(tk), at, body })); } catch (_) { /* full or off */ }
+          }
+          return { status: r.status, body };
+        } finally { delete inflight[key]; }
+      })();
+      return inflight[key];
+    }
+    const f0 = window.fetch;
+    if (typeof f0 === 'function') {
+      window.fetch = function (input, init) {
+        const req = input && typeof input === 'object' ? input : null;
+        const method = String((init && init.method) || (req && req.method) || 'GET').toUpperCase();
+        const url = String((req && req.url) || input || '');
+        const p = f0.apply(window, arguments);
+        // Lite re-registers its push token on EVERY page load; that write
+        // changes none of these reads and would otherwise empty them each time.
+        if (method === 'GET' || method === 'HEAD' || url.indexOf('/api/') < 0 || /\/api\/(push\/register|assistant)\b/.test(url)) return p;
+        try { const s = ss(); if (s) s.setItem(WRITE_KEY, String(Date.now())); } catch (_) { /* ignore */ }
+        bust();
+        return p.finally(() => bust());
+      };
+    }
+    if (navigator.serviceWorker && navigator.serviceWorker.addEventListener) {
+      navigator.serviceWorker.addEventListener('message', (e) => {
+        if (e.data && e.data.type === 'hawkeye-push') notePush(e.data.at);
+      });
+    }
+    let appActive = true;
+    const isForeground = () => appActive && document.visibilityState !== 'hidden';
+    const announce = () => {
+      try { document.dispatchEvent(new CustomEvent('hawkeye-foreground', { detail: { foreground: isForeground() } })); } catch (_) { /* ignore */ }
+    };
+    document.addEventListener('visibilitychange', announce);
+    Object.assign(window.HAWKEYE, {
+      FRESH_MS, authGet, authBust: bust, notePush, isForeground,
+      setAppActive(a) { if (appActive !== !!a) { appActive = !!a; announce(); } },
+    });
+  })();
+
   if (!native) return; // ---- web path ends here; nothing below runs in a browser ----
+
+  // Lite: the App plugin knows when the app leaves the screen; the WebView's
+  // visibilitychange does not reliably fire. Late plugin bridges get one retry.
+  (function appState() {
+    const hook = () => {
+      const App = Cap.Plugins && Cap.Plugins.App;
+      if (!App || !App.addListener) return false;
+      App.addListener('appStateChange', (s) => window.HAWKEYE.setAppActive(!!(s && s.isActive)));
+      if (App.getState) App.getState().then((s) => window.HAWKEYE.setAppActive(!!(s && s.isActive))).catch(() => {});
+      return true;
+    };
+    if (!hook()) document.addEventListener('DOMContentLoaded', hook, { once: true });
+  })();
 
   // Mark the document early so CSS can strip web-only UI (e.g. the PWA install
   // CTA) with no race against page scripts.
@@ -525,7 +688,11 @@
           window.HAWKEYE.pushError = `register failed: ${(e && e.message) || e}`;
         });
       });
+      // D6: a push is the signal the badge and the signed-in reads are stale
+      // (signedInReads above); the 120 s backstop covers a push that is lost.
+      Push.addListener('pushNotificationReceived', () => window.HAWKEYE.notePush());
       Push.addListener('pushNotificationActionPerformed', (ev) => {
+        window.HAWKEYE.notePush();
         const url = ev && ev.notification && ev.notification.data && ev.notification.data.url;
         /**
          * NO URL MEANS ALERTS, not "stay where you are".

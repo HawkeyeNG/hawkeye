@@ -166,35 +166,66 @@
         // the server offers now; and a queue written before direct upload
         // existed still flushes, because it carries the blobs either way.
         let directBody = null;
-        if (!it.url && G.HawkeyeDirect && it.fields.imageSha256 && it.fields.venueImageSha256) {
+        // D1: a unit report offers its figures, so the presign may answer
+        // "hash-only" (direct-upload.js then keeps the photos on this phone).
+        let hashOnly = false;
+        const plan = async (withFigures) => {
+          directBody = null;
+          hashOnly = false;
+          if (it.url || !G.HawkeyeDirect || !it.fields.imageSha256 || !it.fields.venueImageSha256) return null;
           const D = G.HawkeyeDirect;
+          const f = it.fields;
           const up = await (D.tryUpload || D.upload)({
             base,
             token,
             blobs: { sheet: it.sheet, venue: it.venue },
-            hashes: { sheet: it.fields.imageSha256, venue: it.fields.venueImageSha256 },
+            hashes: { sheet: f.imageSha256, venue: f.venueImageSha256 },
+            ...(withFigures ? { figures: { puCode: f.puCode, contest: f.contest, votes: f.votes } } : {}),
           });
-          // Presign refused as busy (429/503): NOT a reason to push the photo
-          // bytes through the origin instead. Hold the queue until Retry-After.
-          if (up && up.busy) { holdRest(items.slice(i), up.status, up.retryAfter); break; }
-          if (up === true) directBody = JSON.stringify({ ...it.fields });
-        }
-        const form = new FormData();
-        for (const [k, v] of Object.entries(it.fields)) form.set(k, v);
-        // Collation and incident entries carry their own endpoint and file list
-        // (incident media repeat under one name, so append); a unit report
-        // carries its two photos as sheet/venue.
-        if (it.files) for (const [name, blob, filename] of it.files) form.append(name, blob, filename);
-        else { form.set('photo', it.sheet, 'ec8a.jpg'); form.set('venuePhoto', it.venue, 'venue.jpg'); }
-        let resp;
-        try {
+          if (up && up.busy) return up;
+          if (up === true || (up && up.hashOnly)) {
+            hashOnly = up !== true;
+            directBody = JSON.stringify({ ...f, ...(hashOnly ? { hashOnly: '1' } : {}) });
+          }
+          return null;
+        };
+        // Presign refused as busy (429/503): NOT a reason to push the photo
+        // bytes through the origin instead. Hold the queue until Retry-After.
+        const busyUp = await plan(true);
+        if (busyUp) { holdRest(items.slice(i), busyUp.status, busyUp.retryAfter); break; }
+        const send = () => {
+          const form = new FormData();
+          for (const [k, v] of Object.entries(it.fields)) form.set(k, v);
+          // Collation and incident entries carry their own endpoint and file list
+          // (incident media repeat under one name, so append); a unit report
+          // carries its two photos as sheet/venue.
+          if (it.files) for (const [name, blob, filename] of it.files) form.append(name, blob, filename);
+          else { form.set('photo', it.sheet, 'ec8a.jpg'); form.set('venuePhoto', it.venue, 'venue.jpg'); }
           const auth = { authorization: 'Bearer ' + token, ...(it.deviceId ? { 'x-device-id': it.deviceId } : {}) };
-          resp = await fetch(base + (it.url || '/api/submissions'), {
+          return fetch(base + (it.url || '/api/submissions'), {
             method: 'POST',
             headers: directBody ? { ...auth, 'content-type': 'application/json' } : auth,
             body: directBody || form,
           });
+        };
+        let resp;
+        let heldAll = false;
+        try {
+          resp = await send();
+          // D1: the quorum moved since the presign. The photos are still here:
+          // upload them the ordinary way and resend now, once, rather than wait
+          // for a later flush that could hear "hash-only" again.
+          if (hashOnly && resp.status === 409) {
+            let b = null;
+            try { b = await resp.clone().json(); } catch { /* not json */ }
+            if (b && b.error === 'photo_not_uploaded') {
+              const busy2 = await plan(false);
+              if (busy2) { holdRest(items.slice(i), busy2.status, busy2.retryAfter); heldAll = true; }
+              else resp = await send();
+            }
+          }
         } catch { wantSync(); break; } // still offline — keep the rest, and ask to be woken
+        if (heldAll) break;
         // 409 USED TO MEAN "the server already has it" — already_submitted or
         // duplicate_image — so dropping the queue entry was right. Direct upload
         // added a 409 that means the OPPOSITE: photo_not_uploaded, i.e. the bucket

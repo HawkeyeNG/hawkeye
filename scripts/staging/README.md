@@ -175,7 +175,7 @@ It then:
 
 | Copy | What | Where | RPO | Kept |
 |---|---|---|---|---|
-| 1 | Litestream 0.5, continuous, one replica | R2 `hawkeye-db-staging`, path `hawkeye.db` (S3 `litestream/` until the R2 keys exist) | ≤ 1 s | 72 h of snapshots (hourly) plus LTX |
+| 1 | Litestream 0.5, continuous, one replica | R2 `hawkeye-db-staging`, path `hawkeye.db` (S3 `litestream/` until the R2 keys exist) | ≤ 1 s in election week (13–24 Jan 2027), ≤ 10 s otherwise | 72 h of snapshots (hourly) plus LTX |
 | 2 | `hawkeye-db-backup.timer`, hourly at :05: `sqlite3 .backup`, `PRAGMA quick_check` on the copy, gzip | S3 `s3://hawkeye-staging-replica-025232685387/backup/hourly/`, first of each UTC day also in `backup/daily/` | ≤ 1 h | newest 48 hourly and 14 daily, pruned by count |
 
 - Litestream 0.5 allows **one** replica per database. The second copy is
@@ -192,6 +192,42 @@ It then:
   database: the TXID of its newest local LTX file (16 hex digits; one per sync
   that found new writes; the name is kept from 0.3). It is null when Litestream
   has never run here, and it must rise as reports arrive.
+
+### Sync interval (design D7)
+
+Litestream's `sync-interval` is **1 s from 13 to 24 January 2027** (dates in
+West Africa Time, both days included) and **10 s at every other time**. At 1 s
+Litestream makes about 90,000 R2 PUTs a day, which passes R2's free million a
+month; at 10 s it stays inside it. The cost is RPO: up to 10 s of writes
+outside election week, 1 s inside it. The hourly S3 backup is unaffected.
+
+- `hawkeye-prestart` asks `hawkeye-litestream-interval --print` at every boot
+  and writes the answer into `/run/hawkeye/litestream.yml`. If the helper
+  fails, it writes 1 s, the safe side, and starts anyway.
+- `hawkeye-litestream-interval.timer` runs the helper hourly at :00:30. The
+  helper rewrites the config and restarts Litestream only when the value
+  changes, so on 13 Jan it switches to 1 s within a minute of midnight WAT
+  (23:00 UTC on 12 Jan). On 25 Jan it switches back to 10 s. It uses
+  `try-restart`, so it never starts a Litestream someone stopped on purpose
+  during a failover or a restore.
+- Litestream reads its config only at start, so a change costs one restart of
+  a couple of seconds. The writes in that gap are in the WAL, and Litestream
+  ships them when it comes back.
+
+Runbook (on the host):
+
+```bash
+sudo hawkeye-litestream-interval --status     # schedule, any pin, running value, next timer run
+sudo hawkeye-litestream-interval --set 1s     # pin 1 s now, e.g. for a governorship or re-run week
+sudo hawkeye-litestream-interval --set auto   # remove the pin and go back to the date schedule
+sudo hawkeye-litestream-interval              # apply what applies now (what the timer runs)
+journalctl -u hawkeye-litestream-interval     # every switch, with the old and the new value
+```
+
+The pin lives in `/etc/hawkeye/litestream-sync-interval` and survives reboots.
+To move election week, edit `WINDOW_START`/`WINDOW_END` in `bootstrap.sh` and
+re-run it. `bootstrap.sh` checks that the running config carries the value the
+schedule gives.
 
 ### Restore test (run it after every drill, and weekly)
 

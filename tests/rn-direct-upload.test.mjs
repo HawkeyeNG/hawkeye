@@ -156,6 +156,47 @@ check('unreadable photo falls back', await uploadDirect({ ...ARGS, sheetUri: 'fi
   check('no token makes no request', called, 0);
 }
 
+// ---- D1 PHOTO QUORUM: hash-only ----------------------------------------------
+// A server at quorum answers "hash-only" only when the figures come with the
+// presign; without them it gives the ordinary direct plan.
+{
+  const FIG = { puCode: '24-14-01-020', contest: 'PRES', votes: [{ party: 'A', count: 41 }] };
+  let presigns = []; let puts = 0; let kept = 0;
+  globalThis.fetch = async (url, opt) => {
+    if (String(url).includes('/presign')) {
+      const b = JSON.parse(opt.body);
+      presigns.push(b);
+      return res(200, b.puCode ? JSON.stringify({ mode: 'hash-only', quorum: 5 }) : plan());
+    }
+    if (opt?.method === 'PUT') { puts++; return res(200); }
+    return res(500);
+  };
+  const r = await uploadDirect({ ...ARGS, figures: FIG, keep: async () => { kept++; return true; } });
+  check('D1: at quorum, photos kept -> { hashOnly: true }', JSON.stringify(r), JSON.stringify({ hashOnly: true }));
+  check('D1: the presign carried the figures', presigns[0].puCode, FIG.puCode);
+  check('D1: keep() ran once, BEFORE hash-only was accepted', kept, 1);
+  check('D1: nothing was PUT', puts, 0);
+
+  presigns = []; puts = 0;
+  const r2 = await uploadDirect({ ...ARGS, figures: FIG, keep: async () => false });
+  check('D1: the copy failed -> ordinary upload (true)', r2, true);
+  check('D1: ...asked again WITHOUT figures', presigns.length === 2 && presigns[1].puCode === undefined, true);
+  check('D1: ...and PUT both photos', puts, 2);
+
+  presigns = []; puts = 0;
+  const r3 = await uploadDirect({ ...ARGS, figures: FIG, keep: async () => { throw new Error('disk full'); } });
+  check('D1: a copy that throws is a copy that failed (uploads)', `${r3}|${puts}`, 'true|2');
+
+  presigns = []; puts = 0;
+  const r4 = await uploadDirect({ ...ARGS, figures: FIG });
+  check('D1 control: figures without keep() are never sent', presigns[0].puCode, undefined);
+  check('D1 control: ...and it uploads as before', r4, true);
+
+  presigns = [];
+  const r5 = await uploadDirect(ARGS);
+  check('D1: an old call (no figures) never hears hash-only', `${r5}|${presigns[0].puCode}`, 'true|undefined');
+}
+
 globalThis.fetch = realFetch;
 fs.rmSync(OUT, { recursive: true, force: true });
 console.log(`\n${fails ? `${fails} FAILURE(S)` : 'rn-direct-upload: all checks passed'}`);

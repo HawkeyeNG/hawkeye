@@ -132,8 +132,24 @@ function canonicalPayload({
 }
 
 // ---------- helpers ----------
+/**
+ * PHONE OR COMPUTER — which of the account's two session slots this one takes
+ * (backend services/sessions.js: one phone AND one computer per account).
+ * The Lite shell and any mobile browser are phones. iPadOS Safari presents a
+ * desktop Mac user agent, so the server cannot tell; a "Macintosh" with a touch
+ * screen is an iPad (Macs report no touch points).
+ */
+function deviceClass() {
+  try {
+    if ((window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()) || (window.HAWKEYE && window.HAWKEYE.native)) return 'phone';
+    const ua = navigator.userAgent || '';
+    if ((navigator.userAgentData && navigator.userAgentData.mobile) || /Mobi|Android|iPhone|iPad|iPod/i.test(ua)) return 'phone';
+    if (/Macintosh/.test(ua) && navigator.maxTouchPoints > 0) return 'phone';
+  } catch { /* fall through */ }
+  return 'computer';
+}
 async function api(path, opts = {}) {
-  opts.headers = { ...(opts.headers || {}), 'x-device-id': await getDeviceId() };
+  opts.headers = { ...(opts.headers || {}), 'x-device-id': await getDeviceId(), 'x-device-class': deviceClass() };
   const res = await fetch(API + path, opts);
   const body = await res.json().catch(() => ({}));
   // retryAfter: null cross-origin unless the server exposes the header; callers
@@ -540,16 +556,19 @@ function applySignUpMode() {
   if ($('signup-line')) $('signup-line').hidden = true;
   if ($('signin-line')) $('signin-line').hidden = false;
   if ($('pw-opt')) $('pw-opt').hidden = false;
-  if ($('ref-opt')) $('ref-opt').hidden = false;
+  if ($('ref-opt')) $('ref-opt').hidden = false;   // the ONE code field: invite or organisation
 }
 
-/* ---------- Invite code field (sign-up only) ----------
- * The one way a referral survives an App Store install: invite.html prints the
- * code and it is typed here. Twin of native sign-in.tsx. Always visible on the
- * create-account form (observe.html #ref-opt); filled when referral.js already
- * holds a code from the link, so the reader can see it came along. The server
- * keeps the rule that matters: a code is recorded only when /verify CREATES the
- * observer, first code wins. */
+/* ---------- Invite or organisation code (sign-up only) ----------
+ * ONE field for two kinds of code, told apart by FORMAT (owner decision,
+ * 2026-09-28): a friend's invite is six characters; an organisation code is
+ * ORG-XXXX-XXXX-XXXX. No invite can start "ORG" (its alphabet has no O), so the
+ * prefix alone decides. The invite is the one way a referral survives an App
+ * Store install: invite.html prints the code and it is typed here; a link or
+ * the Play referrer fills it (referral.js), so the reader sees it came along.
+ * The server keeps the rules that matter: a referral is recorded only when
+ * /verify CREATES the observer, first code wins; an organisation code is single
+ * use and only ever creates an account. Twin of native sign-in.tsx. */
 
 /* A TYPED code. Forgiving of case, spaces and hyphens; strict about the rest —
    stricter than referral.js normalize(), which drops stray characters: right for
@@ -566,14 +585,15 @@ function typedInviteCode(raw) {
   if (!input) return;
   const parked = (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || '';
   if (parked) input.value = parked;
-  input.addEventListener('input', () => { if ($('ref-err')) $('ref-err').hidden = true; });
+  input.addEventListener('input', () => { if ($('ref-err')) $('ref-err').hidden = true; paintCodeKind(); syncOrgMode(); });
+  paintCodeKind();
 })();
-/* False (and the field says why) when a typed code is not a code. Checked
-   before a paid code goes out, and again before /verify. */
+/* False (and the field says why) when the field holds neither kind of code.
+   Checked before a paid code goes out, and again before /verify. */
 function inviteFieldOk() {
   const input = $('ref-input');
   if (IS_SIGNIN || !input) return true;
-  const ok = typedInviteCode(input.value) !== null;
+  const ok = codeKind(input.value) !== null;
   if ($('ref-err')) $('ref-err').hidden = ok;
   if (!ok) input.focus();
   return ok;
@@ -586,6 +606,124 @@ function referralForVerify() {
   if (!IS_SIGNIN && input) return typedInviteCode(input.value) || undefined;
   return (window.HAWKEYE_REFERRAL && window.HAWKEYE_REFERRAL.pending()) || undefined;
 }
+
+/* ---------- Organisation code (owner decision D4) ----------
+ * A party's or civic partner's single-use code that REPLACES the one-time
+ * code: with one in the field, the channel picker goes, "Request OTP" becomes
+ * "Create account", nothing is sent, and /api/observers/org-signup creates the
+ * account on this number. The server keeps every rule that matters (single use,
+ * bound to this number at first use, never opens an existing account):
+ * backend/src/services/orgCodes.js. */
+// A declaration, not a const: initInviteField (above) paints the kind line at
+// load, before this line has run.
+function squashCode(raw) { return String(raw || '').toUpperCase().replace(/[\s-]+/g, ''); }
+/* 'ORG-XXXX-XXXX-XXXX' for a well-formed organisation code, '' for nothing
+   typed, null otherwise. Twin of native lib/auth-copy.ts typedOrgCode(). */
+function typedOrgCode(raw) {
+  const c = squashCode(raw);
+  if (!c) return '';
+  const m = /^ORG([2-9A-HJKMNP-TV-Z]{12})$/.exec(c);
+  return m ? 'ORG-' + m[1].match(/.{4}/g).join('-') : null;
+}
+/* Which kind the field holds: '' (empty), 'invite', 'org', or null (neither).
+   The ORG prefix decides, so a half-typed organisation code is never taken for
+   an invite. Twin of native lib/auth-copy.ts codeKind(). */
+function codeKind(raw) {
+  const c = squashCode(raw);
+  if (!c) return '';
+  if (c.startsWith('ORG')) return typedOrgCode(raw) ? 'org' : null;
+  return typedInviteCode(raw) ? 'invite' : null;
+}
+/* The line under the field: a hint while it is empty, then the kind it
+   recognised. Errors are #ref-err, shown only when the reader tries to go on. */
+function paintCodeKind() {
+  const input = $('ref-input');
+  if (!input) return;
+  const k = codeKind(input.value);
+  if ($('ref-hint')) $('ref-hint').hidden = k !== '' && k !== null;
+  if ($('ref-kind-invite')) $('ref-kind-invite').hidden = k !== 'invite';
+  if ($('ref-kind-org')) $('ref-kind-org').hidden = k !== 'org';
+}
+/* Organisation mode starts at the prefix, not at a complete code, so the form
+   does not flip back and forth while the reader is still typing it. */
+const orgCodeTyped = () => !IS_SIGNIN && authMode === 'phone' && !!$('ref-input') && squashCode($('ref-input').value).startsWith('ORG');
+function syncOrgMode() {
+  if (IS_SIGNIN || authMode !== 'phone' || !$('ref-input')) return;
+  const on = orgCodeTyped();
+  if ($('channel-pick')) $('channel-pick').hidden = on;   // nothing is sent with a code
+  $('btn-auth').textContent = on ? T('auth.org-create-account', 'Create account') : T('observe.request-otp', 'Request OTP');
+  syncChannelGate();
+}
+const ORG_ERRORS = {
+  org_code_invalid: ['auth.org-code-unknown', 'That organisation code is not valid. Check it with your organisation, or leave the box empty to sign up with a one-time code.'],
+  code_is_invite: ['auth.code-invalid', "Not a code we recognise. A friend's invite has 6 letters and numbers; an organisation code looks like ORG-ABCD-EFGH-JKMN."],
+  org_code_used: ['auth.org-code-used', 'This organisation code has already been used. Ask your organisation for another one, or sign up with a one-time code.'],
+  org_code_revoked: ['auth.org-code-revoked', 'This organisation code has been withdrawn. Ask your organisation for another one, or sign up with a one-time code.'],
+  org_code_number_taken: ['auth.org-code-number-taken', 'An organisation code can only create a new account, and this code is now used up. If this number already has an account, sign in with a one-time code. If you deleted your account, signing in that way restores it.'],
+  too_many_requests: ['auth.org-code-too-many', 'Too many attempts from this network. Wait an hour and try again.'],
+};
+async function orgSignUp(phone) {
+  const code = typedOrgCode($('ref-input').value);
+  if (!code) { if ($('ref-err')) $('ref-err').hidden = false; $('ref-input').focus(); return; }
+  if (!phone) return alert('Enter your phone number.');
+  const newPw = $('pw-opt-input') ? $('pw-opt-input').value : '';
+  if (newPw.length < 8) return alert('Your password must be at least 8 characters.');
+  // No code comes back to prove the number, so the number is the one thing to
+  // get right: the code is tied to it for good.
+  if (!confirm(T('auth.org-confirm-number', 'This code will be tied to {phone} for good. Is this your number?', { phone }))) return;
+  const pair = await ensureKeys();
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+  const { status, body } = await api('/api/observers/org-signup', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone, orgCode: code, publicKeyJwk, lang: chosenLang() }),
+  });
+  if (status !== 200) {
+    const m = ORG_ERRORS[body && body.error];
+    return alert(m ? T(m[0], m[1]) : explain(body || {}));
+  }
+  localStorage.setItem('hawkeye_token', body.token);
+  clearSignedOutElsewhere();
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
+  const r = await api('/api/observers/set-password', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
+    body: JSON.stringify({ password: newPw }),
+  });
+  if (r.status !== 200) alert('Signed in, but saving your password failed (' + explain(r.body) + '). Set one on My Profile so you can sign in with it next time.');
+  $('ref-input').value = '';
+  paintCodeKind();
+  resetAuthPane();
+  afterVerified(body.isNew === true || body.needsUnit === true);
+}
+
+/* ---------- Signed out because the account signed in elsewhere (D3) ----------
+ * One device at a time: a sign-in on another device revokes this one's session.
+ * authgate.js catches the server's 401 signed_in_elsewhere on every page and
+ * leaves this flag; /resume says the same (signedInElsewhere). The sign-in pane
+ * explains it — with the count of signed reports still waiting in this phone's
+ * outbox, which a 401 never drops — until this device signs in again. */
+const K_ELSEWHERE = 'hawkeye_signed_out_elsewhere';
+function signedOutElsewhere() { try { return !!localStorage.getItem(K_ELSEWHERE); } catch { return false; } }
+function markSignedOutElsewhere() {
+  try { localStorage.setItem(K_ELSEWHERE, String(Date.now())); } catch { /* the notice is a courtesy */ }
+  paintElsewhere();
+}
+function clearSignedOutElsewhere() {
+  try { localStorage.removeItem(K_ELSEWHERE); } catch { /* nothing to clear */ }
+  paintElsewhere();
+}
+async function paintElsewhere() {
+  const el = $('elsewhere-note');
+  if (!el) return;
+  if (!signedOutElsewhere()) { el.hidden = true; return; }
+  let n = 0;
+  try { n = window.HawkeyeOutbox ? await window.HawkeyeOutbox.count() : 0; } catch { /* count is optional */ }
+  el.textContent = T('auth.signed-out-elsewhere', 'You were signed out because this account signed in on another device.')
+    + (n ? ' ' + T('auth.signed-out-elsewhere-queued', 'Signed reports waiting on this phone: {n}. Sign in again here to send them.', { n }) : '');
+  el.hidden = false;
+}
+window.addEventListener('hawkeye-signed-out-elsewhere', () => paintElsewhere());
 
 /**
  * `isNew` is the server's word that this verification CREATED the observer
@@ -646,6 +784,7 @@ function resetAuthPane() {
   // exactly one of these two does anything.
   applySignUpMode();
   applySignInMode();   // keep a sign-in visit in sign-in mode after a reset
+  syncOrgMode();       // a typed organisation code keeps the picker hidden
 }
 
 // Password (#pw-opt-input) is REQUIRED and shown whenever a code is in flight —
@@ -831,6 +970,7 @@ $('btn-auth').onclick = async () => {
 
   if (authMode === 'phone') {
     const phone = input.value.trim();
+    if (orgCodeTyped()) { await orgSignUp(phone); return; }
     const channel = pickedChannel();
     if (!channel) return alert('Choose where to receive your code — WhatsApp or Telegram.');
     if (!inviteFieldOk()) return;
@@ -896,6 +1036,7 @@ $('btn-auth').onclick = async () => {
   });
   if (status !== 200) return alert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);
+  clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
   // so signing in afterwards left this install permanently unregistered —
   // no token, no server row, and nothing anywhere said so.
@@ -2228,23 +2369,34 @@ $('btn-submit').onclick = async () => {
   // EXCEPT "busy": a presign refused 429/503 must not become a multipart post —
   // that pushes the photo bytes through the origin just when it asked for less.
   // The report is parked in the outbox below instead, until Retry-After.
+  // D1 PHOTO QUORUM: with the figures, the presign may answer "hash-only" (the
+  // sheet already holds 5 agreeing photo-backed reports). direct-upload.js
+  // then keeps both photos on this phone and nothing is uploaded; hashOnly
+  // marks the body so the server re-checks the quorum on the SIGNED figures.
   let directBody = null;
   let presignBusy = null;
-  if (window.HawkeyeDirect) {
+  let hashOnly = false;
+  const planUpload = async (withFigures) => {
+    directBody = null;
+    hashOnly = false;
+    if (!window.HawkeyeDirect) return;
     const D = window.HawkeyeDirect;
     const up = await (D.tryUpload || D.upload)({
       base: (window.HAWKEYE && window.HAWKEYE.apiBase) || '',
       token: localStorage.getItem('hawkeye_token'),
       blobs: { sheet: shots.sheet.blob, venue: shots.venue.blob },
       hashes: { sheet: imageSha256, venue: venueImageSha256 },
+      ...(withFigures ? { figures: { puCode: selectedPu.pu_code, contest, votes } } : {}),
     });
     if (up && up.busy) presignBusy = up;
-    else if (up === true) {
+    else if (up === true || (up && up.hashOnly)) {
+      hashOnly = up !== true;
       const f = {};
       for (const [k, v] of form.entries()) if (typeof v === 'string') f[k] = v;
-      directBody = JSON.stringify({ ...f, imageSha256, venueImageSha256 });
+      directBody = JSON.stringify({ ...f, imageSha256, venueImageSha256, ...(hashOnly ? { hashOnly: '1' } : {}) });
     }
-  }
+  };
+  await planUpload(true);
 
   // A copy of the two photos on the device (save-media.js), once, at hand-off —
   // accepted or queued. These are the compressed bytes that were signed.
@@ -2321,10 +2473,42 @@ $('btn-submit').onclick = async () => {
     if (await tryResume()) ({ status, body, retryAfter } = await post());
   }
   if (status === 401) {
-    $('submit-status').textContent = T('observe.session-expired-verify-your-phone-again-to', 'Session expired — verify your phone again to submit.');
+    /* KEEP THE SIGNED REPORT. The report is signed over its exact bytes and
+       only the session died, so it goes to the outbox — which holds 401s until
+       this device signs in again — exactly as native's submit does. When the
+       reason is a sign-in on another device (D3), the sign-in pane says so and
+       counts what is waiting. */
+    const elsewhere = (body && body.error === 'signed_in_elsewhere') || signedOutElsewhere();
+    if (elsewhere) markSignedOutElsewhere();
+    const kept = await park(elsewhere
+      ? T('auth.report-kept-elsewhere', 'You were signed out because this account signed in on another device. Your signed report is saved on this phone and sends when you sign in here again.')
+      : T('auth.report-kept-signed-out', 'You are signed out. Your signed report is saved on this phone and sends when you sign in again.'));
+    if (kept && !elsewhere) return;
+    if (!kept) $('submit-status').textContent = T('observe.session-expired-verify-your-phone-again-to', 'Session expired — verify your phone again to submit.');
     resetAuthPane();
     show('screen-register');
+    paintElsewhere();
     return;
+  }
+  // D1: the answer changed between presign and submit (a dissent landed, or
+  // this server cannot hold a byte-less report). The photos never left the
+  // phone, so upload them the ordinary way and send the same signed report.
+  if (hashOnly && status === 409 && body && body.error === 'photo_not_uploaded') {
+    await planUpload(false);
+    if (presignBusy) {
+      if (await park(busyLine(), holdUntil(presignBusy.status, presignBusy.retryAfter))) return;
+      $('submit-status').textContent = T('observe.server-busy-try-again', 'Hawkeye is busy — try again in a minute.');
+      $('btn-submit').disabled = false;
+      return;
+    }
+    try {
+      ({ status, body, retryAfter } = await post());
+    } catch {
+      if (await park(T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.'))) return;
+      $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
+      $('btn-submit').disabled = false;
+      return;
+    }
   }
   // The report is fine, the server is not (busy 503, rate-limited 429, down,
   // timed out): exactly the class the outbox retries — native has queued these
@@ -2358,6 +2542,7 @@ $('btn-submit').onclick = async () => {
        (${r.matchingReports} of ${r.totalReports} reports match)</p>
     <p>${locLabel}${venueLabel}</p>
     ${body.ocr && body.ocr.total ? `<p class="hint">🔎 OCR cross-check: ${body.ocr.matched}/${body.ocr.total} of your counts were read on the sheet photo.</p>` : ''}
+    ${body.photosOnDevice ? `<p class="hint">${T('observe.photos-kept-as-evidence', 'Your photos were kept on this phone as evidence.')}</p>` : ''}
     <ul>${r.votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
   $('receipt-wrap').hidden = true;
   showReceipt(receiptData(contestName, r.votes, body.entryHash));
@@ -2458,12 +2643,15 @@ async function tryResume() {
     });
     if (status === 200 && body.token) {
       localStorage.setItem('hawkeye_token', body.token);
+      clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
   // so signing in afterwards left this install permanently unregistered —
   // no token, no server row, and nothing anywhere said so.
   try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
       return true;
     }
+    // This device was the account's until another device signed in (D3).
+    if (body && body.signedInElsewhere) markSignedOutElsewhere();
   } catch { /* fall through to sign-up */ }
   return false;
 }
@@ -2507,6 +2695,7 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
     applySignUpMode();
     applySignInMode();
     show('screen-register');
+    paintElsewhere();
   };
   /* The auth screen's copy is painted by JS, and T() resolves when it is called.
      Without this, switching language on this page moves every keyed element in
@@ -2527,8 +2716,11 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
           ? T('observe.verify-otp', 'Verify OTP')
           : authMode === 'password'
             ? T('observe.sign-in', 'Sign In')
-            : T('observe.request-otp', 'Request OTP');
+            : orgCodeTyped()
+              ? T('auth.org-create-account', 'Create account')
+              : T('observe.request-otp', 'Request OTP');
       }
+      paintElsewhere();
     }
   });
 
@@ -2610,6 +2802,7 @@ function armTelegramLogin() {
       });
       if (status !== 200) throw new Error(body.error || 'failed');
       localStorage.setItem('hawkeye_token', body.token);
+      clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
   // so signing in afterwards left this install permanently unregistered —
   // no token, no server row, and nothing anywhere said so.

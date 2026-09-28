@@ -40,6 +40,20 @@ export type DirectBusy = { busy: true; status: number; retryAfter: string | null
 export const isDirectBusy = (x: unknown): x is DirectBusy =>
   !!x && typeof x === 'object' && (x as DirectBusy).busy === true;
 
+/**
+ * D1 PHOTO QUORUM: the sheet already holds its quorum of agreeing photo-backed
+ * reports for these figures, and `keep` has put both photos somewhere durable
+ * on this phone. Nothing was uploaded; submit the hashes as JSON with
+ * hashOnly:'1'. The server re-checks the quorum on the SIGNED figures.
+ */
+export type DirectHashOnly = { hashOnly: true };
+
+export const isHashOnly = (x: unknown): x is DirectHashOnly =>
+  !!x && typeof x === 'object' && (x as DirectHashOnly).hashOnly === true;
+
+/** What the presign may be told so it can answer "hash-only" (D1). */
+export type ReportFigures = { puCode: string; contest: string; votes: unknown };
+
 type PresignSlot = {
   url?: string;
   headers?: Record<string, string>;
@@ -55,11 +69,18 @@ async function bytesOf(uri: string): Promise<Uint8Array> {
 /**
  * Presign, then PUT both photos to the bucket.
  *
+ * `figures` + `keep` are optional and go together (D1). Given both, the presign
+ * carries the figures and may answer "hash-only"; then `keep()` must put both
+ * photos somewhere durable on the phone and resolve true, or this asks again
+ * WITHOUT the figures and carries on exactly as before.
+ *
  * @returns true when both photos are in the bucket and the caller should submit
- *   hashes as JSON; null when the caller should fall back to multipart; a
- *   DirectBusy when the presign was refused 429/503 — the caller must NOT post
- *   multipart, but queue the report until `retryAfter` (the Retry-After header,
- *   else the body's retryAfterS; null if neither).
+ *   hashes as JSON; a DirectHashOnly when the photos were kept on the phone and
+ *   the caller should submit hashes as JSON with hashOnly:'1'; null when the
+ *   caller should fall back to multipart; a DirectBusy when the presign was
+ *   refused 429/503 — the caller must NOT post multipart, but queue the report
+ *   until `retryAfter` (the Retry-After header, else the body's retryAfterS;
+ *   null if neither).
  */
 export async function uploadDirect(args: {
   token: string;
@@ -68,9 +89,13 @@ export async function uploadDirect(args: {
   venueUri: string;
   sheetSha256: string;
   venueSha256: string;
-}): Promise<true | null | DirectBusy> {
-  const { token, deviceId, sheetUri, venueUri, sheetSha256, venueSha256 } = args;
+  figures?: ReportFigures;
+  keep?: () => Promise<boolean>;
+}): Promise<true | null | DirectBusy | DirectHashOnly> {
+  const { token, deviceId, sheetUri, venueUri, sheetSha256, venueSha256, figures, keep } = args;
   if (!token || !sheetSha256 || !venueSha256) return null;
+  // The figures go only from a caller that can keep the photos.
+  const offer = !!(figures && figures.puCode && figures.contest && figures.votes && keep);
 
   let sheetBytes: Uint8Array;
   let venueBytes: Uint8Array;
@@ -97,6 +122,7 @@ export async function uploadDirect(args: {
         venueSha256,
         sheetBytes: sheetBytes.length,
         venueBytes: venueBytes.length,
+        ...(offer && figures ? { puCode: figures.puCode, contest: figures.contest, votes: figures.votes } : {}),
       }),
     });
     // 409 is the server saying "I am in proxy mode" — an answer, not a fault.
@@ -113,6 +139,13 @@ export async function uploadDirect(args: {
     plan = (await res.json()) as typeof plan;
   } catch {
     return null;
+  }
+  // D1: nothing to upload once the photos are safe on the phone. If they could
+  // not be kept, ask again without the figures: the ordinary answer follows.
+  if (plan && plan.mode === 'hash-only') {
+    const kept = offer && keep ? await keep().catch(() => false) : false;
+    if (kept) return { hashOnly: true };
+    return uploadDirect({ token, deviceId, sheetUri, venueUri, sheetSha256, venueSha256 });
   }
   if (!plan || plan.mode !== 'direct') return null;
 

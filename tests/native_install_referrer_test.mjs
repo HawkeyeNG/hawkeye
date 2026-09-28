@@ -370,7 +370,7 @@ try {
   check('a laptop: NOT shown (phones only)', d.openShown, false);
   check('CONTROL without the page\'s [hidden] rule it WOULD show', d.shownWithoutRule, true);
 
-  console.log('\n=== observe.html: "Invite code (optional)" always on web sign-up ===');
+  console.log('\n=== observe.html: the ONE code field ("Invite or organisation code") always on web sign-up ===');
   async function signup(qs = '') {
     const ctx = await b.newContext({ viewport: { width: 390, height: 820 } });
     const p = await ctx.newPage();
@@ -411,7 +411,7 @@ try {
   {
     const { ctx, p, errors } = await signup();
     check('no code: the field is visible, and empty', [await visible(p, 'ref-input'), await p.inputValue('#ref-input')], [true, '']);
-    check('labelled "Invite code (optional)"', await p.evaluate(() => document.querySelector('label[for="ref-input"]').textContent.trim()), 'Invite code (optional)');
+    check('labelled "Invite or organisation code (optional)"', await p.evaluate(() => document.querySelector('label[for="ref-input"]').textContent.trim()), 'Invite or organisation code (optional)');
     check('no "Have an invite code?" link to find first', await p.evaluate(() => !!document.getElementById('ref-toggle')), false);
     /* CONTROL for visible(): the same field inside a [hidden] box reads hidden. */
     await p.evaluate(() => { document.getElementById('ref-opt').hidden = true; });
@@ -479,11 +479,11 @@ console.log('\n=== native sources ===');
     /takeInviteUnit\(\)[\s\S]{0,200}\/choose-unit\?onboard=1&unit=\$\{encodeURIComponent\(unit\)\}/.test(signIn), true);
   /* ALWAYS SHOWN on the create-account path: the sign-up branch renders the
      field directly, with no open/closed state in front of it. */
-  const alwaysShown = (src) => /\{purpose === 'signup' \? \(\s*<View className="pt-4">\s*<Text[^>]*>\s*\{i18nT\('n\.app\.sign-in\.invite-code-optional'\)\}/.test(src)
+  const alwaysShown = (src) => /\{purpose === 'signup' \? \(\s*<View className="pt-4">\s*<Text[^>]*>\s*\{authT\('n\.auth\.code-label'\)\}/.test(src)
     && !/inviteOpen|have-an-invite-code/.test(src);
   check('the invite field is on the create-account path only, always shown', alwaysShown(signIn), true);
   check('CONTROL the old collapsed form fails that check',
-    alwaysShown("{purpose === 'signup' ? (\n  inviteOpen ? (\n  <View className=\"pt-4\">\n <Text className=\"x\">\n{i18nT('n.app.sign-in.invite-code-optional')}"), false);
+    alwaysShown("{purpose === 'signup' ? (\n  inviteOpen ? (\n  <View className=\"pt-4\">\n <Text className=\"x\">\n{authT('n.auth.code-label')}"), false);
 
   const open = read('native/src/app/open.tsx');
   const inviteBranch = open.slice(open.indexOf("=== 'invite'"), open.indexOf('const path = TARGETS'));
@@ -516,8 +516,8 @@ console.log('\n=== native sources ===');
 // ================================================================== 5. i18n
 console.log('\n=== every new string, in four languages ===');
 {
-  const WEB = JSON.parse(read('scripts/i18n/batches/native108_web.json'));
-  const NATIVE = JSON.parse(read('scripts/i18n/batches/native108_native.json'));
+  const WEB = { ...JSON.parse(read('scripts/i18n/batches/native108_web.json')), ...JSON.parse(read('scripts/i18n/batches/auth_web.json')) };
+  const NATIVE = { ...JSON.parse(read('scripts/i18n/batches/native108_native.json')), ...JSON.parse(read('scripts/i18n/batches/auth_native.json')) };
   const isNFC = (s) => s === s.normalize('NFC');
   const complete = (entry) => ['en', 'ha', 'ig', 'yo'].every((l) => typeof entry?.[l] === 'string' && entry[l].trim() && isNFC(entry[l]))
     && ['ha', 'ig', 'yo'].every((l) => entry[l] !== entry.en);
@@ -529,20 +529,28 @@ console.log('\n=== every new string, in four languages ===');
   const observe = read('app/observe.html');
   const invite = read('app/invite.html');
   const webUses = [
-    ['observe.invite-code-optional', observe],
-    ['observe.invite-code-invalid', observe], ['invite.open-in-app', invite],
+    // The one code field (invite or organisation): scripts/i18n/batches/auth_web.json.
+    ['auth.code-label', observe], ['auth.code-hint', observe], ['auth.code-kind-invite', observe],
+    ['auth.code-kind-org', observe], ['auth.code-invalid', observe], ['invite.open-in-app', invite],
   ];
-  /* "Have an invite code?" went with the collapsed field (always shown now):
-     no markup or code asks for it, and it is out of every bundle. */
+  /* "Have an invite code?" went with the collapsed field (always shown now),
+     and the invite-only label/error went with the ONE code field (auth.code-*):
+     no markup or code asks for them, and they are out of every bundle. */
+  const WEB_BUNDLES = ['app/i18n/en.json', 'app/i18n/ha.json', 'app/i18n/ig.json', 'app/i18n/yo.json', 'scripts/i18n/catalogue.json'];
+  const NATIVE_BUNDLES = ['native/src/lib/i18n/en.json', 'native/src/lib/i18n/ha.json', 'native/src/lib/i18n/ig.json', 'native/src/lib/i18n/yo.json', 'scripts/i18n/native_catalogue.json'];
   const gone = [
-    ['observe.have-an-invite-code', ['app/i18n/en.json', 'app/i18n/ha.json', 'app/i18n/ig.json', 'app/i18n/yo.json', 'scripts/i18n/catalogue.json']],
-    ['n.app.sign-in.have-an-invite-code', ['native/src/lib/i18n/en.json', 'native/src/lib/i18n/ha.json', 'native/src/lib/i18n/ig.json', 'native/src/lib/i18n/yo.json', 'scripts/i18n/native_catalogue.json']],
+    ['observe.have-an-invite-code', WEB_BUNDLES],
+    ['observe.invite-code-optional', WEB_BUNDLES],
+    ['observe.invite-code-invalid', WEB_BUNDLES],
+    ['n.app.sign-in.have-an-invite-code', NATIVE_BUNDLES],
+    ['n.app.sign-in.invite-code-optional', NATIVE_BUNDLES],
+    ['n.app.sign-in.invite-code-invalid', NATIVE_BUNDLES],
   ];
   const usedAnywhere = (k) => ['app/observe.html', 'app/app.js', 'native/src/app/sign-in.tsx'].some((f) => read(f).includes(k.split('.').pop()));
   for (const [k, files] of gone) {
     check(`${k}: unused and removed`, [usedAnywhere(k), files.filter((f) => k in JSON.parse(read(f)))], [false, []]);
   }
-  check('CONTROL the removal check finds a key that is still there', 'observe.invite-code-optional' in JSON.parse(read('app/i18n/en.json')), true);
+  check('CONTROL the removal check finds a key that is still there', [usedAnywhere('auth.code-label'), 'auth.code-label' in JSON.parse(read('app/i18n/en.json'))], [true, true]);
   for (const [k, html] of webUses) {
     const m = new RegExp(`data-i18n="${k.replace(/\./g, '\\.')}"[^>]*>([^<]+)<`).exec(html);
     check(`web ${k}: in the markup, in the batch, complete`, !!m && complete(WEB[k]), true);
@@ -550,12 +558,13 @@ console.log('\n=== every new string, in four languages ===');
   }
   // Native: every new key sign-in.tsx asks for.
   const signIn = read('native/src/app/sign-in.tsx');
-  const nativeUses = [...new Set([...signIn.matchAll(/i18nT\('(n\.app\.sign-in\.(?:have-an-invite-code|invite-code-[a-z-]+))'\)/g)].map((m) => m[1]))];
-  check('native: two invite keys used', nativeUses.length, 2);
+  const nativeUses = [...new Set([...signIn.matchAll(/authT\('(n\.auth\.code-[a-z-]+)'\)/g)].map((m) => m[1]))];
+  check('native: the five code-field keys used', nativeUses.sort(), ['n.auth.code-hint', 'n.auth.code-invalid', 'n.auth.code-kind-invite', 'n.auth.code-kind-org', 'n.auth.code-label']);
   for (const k of nativeUses) check(`native ${k}: in the batch, complete`, complete(NATIVE[k]), true);
   check('native and web say the same thing in every language',
-    ['invite-code-optional', 'invite-code-invalid'].every((s) =>
-      JSON.stringify(NATIVE[`n.app.sign-in.${s}`]) === JSON.stringify(WEB[`observe.${s}`])), true);
+    ['code-label', 'code-hint', 'code-kind-invite', 'code-kind-org', 'code-invalid'].every((s) =>
+      JSON.stringify(NATIVE[`n.auth.${s}`]) === JSON.stringify(WEB[`auth.${s}`])), true);
+  check('CONTROL that comparison can fail', JSON.stringify(NATIVE['n.auth.code-label']) === JSON.stringify(WEB['auth.code-hint']), false);
 }
 
 fs.rmSync(tmp, { recursive: true, force: true });

@@ -93,8 +93,14 @@
   function mySubscriptions() {
     var t = token();
     if (!t) return Promise.resolve(null);
-    return fetch('/api/observers/me', { headers: { authorization: 'Bearer ' + t } })
-      .then(function (r) { return r.ok ? r.json() : null; })
+    // D6: native.js's 120 s signed-in cache. Following or unfollowing is a
+    // POST/DELETE from this page, which empties it, so the button cannot lag.
+    var H = window.HAWKEYE;
+    var get = H && H.authGet
+      ? H.authGet('/api/observers/me').then(function (x) { return x.status === 200 ? x.body : null; })
+      : fetch('/api/observers/me', { headers: { authorization: 'Bearer ' + t } })
+        .then(function (r) { return r.ok ? r.json() : null; });
+    return get
       .then(function (me) { return (me && me.subscriptions) || null; })
       .catch(function () { return null; });
   }

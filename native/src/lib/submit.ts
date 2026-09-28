@@ -11,7 +11,8 @@ import { File } from 'expo-file-system';
 import * as SecureStore from '@/lib/secure-store';
 
 import { bootstrapAuth } from '@/lib/auth';
-import { isDirectBusy, uploadDirect } from '@/lib/direct-upload';
+import { isDirectBusy, isHashOnly, uploadDirect } from '@/lib/direct-upload';
+import { keepEvidence } from '@/lib/evidence';
 import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
 import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
@@ -208,7 +209,8 @@ export type Receipt = ResultSummary & {
 };
 
 export type SubmitResult =
-  | ({ ok: true; queued?: false; submissionId?: number } & Receipt)
+  /** photosOnDevice: D1 hash-only — the photos were kept on this phone as evidence. */
+  | ({ ok: true; queued?: false; submissionId?: number; photosOnDevice?: boolean } & Receipt)
   /**
    * Held in the offline outbox — captured, signed and safe on disk, just not
    * delivered yet. Deliberately NOT ok:true: a screen that has not been taught
@@ -492,32 +494,75 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   // host's monthly allowance and the photos are the whole of it. Any failure at
   // all returns null and the multipart post below runs untouched — the server
   // accepts either shape, so the fallback genuinely works.
-  let buildJson: (() => string) | null = null;
-  const direct = await uploadDirect({
-    token,
-    deviceId: id.deviceId,
-    sheetUri: input.sheet.uri,
-    venueUri: input.venue.uri,
-    sheetSha256: imageSha256,
-    venueSha256: venueImageSha256,
-  }).catch(() => null);
+  //
+  // D1 PHOTO QUORUM: a real report also offers its figures, so the presign may
+  // answer "hash-only" (the sheet already holds 5 agreeing photo-backed
+  // reports). Both photos are then copied into the app's evidence store
+  // (lib/evidence.ts, kept to 31 July 2027 whatever the gallery switch says)
+  // and nothing is uploaded. A rehearsal never offers: it must leave nothing.
+  const plan = (withFigures: boolean) =>
+    uploadDirect({
+      token,
+      deviceId: id.deviceId,
+      sheetUri: input.sheet.uri,
+      venueUri: input.venue.uri,
+      sheetSha256: imageSha256,
+      venueSha256: venueImageSha256,
+      ...(withFigures && !input.dryRun
+        ? {
+            figures: { puCode: input.puCode, contest: input.contest, votes: canonicalVotes(input.votes) },
+            keep: () =>
+              keepEvidence({
+                puCode: input.puCode,
+                contest: input.contest,
+                photos: [
+                  { slot: 'sheet', uri: input.sheet.uri, sha256: imageSha256 },
+                  { slot: 'venue', uri: input.venue.uri, sha256: venueImageSha256 },
+                ],
+              }),
+          }
+        : {}),
+    }).catch(() => null);
+  const bodyFor = (d: Awaited<ReturnType<typeof plan>>): (() => string) | null =>
+    d === true
+      ? () => JSON.stringify(fields)
+      : isHashOnly(d)
+        ? () => JSON.stringify({ ...fields, hashOnly: '1' })
+        : null;
+  const busyPark = (b: { status: number; retryAfter: string | null }) =>
+    park(`HTTP ${b.status}`, i18nT('n.lib.submit.server-busy-saved'), Date.now() + retryDelayMs(b.status, b.retryAfter, 0));
+
+  const direct = await plan(true);
   // EXCEPT "busy": a presign refused 429/503 must not become a multipart post,
   // which would push the photo bytes through the origin just when it asked for
   // less. Park the report until Retry-After instead.
-  if (isDirectBusy(direct)) {
-    return park(
-      `HTTP ${direct.status}`,
-      i18nT('n.lib.submit.server-busy-saved'),
-      Date.now() + retryDelayMs(direct.status, direct.retryAfter, 0),
-    );
-  }
-  if (direct === true) buildJson = () => JSON.stringify(fields);
+  if (isDirectBusy(direct)) return busyPark(direct);
+  let buildJson = bodyFor(direct);
+  let hashOnly = isHashOnly(direct);
 
   let res: Response;
   try {
     res = await deliver('/api/submissions', buildForm, token, id.deviceId, buildJson);
   } catch (e) {
     return park(`network: ${errText(e)}`);
+  }
+
+  // D1: the answer changed between presign and submit (a dissent landed, or
+  // the server cannot hold a byte-less report). The photos never left the
+  // phone: upload them the ordinary way and send the same signed report again.
+  if (hashOnly && res.status === 409) {
+    const why = (await res.clone().json().catch(() => ({}))) as { error?: string };
+    if (why.error === 'photo_not_uploaded') {
+      const again = await plan(false);
+      if (isDirectBusy(again)) return busyPark(again);
+      buildJson = bodyFor(again);
+      hashOnly = false;
+      try {
+        res = await deliver('/api/submissions', buildForm, token, id.deviceId, buildJson);
+      } catch (e) {
+        return park(`network: ${errText(e)}`);
+      }
+    }
   }
 
   // Still 401 after deliver() tried to re-mint the session. Queue it anyway:
@@ -555,6 +600,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
       locationVerified: body.locationVerified,
       ocr: body.ocr,
       result: body.result,
+      photosOnDevice: hashOnly,
     };
   }
   const code = body.error ?? `http_${res.status}`;

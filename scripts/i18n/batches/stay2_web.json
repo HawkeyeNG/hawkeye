@@ -1,0 +1,140 @@
+{
+  "stay.kicker": {
+    "en": "Election day: Saturday 16 January 2027",
+    "ha": "Ranar zaɓe: Asabar, 16 ga Janairu 2027",
+    "ig": "Ụbọchị ntuli aka: Satọde, 16 Jenụwarị 2027",
+    "yo": "Ọjọ́ ìdìbò: Ọjọ́ Àbámẹ́ta, 16 Oṣù Ṣẹ́rẹ́ (January) 2027"
+  },
+  "stay.tag": {
+    "en": "Independent · Nonpartisan",
+    "ha": "Mai zaman kanta",
+    "ig": "Nweere onwe ya",
+    "yo": "Olómìnira"
+  },
+  "stay.hero-h": {
+    "en": "Stay for the <span class=\"sfc-gold\">count</span>.",
+    "ha": "Ku tsaya domin <span class=\"sfc-gold\">ƙidaya</span>.",
+    "ig": "Nọrọnụ maka <span class=\"sfc-gold\">ọgụgụ</span>.",
+    "yo": "Ẹ dúró fún <span class=\"sfc-gold\">ìkà</span>."
+  },
+  "stay.hero-lede": {
+    "en": "Photograph the result posted at your polling unit. It becomes part of a public record anyone can check.",
+    "ha": "Ku ɗauki hoton sakamakon da aka liƙa a rukunin zaɓenku. Zai shiga littafin jama'a da kowa zai iya dubawa.",
+    "ig": "Seenụ foto nsonaazụ e gosiri ọha na ngalaba ntuli aka unu. Ọ ga-abụ akụkụ nke ndekọ ọha onye ọ bụla nwere ike ilele.",
+    "yo": "Ẹ ya fọ́tò àbájáde tí wọ́n lẹ̀ ní ẹ̀ka ìdìbò yín. Yóò di ara àkọsílẹ̀ gbangba tí ẹnikẹ́ni lè ṣàyẹ̀wò."
+  },
+  "stay.s1-sub": {
+    "en": "Hawkeye Election Monitor or Hawkeye Lite. Free on Google Play and the App Store.",
+    "ha": "Hawkeye Election Monitor ko Hawkeye Lite. Kyauta a Google Play da App Store.",
+    "ig": "Hawkeye Election Monitor ma ọ bụ Hawkeye Lite. N'efu na Google Play na App Store.",
+    "yo": "Hawkeye Election Monitor tàbí Hawkeye Lite. Ọ̀fẹ́ lórí Google Play àti App Store."
+  },
+  "stay.s2-sub": {
+    "en": "The unit where you vote. Do it now, not on the day.",
+    "ha": "Inda kuke jefa ƙuri'a. Ku yi haka yanzu, ba a ranar zaɓe ba.",
+    "ig": "Ebe unu na-atụ vootu. Meenụ ya ugbu a, ọ bụghị n'ụbọchị ahụ.",
+    "yo": "Ibi tí ẹ ti ń dìbò. Ẹ ṣe é nísinsìnyí, kì í ṣe ní ọjọ́ ìdìbò."
+  },
+  "stay.s3-sub": {
+    "en": "A few minutes, no sign-up, and nothing you enter is published.",
+    "ha": "'Yan mintuna kawai, ba sai an yi rijista ba, kuma ba a wallafa komai da kuka shigar.",
+    "ig": "Nkeji ole na ole, ọ chọghị ndebanye aha, a naghịkwa ebipụta ihe ọ bụla unu tinyere.",
+    "yo": "Ìṣẹ́jú díẹ̀ péré, kò nílò ìforúkọsílẹ̀, a kì í sì í tẹ ohunkóhun tí ẹ bá tẹ̀ sí i jáde."
+  },
+  "stay.d-vote": {
+    "en": "Vote",
+    "ha": "Ku jefa ƙuri'a",
+    "ig": "Tụọnụ vootu",
+    "yo": "Ẹ dìbò"
+  },
+  "stay.d-stay-sub": {
+    "en": "Or come back before counting ends.",
+    "ha": "Ko ku dawo kafin a gama ƙidaya.",
+    "ig": "Ma ọ bụ laghachinụ tupu ọgụgụ agwụ.",
+    "yo": "Tàbí kí ẹ padà wá kí wọ́n tó parí ìkà."
+  },
+  "stay.d-photo": {
+    "en": "When the result is posted, photograph it and submit",
+    "ha": "Idan an liƙa sakamako, ku ɗauki hotonsa ku aika",
+    "ig": "Mgbe e gosiri ọha nsonaazụ, seenụ ya foto ma zipu ya",
+    "yo": "Nígbà tí wọ́n bá lẹ̀ àbájáde, ẹ ya fọ́tò rẹ̀ kí ẹ sì fi ránṣẹ́"
+  },
+  "stay.d-photo-sub": {
+    "en": "Photograph each result sheet: Presidential, Senate and House of Representatives.",
+    "ha": "Ku ɗauki hoton kowace takardar sakamako: ta Shugaban Ƙasa, ta Majalisar Dattawa da ta Majalisar Wakilai.",
+    "ig": "Seenụ foto mpempe akwụkwọ nsonaazụ ọ bụla: nke Onyeisiala, nke Sineti na nke Ụlọ Ndị Nnọchiteanya.",
+    "yo": "Ẹ ya fọ́tò ìwé àbájáde kọ̀ọ̀kan: ti Ààrẹ, ti Ilé Aṣòfin Àgbà àti ti Ilé Aṣòfin Kékeré."
+  },
+  "stay.d-offline": {
+    "en": "No signal? Hawkeye saves your report and sends it when you have signal.",
+    "ha": "Babu yanar gizo? Hawkeye za ta ajiye rahotonku, ta aika da kanta idan kun dawo kan layi.",
+    "ig": "Enweghị ịntanetị? Hawkeye ga-echekwa akụkọ unu ma ziga ya onwe ya mgbe netwọk laghachiri.",
+    "yo": "Kò sí íńtánẹ́ẹ̀tì? Hawkeye yóò fi ìròyìn yín pamọ́, yóò sì fi ránṣẹ́ fúnra rẹ̀ nígbà tí íńtánẹ́ẹ̀tì bá dé."
+  },
+  "stay.safety-h": {
+    "en": "No result is worth your life.",
+    "ha": "Babu sakamakon da ya fi ranku daraja.",
+    "ig": "Ọ dịghị nsonaazụ ọ bụla dị mkpa karịa ndụ unu.",
+    "yo": "Kò sí àbájáde kankan tí ó ṣe pàtàkì ju ẹ̀mí yín lọ."
+  },
+  "stay.safety-body": {
+    "en": "Follow electoral officials' instructions. Never interfere, never argue. Photograph only what is posted or handed out.",
+    "ha": "Ku bi umarnin jami'an zaɓe. Kada ku tsoma baki, kada ku yi gardama. Ku ɗauki hoton abin da aka liƙa ko aka ba ku kawai.",
+    "ig": "Soronụ ntụziaka ndị ọrụ ntuli aka. Unu etinyela aka n’ọrụ ha, unu esela okwu. Seenụ foto naanị ihe e gosiri ọha ma ọ bụ nke e nyere unu.",
+    "yo": "Ẹ tẹ̀lé ìtọ́ni àwọn òṣìṣẹ́ ìdìbò. Ẹ má ṣe dí iṣẹ́ wọn lọ́wọ́, ẹ má sì bá ẹnikẹ́ni jiyàn. Ohun tí wọ́n lẹ̀ ní gbangba tàbí tí wọ́n fún yín nìkan ni kí ẹ ya fọ́tò rẹ̀."
+  },
+  "stay.cert-s": {
+    "en": "Do the practice run, then answer 7 short questions.",
+    "ha": "Ku yi gwajin atisaye, sannan ku amsa gajerun tambayoyi 7.",
+    "ig": "Meenụ ọsọ omume, wee zaa ajụjụ mkpirikpi 7.",
+    "yo": "Ẹ ṣe eré àdánwò, lẹ́yìn náà ẹ dáhùn ìbéèrè kúkúrú 7."
+  },
+  "stay.captain-s": {
+    "en": "A ward captain makes sure someone stays for the count at every polling unit in one ward.",
+    "ha": "Kyaftin na unguwa yana tabbatar da cewa wani ya tsaya domin ƙidaya a kowane rukunin zaɓe na unguwa ɗaya.",
+    "ig": "Onye ndú ward na-ahụ na mmadụ nọrọ maka ọgụgụ na ngalaba ntuli aka ọ bụla dị n'otu ward.",
+    "yo": "Olùdarí àgọ́ ń rí i dájú pé ẹnìkan dúró fún ìkà ní gbogbo ẹ̀ka ìdìbò ní àgọ́ kan."
+  },
+  "stay.second-s": {
+    "en": "Two observers with the same numbers verify their unit's count. Open My Profile and tap <strong>Invite a Second Observer</strong>.",
+    "ha": "Masu lura biyu masu alkaluma iri ɗaya suna tabbatar da ƙidayar rukuninsu. Ku buɗe Bayanaina ku danna <strong>Gayyaci Mai Lura Na Biyu</strong>.",
+    "ig": "Ndị na-ekiri ihe abụọ nwere otu ọnụọgụ na-enyocha ngụkọ ngalaba ha. Mepee Profaịlụ M ma pịa <strong>Kpọọ Onye Na-ekiri Ihe Nke Abụọ</strong>.",
+    "yo": "Olùwòran méjì tí nọ́ńbà wọn bára mu ń fìdí ìkàyè ẹ̀ka wọn múlẹ̀. Ṣí Àkọọ́lẹ̀ Mi kí o sì tẹ <strong>Pe Olùwòran Kejì</strong>."
+  },
+  "stay.coverage-s": {
+    "en": "Observer coverage by state and local government. It never shows who watches which unit.",
+    "ha": "Yawan rufewar masu lura bisa jiha da ƙaramar hukuma. Ba ya taɓa nuna wanda ke lura da wane rukuni.",
+    "ig": "Mkpuchi ndị na-ekiri ihe site na steeti na ọchịchị ime obodo. Ọ naghị egosi onye na-ekiri ngalaba ọ bụla.",
+    "yo": "Ìbòòrí àwọn olùwòran ní ìpínlẹ̀ àti ìjọba ìbílẹ̀. Kì í fi ẹni tó ń wo ẹ̀ka kọ̀ọ̀kan hàn."
+  },
+  "press.date-pd1-s": {
+    "en": "<strong>National Practice Day.</strong> Observers across Nigeria run the same mock election, 08:00–18:00 WAT. Practice is never counted as a result.",
+    "ha": "<strong>Ranar Atisaye ta Ƙasa.</strong> Masu lura a faɗin Najeriya za su yi zaɓen gwaji iri ɗaya, 08:00–18:00 WAT. Ba a taɓa ƙidaya atisaye a matsayin sakamako ba.",
+    "ig": "<strong>Ụbọchị Omume nke Mba.</strong> Ndị na-ekiri ihe n’ofe Naịjirịa na-eme otu ntuli aka omume, 08:00–18:00 WAT. A naghị agụ omume dị ka nsonaazụ.",
+    "yo": "<strong>Ọjọ́ Àdánwò Orílẹ̀-èdè.</strong> Àwọn olùwòran jákèjádò Nàìjíríà ń ṣe ìdìbò àdánwò kan náà, 08:00–18:00 WAT. A kì í ka àdánwò sí àbájáde."
+  },
+  "press.q-fact": {
+    "en": "Fact sheet (PDF)",
+    "ha": "Takardar bayanai (PDF)",
+    "ig": "Mpempe akwụkwọ eziokwu (PDF)",
+    "yo": "Ìwé òtítọ́ ní ṣókí (PDF)"
+  },
+  "press.q-data": {
+    "en": "Data-use guide (PDF)",
+    "ha": "Jagorar amfani da data (PDF)",
+    "ig": "Ntuziaka ojiji data (PDF)",
+    "yo": "Ìtọ́sọ́nà lílo dátà (PDF)"
+  },
+  "press.data-r1-fig": {
+    "en": "About 2 MB",
+    "ha": "Kusan MB 2",
+    "ig": "Ihe dị ka MB 2",
+    "yo": "Nǹkan bí MB 2"
+  },
+  "press.data-r1-sub": {
+    "en": "About 0.4 MB of compressed photos per report, plus retries.",
+    "ha": "Kusan MB 0.4 na hotuna da aka matsa a kowane rahoto, da sake gwadawa.",
+    "ig": "Ihe dị ka MB 0.4 nke foto a kpakọrọ n'akụkọ ọ bụla, gbakwunyere mgbalị ọzọ.",
+    "yo": "Nǹkan bí MB 0.4 fọ́tò tí a ti fún pọ̀ fún ìròyìn kọ̀ọ̀kan, pẹ̀lú àtúngbìyànjú."
+  }
+}

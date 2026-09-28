@@ -14,37 +14,150 @@
   <script src="native.js?v=120"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
-    main.stay-main { padding-top: 16px; }
-    .stay-kicker { display: inline-block; background: var(--gold); color: #00331e; font-weight: 700; font-size: 0.9rem; border-radius: 6px; padding: 4px 10px; margin: 0 0 4px; font-variant-numeric: tabular-nums; }
-    .stay-indep { border-left: 4px solid var(--gold); background: var(--tint); border-radius: 0 10px 10px 0; padding: 10px 14px; font-weight: 600; margin: 0 0 16px; }
-    .stay-main .card h2 { margin-top: 0; }
-    .stay-main .card h3 { margin: 18px 0 6px; font-size: 1.05rem; }
-    .stay-steps { padding-left: 1.3em; margin: 8px 0 0; display: grid; gap: 10px; }
-    .stay-main .card a:not(.btn-link), .stay-main > p a { color: var(--link); font-weight: 600; }
-    .stay-dates { display: grid; grid-template-columns: minmax(10rem, 14rem) 1fr; gap: 12px 18px; margin: 0; }
-    .stay-dates dt { font-weight: 700; font-variant-numeric: tabular-nums; }
-    .stay-dates dd { margin: 0; }
-    .stay-safety { border-left: 4px solid var(--gold); }
-    .stay-list { margin: 8px 0 0; padding-left: 1.2em; }
-    .stay-list li { margin: 6px 0; }
-    .stay-more { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; }
-    .stay-main .stay-more h3 { margin: 0 0 4px; }
-    .stay-more p { margin: 0; }
-    .stay-langs { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 10px; }
-    .stay-langs button { display: inline-block; width: auto; margin: 0; padding: 8px 14px; font-size: 0.95rem; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface); color: var(--link); box-shadow: none; }
-    .stay-langs button[aria-checked="true"] { background: var(--green-dark); border-color: var(--green-dark); color: #fff; }
-    #wa-msg { display: block; width: 100%; box-sizing: border-box; min-height: 17rem; padding: 12px 13px; font-size: 0.92rem; line-height: 1.45; resize: vertical; white-space: pre-wrap; }
-    .stay-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
-    .stay-actions button, .stay-actions .btn-link { margin: 0; }
-    .stay-files { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
-    .stay-files a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 10px; border: 1.5px solid var(--border); border-radius: 10px; padding: 10px 14px; text-decoration: none; }
-    .stay-files a:hover { background: var(--tint); border-color: var(--link); }
-    .stay-tag { font-size: 0.8rem; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 2px 8px; }
-    @media (max-width: 560px) {
-      .stay-dates { grid-template-columns: 1fr; gap: 2px 0; }
-      .stay-dates dd { margin-bottom: 10px; }
+    /* Stay for the count. Page-scoped on purpose: nothing here reaches another
+       page. The look is the A5 flyer's (docs/private/outreach/stay-for-the-count):
+       deep green, gold for what matters, one idea per card. */
+    .sfc {
+      --sfc-green: #004225; --sfc-deep: #00331e; --sfc-gold: #f5b301;
+      --sfc-gold-ink: #7a5200; --sfc-gold-soft: #fff7dc; --sfc-gold-line: rgba(245, 179, 1, .55);
+      --sfc-head: var(--green);
+      font-size: .9375rem; line-height: 1.5; padding-top: 14px;
     }
-    @media (max-width: 420px) { .stay-actions { grid-template-columns: 1fr; } }
+    :root[data-theme="dark"] .sfc { --sfc-gold-ink: #f7c948; --sfc-gold-soft: rgba(245, 179, 1, .09); --sfc-head: #f7c948; }
+    .sfc p { margin: 0; }
+    .sfc h2 { font-size: 1.08rem; margin: 30px 0 12px; }
+    .sfc h2::before { content: ""; flex: none; width: 4px; height: 1.05em; border-radius: 2px; background: var(--sfc-gold); }
+    .sfc h3 { font-size: .98rem; margin: 0; line-height: 1.3; }
+    .sfc svg { display: block; }
+    .sfc-ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ---- the ask ---- */
+    .sfc-hero {
+      position: relative; overflow: hidden; color: #fff; border-radius: 20px;
+      padding: 18px clamp(18px, 4vw, 30px) 20px;
+      background: radial-gradient(110% 80% at 100% 0%, rgba(20, 110, 66, .9) 0%, rgba(20, 110, 66, 0) 60%), linear-gradient(165deg, var(--sfc-green) 0%, var(--sfc-deep) 100%);
+      box-shadow: 0 14px 34px -18px rgba(0, 51, 30, .7);
+    }
+    :root[data-theme="dark"] .sfc-hero { box-shadow: inset 0 0 0 1px rgba(245, 179, 1, .22); }
+    .sfc-hero-top { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+    .sfc-kicker { display: inline-block; background: var(--sfc-gold); color: var(--sfc-deep); font-weight: 700; font-size: .8rem; line-height: 1.3; padding: 4px 10px; border-radius: 6px; font-variant-numeric: tabular-nums; }
+    .sfc-tag { font-size: .74rem; font-weight: 600; color: var(--sfc-gold); border: 1px solid var(--sfc-gold); border-radius: 999px; padding: 3px 10px; white-space: nowrap; }
+    .sfc-hero-body { display: flex; gap: 16px; align-items: center; margin-top: 14px; }
+    .sfc-hero-body > div { flex: 1; min-width: 0; }
+    .sfc-h1 { margin: 0 !important; font-family: var(--display); font-weight: 700; color: #fff; font-size: clamp(2rem, 8.2vw, 3.2rem); line-height: 1.02; letter-spacing: -.02em; text-wrap: balance; }
+    .sfc-gold { color: var(--sfc-gold); }
+    .sfc-lede { margin-top: 10px !important; color: #d6e9de; font-size: clamp(.95rem, 2.6vw, 1.08rem); line-height: 1.45; max-width: 36em; text-wrap: pretty; }
+    .sfc-art { flex: none; width: clamp(54px, 15vw, 96px); height: auto; }
+    .sfc-cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .sfc-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 18px; border-radius: 12px; font-weight: 700; font-size: .95rem; text-decoration: none; line-height: 1.2; }
+    .sfc-btn-gold { background: var(--sfc-gold); color: var(--sfc-deep); box-shadow: 0 6px 16px -6px rgba(245, 179, 1, .7); }
+    .sfc-btn-ghost { color: #fff; border: 1.5px solid rgba(255, 255, 255, .45); }
+    .sfc-btn:hover { filter: brightness(1.07); }
+    .sfc-btn-ghost:hover { background: rgba(255, 255, 255, .08); }
+    .sfc-indep { display: flex; gap: 10px; align-items: center; margin: 12px 0 0 !important; background: var(--tint); border-left: 4px solid var(--sfc-gold); border-radius: 0 12px 12px 0; padding: 10px 14px; font-weight: 600; font-size: .9rem; line-height: 1.4; }
+    .sfc-indep svg { flex: none; width: 22px; height: 22px; }
+
+    /* ---- three steps ---- */
+    .sfc-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sfc-step { position: relative; display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: start; align-content: start; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; box-shadow: 0 1px 3px rgba(20, 32, 26, .05); transition: border-color .15s, transform .15s; }
+    .sfc-step:hover { border-color: var(--sfc-gold-line); transform: translateY(-1px); }
+    .sfc-num { grid-row: span 2; width: 34px; height: 34px; border-radius: 50%; background: var(--sfc-green); color: var(--sfc-gold); font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: .95rem; }
+    .sfc-step.sfc-key .sfc-num { background: var(--sfc-gold); color: var(--sfc-deep); }
+    :root[data-theme="dark"] .sfc-num { box-shadow: inset 0 0 0 1.5px rgba(245, 179, 1, .45); }
+    .sfc-step h3 { padding-top: 6px; }
+    .sfc-step h3 a { color: var(--ink); text-decoration: none; }
+    .sfc-step h3 a::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+    .sfc-step h3 a:focus-visible::after { outline: 3px solid var(--focus); outline-offset: 2px; }
+    .sfc-step p { color: var(--muted); font-size: .88rem; margin-top: 2px; }
+    .sfc-arrow { color: var(--sfc-gold-ink); font-weight: 700; }
+    @media (min-width: 700px) {
+      .sfc-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .sfc-step { grid-template-columns: 1fr; padding: 16px; }
+      .sfc-num { grid-row: auto; margin-bottom: 6px; }
+      .sfc-step h3 { padding-top: 0; }
+    }
+
+    /* ---- election day ---- */
+    .sfc-day { margin-top: 12px; background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px; box-shadow: 0 1px 3px rgba(20, 32, 26, .05); }
+    .sfc-day > h3 { display: flex; align-items: center; gap: 8px; color: var(--sfc-head); font-size: 1rem; padding-bottom: 8px; border-bottom: 2px solid var(--sfc-gold); margin-bottom: 12px; }
+    .sfc-flow { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sfc-flow li { display: grid; grid-template-columns: auto 1fr; gap: 0 12px; align-items: start; align-content: start; }
+    .sfc-flow .sfc-badge { grid-row: span 2; width: 34px; height: 34px; border-radius: 10px; background: var(--sfc-gold-soft); color: var(--sfc-gold-ink); display: flex; align-items: center; justify-content: center; }
+    .sfc-flow strong { font-size: .95rem; line-height: 1.3; padding-top: 6px; display: block; }
+    .sfc-flow span.sfc-sub { color: var(--muted); font-size: .86rem; }
+    @media (min-width: 700px) { .sfc-flow { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; } }
+    .sfc-offline { display: flex; gap: 10px; align-items: center; margin-top: 14px !important; padding: 9px 12px; background: var(--tint); border-radius: 10px; font-size: .86rem; font-weight: 600; }
+    .sfc-offline svg { flex: none; width: 22px; height: 22px; }
+
+    /* ---- safety ---- */
+    .sfc-safety { display: flex; gap: 12px; align-items: flex-start; margin-top: 12px; border: 2px solid var(--sfc-gold); background: var(--sfc-gold-soft); border-radius: 16px; padding: 14px 16px; }
+    .sfc-safety svg { flex: none; width: 34px; height: 34px; }
+    .sfc-safety h3 { color: var(--sfc-head); font-size: 1.05rem; }
+    /* The flyer's shield is green on white; on the dark page it turns gold so it still reads. */
+    :root[data-theme="dark"] .sfc-safety svg path:first-child, :root[data-theme="dark"] .sfc-indep svg path:first-child { fill: var(--sfc-gold); }
+    :root[data-theme="dark"] .sfc-safety svg path:last-child, :root[data-theme="dark"] .sfc-indep svg path:last-child { stroke: var(--sfc-deep); }
+    .sfc-safety p { font-size: .88rem; margin-top: 3px; }
+
+    /* ---- dates ---- */
+    .sfc-dates { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sfc-date { display: block; height: 100%; box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; color: var(--ink); text-decoration: none; }
+    a.sfc-date:hover { border-color: var(--sfc-gold-line); }
+    .sfc-date time { display: block; font-size: .8rem; font-weight: 700; color: var(--sfc-gold-ink); font-variant-numeric: tabular-nums; }
+    .sfc-date span { display: block; font-size: .86rem; color: var(--muted); margin-top: 2px; }
+    .sfc-date strong { display: block; color: var(--ink); font-size: .95rem; }
+    .sfc-date.sfc-eday { background: linear-gradient(165deg, var(--sfc-green), var(--sfc-deep)); border-color: transparent; color: #d6e9de; }
+    .sfc-date.sfc-eday time { color: var(--sfc-gold); }
+    .sfc-date.sfc-eday span, .sfc-date.sfc-eday strong { color: #fff; }
+    .sfc-date.sfc-eday span { color: #d6e9de; }
+    @media (min-width: 560px) { .sfc-dates { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+
+    /* ---- do more ---- */
+    .sfc-more { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    .sfc-more a { display: grid; grid-template-columns: auto 1fr auto; gap: 0 12px; align-items: center; height: 100%; box-sizing: border-box; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 13px 14px; color: var(--ink); text-decoration: none; transition: border-color .15s; }
+    .sfc-more a:hover { border-color: var(--sfc-gold-line); }
+    .sfc-more .sfc-badge { width: 38px; height: 38px; border-radius: 12px; background: var(--sfc-gold-soft); color: var(--sfc-gold-ink); display: flex; align-items: center; justify-content: center; }
+    .sfc-more p { color: var(--muted); font-size: .85rem; line-height: 1.4; margin-top: 2px; }
+    @media (min-width: 560px) { .sfc-more { grid-template-columns: 1fr 1fr; } }
+
+    /* ---- share kit ---- */
+    .sfc-share { margin-top: 30px; }
+    .sfc-share { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 18px clamp(14px, 3.5vw, 22px) 20px; box-shadow: inset 0 4px 0 var(--sfc-gold), 0 1px 3px rgba(20, 32, 26, .05); }
+    .sfc-share > h2 { margin-top: 0; }
+    .sfc-share > p { color: var(--muted); font-size: .9rem; }
+    .sfc-share-grid { display: grid; gap: 18px; margin-top: 14px; }
+    @media (min-width: 760px) { .sfc-share-grid { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 22px; } }
+    .sfc-share h3 { font-size: .92rem; display: flex; align-items: center; gap: 8px; }
+    .sfc-share h3 svg { width: 18px; height: 18px; color: var(--sfc-gold-ink); }
+    .stay-langs { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+    .stay-langs button { display: inline-block; width: auto; margin: 0; padding: 6px 13px; font-size: .84rem; font-weight: 600; border-radius: 999px; border: 1.5px solid var(--border); background: var(--surface); color: var(--ink); box-shadow: none; }
+    .stay-langs button:hover { border-color: var(--sfc-gold); filter: none; }
+    .stay-langs button[aria-checked="true"] { background: var(--sfc-green); border-color: var(--sfc-green); color: #fff; }
+    :root[data-theme="dark"] .stay-langs button[aria-checked="true"] { background: var(--sfc-gold); border-color: var(--sfc-gold); color: var(--sfc-deep); }
+    #wa-draft { margin: 0 0 8px; font-size: .8rem; }
+    #wa-msg { display: block; width: 100%; box-sizing: border-box; height: 15rem; min-height: 9rem; padding: 12px 13px; font-size: .82rem; line-height: 1.45; resize: vertical; white-space: pre-wrap; background: var(--tint); border: 1px solid var(--line); border-radius: 12px; }
+    .stay-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+    .stay-actions button, .stay-actions a { display: flex; align-items: center; justify-content: center; gap: 8px; width: auto; margin: 0; min-height: 44px; padding: 9px 12px; font-size: .9rem; font-weight: 700; border-radius: 12px; text-decoration: none; box-sizing: border-box; line-height: 1.2; text-align: center; }
+    .stay-actions button { background: var(--surface); color: var(--ink); border: 1.5px solid var(--border); box-shadow: none; }
+    .stay-actions button:hover { border-color: var(--sfc-gold); filter: none; }
+    .stay-actions a { background: var(--sfc-gold); color: var(--sfc-deep); }
+    .stay-actions a:hover { filter: brightness(1.06); }
+    .stay-actions svg { width: 18px; height: 18px; flex: none; }
+    #wa-status { margin: 8px 0 0; min-height: 1.2em; font-size: .84rem; }
+    #wa-status:empty { display: none; }
+    .sfc-flyer-note { color: var(--muted); font-size: .85rem; margin-top: 4px !important; }
+    .stay-files { list-style: none; margin: 10px 0 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .stay-files a { display: flex; flex-direction: column; gap: 2px; height: 100%; box-sizing: border-box; border: 1.5px solid var(--line); border-radius: 12px; padding: 10px 12px; color: var(--ink); text-decoration: none; background: var(--card); }
+    .stay-files a:hover { border-color: var(--sfc-gold); background: var(--sfc-gold-soft); }
+    .stay-files .sfc-file-top { display: flex; align-items: center; gap: 7px; font-weight: 700; font-size: .92rem; }
+    .stay-files .sfc-file-top svg { width: 18px; height: 18px; color: var(--sfc-gold-ink); flex: none; }
+    .stay-files .sfc-file-sub { font-size: .8rem; color: var(--muted); }
+    .stay-tag { align-self: flex-start; margin-top: 4px; font-size: .7rem; font-weight: 600; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 1px 7px; }
+    @media (max-width: 340px) { .stay-actions, .stay-files { grid-template-columns: 1fr; } }
+
+    /* ---- data ---- */
+    .sfc-data { display: flex; gap: 12px; align-items: flex-start; margin-top: 12px; background: var(--tint); border-radius: 14px; padding: 12px 14px; font-size: .88rem; }
+    .sfc-data .sfc-badge { flex: none; width: 34px; height: 34px; border-radius: 10px; background: var(--sfc-gold-soft); color: var(--sfc-gold-ink); display: flex; align-items: center; justify-content: center; }
+    .sfc-data a { color: var(--link); font-weight: 700; }
   </style>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Hawkeye">
@@ -57,13 +170,14 @@
   <meta name="twitter:card" content="summary_large_image">
   <!-- No authgate.js: the destination of every recruitment message, so it is
        public to everyone, signed in or not, on the web and in the app shell.
-       Copy lives in scripts/i18n/batches/stay_web.json. The WhatsApp message
-       there (stay.wa-message) is also written to stay/whatsapp.json, so the
-       share kit can offer all four languages whatever the page language is.
-       The flyers are built by docs/private/outreach/stay-for-the-count/build.mjs
-       and copied to stay/. Every link this page hands out is built on
-       https://hawkeye.com.ng, never location.origin: in the app shell that is
-       the phone itself. -->
+       Copy lives in scripts/i18n/batches/stay_web.json and stay2_web.json (the
+       card redesign's shorter strings, most of them the flyer's own wording).
+       The WhatsApp message (stay.wa-message) is also written to
+       stay/whatsapp.json, so the share kit can offer all four languages
+       whatever the page language is. The flyers are built by
+       docs/private/outreach/stay-for-the-count/build.mjs and copied to stay/.
+       Every link this page hands out is built on https://hawkeye.com.ng, never
+       location.origin: in the app shell that is the phone itself. -->
 </head>
 <body>
   <header class="gov-header">
@@ -92,83 +206,147 @@
     </div>
   </header>
 
-  <main class="wrap stay-main" id="main">
-    <p class="stay-kicker" data-i18n="press.date-pres">Saturday, 16 January 2027</p>
-    <h1 data-i18n="stay.title">Stay for the count</h1>
-    <p data-i18n="stay.lede" class="lede">On Saturday 16 January 2027, vote, then stay at your polling unit until the result is announced, and photograph it with Hawkeye. Your photo becomes part of a public record anyone can check.</p>
-    <p data-i18n="stay.indep" class="stay-indep">Hawkeye is independent and nonpartisan: not INEC, not the government, not a political party.</p>
-
-    <section class="card">
-      <h2 data-i18n="stay.steps-h">Three steps before 16 January</h2>
-      <ol class="stay-steps">
-        <li data-i18n-html="stay.step-app"><strong>Get the app.</strong> Hawkeye Election Monitor or Hawkeye Lite, free on Google Play and the App Store. <a href="download.html">Get the app →</a></li>
-        <li data-i18n-html="stay.step-unit"><strong>Save your polling unit.</strong> The unit where you vote. Do it now, not on the day. <a href="choose-unit.html">Save your unit →</a></li>
-        <li data-i18n-html="stay.step-practise"><strong>Practise.</strong> The free practice run takes a few minutes, needs no sign-up, and nothing you enter is published. <a href="practice.html">Start the practice run →</a></li>
-      </ol>
-      <h3 data-i18n="stay.day-h">On election day</h3>
-      <p data-i18n="stay.day-body">Vote, then stay for the count, or come back before counting ends. When the result is posted, photograph it in Hawkeye and submit. Photograph each result sheet: Presidential, Senate and House of Representatives. No signal? Hawkeye saves your report and sends it when you have signal.</p>
-      <a class="btn-link" href="download.html" data-i18n="download.get-hawkeye">Get Hawkeye</a>
-    </section>
-
-    <section class="card">
-      <h2 data-i18n="press.dates-h">Key dates</h2>
-      <dl class="stay-dates">
-        <dt data-i18n="press.date-pd1">Saturday, 12 December 2026</dt>
-        <dd data-i18n-html="press.date-pd1-what"><strong>National Practice Day.</strong> Observers across Nigeria run the same mock election, 08:00–18:00 WAT. Only the combined count is shared, and practice is never counted as a result. <a href="practice-day.html">About Practice Day →</a></dd>
-        <dt data-i18n="press.date-pd2">Saturday, 9 January 2027</dt>
-        <dd data-i18n-html="press.date-pd2-what"><strong>National Practice Day.</strong> A final run, one week before the vote.</dd>
-        <dt data-i18n="press.date-pres">Saturday, 16 January 2027</dt>
-        <dd data-i18n-html="stay.date-pres-what"><strong>Election day.</strong> Presidential and National Assembly elections. Stay for the count.</dd>
-      </dl>
-    </section>
-
-    <section class="card stay-safety">
-      <h2 data-i18n="captain-guide.safety-h">Stay safe and follow the law</h2>
-      <ul class="stay-list">
-        <li data-i18n="captain-guide.safety-1">No result is worth your life. If there is trouble, leave, and report it later from somewhere safe.</li>
-        <li data-i18n="captain-guide.safety-2">Never interfere with election officials, voters or materials. Follow officials' instructions.</li>
-        <li data-i18n="captain-guide.safety-3">Follow the Electoral Act and INEC's rules. Photograph only what is posted or handed out.</li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2 data-i18n="stay.more-h">Do more</h2>
-      <ul class="stay-more">
-        <li>
-          <h3 data-i18n="stay.cert-h">Earn the observer certificate</h3>
-          <p data-i18n-html="stay.cert-body">Do the <a href="practice.html">practice run</a>, then answer 7 short questions on observing well and within the law. <a href="certificate.html">Get your certificate →</a></p>
-        </li>
-        <li>
-          <h3 data-i18n="stay.captain-h">Become a ward captain</h3>
-          <p data-i18n-html="stay.captain-body">A ward captain makes sure someone stays for the count at every polling unit in one ward. <a href="captain-guide.html">Read the captain's guide</a>, then <a href="captain.html">apply →</a></p>
-        </li>
-        <li>
-          <h3 data-i18n="stay.second-h">Bring a second observer</h3>
-          <p data-i18n-html="stay.second-body">When two observers at the same unit report the same numbers, its count is verified. Once your unit is saved, open <a href="profile.html">My Profile</a> and tap <strong>Invite a Second Observer</strong> to send a link set to your unit.</p>
-        </li>
-        <li>
-          <h3 data-i18n="stay.coverage-h">See where observers are needed</h3>
-          <p data-i18n-html="stay.coverage-body">Observer coverage by state and local government. It never shows who watches which unit. <a href="coverage.html">See observer coverage →</a></p>
-        </li>
-      </ul>
-    </section>
-
-    <section class="card" id="share">
-      <h2 data-i18n="stay.share-h">Share kit</h2>
-      <p data-i18n="stay.share-lede">Send it to your family, your neighbours and your groups. Everything here is free to share and print.</p>
-
-      <h3 id="wa-h" data-i18n="stay.wa-h">WhatsApp message</h3>
-      <!-- Language names are the languages' own names, the same in every
-           language (like lang.js's picker), so they carry no key. -->
-      <div class="stay-langs" role="radiogroup" aria-label="Language" data-i18n-attr="aria-label:stay.msg-lang">
-        <button type="button" role="radio" aria-checked="true" data-msg-lang="en" lang="en" translate="no">English</button>
-        <button type="button" role="radio" aria-checked="false" data-msg-lang="ha" lang="ha" translate="no">Hausa</button>
-        <button type="button" role="radio" aria-checked="false" data-msg-lang="ig" lang="ig" translate="no">Igbo</button>
-        <button type="button" role="radio" aria-checked="false" data-msg-lang="yo" lang="yo" translate="no">Yorùbá</button>
+  <main class="wrap sfc" id="main">
+    <!-- menu.js names the page in the header from this H1 (and its key), then
+         hides it; the hero below carries the headline itself. -->
+    <h1 data-i18n="stay.title" hidden>Stay for the count</h1>
+    <section class="sfc-hero" aria-labelledby="sfc-title">
+      <div class="sfc-hero-top">
+        <span class="sfc-kicker" data-i18n="stay.kicker">Election day: Saturday 16 January 2027</span>
+        <span class="sfc-tag" data-i18n="stay.tag">Independent · Nonpartisan</span>
       </div>
-      <p id="wa-draft" class="hint" data-i18n="stay.draft" hidden>Draft translation: not yet reviewed by a native speaker.</p>
-      <!-- The English message is the markup fallback; the script replaces it. -->
-      <textarea id="wa-msg" readonly rows="16" lang="en" aria-labelledby="wa-h" spellcheck="false">STAY FOR THE COUNT – Saturday 16 January 2027
+      <div class="sfc-hero-body">
+        <div>
+          <p class="sfc-h1" id="sfc-title" role="heading" aria-level="1" data-i18n-html="stay.hero-h">Stay for the <span class="sfc-gold">count</span>.</p>
+          <p class="sfc-lede" data-i18n="stay.hero-lede">Photograph the result posted at your polling unit. It becomes part of a public record anyone can check.</p>
+        </div>
+        <!-- A phone framing a BLANK result sheet (the flyer's art): no numbers, no names, no party marks. -->
+        <svg class="sfc-art" viewBox="0 0 64 96" aria-hidden="true">
+          <rect x="3" y="2" width="58" height="92" rx="9" fill="#00331e" stroke="#f5b301" stroke-width="1.6"/>
+          <rect x="26" y="5.6" width="12" height="1.8" rx=".9" fill="#f5b301" opacity=".55"/>
+          <rect x="8" y="11" width="48" height="70" rx="2.5" fill="#0d5c38"/>
+          <rect x="14" y="16" width="36" height="58" rx="1" fill="#fff"/>
+          <rect x="18" y="20" width="28" height="3.2" rx=".4" fill="#004225"/>
+          <rect x="22" y="25.2" width="20" height="1.4" rx=".4" fill="#a9c2b5"/>
+          <g fill="#c9d6cf"><rect x="18" y="30.9" width="13" height="1.5" rx=".4"/><rect x="18" y="36.1" width="13" height="1.5" rx=".4"/><rect x="18" y="41.3" width="13" height="1.5" rx=".4"/><rect x="18" y="46.5" width="13" height="1.5" rx=".4"/><rect x="18" y="51.7" width="13" height="1.5" rx=".4"/><rect x="18" y="56.9" width="13" height="1.5" rx=".4"/><rect x="18" y="62.1" width="13" height="1.5" rx=".4"/></g>
+          <g fill="none" stroke="#9bb5a8" stroke-width=".6"><rect x="34" y="30" width="12" height="3.4" rx=".4"/><rect x="34" y="35.2" width="12" height="3.4" rx=".4"/><rect x="34" y="40.4" width="12" height="3.4" rx=".4"/><rect x="34" y="45.6" width="12" height="3.4" rx=".4"/><rect x="34" y="50.8" width="12" height="3.4" rx=".4"/><rect x="34" y="56" width="12" height="3.4" rx=".4"/><rect x="34" y="61.2" width="12" height="3.4" rx=".4"/></g>
+          <line x1="18" y1="69" x2="46" y2="69" stroke="#c9d6cf" stroke-width=".7"/>
+          <g fill="none" stroke="#f5b301" stroke-width="1.8" stroke-linecap="round"><path d="M11 20 V14 H17"/><path d="M47 14 H53 V20"/><path d="M11 70 V76 H17"/><path d="M47 76 H53 V70"/></g>
+          <circle cx="32" cy="87.6" r="3.4" fill="#f5b301"/><circle cx="32" cy="87.6" r="1.7" fill="#00331e"/>
+        </svg>
+      </div>
+      <div class="sfc-cta">
+        <a class="sfc-btn sfc-btn-gold" href="download.html" data-i18n="index.get-the-app">Get the app</a>
+        <a class="sfc-btn sfc-btn-ghost" href="#share" data-i18n="stay.share-h">Share kit</a>
+      </div>
+    </section>
+    <p class="sfc-indep"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 5.2 V11.5 C20 16.6 16.6 20.4 12 22 C7.4 20.4 4 16.6 4 11.5 V5.2 Z" fill="#004225"/><path d="M8.2 12.2 L10.9 14.9 L16 9.6" fill="none" stroke="#f5b301" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span data-i18n="stay.indep">Hawkeye is independent and nonpartisan: not INEC, not the government, not a political party.</span></p>
+
+    <h2 data-i18n="stay.steps-h">Three steps before 16 January</h2>
+    <ol class="sfc-steps">
+      <li class="sfc-step">
+        <span class="sfc-num" aria-hidden="true">1</span>
+        <h3><a href="download.html" data-i18n="index.install-hawkeye">Install Hawkeye</a></h3>
+        <p><span data-i18n="stay.s1-sub">Hawkeye Election Monitor or Hawkeye Lite. Free on Google Play and the App Store.</span> <span class="sfc-arrow" aria-hidden="true">→</span></p>
+      </li>
+      <li class="sfc-step sfc-key">
+        <span class="sfc-num" aria-hidden="true">2</span>
+        <h3><a href="choose-unit.html" data-i18n="coverage.save-your-unit">Save your polling unit</a></h3>
+        <p><span data-i18n="stay.s2-sub">The unit where you vote. Do it now, not on the day.</span> <span class="sfc-arrow" aria-hidden="true">→</span></p>
+      </li>
+      <li class="sfc-step">
+        <span class="sfc-num" aria-hidden="true">3</span>
+        <h3><a href="practice.html" data-i18n="index.practice-nudge-go">Start the practice run</a></h3>
+        <p><span data-i18n="stay.s3-sub">A few minutes, no sign-up, and nothing you enter is published.</span> <span class="sfc-arrow" aria-hidden="true">→</span></p>
+      </li>
+    </ol>
+
+    <section class="sfc-day" aria-labelledby="sfc-day-h">
+      <h3 id="sfc-day-h"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg><span data-i18n="stay.day-h">On election day</span></h3>
+      <ol class="sfc-flow">
+        <li>
+          <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><path d="M4 13h16v7H4z"/><path d="M8 13V4h8v9"/><path d="m10 8.5 1.6 1.6L14.5 7"/></svg></span>
+          <strong data-i18n="stay.d-vote">Vote</strong>
+        </li>
+        <li>
+          <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg></span>
+          <strong data-i18n="stay.title">Stay for the count</strong>
+          <span class="sfc-sub" data-i18n="stay.d-stay-sub">Or come back before counting ends.</span>
+        </li>
+        <li>
+          <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><path d="M3.5 8h3.2l2-2.6h6.6l2 2.6h3.2v11.5h-17z"/><circle cx="12" cy="13.3" r="3.6"/></svg></span>
+          <strong data-i18n="stay.d-photo">When the result is posted, photograph it and submit</strong>
+          <span class="sfc-sub" data-i18n="stay.d-photo-sub">Photograph each result sheet: Presidential, Senate and House of Representatives.</span>
+        </li>
+      </ol>
+      <p class="sfc-offline"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="currentColor" style="color:var(--link)"><rect x="2" y="15" width="3.4" height="6" rx=".8"/><rect x="7.2" y="11" width="3.4" height="10" rx=".8"/><rect x="12.4" y="7" width="3.4" height="14" rx=".8" opacity=".35"/><rect x="17.6" y="3" width="3.4" height="18" rx=".8" opacity=".35"/></g></svg><span data-i18n="stay.d-offline">No signal? Hawkeye saves your report and sends it when you have signal.</span></p>
+    </section>
+
+    <section class="sfc-safety" aria-labelledby="sfc-safety-h">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L20 5.2 V11.5 C20 16.6 16.6 20.4 12 22 C7.4 20.4 4 16.6 4 11.5 V5.2 Z" fill="#004225"/><path d="M8.2 12.2 L10.9 14.9 L16 9.6" fill="none" stroke="#f5b301" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div>
+        <h3 id="sfc-safety-h" data-i18n="stay.safety-h">No result is worth your life.</h3>
+        <p data-i18n="stay.safety-body">Follow electoral officials' instructions. Never interfere, never argue. Photograph only what is posted or handed out.</p>
+      </div>
+    </section>
+
+    <h2 data-i18n="press.dates-h">Key dates</h2>
+    <ul class="sfc-dates">
+      <li><a class="sfc-date" href="practice-day.html">
+        <time datetime="2026-12-12" data-i18n="press.date-pd1">Saturday, 12 December 2026</time>
+        <span data-i18n-html="press.date-pd1-s"><strong>National Practice Day.</strong> Observers across Nigeria run the same mock election, 08:00–18:00 WAT. Practice is never counted as a result.</span>
+      </a></li>
+      <li><a class="sfc-date" href="practice-day.html">
+        <time datetime="2027-01-09" data-i18n="press.date-pd2">Saturday, 9 January 2027</time>
+        <span data-i18n-html="press.date-pd2-what"><strong>National Practice Day.</strong> A final run, one week before the vote.</span>
+      </a></li>
+      <li><div class="sfc-date sfc-eday">
+        <time datetime="2027-01-16" data-i18n="press.date-pres">Saturday, 16 January 2027</time>
+        <span data-i18n-html="stay.date-pres-what"><strong>Election day.</strong> Presidential and National Assembly elections. Stay for the count.</span>
+      </div></li>
+    </ul>
+
+    <h2 data-i18n="stay.more-h">Do more</h2>
+    <ul class="sfc-more">
+      <li><a href="certificate.html">
+        <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5.5"/><path d="M8.6 13.4 7.5 21l4.5-2.3 4.5 2.3-1.1-7.6"/></svg></span>
+        <div><h3 data-i18n="stay.cert-h">Earn the observer certificate</h3><p data-i18n="stay.cert-s">Do the practice run, then answer 7 short questions.</p></div>
+        <span class="sfc-arrow" aria-hidden="true">→</span>
+      </a></li>
+      <li><a href="captain-guide.html">
+        <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><path d="M5.5 21V3.5"/><path d="M5.5 4h12l-2.6 4.5 2.6 4.5h-12"/></svg></span>
+        <div><h3 data-i18n="stay.captain-h">Become a ward captain</h3><p data-i18n="stay.captain-s">A ward captain makes sure someone stays for the count at every polling unit in one ward.</p></div>
+        <span class="sfc-arrow" aria-hidden="true">→</span>
+      </a></li>
+      <li><a href="profile.html">
+        <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20c.5-3.4 3-5.6 6-5.6s5.5 2.2 6 5.6"/><circle cx="17" cy="9" r="2.6"/><path d="M16.5 14.4c2.5.3 4 2.2 4.5 5.1"/></svg></span>
+        <div><h3 data-i18n="stay.second-h">Bring a second observer</h3><p data-i18n-html="stay.second-s">Two observers with the same numbers verify their unit's count. Open My Profile and tap <strong>Invite a Second Observer</strong>.</p></div>
+        <span class="sfc-arrow" aria-hidden="true">→</span>
+      </a></li>
+      <li><a href="coverage.html">
+        <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.6-6.5-10.5a6.5 6.5 0 0 1 13 0C18.5 15.4 12 21 12 21z"/><circle cx="12" cy="10.5" r="2.4"/></svg></span>
+        <div><h3 data-i18n="stay.coverage-h">See where observers are needed</h3><p data-i18n="stay.coverage-s">Observer coverage by state and local government. It never shows who watches which unit.</p></div>
+        <span class="sfc-arrow" aria-hidden="true">→</span>
+      </a></li>
+    </ul>
+
+    <section class="sfc-share" id="share" aria-labelledby="share-h">
+      <h2 id="share-h" data-i18n="stay.share-h">Share kit</h2>
+      <p data-i18n="stay.share-lede">Send it to your family, your neighbours and your groups. Everything here is free to share and print.</p>
+      <div class="sfc-share-grid">
+        <div>
+          <h3 id="wa-h"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5 5.3 15.6A8 8 0 1 1 8.4 18.7z"/><path d="M9 9.2c.3 2.4 2.4 4.5 4.8 4.8"/></svg><span data-i18n="stay.wa-h">WhatsApp message</span></h3>
+          <!-- Language names are the languages' own names, the same in every
+               language (like lang.js's picker), so they carry no key. -->
+          <div class="stay-langs" role="radiogroup" aria-label="Language" data-i18n-attr="aria-label:stay.msg-lang">
+            <button type="button" role="radio" aria-checked="true" data-msg-lang="en" lang="en" translate="no">English</button>
+            <button type="button" role="radio" aria-checked="false" data-msg-lang="ha" lang="ha" translate="no">Hausa</button>
+            <button type="button" role="radio" aria-checked="false" data-msg-lang="ig" lang="ig" translate="no">Igbo</button>
+            <button type="button" role="radio" aria-checked="false" data-msg-lang="yo" lang="yo" translate="no">Yorùbá</button>
+          </div>
+          <p id="wa-draft" class="hint" data-i18n="stay.draft" hidden>Draft translation: not yet reviewed by a native speaker.</p>
+          <!-- The English message is the markup fallback; the script replaces it. -->
+          <textarea id="wa-msg" readonly rows="12" lang="en" aria-labelledby="wa-h" spellcheck="false">STAY FOR THE COUNT – Saturday 16 January 2027
 
 Hawkeye is a free app for Nigerians. It is independent and nonpartisan: not INEC, not the government, not a political party.
 
@@ -183,25 +361,27 @@ On the day: vote, then stay for the count or come back. When the result is poste
 No result is worth your life. Follow officials' instructions. Never interfere or argue. Photograph only what is posted or handed out.
 
 https://hawkeye.com.ng/stay</textarea>
-      <div class="stay-actions">
-        <button type="button" id="wa-copy" data-i18n="stay.copy">Copy message</button>
-        <a id="wa-share" class="btn-link" href="https://wa.me/?text=" target="_blank" rel="noopener" data-i18n="stay.share-wa">Share on WhatsApp</a>
+          <div class="stay-actions">
+            <button type="button" id="wa-copy"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2.5"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg><span data-i18n="stay.copy">Copy message</span></button>
+            <a id="wa-share" href="https://wa.me/?text=" target="_blank" rel="noopener"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5 5.3 15.6A8 8 0 1 1 8.4 18.7z"/><path d="M9 9.2c.3 2.4 2.4 4.5 4.8 4.8"/></svg><span data-i18n="stay.share-wa">Share on WhatsApp</span></a>
+          </div>
+          <p id="wa-status" class="hint" role="status" aria-live="polite"></p>
+        </div>
+        <div>
+          <h3><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9V3.5h10V9"/><rect x="3.5" y="9" width="17" height="8" rx="2"/><path d="M7 14h10v6.5H7z"/></svg><span data-i18n="stay.flyer-h">Printable flyer</span></h3>
+          <p class="sfc-flyer-note" data-i18n="stay.flyer-note">One A5 page with a QR code that opens this page. Print at A5, or on A4 at 141%.</p>
+          <ul class="stay-files">
+            <li><a href="stay/flyer-en.pdf" download="Hawkeye-Stay-for-the-count-English.pdf"><span class="sfc-file-top"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg><span translate="no">English</span></span><span class="sfc-file-sub" data-i18n="stay.flyer-dl">Flyer (PDF)</span></a></li>
+            <li><a href="stay/flyer-ha.pdf" download="Hawkeye-Stay-for-the-count-Hausa.pdf" lang="ha"><span class="sfc-file-top"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg><span translate="no">Hausa</span></span><span class="sfc-file-sub" data-i18n="stay.flyer-dl">Flyer (PDF)</span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+            <li><a href="stay/flyer-ig.pdf" download="Hawkeye-Stay-for-the-count-Igbo.pdf" lang="ig"><span class="sfc-file-top"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg><span translate="no">Igbo</span></span><span class="sfc-file-sub" data-i18n="stay.flyer-dl">Flyer (PDF)</span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+            <li><a href="stay/flyer-yo.pdf" download="Hawkeye-Stay-for-the-count-Yoruba.pdf" lang="yo"><span class="sfc-file-top"><svg class="sfc-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg><span translate="no">Yorùbá</span></span><span class="sfc-file-sub" data-i18n="stay.flyer-dl">Flyer (PDF)</span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
+          </ul>
+          <p class="sfc-data">
+            <span class="sfc-badge" aria-hidden="true"><svg class="sfc-ico" viewBox="0 0 24 24"><path d="M4 17a8 8 0 1 1 16 0"/><path d="m12 17 4.2-5.2"/></svg></span>
+            <span data-i18n-html="stay.data-body">About 2 MB to report the three results. A 100 MB bundle covers the whole day with a wide margin. <a href="press/Hawkeye-Data-Use.pdf" download>Data-use guide (PDF)</a> · <a href="press.html#data">All the figures →</a></span>
+          </p>
+        </div>
       </div>
-      <p id="wa-status" class="hint" role="status" aria-live="polite"></p>
-
-      <h3 data-i18n="stay.flyer-h">Printable flyer</h3>
-      <p data-i18n="stay.flyer-note">One A5 page with a QR code that opens this page. Print at A5, or on A4 at 141%.</p>
-      <ul class="stay-files">
-        <li><a href="stay/flyer-en.pdf" download="Hawkeye-Stay-for-the-count-English.pdf"><span><span translate="no">English</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span></a></li>
-        <li><a href="stay/flyer-ha.pdf" download="Hawkeye-Stay-for-the-count-Hausa.pdf" lang="ha"><span><span translate="no">Hausa</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
-        <li><a href="stay/flyer-ig.pdf" download="Hawkeye-Stay-for-the-count-Igbo.pdf" lang="ig"><span><span translate="no">Igbo</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
-        <li><a href="stay/flyer-yo.pdf" download="Hawkeye-Stay-for-the-count-Yoruba.pdf" lang="yo"><span><span translate="no">Yorùbá</span> · <span data-i18n="stay.flyer-dl">Flyer (PDF)</span></span><span class="stay-tag" data-i18n="stay.draft-tag">draft translation</span></a></li>
-      </ul>
-    </section>
-
-    <section class="card">
-      <h2 data-i18n="press.data-h">How much data does it use?</h2>
-      <p data-i18n-html="stay.data-body">About 2 MB to report the three results. A 100 MB bundle covers the whole day with a wide margin. <a href="press/Hawkeye-Data-Use.pdf" download>Data-use guide (PDF)</a> · <a href="press.html#data">All the figures →</a></p>
     </section>
   </main>
 

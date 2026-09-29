@@ -37,17 +37,38 @@ export default function PracticeDayScreen() {
   const [failed, setFailed] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  const load = useCallback(async (date: string | null) => {
-    try {
-      setData(await fetchPracticeDays(date));
-      setFailed(false);
-    } catch {
-      setFailed(true);
-    }
-  }, []);
+  /**
+   * A plain promise with the state set in its callbacks — the captain.tsx shape.
+   * As an async function, react-hooks/set-state-in-effect read its setState as
+   * running synchronously inside the effect below; it never did (it followed the
+   * await), but the callback form lets the compiler see that without a disable
+   * comment.
+   *
+   * `current` is what the effect adds: a response for a day the reader has
+   * already moved off (or for a screen that has closed) is dropped, rather than
+   * landing after the newer one and showing the wrong day's figures.
+   */
+  const load = useCallback(
+    (date: string | null, current: () => boolean = () => true) =>
+      fetchPracticeDays(date).then(
+        (d) => {
+          if (!current()) return;
+          setData(d);
+          setFailed(false);
+        },
+        () => {
+          if (current()) setFailed(true);
+        },
+      ),
+    [],
+  );
 
   useEffect(() => {
-    load(wanted);
+    let active = true;
+    void load(wanted, () => active);
+    return () => {
+      active = false;
+    };
   }, [load, wanted]);
 
   const live = data?.day?.phase === 'live';

@@ -54,7 +54,7 @@ export function humanError(e: unknown, fallback = i18nT('n.lib.errors.something-
   const status = raw.match(/\b(4\d\d|5\d\d)\b/);
   if (status) {
     return status[1].startsWith('5')
-      ? 'The server had a problem. Try again shortly.'
+      ? i18nT('n.lib.errors.the-server-had-a-problem')
       : i18nT('n.lib.errors.that-request-was-refused-try-again');
   }
   return fallback;

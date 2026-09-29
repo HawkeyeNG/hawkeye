@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { Modal, Pressable, Text, View } from 'react-native';
 
+import { t as i18nT } from '@/lib/i18n';
 import { useUi } from '@/lib/theme';
 
 /**
@@ -17,7 +18,8 @@ export function ConfirmSheet({
   title,
   body,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  // Resolved per render, never at import — the default is evaluated each call.
+  cancelLabel = i18nT('common.cancel'),
   danger,
   busy,
   onConfirm,
@@ -32,7 +34,7 @@ export function ConfirmSheet({
    * `null` drops the second button, turning the sheet into a one-action NOTICE.
    * A refusal has nothing to cancel — offering "Cancel" beside "Choose another
    * unit" asks the reader to distinguish two ways of doing the same thing.
-   * Defaults to 'Cancel', so every existing caller is unchanged.
+   * Defaults to Cancel (common.cancel), so every existing caller is unchanged.
    */
   cancelLabel?: string | null;
   danger?: boolean;

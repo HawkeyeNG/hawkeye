@@ -405,7 +405,7 @@ export default function Profile() {
       const r = await requestOtp(resetPhone.trim(), resetChannel as ResetChannel);
       if (r.ok || r.viaSms || r.viaWhatsapp) {
         setPwMode('reset-otp');
-        setPwMsg(r.devOtp ? i18nT('n.app.profile.dev-mode-your-code-is', { v0: r.devOtp }) : 'Code sent — check WhatsApp/SMS.');
+        setPwMsg(r.devOtp ? i18nT('n.app.profile.dev-mode-your-code-is', { v0: r.devOtp }) : i18nT('n.app.profile.code-sent-check-whatsapp-sms'));
       } else {
         setPwMsg(r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check'));
       }
@@ -431,11 +431,11 @@ export default function Profile() {
       } else {
         setPwMsg(
           r.error === 'not_your_number'
-            ? "That number isn't the one registered to this observer ID."
+            ? i18nT('n.app.profile.number-not-registered-to-id')
             : r.error === 'otp_incorrect'
-              ? 'Wrong code — check and retry.'
+              ? i18nT('n.app.profile.wrong-code-check-and-retry')
               : r.error === 'otp_expired'
-                ? 'Code expired — send a new one.'
+                ? i18nT('n.app.profile.code-expired-send-new')
                 : r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again'),
         );
       }
@@ -463,7 +463,7 @@ export default function Profile() {
       await signOut();
       router.replace('/welcome');
     } else {
-      notice.show('Could not delete', i18nT('n.app.profile.try-again-http', { v0: status }));
+      notice.show(i18nT('n.app.profile.could-not-delete'), i18nT('n.app.profile.try-again-http', { v0: status }));
     }
   };
 
@@ -925,7 +925,7 @@ export default function Profile() {
         visible={confirm === 'signout'}
         icon="log-out"
         title={i18nT('n.app.profile.sign-out-2')}
-        body='You can sign back in with your number and password. Your reports are unaffected.'
+        body={i18nT('n.app.profile.sign-out-body')}
         confirmLabel={i18nT('n.app.profile.sign-out')}
         busy={confirmBusy}
         onConfirm={doSignOut}
@@ -1083,7 +1083,7 @@ export default function Profile() {
 
             {pwMode === 'reset-otp' ? (
               <>
-                <Text className="pb-3 text-sm text-muted">{pwMsg ?? 'Enter the code.'}</Text>
+                <Text className="pb-3 text-sm text-muted">{pwMsg ?? i18nT('n.app.profile.enter-the-code')}</Text>
                 <TextInput
                   value={resetOtp}
                   onChangeText={setResetOtp}

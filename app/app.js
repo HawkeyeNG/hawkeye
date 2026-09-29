@@ -352,31 +352,41 @@ async function prefetchNearby() {
   } catch { /* best-effort warm-up; btn-locate still does the real fetch */ }
 }
 
+/* KEY BESIDE ENGLISH, RESOLVED WHEN SHOWN. These reach the reader through
+   hkAlert, the refusal modal and the status line. A module-level constant is
+   built once, before the language bundle has loaded, so a T() here would freeze
+   every refusal in English — the key travels beside the English and
+   errorText() resolves it at the moment the message is written. */
 const ERRORS = {
-  outside_geofence: 'You are too far from this polling unit to report it.',
-  too_far_from_unit: 'You are too far from this polling unit — report only while standing there.',
-  sms_send_failed: 'Could not deliver your code just now — wait a minute and tap Resend code.',
-  otp_incorrect: 'That code is not right — check it and try again.',
-  otp_expired: 'That code has expired — tap "Resend code" to get a fresh one.',
-  too_many_attempts: 'Too many wrong tries — tap "Resend code" and enter the fresh code.',
-  too_many_requests: 'Too many requests from your connection — wait a few minutes and try again.',
-  gps_accuracy_too_low: 'GPS signal too weak — move to open sky and retry.',
-  photo_not_fresh: 'Photos too old — capture them again and submit immediately.',
-  photo_required: 'The result sheet photo is missing.',
-  venue_photo_required: 'A distinct photo of the polling unit surroundings is required.',
-  duplicate_image: 'One of these exact photos was already submitted by someone.',
-  near_duplicate_image: 'A near-identical copy of one of these photos was already submitted.',
-  already_submitted: 'You have already reported this election for this polling unit.',
-  unknown_contest: 'Select which election you are reporting.',
-  contest_not_applicable: 'That election does not take place at this polling unit (the FCT has no governorship or state assembly).',
-  photo_location_mismatch: 'Your photos were taken somewhere else — capture both here and submit immediately.',
-  bad_signature: 'Signature check failed — refresh and try again.',
-  invalid_votes: 'Check the counts — whole numbers only.',
-  device_already_reported_race: 'This device has already reported this election — one report per race per device.',
-  device_too_fast: 'This device just submitted a report — wait a few minutes and try again.',
-  reporting_not_open: 'Result reporting opens on election day, when polls open. Come back then.',
+  outside_geofence: ['observe.err.outside-geofence', 'You are too far from this polling unit to report it.'],
+  too_far_from_unit: ['observe.err.too-far-from-unit', 'You are too far from this polling unit — report only while standing there.'],
+  sms_send_failed: ['observe.err.sms-send-failed', 'Could not deliver your code just now — wait a minute and tap Resend code.'],
+  otp_incorrect: ['observe.err.otp-incorrect', 'That code is not right — check it and try again.'],
+  otp_expired: ['observe.err.otp-expired', 'That code has expired — tap "Resend code" to get a fresh one.'],
+  too_many_attempts: ['observe.err.too-many-attempts', 'Too many wrong tries — tap "Resend code" and enter the fresh code.'],
+  too_many_requests: ['observe.err.too-many-requests', 'Too many requests from your connection — wait a few minutes and try again.'],
+  gps_accuracy_too_low: ['observe.err.gps-accuracy-too-low', 'GPS signal too weak — move to open sky and retry.'],
+  photo_not_fresh: ['observe.err.photo-not-fresh', 'Photos too old — capture them again and submit immediately.'],
+  photo_required: ['observe.err.photo-required', 'The result sheet photo is missing.'],
+  venue_photo_required: ['observe.err.venue-photo-required', 'A distinct photo of the polling unit surroundings is required.'],
+  duplicate_image: ['observe.err.duplicate-image', 'One of these exact photos was already submitted by someone.'],
+  near_duplicate_image: ['observe.err.near-duplicate-image', 'A near-identical copy of one of these photos was already submitted.'],
+  already_submitted: ['observe.err.already-submitted', 'You have already reported this election for this polling unit.'],
+  unknown_contest: ['observe.select-which-election-you-are-reporting', 'Select which election you are reporting.'],
+  contest_not_applicable: ['observe.err.contest-not-applicable', 'That election does not take place at this polling unit (the FCT has no governorship or state assembly).'],
+  photo_location_mismatch: ['observe.err.photo-location-mismatch', 'Your photos were taken somewhere else — capture both here and submit immediately.'],
+  bad_signature: ['observe.err.bad-signature', 'Signature check failed — refresh and try again.'],
+  invalid_votes: ['observe.err.invalid-votes', 'Check the counts — whole numbers only.'],
+  device_already_reported_race: ['observe.err.device-already-reported-race', 'This device has already reported this election — one report per race per device.'],
+  device_too_fast: ['observe.err.device-too-fast', 'This device just submitted a report — wait a few minutes and try again.'],
+  reporting_not_open: ['observe.err.reporting-not-open', 'Result reporting opens on election day, when polls open. Come back then.'],
 };
-const explain = (body) => body.hint || ERRORS[body.error] || body.error || 'Something went wrong.';
+const errorText = (code) => {
+  const e = ERRORS[code];
+  return e ? T(e[0], e[1]) : null;
+};
+const explain = (body) => body.hint || errorText(body.error) || body.error
+  || T('observe.err.something-went-wrong', 'Something went wrong.');
 
 // Mirror of backend/src/services/scope.js — the polling unit determines the race.
 // The FCT has an appointed minister: no governorship, no state assembly.
@@ -2314,7 +2324,7 @@ $('btn-submit').onclick = async () => {
     // fixes today, and the observer has just photographed a sheet and typed a
     // tally. A status line below the fold is missable enough that it reads as
     // the button doing nothing.
-    notifyBlocked(T('common.reporting-not-open-yet', 'Reporting is not open yet'), ERRORS.reporting_not_open);
+    notifyBlocked(T('common.reporting-not-open-yet', 'Reporting is not open yet'), errorText('reporting_not_open'));
     return;
   }
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]
@@ -2705,9 +2715,9 @@ $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
   if (!n) {
     const rows = document.querySelectorAll('#vote-inputs input').length;
     if (window.HAWKEYE_ALERT) {
-      HAWKEYE_ALERT('No counts entered', rows
-        ? 'Type the votes each party was announced to have, then tap Verify counts again.'
-        : 'The party list could not be loaded. Close and reopen the report to try again.');
+      HAWKEYE_ALERT(T('observe.no-counts-entered', 'No counts entered'), rows
+        ? T('observe.no-counts-entered-body', 'Type the votes each party was announced to have, then tap Verify counts again.')
+        : T('observe.party-list-not-loaded-body', 'The party list could not be loaded. Close and reopen the report to try again.'));
     } else { $('submit-status').textContent = T('observe.enter-at-least-one-party-count', 'Enter at least one party count.'); }
     return;
   }

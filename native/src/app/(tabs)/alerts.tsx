@@ -117,7 +117,7 @@ export default function Alerts() {
     // Under a full-height list an inline error sits below the fold and is never
     // read. The pull was deliberate, so a failed one gets an answer.
     if (failed && items?.length) {
-      notice.show('Could not refresh', i18nT('n.app.tabs.alerts.your-alerts-did-not-load', { v0: failed }));
+      notice.show(i18nT('n.common.could-not-refresh'), i18nT('n.app.tabs.alerts.your-alerts-did-not-load', { v0: failed }));
     }
   };
 
@@ -139,7 +139,7 @@ export default function Alerts() {
       markRead(n.id).catch((e) => {
         setItems((list) => list?.map((x) => (x.id === n.id ? { ...x, read: 0 } : x)) ?? list);
         refreshUnread();
-        notice.show('Could not mark that read', humanError(e));
+        notice.show(i18nT('n.app.tabs.alerts.could-not-mark-that-read'), humanError(e));
       });
     }
     /**
@@ -162,7 +162,7 @@ export default function Alerts() {
       await markRead('all');
       setItems((list) => list?.map((x) => ({ ...x, read: 1 })) ?? list);
     } catch (e) {
-      notice.show('Could not mark them read', humanError(e));
+      notice.show(i18nT('n.app.tabs.alerts.could-not-mark-them-read'), humanError(e));
     } finally {
       setMarking(false);
     }

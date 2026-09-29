@@ -32,12 +32,21 @@ for (const f of batches) {
 
 let bad = 0;
 const ph = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
+// A format pattern ("{v0} {v1}", no letter outside a placeholder) is the same in
+// every language by construction — the same rule as native_bundles.mjs, copied
+// rather than imported because importing that script runs it.
+const isPattern = (s) => !/\p{L}/u.test(String(s).replace(/\{\w+\}/g, ''));
+// Identical to English on purpose; each is also in native_bundles.mjs SAME_OK
+// with its reason. Kept short and named so "untranslated" stays a real check.
+const SAME_OK = new Set([
+  'n.components.practice-day-card.window', // "{v0}–{v1} WAT": times + time-zone abbreviation
+]);
 for (const [k, v] of Object.entries(incoming)) {
   if (!(k in CAT)) { console.log(`NOT IN CATALOGUE: ${k}`); bad++; continue; }
   for (const lang of Object.keys(FILES)) {
     const t = v[lang];
     if (typeof t !== 'string' || !t.trim()) { console.log(`MISSING ${lang}: ${k}`); bad++; }
-    else if (t.trim() === CAT[k].trim()) { console.log(`UNTRANSLATED ${lang}: ${k}`); bad++; }
+    else if (t.trim() === CAT[k].trim() && !isPattern(CAT[k]) && !SAME_OK.has(k)) { console.log(`UNTRANSLATED ${lang}: ${k}`); bad++; }
     else if (ph(t) !== ph(CAT[k])) { console.log(`PLACEHOLDERS ${lang}: ${k} (en has {${ph(CAT[k])}})`); bad++; }
   }
 }

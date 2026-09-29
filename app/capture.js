@@ -25,6 +25,15 @@
     for (const [k, v] of Object.entries(params || {})) out = String(out).split('{' + k + '}').join(v);
     return out;
   };
+  /* The scan worker's quality warnings arrive as English sentences: a worker has
+     no i18n runtime and is cached on its own ?v=, so its words are the wire
+     format and the KEY is chosen here, where the confirm is shown. An unknown
+     sentence still shows — in English, never as nothing. */
+  const SCAN_WARNING = {
+    'The photo looks blurry.': 'capture.photo-looks-blurry',
+    'Glare is washing out part of the sheet.': 'capture.glare-washing-out-sheet',
+  };
+  const warningText = (w) => (SCAN_WARNING[w] ? T(SCAN_WARNING[w], w) : w);
   const $ = (id) => document.getElementById(id);
   let stream = null;
   let target = null;
@@ -73,7 +82,7 @@
       let blob;
       if (target === 'sheet' && window.DocScanner) {
         const scan = await DocScanner.capture();
-        if (scan.warnings.length && !(await hkConfirm(T('capture.use-this-photo-anyway', '{v0} Use this photo anyway?', { v0: scan.warnings.join(' ') })))) {
+        if (scan.warnings.length && !(await hkConfirm(T('capture.use-this-photo-anyway', '{v0} Use this photo anyway?', { v0: scan.warnings.map(warningText).join(' ') })))) {
           DocScanner.rearm();
           return;
         }

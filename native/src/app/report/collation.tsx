@@ -188,8 +188,9 @@ export default function ReportCollation() {
     if (!stateSel) return;
     if (contests.length === 0) {
       notice.show(
-        'Election list not loaded',
-        'Hawkeye could not load which elections are running — check your connection and reopen this screen. (no /api/contests response)',
+        // The same notice report/result.tsx raises, word for word — so the same keys.
+        i18nT('n.app.report.result.election-list-not-loaded'),
+        i18nT('n.app.report.result.hawkeye-could-not-load-which-elections'),
       );
       return;
     }

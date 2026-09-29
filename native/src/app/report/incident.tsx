@@ -1901,7 +1901,7 @@ export default function ReportIncident() {
         visible={!!blocked}
         onClose={() => setBlocked(null)}
         title={blocked?.title}
-        closeLabel="Got it"
+        closeLabel={i18nT('n.common.got-it')}
       >
         <Text className="text-sm leading-5 text-muted">{blocked?.body}</Text>
       </ModalCard>

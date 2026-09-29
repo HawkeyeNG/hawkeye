@@ -19,7 +19,10 @@ import { t as i18nT } from '@/lib/i18n';
  * owns the state, so a file adds three lines however many notices it raises.
  *
  *   const notice = useNotice();
- *   notice.show('Could not refresh', i18nT('n.components.notice-sheet.your-alerts-did-not-load', { v0: failed }));
+ *   notice.show(i18nT('n.common.could-not-refresh'), i18nT('n.app.tabs.alerts.your-alerts-did-not-load', { v0: failed }));
+ *
+ * Both arguments are keys: the title is the half that reads first and the one
+ * most often left English (six were, until 2026-09-29).
  *   <NoticeSheet {...notice.props} />
  *
  * TONE, NOT DANGER. Failures here are "that did not work", not destructive
@@ -70,7 +73,7 @@ export function NoticeSheet({
       icon={notice?.tone === 'good' ? 'check-circle' : 'alert-circle'}
       title={notice?.title ?? ''}
       body={notice?.body ?? ''}
-      confirmLabel="OK"
+      confirmLabel={i18nT('common.ok')}
       /* A notice has nothing to cancel — one way out, not two. */
       cancelLabel={null}
       onConfirm={onDismiss}

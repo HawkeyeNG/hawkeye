@@ -1,8 +1,738 @@
 {
+ "captain-guide.invite-1": {
+  "kind": "body",
+  "en": 181,
+  "max": 317
+ },
+ "captain-guide.invite-2": {
+  "kind": "body",
+  "en": 98,
+  "max": 172
+ },
+ "captain-guide.invite-3": {
+  "kind": "body",
+  "en": 99,
+  "max": 174
+ },
+ "captain-guide.invite-h": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "captain-guide.lede": {
+  "kind": "button",
+  "en": 155,
+  "max": 194
+ },
+ "captain-guide.never-1": {
+  "kind": "body",
+  "en": 97,
+  "max": 170
+ },
+ "captain-guide.never-2": {
+  "kind": "body",
+  "en": 57,
+  "max": 100
+ },
+ "captain-guide.never-3": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
+ "captain-guide.never-h": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "captain-guide.rules-1": {
+  "kind": "body",
+  "en": 100,
+  "max": 175
+ },
+ "captain-guide.rules-2": {
+  "kind": "body",
+  "en": 77,
+  "max": 135
+ },
+ "captain-guide.rules-3": {
+  "kind": "body",
+  "en": 92,
+  "max": 161
+ },
+ "captain-guide.rules-4": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
+ },
+ "captain-guide.rules-5": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
+ "captain-guide.rules-h": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "captain-guide.safety-1": {
+  "kind": "body",
+  "en": 98,
+  "max": 172
+ },
+ "captain-guide.safety-2": {
+  "kind": "body",
+  "en": 93,
+  "max": 163
+ },
+ "captain-guide.safety-3": {
+  "kind": "body",
+  "en": 88,
+  "max": 154
+ },
+ "captain-guide.safety-h": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "captain-guide.title": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
+ },
+ "captain-guide.what-1": {
+  "kind": "body",
+  "en": 131,
+  "max": 230
+ },
+ "captain-guide.what-2": {
+  "kind": "body",
+  "en": 165,
+  "max": 289
+ },
+ "captain-guide.what-3": {
+  "kind": "body",
+  "en": 100,
+  "max": 175
+ },
+ "captain-guide.what-4": {
+  "kind": "body",
+  "en": 114,
+  "max": 200
+ },
+ "captain-guide.what-h": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "captain.about-you": {
+  "kind": "chip",
+  "en": 9,
+  "max": 21
+ },
+ "captain.applied-on": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "captain.consent": {
+  "kind": "button",
+  "en": 50,
+  "max": 64
+ },
+ "captain.contact": {
+  "kind": "body",
+  "en": 295,
+  "max": 517
+ },
+ "captain.contact-h": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "captain.err.already-applied": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
+ },
+ "captain.err.bad-volunteers": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "captain.err.consent-required": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
+ "captain.err.failed": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "captain.err.network": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "captain.err.note-required": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "captain.err.rate-limited": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "captain.err.register": {
+  "kind": "chip",
+  "en": 71,
+  "max": 93
+ },
+ "captain.err.signed-out": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "captain.err.unknown-ward": {
+  "kind": "body",
+  "en": 65,
+  "max": 114
+ },
+ "captain.err.ward-required": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "captain.lede": {
+  "kind": "body",
+  "en": 160,
+  "max": 280
+ },
+ "captain.no-access-note": {
+  "kind": "body",
+  "en": 108,
+  "max": 189
+ },
+ "captain.note": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "captain.note-hint": {
+  "kind": "body",
+  "en": 110,
+  "max": 193
+ },
+ "captain.open-alerts": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "captain.optional": {
+  "kind": "chip",
+  "en": 10,
+  "max": 22
+ },
+ "captain.organisation": {
+  "kind": "chip",
+  "en": 12,
+  "max": 24
+ },
+ "captain.organisation-hint": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "captain.privacy": {
+  "kind": "body",
+  "en": 86,
+  "max": 151
+ },
+ "captain.read-guide": {
+  "kind": "button",
+  "en": 24,
+  "max": 38
+ },
+ "captain.sent": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "captain.sign-in": {
+  "kind": "button",
+  "en": 7,
+  "max": 21
+ },
+ "captain.status-line.approved": {
+  "kind": "body",
+  "en": 79,
+  "max": 139
+ },
+ "captain.status-line.contacted": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
+ "captain.status-line.declined": {
+  "kind": "body",
+  "en": 86,
+  "max": 151
+ },
+ "captain.status-line.new": {
+  "kind": "body",
+  "en": 65,
+  "max": 114
+ },
+ "captain.status.approved": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "captain.status.contacted": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "captain.status.declined": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "captain.status.new": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "captain.submit": {
+  "kind": "button",
+  "en": 16,
+  "max": 30
+ },
+ "captain.title": {
+  "kind": "heading",
+  "en": 21,
+  "max": 41
+ },
+ "captain.volunteers": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "captain.your-application": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "captain.your-ward": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
  "case.evidence": {
   "kind": "body",
   "en": 8,
   "max": 48
+ },
+ "cert.card-check": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "cert.card-code": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "cert.card-foot": {
+  "kind": "body",
+  "en": 83,
+  "max": 146
+ },
+ "cert.card-issued": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "cert.card-line": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "cert.card-title": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "cert.check-at": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "cert.code-label": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "cert.correct": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "cert.done-body": {
+  "kind": "body",
+  "en": 91,
+  "max": 160
+ },
+ "cert.done-h": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "cert.finish": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "cert.issue-failed": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "cert.issuing": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "cert.lede": {
+  "kind": "body",
+  "en": 160,
+  "max": 280
+ },
+ "cert.load-error": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "cert.name-label": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "cert.name-note": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
+ },
+ "cert.next": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "cert.practice-first-body": {
+  "kind": "button",
+  "en": 128,
+  "max": 160
+ },
+ "cert.practice-first-h": {
+  "kind": "button",
+  "en": 30,
+  "max": 44
+ },
+ "cert.practice-go": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "cert.practice-recheck": {
+  "kind": "button",
+  "en": 28,
+  "max": 42
+ },
+ "cert.profile-heading": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "cert.profile-row": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "cert.profile-row-sub": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "cert.progress": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "cert.q1": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "cert.q1-a": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "cert.q1-b": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "cert.q1-c": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "cert.q1-why": {
+  "kind": "body",
+  "en": 184,
+  "max": 322
+ },
+ "cert.q2": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
+ "cert.q2-a": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "cert.q2-b": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "cert.q2-c": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "cert.q2-why": {
+  "kind": "body",
+  "en": 152,
+  "max": 266
+ },
+ "cert.q3": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "cert.q3-a": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "cert.q3-b": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "cert.q3-c": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
+ },
+ "cert.q3-why": {
+  "kind": "body",
+  "en": 168,
+  "max": 294
+ },
+ "cert.q4": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
+ "cert.q4-a": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "cert.q4-b": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "cert.q4-c": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "cert.q4-why": {
+  "kind": "body",
+  "en": 140,
+  "max": 245
+ },
+ "cert.q5": {
+  "kind": "body",
+  "en": 56,
+  "max": 98
+ },
+ "cert.q5-a": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "cert.q5-b": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "cert.q5-c": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "cert.q5-why": {
+  "kind": "body",
+  "en": 98,
+  "max": 172
+ },
+ "cert.q6": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "cert.q6-a": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "cert.q6-b": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "cert.q6-c": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
+ "cert.q6-why": {
+  "kind": "body",
+  "en": 264,
+  "max": 462
+ },
+ "cert.q7": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "cert.q7-a": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "cert.q7-b": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
+ "cert.q7-c": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "cert.q7-why": {
+  "kind": "body",
+  "en": 166,
+  "max": 291
+ },
+ "cert.retry": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "cert.save": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "cert.share": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "cert.share-text": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
+ },
+ "cert.try-again": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "cert.verify-button": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
+ "cert.verify-checking": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "cert.verify-earn": {
+  "kind": "button",
+  "en": 46,
+  "max": 60
+ },
+ "cert.verify-error": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "cert.verify-invalid-body": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
+ },
+ "cert.verify-invalid-h": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "cert.verify-label": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "cert.verify-lede": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "cert.verify-title": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "cert.verify-valid-body": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
+ "cert.verify-valid-h": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "cert.verify-what": {
+  "kind": "body",
+  "en": 190,
+  "max": 333
+ },
+ "cert.wrong": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
  },
  "common.about-contact": {
   "kind": "body",
@@ -13,6 +743,11 @@
   "kind": "button",
   "en": 6,
   "max": 20
+ },
+ "common.chat-with-us": {
+  "kind": "button",
+  "en": 12,
+  "max": 26
  },
  "common.close": {
   "kind": "button",
@@ -44,10 +779,20 @@
   "en": 4,
   "max": 18
  },
+ "common.not-yet": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
  "common.observer-guide": {
   "kind": "body",
   "en": 14,
   "max": 54
+ },
+ "common.ok": {
+  "kind": "body",
+  "en": 2,
+  "max": 42
  },
  "common.password": {
   "kind": "body",
@@ -98,6 +843,171 @@
   "kind": "heading",
   "en": 17,
   "max": 37
+ },
+ "coverage.all-states": {
+  "kind": "button",
+  "en": 10,
+  "max": 24
+ },
+ "coverage.become-captain": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "coverage.change-your-unit": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "coverage.col-lga": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "coverage.coverage": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "coverage.cta-body": {
+  "kind": "body",
+  "en": 127,
+  "max": 223
+ },
+ "coverage.goal-note": {
+  "kind": "body",
+  "en": 133,
+  "max": 233
+ },
+ "coverage.lede": {
+  "kind": "body",
+  "en": 111,
+  "max": 195
+ },
+ "coverage.lgas-in-state": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "coverage.load-failed": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "coverage.n-of-m-units-covered": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
+ "coverage.nationwide": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "coverage.none-yet": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "coverage.observer-coverage": {
+  "kind": "heading",
+  "en": 17,
+  "max": 37
+ },
+ "coverage.open-state-aria": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "coverage.privacy-note": {
+  "kind": "body",
+  "en": 105,
+  "max": 184
+ },
+ "coverage.progress-aria": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "coverage.safety": {
+  "kind": "body",
+  "en": 128,
+  "max": 224
+ },
+ "coverage.save-your-unit": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "coverage.states-at-goal": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "coverage.states-by-coverage": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
+ },
+ "coverage.stay-for-the-count": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "coverage.tap-a-state": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "coverage.try-again": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "coverage.try-practice": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "coverage.units-covered-short": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "coverage.unknown-state": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "coverage.updated-at": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "faq.still-have-a-question": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "flag.reason-abuse": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "flag.reason-false": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "flag.reason-other": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "flag.reason-privacy": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "incident-reports.incident-reports": {
   "kind": "body",
@@ -274,10 +1184,150 @@
   "en": 7,
   "max": 21
  },
+ "map-unit.save-your-polling-unit-you-ll-get": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
+ },
+ "map-unit.skip-for-now": {
+  "kind": "button",
+  "en": 12,
+  "max": 26
+ },
+ "my-groups.accept": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "my-groups.accept-failed": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "my-groups.declined-note": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
+ },
+ "my-groups.invited-body": {
+  "kind": "body",
+  "en": 197,
+  "max": 345
+ },
+ "my-groups.invited-lede": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "my-groups.kind-campaign": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "my-groups.kind-cso": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "my-groups.leave": {
+  "kind": "heading",
+  "en": 16,
+  "max": 36
+ },
+ "my-groups.leave-confirm": {
+  "kind": "body",
+  "en": 100,
+  "max": 175
+ },
+ "my-groups.leave-failed": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "my-groups.lede": {
+  "kind": "body",
+  "en": 178,
+  "max": 312
+ },
+ "my-groups.load-failed": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "my-groups.no-thanks": {
+  "kind": "heading",
+  "en": 9,
+  "max": 29
+ },
+ "my-groups.no-unit": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "my-groups.not-where": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "my-groups.note": {
+  "kind": "body",
+  "en": 206,
+  "max": 361
+ },
+ "my-groups.open-room": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "my-groups.refuse-confirm": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
+ },
+ "my-groups.refuse-failed": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "my-groups.send-failed": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "my-groups.unit-assigned": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "my-groups.unit-declined": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "my-groups.your-groups": {
+  "kind": "heading",
+  "en": 9,
+  "max": 29
+ },
+ "n.app._layout.nothing-you-have-already-sent-is": {
+  "kind": "body",
+  "en": 132,
+  "max": 231
+ },
+ "n.app._layout.this-screen-hit-a-problem": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
  "n.app._layout.try-again": {
   "kind": "button",
   "en": 9,
   "max": 23
+ },
+ "n.app.assistant.ask": {
+  "kind": "button",
+  "en": 3,
+  "max": 17
  },
  "n.app.assistant.ask-about-the-results": {
   "kind": "body",
@@ -309,10 +1359,25 @@
   "en": 20,
   "max": 60
  },
+ "n.app.assistant.retry": {
+  "kind": "button",
+  "en": 5,
+  "max": 19
+ },
  "n.app.assistant.the-assistant-is-switched-off": {
   "kind": "body",
   "en": 29,
   "max": 69
+ },
+ "n.app.assistant.the-assistant-isn-t-switched-on": {
+  "kind": "body",
+  "en": 120,
+  "max": 210
+ },
+ "n.app.assistant.try-asking": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
  },
  "n.app.assistant.unanswered": {
   "kind": "body",
@@ -329,6 +1394,16 @@
   "en": 35,
   "max": 75
  },
+ "n.app.case.1-is-the-photographed-sheet-an-official": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
+ "n.app.case.2-do-the-figures-written-on-the": {
+  "kind": "body",
+  "en": 71,
+  "max": 125
+ },
  "n.app.case.all-cases": {
   "kind": "button",
   "en": 9,
@@ -343,6 +1418,11 @@
   "kind": "body",
   "en": 22,
   "max": 62
+ },
+ "n.app.case.case-not-found": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
  },
  "n.app.case.cast-my-verdict": {
   "kind": "button",
@@ -359,6 +1439,26 @@
   "en": 36,
   "max": 76
  },
+ "n.app.case.e-g-the-inec-stamp-is-missing": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "n.app.case.only-verified-observers-can-judge-one": {
+  "kind": "body",
+  "en": 81,
+  "max": 142
+ },
+ "n.app.case.optional-note-what-did-you-see": {
+  "kind": "body",
+  "en": 57,
+  "max": 100
+ },
+ "n.app.case.re-verify-the-whole-chain": {
+  "kind": "button",
+  "en": 27,
+  "max": 41
+ },
  "n.app.case.recorded-computed-verdict": {
   "kind": "body",
   "en": 34,
@@ -374,20 +1474,100 @@
   "en": 20,
   "max": 34
  },
+ "n.app.case.result-sheet-tap-full-size": {
+  "kind": "button",
+  "en": 32,
+  "max": 46
+ },
+ "n.app.case.the-crowd-s-verdict": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.case.this-case-is-closed-the-record": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
  "n.app.case.what-jurors-noted": {
   "kind": "body",
   "en": 17,
   "max": 57
+ },
+ "n.app.case.your-answers-compute-the-verdict-by": {
+  "kind": "body",
+  "en": 122,
+  "max": 214
+ },
+ "n.app.certificate.making-pdf": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.certificate.pdf-failed": {
+  "kind": "body",
+  "en": 47,
+  "max": 87
+ },
+ "n.app.certificate.practice-cta": {
+  "kind": "button",
+  "en": 29,
+  "max": 43
+ },
+ "n.app.certificate.print": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.certificate.save-failed": {
+  "kind": "body",
+  "en": 65,
+  "max": 114
+ },
+ "n.app.certificate.saved": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.certificate.title": {
+  "kind": "heading",
+  "en": 20,
+  "max": 40
+ },
+ "n.app.choose-unit.last-step": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.coverage.empty": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
  },
  "n.app.docket.a-flag-never-decides-anything-it": {
   "kind": "body",
   "en": 106,
   "max": 186
  },
+ "n.app.docket.cases": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
  "n.app.docket.cleared-by-the-crowd": {
   "kind": "body",
   "en": 20,
   "max": 60
+ },
+ "n.app.docket.could-not-load-more-cases": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
+ "n.app.docket.flagged-results-judged-by-the-crowd": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
  },
  "n.app.docket.held-out-of-tallies": {
   "kind": "body",
@@ -409,6 +1589,21 @@
   "en": 15,
   "max": 55
  },
+ "n.app.docket.load-more-cases": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.app.docket.newest-first-open-one-to-see": {
+  "kind": "body",
+  "en": 56,
+  "max": 98
+ },
+ "n.app.docket.no-cases-are-open-for-judging": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
  "n.app.docket.open-cases": {
   "kind": "body",
   "en": 10,
@@ -418,6 +1613,11 @@
   "kind": "button",
   "en": 5,
   "max": 19
+ },
+ "n.app.docket.showing-v0-of-v1-cases": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
  },
  "n.app.docket.struck-by-the-crowd": {
   "kind": "body",
@@ -429,12 +1629,37 @@
   "en": 13,
   "max": 53
  },
+ "n.app.docket.who-judges-and-how-verified-observers-worldwide": {
+  "kind": "body",
+  "en": 275,
+  "max": 482
+ },
+ "n.app.docket.why-a-disputed-result-is-excluded-a": {
+  "kind": "body",
+  "en": 586,
+  "max": 1026
+ },
  "n.app.incidents.ballot-snatching": {
   "kind": "body",
   "en": 16,
   "max": 56
  },
  "n.app.incidents.bvas-failure": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.incidents.could-not-load-the-feed": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.incidents.election-day-incidents-reported-by-observers": {
+  "kind": "body",
+  "en": 78,
+  "max": 137
+ },
+ "n.app.incidents.intimidation": {
   "kind": "body",
   "en": 12,
   "max": 52
@@ -449,10 +1674,35 @@
   "en": 12,
   "max": 52
  },
- "n.app.incidents.open-evidence-full-size": {
+ "n.app.incidents.no-incidents-published-yet": {
   "kind": "body",
-  "en": 28,
-  "max": 68
+  "en": 26,
+  "max": 66
+ },
+ "n.app.incidents.obstruction": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.incidents.open-photo-full-size": {
+  "kind": "button",
+  "en": 29,
+  "max": 43
+ },
+ "n.app.incidents.other": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.app.incidents.photo": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "n.app.incidents.reports-appear-here-once-a-moderator": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
  },
  "n.app.incidents.the-incident-feed-did-not-load": {
   "kind": "body",
@@ -463,6 +1713,16 @@
   "kind": "button",
   "en": 5,
   "max": 19
+ },
+ "n.app.incidents.violence": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.incidents.violence-vote-buying-bvas-failures-obstruction-and": {
+  "kind": "body",
+  "en": 235,
+  "max": 412
  },
  "n.app.incidents.vote-buying": {
   "kind": "body",
@@ -478,6 +1738,16 @@
   "kind": "body",
   "en": 32,
   "max": 72
+ },
+ "n.app.integrity.announced-totals-checked-against-the-units": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
+ },
+ "n.app.integrity.automated-checks-on-every-result-anything": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
  },
  "n.app.integrity.based-on-unit-result-s-party": {
   "kind": "body",
@@ -498,6 +1768,11 @@
   "kind": "heading",
   "en": 24,
   "max": 44
+ },
+ "n.app.integrity.collation-reconciliation-ec8b-c-d": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
  },
  "n.app.integrity.collation-report-s-ward-lga-state": {
   "kind": "body",
@@ -594,10 +1869,40 @@
   "en": 70,
   "max": 123
  },
+ "n.app.integrity.detected-discrepancies": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
  "n.app.integrity.digit-distribution-screening": {
   "kind": "heading",
   "en": 28,
   "max": 48
+ },
+ "n.app.integrity.every-result-is-run-through-these": {
+  "kind": "button",
+  "en": 80,
+  "max": 100
+ },
+ "n.app.integrity.fabricated-figures-cluster-on-favourite-digits-while": {
+  "kind": "body",
+  "en": 389,
+  "max": 681
+ },
+ "n.app.integrity.first-digit-benford-s-law": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.app.integrity.first-digit-of-every-party-count": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
+ },
+ "n.app.integrity.for-each-polling-unit-the-crowd-s": {
+  "kind": "body",
+  "en": 277,
+  "max": 485
  },
  "n.app.integrity.high-severity-flags": {
   "kind": "body",
@@ -608,6 +1913,11 @@
   "kind": "heading",
   "en": 21,
   "max": 41
+ },
+ "n.app.integrity.last-digit-of-winning-party-counts": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
  },
  "n.app.integrity.low-flags": {
   "kind": "body",
@@ -629,6 +1939,11 @@
   "en": 12,
   "max": 52
  },
+ "n.app.integrity.needs-100-counts-for-a-verdict": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
  "n.app.integrity.no-collation-reports-yet-they-arrive": {
   "kind": "body",
   "en": 87,
@@ -639,30 +1954,180 @@
   "en": 14,
   "max": 54
  },
+ "n.app.integrity.no-discrepancies-match-nothing-flagged-yet": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "n.app.integrity.over-voting-impossible-turnout-forged-form-serials": {
+  "kind": "body",
+  "en": 173,
+  "max": 303
+ },
  "n.app.integrity.reports-screened": {
   "kind": "body",
   "en": 16,
   "max": 56
+ },
+ "n.app.integrity.screening-signal-never-proof-on-its": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
+ },
+ "n.app.integrity.severity-all": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "n.app.integrity.severity-high": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.integrity.severity-low": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "n.app.integrity.severity-medium": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.integrity.the-crowd-s-count-checked-against": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
  },
  "n.app.integrity.units-flagged": {
   "kind": "body",
   "en": 13,
   "max": 53
  },
+ "n.app.integrity.view-inec-s-sheet": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.app.integrity.waiting-for-inec-to-open-the": {
+  "kind": "body",
+  "en": 98,
+  "max": 172
+ },
+ "n.app.integrity.ward-ec8b-lga-ec8c-and-state-ec8d": {
+  "kind": "body",
+  "en": 332,
+  "max": 581
+ },
  "n.app.integrity.what-gets-checked": {
   "kind": "heading",
   "en": 17,
   "max": 37
+ },
+ "n.app.integrity.what-we-check": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.join.back-home": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.join.checking": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.join.continue": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.join.done-body": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.app.join.done-title": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.join.expired-body": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
+ },
+ "n.app.join.expired-title": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.join.invited": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "n.app.join.join": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.join.joining": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.join.not-now": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.app.join.point-anywhere": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
+ },
+ "n.app.join.point-forward": {
+  "kind": "body",
+  "en": 111,
+  "max": 195
+ },
+ "n.app.join.point-leave": {
+  "kind": "body",
+  "en": 71,
+  "max": 125
+ },
+ "n.app.join.point-public": {
+  "kind": "body",
+  "en": 102,
+  "max": 179
+ },
+ "n.app.join.sign-in": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
  },
  "n.app.ledger.broken-at": {
   "kind": "body",
   "en": 15,
   "max": 55
  },
+ "n.app.ledger.chain": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
  "n.app.ledger.chain-broken-at-entry-a-report": {
   "kind": "body",
   "en": 61,
   "max": 107
+ },
+ "n.app.ledger.check-one-race-s-paper-trail": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
  },
  "n.app.ledger.confirm-in-rekor": {
   "kind": "button",
@@ -678,6 +2143,16 @@
   "kind": "body",
   "en": 26,
   "max": 66
+ },
+ "n.app.ledger.each-anchor-folds-every-race-into-one": {
+  "kind": "body",
+  "en": 190,
+  "max": 333
+ },
+ "n.app.ledger.each-entry-stores-the-hash-of-the": {
+  "kind": "body",
+  "en": 256,
+  "max": 448
  },
  "n.app.ledger.entries-chained": {
   "kind": "body",
@@ -699,20 +2174,45 @@
   "en": 69,
   "max": 121
  },
+ "n.app.ledger.ledger-entries": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
  "n.app.ledger.min-ago": {
   "kind": "body",
   "en": 12,
   "max": 52
+ },
+ "n.app.ledger.newest-first-each-photo-s-filename": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
+ "n.app.ledger.no-race-is-anchored-yet-race": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
  },
  "n.app.ledger.not-published-to-rekor-yet": {
   "kind": "body",
   "en": 26,
   "max": 66
  },
+ "n.app.ledger.nothing-reported-into-the-chain-yet": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
  "n.app.ledger.on-this-phone": {
   "kind": "body",
   "en": 13,
   "max": 53
+ },
+ "n.app.ledger.photo-kept-on-observer-phone": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
  },
  "n.app.ledger.proof-does-not-fold-to-the": {
   "kind": "body",
@@ -734,10 +2234,20 @@
   "en": 12,
   "max": 52
  },
+ "n.app.ledger.server-head": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
  "n.app.ledger.sheet-photo": {
   "kind": "button",
   "en": 11,
   "max": 25
+ },
+ "n.app.ledger.single-race-proof": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.app.ledger.the-chain-is-empty-no-report": {
   "kind": "body",
@@ -745,14 +2255,19 @@
   "max": 139
  },
  "n.app.ledger.venue-photo": {
-  "kind": "button",
+  "kind": "body",
   "en": 11,
-  "max": 25
+  "max": 51
  },
  "n.app.ledger.verified-all-entries-on-this-phone": {
   "kind": "body",
   "en": 59,
   "max": 104
+ },
+ "n.app.ledger.verified-means-your-phone-recomputed-every": {
+  "kind": "body",
+  "en": 88,
+  "max": 154
  },
  "n.app.ledger.verified-report-s-fold-to-the": {
   "kind": "body",
@@ -794,6 +2309,11 @@
   "en": 44,
   "max": 84
  },
+ "n.app.map-unit.could-not-remove-your-polling-unit": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
  "n.app.map-unit.could-not-save-your-polling-unit": {
   "kind": "body",
   "en": 32,
@@ -819,6 +2339,11 @@
   "en": 12,
   "max": 52
  },
+ "n.app.map-unit.fix-updated": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
  "n.app.map-unit.getting-an-accurate-fix-stand-still": {
   "kind": "body",
   "en": 38,
@@ -833,6 +2358,11 @@
   "kind": "body",
   "en": 21,
   "max": 61
+ },
+ "n.app.map-unit.i-am-standing-here-record-fix": {
+  "kind": "button",
+  "en": 31,
+  "max": 45
  },
  "n.app.map-unit.is-not-in-the-register-http": {
   "kind": "body",
@@ -863,6 +2393,16 @@
   "kind": "button",
   "en": 18,
   "max": 32
+ },
+ "n.app.map-unit.most-polling-units-have-no-confirmed-location": {
+  "kind": "body",
+  "en": 277,
+  "max": 485
+ },
+ "n.app.map-unit.nationwide-mapping-coverage": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
  },
  "n.app.map-unit.no-unit-within-m-search-by": {
   "kind": "body",
@@ -914,6 +2454,11 @@
   "en": 17,
   "max": 57
  },
+ "n.app.map-unit.record-a-fix-here-to-confirm": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
+ },
  "n.app.map-unit.save-as-my-polling-unit": {
   "kind": "button",
   "en": 23,
@@ -944,6 +2489,21 @@
   "en": 15,
   "max": 27
  },
+ "n.app.map-unit.selected-label": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.map-unit.sign-in-to-map-a-polling": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.map-unit.stand-at-the-polling-unit-and": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
  "n.app.map-unit.state-lga-ward": {
   "kind": "button",
   "en": 18,
@@ -954,15 +2514,30 @@
   "en": 70,
   "max": 123
  },
+ "n.app.map-unit.too-far-map-it-at-the-unit": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
  "n.app.map-unit.unit-confirmed": {
   "kind": "body",
   "en": 14,
   "max": 54
  },
+ "n.app.map-unit.unit-not-in-register": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
  "n.app.map-unit.why-mapping-units-matters": {
   "kind": "heading",
   "en": 25,
   "max": 45
+ },
+ "n.app.map-unit.your-polling-unit": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.app.map.and-tied": {
   "kind": "body",
@@ -978,6 +2553,16 @@
   "kind": "body",
   "en": 23,
   "max": 63
+ },
+ "n.app.map.crowd-reported-totals-excluding-disputed-results": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
+ },
+ "n.app.map.every-state": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
  },
  "n.app.map.excluded-pending-arbitration": {
   "kind": "body",
@@ -1024,6 +2609,16 @@
   "en": 18,
   "max": 58
  },
+ "n.app.map.states-units-reporting": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
+ },
+ "n.app.map.this-race-can-t-be-drawn": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
+ },
  "n.app.map.unit-s-reporting-verified": {
   "kind": "body",
   "en": 45,
@@ -1039,6 +2634,66 @@
   "en": 83,
   "max": 146
  },
+ "n.app.my-groups.bad-link": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "n.app.my-groups.have-link": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.my-groups.have-link-sub": {
+  "kind": "body",
+  "en": 53,
+  "max": 93
+ },
+ "n.app.my-groups.none": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.app.my-groups.none-sub": {
+  "kind": "body",
+  "en": 72,
+  "max": 126
+ },
+ "n.app.my-groups.open-link": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.my-groups.room-body": {
+  "kind": "body",
+  "en": 201,
+  "max": 352
+ },
+ "n.app.my-groups.share-link": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.my-groups.try-again-later": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.app.my-groups.you-coordinate": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
+ },
+ "n.app.my-groups.you-manage": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.my-groups.you-own": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
  "n.app.open.opening": {
   "kind": "body",
   "en": 8,
@@ -1048,6 +2703,11 @@
   "kind": "body",
   "en": 31,
   "max": 71
+ },
+ "n.app.page.that-page-doesn-t-exist": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
  },
  "n.app.political.as-of": {
   "kind": "body",
@@ -1119,6 +2779,106 @@
   "en": 19,
   "max": 59
  },
+ "n.app.practice-day.all-days": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.practice-day.combined-heading": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.practice-day.combined-note": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
+ },
+ "n.app.practice-day.lede": {
+  "kind": "body",
+  "en": 167,
+  "max": 293
+ },
+ "n.app.practice-day.load-error": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
+ },
+ "n.app.practice-day.method": {
+  "kind": "body",
+  "en": 103,
+  "max": 181
+ },
+ "n.app.practice-day.no-tally": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.practice-day.none-scheduled": {
+  "kind": "button",
+  "en": 39,
+  "max": 53
+ },
+ "n.app.practice-day.observer-practised": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.practice-day.observers-practised": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.practice-day.phase-after": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.practice-day.phase-before": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.practice-day.phase-live": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.practice-day.status-after": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.practice-day.status-before": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.practice-day.status-live": {
+  "kind": "body",
+  "en": 56,
+  "max": 98
+ },
+ "n.app.practice-day.title": {
+  "kind": "heading",
+  "en": 21,
+  "max": 41
+ },
+ "n.app.practice-day.try-again": {
+  "kind": "button",
+  "en": 9,
+  "max": 23
+ },
+ "n.app.practice.a-fresh-practice-run-reopens-after": {
+  "kind": "body",
+  "en": 93,
+  "max": 163
+ },
+ "n.app.practice.a-real-report-is-only-accepted": {
+  "kind": "body",
+  "en": 182,
+  "max": 319
+ },
  "n.app.practice.back-to-the-race": {
   "kind": "button",
   "en": 18,
@@ -1128,6 +2888,11 @@
   "kind": "button",
   "en": 15,
   "max": 29
+ },
+ "n.app.practice.become-an-observer": {
+  "kind": "button",
+  "en": 18,
+  "max": 32
  },
  "n.app.practice.browse-the-register-below-or-just": {
   "kind": "body",
@@ -1169,20 +2934,40 @@
   "en": 85,
   "max": 149
  },
- "n.app.practice.is-in-about": {
+ "n.app.practice.enter-the-announced-counts-practice": {
+  "kind": "heading",
+  "en": 45,
+  "max": 65
+ },
+ "n.app.practice.envelope-gate": {
   "kind": "body",
-  "en": 29,
-  "max": 69
+  "en": 172,
+  "max": 301
+ },
+ "n.app.practice.green-races-are-live-now-the": {
+  "kind": "body",
+  "en": 128,
+  "max": 224
+ },
+ "n.app.practice.is-every-figure-readable-on-election-day": {
+  "kind": "body",
+  "en": 78,
+  "max": 137
+ },
+ "n.app.practice.is-the-polling-unit-itself-visible-on": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
  },
  "n.app.practice.is-this-your-polling-unit": {
   "kind": "body",
   "en": 26,
   "max": 66
  },
- "n.app.practice.km-from-where-you-are-now": {
-  "kind": "body",
-  "en": 35,
-  "max": 75
+ "n.app.practice.kept-per-device-practice-never-asks": {
+  "kind": "button",
+  "en": 111,
+  "max": 139
  },
  "n.app.practice.location-fixed-m-looking-up-nearby": {
   "kind": "body",
@@ -1209,6 +2994,16 @@
   "en": 101,
   "max": 177
  },
+ "n.app.practice.no-practice-runs-yet-on-this": {
+  "kind": "body",
+  "en": 35,
+  "max": 75
+ },
+ "n.app.practice.no-unit-chosen-you-ll-practise": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
  "n.app.practice.no-unit-found-within-m-browse": {
   "kind": "body",
   "en": 73,
@@ -1224,6 +3019,21 @@
   "en": 24,
   "max": 64
  },
+ "n.app.practice.on-election-day-this-step-takes": {
+  "kind": "body",
+  "en": 188,
+  "max": 329
+ },
+ "n.app.practice.practice-complete": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.practice.practice-is-closed": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
  "n.app.practice.practice-polling-unit": {
   "kind": "body",
   "en": 21,
@@ -1234,10 +3044,45 @@
   "en": 42,
   "max": 82
  },
+ "n.app.practice.practise-from-the-unit-you-would": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "n.app.practice.preview-chip": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.app.practice.preview-heading": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.practice.preview-no-photo": {
+  "kind": "body",
+  "en": 87,
+  "max": 153
+ },
+ "n.app.practice.preview-reported-explain": {
+  "kind": "body",
+  "en": 110,
+  "max": 193
+ },
+ "n.app.practice.preview-sheet-photo": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
  "n.app.practice.read-off-the-sheet-but-no": {
   "kind": "body",
   "en": 81,
   "max": 142
+ },
+ "n.app.practice.report-a-real-result": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
  },
  "n.app.practice.result-sheet": {
   "kind": "body",
@@ -1279,10 +3124,25 @@
   "en": 14,
   "max": 54
  },
+ "n.app.practice.sign-submit-practice": {
+  "kind": "button",
+  "en": 24,
+  "max": 38
+ },
+ "n.app.practice.step-back-and-capture-the-polling-unit": {
+  "kind": "body",
+  "en": 72,
+  "max": 126
+ },
  "n.app.practice.tap-the-unit-you-are-standing": {
   "kind": "body",
   "en": 70,
   "max": 123
+ },
+ "n.app.practice.that-is-exactly-how-you-report": {
+  "kind": "body",
+  "en": 131,
+  "max": 230
  },
  "n.app.practice.that-unit-is-too-far-away": {
   "kind": "heading",
@@ -1298,6 +3158,16 @@
   "kind": "body",
   "en": 5,
   "max": 45
+ },
+ "n.app.practice.venue-photo-aim-at-the-polling-unit": {
+  "kind": "body",
+  "en": 121,
+  "max": 212
+ },
+ "n.app.practice.what-you-would-keep": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
  },
  "n.app.practice.which-polling-unit": {
   "kind": "heading",
@@ -1319,6 +3189,46 @@
   "en": 18,
   "max": 32
  },
+ "n.app.profile.a-password-lets-you-sign-in": {
+  "kind": "button",
+  "en": 69,
+  "max": 87
+ },
+ "n.app.profile.asked-once-just-before-a-real": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
+ },
+ "n.app.profile.change": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.profile.code-expired-send-new": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "n.app.profile.code-sent-check-whatsapp-sms": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.app.profile.collation-reports": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.app.profile.copied": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.app.profile.could-not-delete": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
  "n.app.profile.could-not-load-your-profile-http": {
   "kind": "body",
   "en": 40,
@@ -1334,10 +3244,25 @@
   "en": 20,
   "max": 40
  },
+ "n.app.profile.deletes-your-observer-identity-key-and": {
+  "kind": "body",
+  "en": 106,
+  "max": 186
+ },
  "n.app.profile.dev-mode-your-code-is": {
   "kind": "body",
   "en": 28,
   "max": 68
+ },
+ "n.app.profile.enter-the-code": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.profile.enter-the-number-registered-to-this": {
+  "kind": "body",
+  "en": 169,
+  "max": 296
  },
  "n.app.profile.face-id-or-fingerprint-to-sign": {
   "kind": "body",
@@ -1349,15 +3274,50 @@
   "en": 19,
   "max": 59
  },
+ "n.app.profile.find-hawkeye": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
  "n.app.profile.fix-es-so-far": {
   "kind": "body",
   "en": 19,
   "max": 59
  },
+ "n.app.profile.forgot-your-current-password": {
+  "kind": "button",
+  "en": 29,
+  "max": 43
+ },
+ "n.app.profile.my-activity": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.profile.new-password-min-8-characters": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.app.profile.not-set": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
  "n.app.profile.nothing-yet": {
   "kind": "body",
   "en": 12,
   "max": 52
+ },
+ "n.app.profile.number-not-registered-to-id": {
+  "kind": "body",
+  "en": 57,
+  "max": 100
+ },
+ "n.app.profile.observer-number": {
+  "kind": "heading",
+  "en": 10,
+  "max": 30
  },
  "n.app.profile.password-saved": {
   "kind": "body",
@@ -1369,10 +3329,20 @@
   "en": 13,
   "max": 53
  },
+ "n.app.profile.races-you-follow": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
  "n.app.profile.repeat-new-password": {
   "kind": "body",
   "en": 19,
   "max": 59
+ },
+ "n.app.profile.result-reports": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
  },
  "n.app.profile.save-new-password": {
   "kind": "button",
@@ -1384,10 +3354,25 @@
   "en": 13,
   "max": 27
  },
+ "n.app.profile.save-report-photos-and-videos-to": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
  "n.app.profile.send-code": {
   "kind": "button",
   "en": 9,
   "max": 23
+ },
+ "n.app.profile.send-it-on": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.profile.sign-in-to-see-your-profile": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
  },
  "n.app.profile.sign-out": {
   "kind": "button",
@@ -1399,6 +3384,16 @@
   "en": 9,
   "max": 29
  },
+ "n.app.profile.sign-out-body": {
+  "kind": "body",
+  "en": 80,
+  "max": 140
+ },
+ "n.app.profile.since": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
  "n.app.profile.the-two-new-passwords-do-not": {
   "kind": "body",
   "en": 35,
@@ -1408,6 +3403,21 @@
   "kind": "body",
   "en": 22,
   "max": 62
+ },
+ "n.app.profile.turn-off-if-your-phone-may": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
+ },
+ "n.app.profile.units-mapped": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.app.profile.verified-now-choose-your-new-password": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
  },
  "n.app.profile.verify": {
   "kind": "button",
@@ -1424,15 +3434,40 @@
   "en": 98,
   "max": 172
  },
+ "n.app.profile.wrong-code-check-and-retry": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
  "n.app.profile.you-can-now-sign-in-with": {
   "kind": "body",
   "en": 70,
   "max": 123
  },
+ "n.app.profile.you-get-an-alert-on-every": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
  "n.app.profile.your-phone-number": {
   "kind": "body",
   "en": 17,
   "max": 57
+ },
+ "n.app.profile.your-public-identity-on-the-ledger": {
+  "kind": "body",
+  "en": 71,
+  "max": 125
+ },
+ "n.app.race.hawkeye-has-no-constituencies-recorded-for": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
+ "n.app.race.hawkeye-has-no-page-for-this": {
+  "kind": "body",
+  "en": 109,
+  "max": 191
  },
  "n.app.race.lga-elects-state-members": {
   "kind": "body",
@@ -1449,6 +3484,21 @@
   "en": 25,
   "max": 65
  },
+ "n.app.races.109-seats-across-36-states": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "n.app.races.360-federal-constituencies": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.app.races.all": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
  "n.app.races.being-reported-now": {
   "kind": "body",
   "en": 18,
@@ -1459,20 +3509,65 @@
   "en": 59,
   "max": 104
  },
+ "n.app.races.completed": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.races.each-opens-that-state-s-constituencies": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
  "n.app.races.how-races-are-grouped": {
   "kind": "heading",
   "en": 21,
   "max": 41
+ },
+ "n.app.races.live": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.races.no-election-has-been-reported-through": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
  },
  "n.app.races.no-election-is-being-reported-today": {
   "kind": "body",
   "en": 68,
   "max": 119
  },
+ "n.app.races.nothing-scheduled": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
+ },
+ "n.app.races.off-cycle-these-states-vote-for": {
+  "kind": "body",
+  "en": 91,
+  "max": 160
+ },
  "n.app.races.one-governorship-per-state-each-state": {
   "kind": "body",
   "en": 64,
   "max": 112
+ },
+ "n.app.races.ongoing-is-an-election-being-reported-today": {
+  "kind": "body",
+  "en": 282,
+  "max": 494
+ },
+ "n.app.races.pick-a-race-to-follow-report": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.races.result": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
  },
  "n.app.races.soon": {
   "kind": "body",
@@ -1499,6 +3594,46 @@
   "en": 132,
   "max": 231
  },
+ "n.app.races.upcoming": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.races.view": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.ready.blocked": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.ready.location-off": {
+  "kind": "body",
+  "en": 37,
+  "max": 77
+ },
+ "n.app.ready.photos": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.ready.turn-on": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.app.report.collation.a-collation-centre-announces-every-race": {
+  "kind": "body",
+  "en": 138,
+  "max": 242
+ },
+ "n.app.report.collation.already-signed-it-sends-itself": {
+  "kind": "body",
+  "en": 53,
+  "max": 93
+ },
  "n.app.report.collation.back-to-totals": {
   "kind": "button",
   "en": 16,
@@ -1519,10 +3654,20 @@
   "en": 15,
   "max": 35
  },
+ "n.app.report.collation.collation-filed": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
  "n.app.report.collation.continue-choose-the-race": {
   "kind": "button",
   "en": 26,
   "max": 40
+ },
+ "n.app.report.collation.copy-the-figures-exactly-as-announced": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
  },
  "n.app.report.collation.form": {
   "kind": "body",
@@ -1538,6 +3683,26 @@
   "kind": "body",
   "en": 135,
   "max": 237
+ },
+ "n.app.report.collation.is-every-figure-readable-blurry-photos-cannot": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "n.app.report.collation.is-the-collation-centre-itself-visible-this": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
+ "n.app.report.collation.it-is-on-the-public-record": {
+  "kind": "body",
+  "en": 95,
+  "max": 167
+ },
+ "n.app.report.collation.ledger-entry": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
  },
  "n.app.report.collation.lga-collation": {
   "kind": "body",
@@ -1569,20 +3734,60 @@
   "en": 13,
   "max": 27
  },
+ "n.app.report.collation.saved-on-this-phone": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.report.collation.search-party-apc-pdp-lp": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
  "n.app.report.collation.select-the-collation-level": {
   "kind": "heading",
   "en": 26,
   "max": 46
+ },
+ "n.app.report.collation.sign-in-to-report-a-collation": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.report.collation.sign-submit": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
  },
  "n.app.report.collation.state-collation": {
   "kind": "body",
   "en": 22,
   "max": 62
  },
+ "n.app.report.collation.step-back-and-capture-the-collation-centre": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
+ "n.app.report.collation.totals-you-reported": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.app.report.collation.venue-photo-aim-at-the-collation-centre": {
+  "kind": "body",
+  "en": 125,
+  "max": 219
+ },
  "n.app.report.collation.ward-collation": {
   "kind": "body",
   "en": 27,
   "max": 67
+ },
+ "n.app.report.collation.which-collation-are-you-reporting": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
  },
  "n.app.report.incident.attach-my-current-location": {
   "kind": "button",
@@ -1614,10 +3819,20 @@
   "en": 33,
   "max": 73
  },
+ "n.app.report.incident.choose-a-unit-or-tick-an-option": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
  "n.app.report.incident.chosen-unit-tap-to-choose-a": {
   "kind": "body",
   "en": 48,
   "max": 88
+ },
+ "n.app.report.incident.continue-where-did-this-happen": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
  },
  "n.app.report.incident.could-not-prepare-the-report-nothing": {
   "kind": "body",
@@ -1629,10 +3844,35 @@
   "en": 11,
   "max": 51
  },
+ "n.app.report.incident.filed-with-no-unit-and-no": {
+  "kind": "body",
+  "en": 145,
+  "max": 254
+ },
+ "n.app.report.incident.filed-without-a-polling-unit-so": {
+  "kind": "body",
+  "en": 110,
+  "max": 193
+ },
+ "n.app.report.incident.helps-reviewers-place-the-incident-coordinates-are": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
+ "n.app.report.incident.i-am-at-my-own-polling": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
  "n.app.report.incident.incident": {
   "kind": "body",
   "en": 15,
   "max": 55
+ },
+ "n.app.report.incident.incident-reported": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.app.report.incident.it-is-mb-and-the-limit": {
   "kind": "body",
@@ -1664,6 +3904,26 @@
   "en": 68,
   "max": 119
  },
+ "n.app.report.incident.pick-what-happened-and-add-detail": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.report.incident.reports-are-reviewed-before-publication-and": {
+  "kind": "body",
+  "en": 132,
+  "max": 231
+ },
+ "n.app.report.incident.saved-on-this-phone-it-sends": {
+  "kind": "body",
+  "en": 62,
+  "max": 109
+ },
+ "n.app.report.incident.saved-to-send-later": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
  "n.app.report.incident.search-near-me-again": {
   "kind": "button",
   "en": 20,
@@ -1679,12 +3939,52 @@
   "en": 20,
   "max": 40
  },
+ "n.app.report.incident.sign-in-to-report-an-incident": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.app.report.incident.submit-incident-report": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.app.report.incident.tap-the-unit-plain": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
  "n.app.report.incident.tap-the-unit-this-happened-at": {
   "kind": "body",
   "en": 67,
   "max": 118
  },
+ "n.app.report.incident.that-photo-is-too-large": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.report.incident.that-video-is-too-large": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
  "n.app.report.incident.the-unit-you-are-at-not-the-one": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.report.incident.this-code-is-not-in-the": {
+  "kind": "body",
+  "en": 180,
+  "max": 315
+ },
+ "n.app.report.incident.this-is-not-tied-to-a": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
+ "n.app.report.incident.units-found-within-800m-unmapped-units-may": {
   "kind": "body",
   "en": 55,
   "max": 97
@@ -1693,6 +3993,11 @@
   "kind": "button",
   "en": 6,
   "max": 20
+ },
+ "n.app.report.incident.upload-failed-and-nothing-was-saved": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
  },
  "n.app.report.incident.uploading-of": {
   "kind": "body",
@@ -1729,6 +4034,16 @@
   "en": 147,
   "max": 258
  },
+ "n.app.report.incident.your-report-is-under-review-if": {
+  "kind": "body",
+  "en": 124,
+  "max": 217
+ },
+ "n.app.report.incident.your-safety-comes-first-never-confront": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
  "n.app.report.result.agree": {
   "kind": "body",
   "en": 18,
@@ -1739,12 +4054,57 @@
   "en": 53,
   "max": 93
  },
+ "n.app.report.result.browse-all-races-instead": {
+  "kind": "button",
+  "en": 26,
+  "max": 40
+ },
+ "n.app.report.result.check-in": {
+  "kind": "button",
+  "en": 14,
+  "max": 28
+ },
+ "n.app.report.result.check-in-different-unit": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
+ "n.app.report.result.check-in-failed": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
+ "n.app.report.result.check-in-locating": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "n.app.report.result.check-in-sub": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
  "n.app.report.result.check-the-result-sheet": {
   "kind": "body",
   "en": 22,
   "max": 62
  },
  "n.app.report.result.check-your-connection-and-retry": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.app.report.result.checked-in-ok": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
+ },
+ "n.app.report.result.checked-in-weak": {
+  "kind": "body",
+  "en": 92,
+  "max": 161
+ },
+ "n.app.report.result.choose-an-open-race-to-continue": {
   "kind": "body",
   "en": 32,
   "max": 72
@@ -1758,6 +4118,11 @@
   "kind": "button",
   "en": 16,
   "max": 30
+ },
+ "n.app.report.result.copy-the-figures-exactly-as-written": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
  },
  "n.app.report.result.could-not-be-loaded-from-the": {
   "kind": "body",
@@ -1778,6 +4143,11 @@
   "kind": "body",
   "en": 52,
   "max": 92
+ },
+ "n.app.report.result.couldn-t-reach-the-server-tap": {
+  "kind": "button",
+  "en": 40,
+  "max": 54
  },
  "n.app.report.result.election-list-not-loaded": {
   "kind": "body",
@@ -1809,20 +4179,30 @@
   "en": 130,
   "max": 228
  },
- "n.app.report.result.is-in-about": {
+ "n.app.report.result.hawkeye-knows-this-unit-s-approximate": {
   "kind": "body",
-  "en": 29,
-  "max": 69
+  "en": 182,
+  "max": 319
+ },
+ "n.app.report.result.is-every-figure-readable-blurry-photos-cannot": {
+  "kind": "body",
+  "en": 61,
+  "max": 107
+ },
+ "n.app.report.result.is-the-polling-unit-itself-visible-the": {
+  "kind": "body",
+  "en": 101,
+  "max": 177
  },
  "n.app.report.result.it-is-now-queued-for-review": {
   "kind": "body",
   "en": 62,
   "max": 109
  },
- "n.app.report.result.km-from-where-you-are-now": {
+ "n.app.report.result.ledger-entry": {
   "kind": "body",
-  "en": 35,
-  "max": 75
+  "en": 12,
+  "max": 52
  },
  "n.app.report.result.location": {
   "kind": "body",
@@ -1839,10 +4219,20 @@
   "en": 21,
   "max": 61
  },
+ "n.app.report.result.map-this-unit-one-gps-fix": {
+  "kind": "button",
+  "en": 29,
+  "max": 43
+ },
  "n.app.report.result.no-active-election-in": {
   "kind": "body",
   "en": 26,
   "max": 66
+ },
+ "n.app.report.result.no-election-is-running-at-this": {
+  "kind": "body",
+  "en": 40,
+  "max": 80
  },
  "n.app.report.result.no-unit-found-within-m-browse": {
   "kind": "body",
@@ -1874,6 +4264,11 @@
   "en": 31,
   "max": 51
  },
+ "n.app.report.result.photos-kept-as-evidence": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
+ },
  "n.app.report.result.pick-your-unit-below-or-search": {
   "kind": "button",
   "en": 39,
@@ -1894,6 +4289,11 @@
   "en": 12,
   "max": 52
  },
+ "n.app.report.result.report-from-the-unit-you-are": {
+  "kind": "button",
+  "en": 41,
+  "max": 55
+ },
  "n.app.report.result.reports-agreeing": {
   "kind": "body",
   "en": 16,
@@ -1903,6 +4303,11 @@
   "kind": "body",
   "en": 19,
   "max": 59
+ },
+ "n.app.report.result.search-party-apc-pdp-lp": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
  },
  "n.app.report.result.see-the-public-log": {
   "kind": "button",
@@ -1934,6 +4339,16 @@
   "en": 14,
   "max": 54
  },
+ "n.app.report.result.sign-in-to-report-a-result": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.report.result.sign-submit": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
+ },
  "n.app.report.result.signing-and-submitting": {
   "kind": "body",
   "en": 23,
@@ -1943,6 +4358,11 @@
   "kind": "body",
   "en": 47,
   "max": 87
+ },
+ "n.app.report.result.step-back-and-capture-the-polling-unit": {
+  "kind": "body",
+  "en": 72,
+  "max": 126
  },
  "n.app.report.result.tap-an-open-race-to-report": {
   "kind": "body",
@@ -1959,10 +4379,20 @@
   "en": 33,
   "max": 73
  },
+ "n.app.report.result.that-took-too-long-check-your-signal": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
  "n.app.report.result.units-found-within-800m-unmapped-units": {
   "kind": "body",
   "en": 55,
   "max": 97
+ },
+ "n.app.report.result.venue-photo-aim-at-the-polling-unit": {
+  "kind": "body",
+  "en": 121,
+  "max": 212
  },
  "n.app.report.result.venue-photo-matches": {
   "kind": "body",
@@ -1984,6 +4414,11 @@
   "en": 26,
   "max": 40
  },
+ "n.app.reports-log.confidence-is-the-share-of-independent": {
+  "kind": "body",
+  "en": 76,
+  "max": 133
+ },
  "n.app.reports-log.confidence-matching-reports": {
   "kind": "body",
   "en": 48,
@@ -1994,25 +4429,50 @@
   "en": 51,
   "max": 91
  },
+ "n.app.reports-log.every-report-is-digitally-signed-on-the": {
+  "kind": "body",
+  "en": 254,
+  "max": 445
+ },
+ "n.app.reports-log.gps-reports-contradict-this-unit-s-expected": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
+ },
  "n.app.reports-log.how-these-reports-are-held": {
   "kind": "heading",
   "en": 26,
   "max": 46
  },
- "n.app.reports-log.location-evidence-100": {
+ "n.app.reports-log.location-evidence": {
   "kind": "body",
-  "en": 29,
-  "max": 69
+  "en": 26,
+  "max": 66
  },
  "n.app.reports-log.location-unverified-gps-agreement": {
   "kind": "body",
   "en": 43,
   "max": 83
  },
- "n.app.reports-log.venue-photo-pair-match": {
+ "n.app.reports-log.location-verified": {
   "kind": "body",
-  "en": 37,
-  "max": 77
+  "en": 20,
+  "max": 60
+ },
+ "n.app.reports-log.no-reports-yet-this-fills-up": {
+  "kind": "body",
+  "en": 70,
+  "max": 123
+ },
+ "n.app.reports-log.venue-photo-pair-matches-one": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "n.app.reports-log.venue-photo-pairs-match": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
  },
  "n.app.sign-in.choose-a-new-password": {
   "kind": "body",
@@ -2060,9 +4520,9 @@
   "max": 81
  },
  "n.app.sign-in.create-your-account": {
-  "kind": "body",
+  "kind": "heading",
   "en": 19,
-  "max": 59
+  "max": 39
  },
  "n.app.sign-in.create-your-password": {
   "kind": "body",
@@ -2099,6 +4559,11 @@
   "en": 118,
   "max": 207
  },
+ "n.app.sign-in.joined-before-hawkeye-had-passwords-leave": {
+  "kind": "body",
+  "en": 119,
+  "max": 209
+ },
  "n.app.sign-in.keep-my-current-password": {
   "kind": "button",
   "en": 24,
@@ -2109,6 +4574,11 @@
   "en": 26,
   "max": 66
  },
+ "n.app.sign-in.new-password-min-8-characters": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
  "n.app.sign-in.no-password-on-this-account": {
   "kind": "body",
   "en": 27,
@@ -2118,6 +4588,11 @@
   "kind": "button",
   "en": 18,
   "max": 32
+ },
+ "n.app.sign-in.not-your-number-sign-out-and": {
+  "kind": "body",
+  "en": 41,
+  "max": 81
  },
  "n.app.sign-in.open-telegram": {
   "kind": "button",
@@ -2219,6 +4694,56 @@
   "en": 12,
   "max": 32
  },
+ "n.app.sign-in.your-phone-number-and-password-your": {
+  "kind": "body",
+  "en": 82,
+  "max": 144
+ },
+ "n.app.support.copied": {
+  "kind": "button",
+  "en": 6,
+  "max": 20
+ },
+ "n.app.support.copy": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "n.app.support.crypto-wallets": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.support.hawkeye-is-built-and-paid-for": {
+  "kind": "body",
+  "en": 225,
+  "max": 394
+ },
+ "n.app.support.tap-copy-for-wallet-address": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "n.app.tabs.alerts.all-read": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.tabs.alerts.could-not-load-your-alerts": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
+ "n.app.tabs.alerts.could-not-mark-that-read": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.tabs.alerts.could-not-mark-them-read": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
  "n.app.tabs.alerts.mark-all-read": {
   "kind": "body",
   "en": 20,
@@ -2229,10 +4754,20 @@
   "en": 11,
   "max": 51
  },
+ "n.app.tabs.alerts.race-updates-docket-cases-and-replies": {
+  "kind": "body",
+  "en": 67,
+  "max": 118
+ },
  "n.app.tabs.alerts.sign-in-to-get-alerts": {
   "kind": "body",
   "en": 21,
   "max": 61
+ },
+ "n.app.tabs.alerts.you-are-signed-in-updates-on": {
+  "kind": "body",
+  "en": 78,
+  "max": 137
  },
  "n.app.tabs.alerts.your-alerts-did-not-load": {
   "kind": "body",
@@ -2244,15 +4779,110 @@
   "en": 16,
   "max": 30
  },
+ "n.app.tabs.index.case-opened": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
  "n.app.tabs.index.case-resolved": {
   "kind": "body",
   "en": 20,
   "max": 60
  },
+ "n.app.tabs.index.chat-card-sub": {
+  "kind": "button",
+  "en": 80,
+  "max": 100
+ },
+ "n.app.tabs.index.chat-card-title": {
+  "kind": "button",
+  "en": 23,
+  "max": 37
+ },
+ "n.app.tabs.index.could-not-reach": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.tabs.index.filter-cases": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.app.tabs.index.filter-everything": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.tabs.index.filter-flags": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.app.tabs.index.filter-incidents": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.app.tabs.index.filter-reports": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.app.tabs.index.live-activity": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.tabs.index.nothing-has-come-in-yet": {
+  "kind": "body",
+  "en": 79,
+  "max": 139
+ },
+ "n.app.tabs.index.nothing-of-this-kind-yet": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "n.app.tabs.index.opens-in-day": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
  "n.app.tabs.index.opens-in-days": {
   "kind": "body",
   "en": 18,
   "max": 58
+ },
+ "n.app.tabs.index.opens-today": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.app.tabs.index.practice-nudge-dismiss": {
+  "kind": "button",
+  "en": 7,
+  "max": 21
+ },
+ "n.app.tabs.index.practice-nudge-go": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "n.app.tabs.index.practice-nudge-sub": {
+  "kind": "button",
+  "en": 117,
+  "max": 147
+ },
+ "n.app.tabs.index.practice-nudge-title": {
+  "kind": "button",
+  "en": 30,
+  "max": 44
+ },
+ "n.app.tabs.index.report-from-your-unit-now": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
  },
  "n.app.tabs.index.reporting-open": {
   "kind": "body",
@@ -2263,6 +4893,36 @@
   "kind": "body",
   "en": 22,
   "max": 62
+ },
+ "n.app.tabs.index.show-fewer-elections": {
+  "kind": "button",
+  "en": 20,
+  "max": 34
+ },
+ "n.app.tabs.index.show-more-elections": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.tabs.index.status-cleared": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "n.app.tabs.index.status-open": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.app.tabs.index.status-unresolved": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.app.tabs.index.status-upheld": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
  },
  "n.app.tabs.index.units-flagged": {
   "kind": "button",
@@ -2314,10 +4974,20 @@
   "en": 5,
   "max": 19
  },
+ "n.app.tabs.results.a-date-not-yet-announced": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
  "n.app.tabs.results.about-this-map": {
   "kind": "heading",
   "en": 14,
   "max": 34
+ },
+ "n.app.tabs.results.accepted-reports-appear-here-live": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
  },
  "n.app.tabs.results.and-tied": {
   "kind": "body",
@@ -2329,6 +4999,31 @@
   "en": 29,
   "max": 43
  },
+ "n.app.tabs.results.choose-a-race": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.app.tabs.results.choose-an-election-type": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.app.tabs.results.colour-is-the-leading-party-tap": {
+  "kind": "body",
+  "en": 88,
+  "max": 154
+ },
+ "n.app.tabs.results.coloured-by-state-not-by-constituency": {
+  "kind": "body",
+  "en": 39,
+  "max": 79
+ },
+ "n.app.tabs.results.coloured-by-the-party-leading": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
  "n.app.tabs.results.contested-only-in-every-other-state": {
   "kind": "body",
   "en": 54,
@@ -2339,10 +5034,25 @@
   "en": 81,
   "max": 142
  },
+ "n.app.tabs.results.could-not-load-the-races": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "n.app.tabs.results.could-not-load-the-results": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
  "n.app.tabs.results.every-that-has-reported-filled-with": {
   "kind": "body",
   "en": 66,
   "max": 116
+ },
+ "n.app.tabs.results.fetching-the-races-hawkeye-covers": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
  },
  "n.app.tabs.results.fetching-the-tally-for": {
   "kind": "body",
@@ -2354,10 +5064,40 @@
   "en": 120,
   "max": 210
  },
+ "n.app.tabs.results.help-cover-these": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.tabs.results.help-cover-where": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
  "n.app.tabs.results.is-set-for-nothing-can-be": {
   "kind": "body",
   "en": 109,
   "max": 191
+ },
+ "n.app.tabs.results.keep-the-current-race": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.tabs.results.leading-party-by": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.app.tabs.results.loading": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.app.tabs.results.loading-results": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
  },
  "n.app.tabs.results.map-of-leading-party-by": {
   "kind": "body",
@@ -2368,6 +5108,16 @@
   "kind": "body",
   "en": 37,
   "max": 77
+ },
+ "n.app.tabs.results.n-of-m-in-this-election-have-reports": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
+ },
+ "n.app.tabs.results.n-of-m-in-where-have-reports": {
+  "kind": "body",
+  "en": 46,
+  "max": 86
  },
  "n.app.tabs.results.narrow-to-one-seat": {
   "kind": "body",
@@ -2389,6 +5139,26 @@
   "en": 25,
   "max": 65
  },
+ "n.app.tabs.results.no-results-yet": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.app.tabs.results.no-votes-counted-yet": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.app.tabs.results.not-covered-yet": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.app.tabs.results.nothing-has-come-in-from": {
+  "kind": "body",
+  "en": 34,
+  "max": 74
+ },
  "n.app.tabs.results.of-nigeria-s-have-a-mapped": {
   "kind": "body",
   "en": 77,
@@ -2404,15 +5174,35 @@
   "en": 34,
   "max": 74
  },
+ "n.app.tabs.results.pull-down-to-try-again-the-list": {
+  "kind": "body",
+  "en": 73,
+  "max": 128
+ },
  "n.app.tabs.results.rank-a-single-seat-instead": {
   "kind": "body",
   "en": 28,
   "max": 68
  },
+ "n.app.tabs.results.reporting-has-not-opened": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
  "n.app.tabs.results.tap-a-for-its-numbers": {
   "kind": "body",
   "en": 26,
   "max": 66
+ },
+ "n.app.tabs.results.tap-change-above-to-pick-the": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.app.tabs.results.the-tally-did-not-reach-this": {
+  "kind": "body",
+  "en": 60,
+  "max": 105
  },
  "n.app.tabs.results.this-election-is-held-only-here": {
   "kind": "body",
@@ -2449,6 +5239,126 @@
   "en": 12,
   "max": 52
  },
+ "n.app.verify-cert.title": {
+  "kind": "heading",
+  "en": 19,
+  "max": 39
+ },
+ "n.app.welcome.independent-election-results-monitor": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.auth.code-hint": {
+  "kind": "body",
+  "en": 71,
+  "max": 125
+ },
+ "n.auth.code-invalid": {
+  "kind": "body",
+  "en": 121,
+  "max": 212
+ },
+ "n.auth.code-kind-invite": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.auth.code-kind-org": {
+  "kind": "body",
+  "en": 49,
+  "max": 89
+ },
+ "n.auth.code-label": {
+  "kind": "body",
+  "en": 38,
+  "max": 78
+ },
+ "n.auth.org-code-number-taken": {
+  "kind": "body",
+  "en": 212,
+  "max": 371
+ },
+ "n.auth.org-code-revoked": {
+  "kind": "body",
+  "en": 114,
+  "max": 200
+ },
+ "n.auth.org-code-too-many": {
+  "kind": "body",
+  "en": 64,
+  "max": 112
+ },
+ "n.auth.org-code-unknown": {
+  "kind": "body",
+  "en": 125,
+  "max": 219
+ },
+ "n.auth.org-code-used": {
+  "kind": "body",
+  "en": 117,
+  "max": 205
+ },
+ "n.auth.org-confirm-body": {
+  "kind": "body",
+  "en": 43,
+  "max": 83
+ },
+ "n.auth.org-confirm-no": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.auth.org-confirm-title": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.auth.org-confirm-yes": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.auth.org-create-account": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.auth.signed-out-elsewhere": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "n.auth.signed-out-elsewhere-queued": {
+  "kind": "body",
+  "en": 75,
+  "max": 132
+ },
+ "n.common.cancel": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.common.change": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.common.close": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.common.could-not-refresh": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.common.got-it": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
  "n.components.ask-fab.ask-hawkeye-about-the-results": {
   "kind": "body",
   "en": 29,
@@ -2479,6 +5389,16 @@
   "en": 44,
   "max": 84
  },
+ "n.components.capture-camera.could-not-read-this-sheet-on": {
+  "kind": "body",
+  "en": 100,
+  "max": 175
+ },
+ "n.components.capture-camera.fill-this-frame-top-to-bottom": {
+  "kind": "body",
+  "en": 52,
+  "max": 92
+ },
  "n.components.capture-camera.hold-still": {
   "kind": "body",
   "en": 11,
@@ -2489,10 +5409,20 @@
   "en": 61,
   "max": 107
  },
+ "n.components.capture-camera.little-text-detected-check-focus-and": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
  "n.components.capture-camera.microphone-is-needed-to-record-video": {
   "kind": "body",
   "en": 48,
   "max": 88
+ },
+ "n.components.capture-camera.no-party-totals-matched-you-will": {
+  "kind": "body",
+  "en": 55,
+  "max": 97
  },
  "n.components.capture-camera.open-settings": {
   "kind": "button",
@@ -2503,6 +5433,11 @@
   "kind": "body",
   "en": 16,
   "max": 56
+ },
+ "n.components.capture-camera.reading-the-sheet": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
  },
  "n.components.capture-camera.recording-failed-try-again": {
   "kind": "body",
@@ -2534,6 +5469,11 @@
   "en": 15,
   "max": 29
  },
+ "n.components.choose-unit.choosing-a-unit-is-a-preference": {
+  "kind": "body",
+  "en": 120,
+  "max": 210
+ },
  "n.components.choose-unit.choosing-vs-mapping": {
   "kind": "heading",
   "en": 19,
@@ -2543,6 +5483,11 @@
   "kind": "body",
   "en": 52,
   "max": 92
+ },
+ "n.components.choose-unit.couldn-t-load-the-register-tap": {
+  "kind": "button",
+  "en": 41,
+  "max": 55
  },
  "n.components.choose-unit.is-not-in-the-register-http": {
   "kind": "body",
@@ -2568,6 +5513,11 @@
   "kind": "body",
   "en": 24,
   "max": 64
+ },
+ "n.components.choose-unit.mapping-is-a-different-job": {
+  "kind": "body",
+  "en": 163,
+  "max": 286
  },
  "n.components.choose-unit.near-me": {
   "kind": "body",
@@ -2595,9 +5545,9 @@
   "max": 83
  },
  "n.components.choose-unit.saved": {
-  "kind": "body",
+  "kind": "button",
   "en": 5,
-  "max": 45
+  "max": 19
  },
  "n.components.choose-unit.selected": {
   "kind": "body",
@@ -2618,6 +5568,11 @@
   "kind": "body",
   "en": 30,
   "max": 70
+ },
+ "n.components.choose-unit.units-found-within-m": {
+  "kind": "body",
+  "en": 56,
+  "max": 98
  },
  "n.components.choose-unit.you-do-not-need-to-be": {
   "kind": "body",
@@ -2644,6 +5599,11 @@
   "en": 16,
   "max": 36
  },
+ "n.components.contest-picker.no-open-race-here-yet-turn": {
+  "kind": "body",
+  "en": 83,
+  "max": 146
+ },
  "n.components.contest-picker.no-open-races": {
   "kind": "body",
   "en": 13,
@@ -2659,6 +5619,21 @@
   "en": 17,
   "max": 57
  },
+ "n.components.contest-picker.open-races-only": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.components.contest-picker.opens-date": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.components.follow-race.alerts-on": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
  "n.components.follow-race.all-races": {
   "kind": "body",
   "en": 14,
@@ -2669,25 +5644,50 @@
   "en": 16,
   "max": 56
  },
+ "n.components.follow-race.follow": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
  "n.components.follow-race.get-alerts-on-every-report": {
   "kind": "body",
   "en": 26,
   "max": 66
+ },
+ "n.components.follow-race.governorship": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
  },
  "n.components.follow-race.house-of-reps": {
   "kind": "body",
   "en": 13,
   "max": 53
  },
+ "n.components.follow-race.senate": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
  "n.components.follow-race.state-assembly": {
   "kind": "body",
   "en": 14,
   "max": 54
  },
+ "n.components.follow-race.this-race": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
  "n.components.follow-race.try-again-http": {
   "kind": "body",
   "en": 22,
   "max": 62
+ },
+ "n.components.follow-race.unfollow": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
  },
  "n.components.follow-race.unfollow-alerts-are-on": {
   "kind": "body",
@@ -2724,10 +5724,35 @@
   "en": 34,
   "max": 48
  },
+ "n.components.header.language": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.components.header.to-dark": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.components.header.to-light": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.components.image-viewer.failed": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
  "n.components.info-dot.more-information": {
   "kind": "body",
   "en": 22,
   "max": 62
+ },
+ "n.components.info-dot.what-gets-checked": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
  },
  "n.components.nigeria-map.map-unavailable": {
   "kind": "body",
@@ -2744,6 +5769,11 @@
   "en": 108,
   "max": 189
  },
+ "n.components.no-election.you-can-still-map-polling-units": {
+  "kind": "body",
+  "en": 101,
+  "max": 177
+ },
  "n.components.notice-sheet.your-alerts-did-not-load": {
   "kind": "body",
   "en": 32,
@@ -2758,6 +5788,81 @@
   "kind": "button",
   "en": 13,
   "max": 27
+ },
+ "n.components.practice-day-card.after-count": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "n.components.practice-day-card.after-count-one": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
+ "n.components.practice-day-card.after-none": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.components.practice-day-card.after-title": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.components.practice-day-card.before-line": {
+  "kind": "body",
+  "en": 82,
+  "max": 144
+ },
+ "n.components.practice-day-card.live-count": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.components.practice-day-card.live-count-one": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "n.components.practice-day-card.live-none": {
+  "kind": "body",
+  "en": 45,
+  "max": 85
+ },
+ "n.components.practice-day-card.live-title": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.components.practice-day-card.next": {
+  "kind": "body",
+  "en": 23,
+  "max": 63
+ },
+ "n.components.practice-day-card.practise-now": {
+  "kind": "button",
+  "en": 12,
+  "max": 26
+ },
+ "n.components.practice-day-card.see-count": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
+ "n.components.practice-day-card.see-results": {
+  "kind": "button",
+  "en": 24,
+  "max": 38
+ },
+ "n.components.practice-day-card.title": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.components.practice-day-card.window": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
  },
  "n.components.race-map.and-tied": {
   "kind": "body",
@@ -2794,10 +5899,20 @@
   "en": 19,
   "max": 59
  },
+ "n.components.race-map.seat-wards": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
  "n.components.race-map.state-local-government-areas": {
   "kind": "body",
   "en": 40,
   "max": 80
+ },
+ "n.components.race-map.tap-an-area-of-the-map": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
  },
  "n.components.race-map.unit-reporting-verified": {
   "kind": "body",
@@ -2824,6 +5939,11 @@
   "en": 29,
   "max": 69
  },
+ "n.components.race-picker.off-cycle-not-in-the-2027": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
  "n.components.race-picker.pick-a": {
   "kind": "body",
   "en": 18,
@@ -2833,6 +5953,11 @@
   "kind": "body",
   "en": 28,
   "max": 68
+ },
+ "n.components.race-picker.pick-a-state-to-open-its-race": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
  },
  "n.components.race-picker.polling-units": {
   "kind": "body",
@@ -2934,6 +6059,11 @@
   "en": 26,
   "max": 66
  },
+ "n.components.rekor-anchor.public-anchor": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
  "n.components.rekor-anchor.the-holding-your-entry-was-signed": {
   "kind": "body",
   "en": 212,
@@ -2948,6 +6078,11 @@
   "kind": "button",
   "en": 22,
   "max": 36
+ },
+ "n.components.report-content.add-any-detail-optional": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
  },
  "n.components.report-content.could-not-send-the-report": {
   "kind": "body",
@@ -2969,10 +6104,20 @@
   "en": 19,
   "max": 59
  },
+ "n.components.report-content.reported": {
+  "kind": "button",
+  "en": 31,
+  "max": 45
+ },
  "n.components.report-content.send-report": {
   "kind": "button",
   "en": 11,
   "max": 25
+ },
+ "n.components.report-content.tell-us-what-is-wrong-with": {
+  "kind": "button",
+  "en": 64,
+  "max": 80
  },
  "n.components.report-sheet.every-report-is-signed-hash-chained": {
   "kind": "body",
@@ -3049,6 +6194,11 @@
   "en": 34,
   "max": 74
  },
+ "n.components.sheet-reference.pinch-or-double-tap-to-zoom": {
+  "kind": "body",
+  "en": 42,
+  "max": 82
+ },
  "n.components.sheet-reference.tap-to-enlarge-read-the-figures": {
   "kind": "body",
   "en": 53,
@@ -3063,6 +6213,11 @@
   "kind": "body",
   "en": 17,
   "max": 57
+ },
+ "n.components.social-row.find-hawkeye": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
  },
  "n.components.social-row.hawkeye-on": {
   "kind": "body",
@@ -3084,6 +6239,11 @@
   "en": 18,
   "max": 58
  },
+ "n.components.social-row.send-the-app-to-someone-who": {
+  "kind": "button",
+  "en": 34,
+  "max": 48
+ },
  "n.components.social-row.share-hawkeye-send-the-app-to": {
   "kind": "button",
   "en": 39,
@@ -3093,6 +6253,16 @@
   "kind": "body",
   "en": 23,
   "max": 63
+ },
+ "n.components.social-row.your-otp-codes-and-result-alerts": {
+  "kind": "button",
+  "en": 45,
+  "max": 59
+ },
+ "n.components.tour.hawkeye-is-independent-and-nonpartisan": {
+  "kind": "body",
+  "en": 195,
+  "max": 342
  },
  "n.components.unit-map.approximate-area-only": {
   "kind": "body",
@@ -3109,10 +6279,30 @@
   "en": 12,
   "max": 52
  },
+ "n.components.unit-map.maps-need-the-full-app-this-build": {
+  "kind": "body",
+  "en": 99,
+  "max": 174
+ },
+ "n.components.unit-map.no-location-fix-yet-so-there-is": {
+  "kind": "body",
+  "en": 54,
+  "max": 95
+ },
  "n.components.unit-map.recentre-the-map-on-my-location": {
   "kind": "button",
   "en": 31,
   "max": 45
+ },
+ "n.components.unit-map.the-map-engine-stopped-the-list-below": {
+  "kind": "body",
+  "en": 51,
+  "max": 91
+ },
+ "n.components.unit-map.this-build-has-no-google-maps-key": {
+  "kind": "body",
+  "en": 96,
+  "max": 168
  },
  "n.components.unit-map.verified-location": {
   "kind": "body",
@@ -3144,15 +6334,15 @@
   "en": 46,
   "max": 86
  },
+ "n.components.unit-search.keep-typing-at-least-3": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
  "n.components.unit-search.n-matches": {
   "kind": "body",
   "en": 13,
   "max": 53
- },
- "n.components.unit-search.one-match": {
-  "kind": "body",
-  "en": 8,
-  "max": 48
  },
  "n.components.unit-search.name-ward-or-unit-number": {
   "kind": "body",
@@ -3164,10 +6354,80 @@
   "en": 72,
   "max": 126
  },
+ "n.components.unit-search.one-match": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
  "n.components.unit-search.search-for-your-polling-unit": {
   "kind": "body",
   "en": 28,
   "max": 68
+ },
+ "n.components.video-viewer.failed": {
+  "kind": "body",
+  "en": 68,
+  "max": 119
+ },
+ "n.components.video-viewer.hide-controls": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.components.video-viewer.label": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.components.video-viewer.loading": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.components.video-viewer.mute": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
+ "n.components.video-viewer.open-in-browser": {
+  "kind": "body",
+  "en": 15,
+  "max": 55
+ },
+ "n.components.video-viewer.pause": {
+  "kind": "button",
+  "en": 11,
+  "max": 25
+ },
+ "n.components.video-viewer.play": {
+  "kind": "button",
+  "en": 10,
+  "max": 24
+ },
+ "n.components.video-viewer.position": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.components.video-viewer.replay": {
+  "kind": "button",
+  "en": 25,
+  "max": 39
+ },
+ "n.components.video-viewer.seek": {
+  "kind": "body",
+  "en": 17,
+  "max": 57
+ },
+ "n.components.video-viewer.show-controls": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
+ },
+ "n.components.video-viewer.unmute": {
+  "kind": "button",
+  "en": 13,
+  "max": 27
  },
  "n.components.wizard.change": {
   "kind": "button",
@@ -3244,6 +6504,136 @@
   "en": 15,
   "max": 55
  },
+ "n.invite2.button": {
+  "kind": "button",
+  "en": 24,
+  "max": 38
+ },
+ "n.invite2.choose-first": {
+  "kind": "body",
+  "en": 66,
+  "max": 116
+ },
+ "n.invite2.failed": {
+  "kind": "body",
+  "en": 50,
+  "max": 90
+ },
+ "n.invite2.prefilled": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
+ "n.invite2.saved-title": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.invite2.share-text": {
+  "kind": "body",
+  "en": 110,
+  "max": 193
+ },
+ "n.invite2.title": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
+ "n.invite2.why": {
+  "kind": "body",
+  "en": 83,
+  "max": 146
+ },
+ "n.kind.ballot-snatching": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "n.kind.bvas-failure": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.kind.intimidation": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.kind.late-materials": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.kind.obstruction": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.kind.other": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.kind.violence": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.kind.vote-buying": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "n.kind.what-happened": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.level.lga": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "n.level.lga-sub": {
+  "kind": "body",
+  "en": 33,
+  "max": 73
+ },
+ "n.level.state": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.level.state-sub": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.level.ward": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.level.ward-sub": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
+ },
+ "n.lib.api.governorship-elections-2027": {
+  "kind": "body",
+  "en": 27,
+  "max": 67
+ },
+ "n.lib.api.nass-elections-2027": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.lib.api.presidential-election-2027": {
+  "kind": "body",
+  "en": 26,
+  "max": 66
+ },
  "n.lib.api.reporting-has-not-opened-for-this": {
   "kind": "body",
   "en": 47,
@@ -3254,10 +6644,75 @@
   "en": 21,
   "max": 61
  },
+ "n.lib.api.state-assembly-elections-2027": {
+  "kind": "body",
+  "en": 29,
+  "max": 69
+ },
  "n.lib.biometric.confirm-it-is-you-before-signing": {
   "kind": "body",
   "en": 44,
   "max": 84
+ },
+ "n.lib.dates.day-month": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.lib.dates.day-month-time": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.lib.dates.day-month-year": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "n.lib.dates.hours-ago": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "n.lib.dates.just-now": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "n.lib.dates.long": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.lib.dates.months": {
+  "kind": "body",
+  "en": 85,
+  "max": 149
+ },
+ "n.lib.dates.today-at": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.lib.dates.updated-at": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "n.lib.dates.weekday-day-month-time": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
+ "n.lib.dates.weekdays": {
+  "kind": "body",
+  "en": 56,
+  "max": 98
+ },
+ "n.lib.dates.yesterday-at": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
  },
  "n.lib.errors.no-connection-check-your-network-and": {
   "kind": "body",
@@ -3278,6 +6733,36 @@
   "kind": "body",
   "en": 30,
   "max": 70
+ },
+ "n.lib.errors.the-server-had-a-problem": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
+ "n.lib.geofence.envelope-gate": {
+  "kind": "body",
+  "en": 227,
+  "max": 398
+ },
+ "n.lib.geofence.far-unit-body": {
+  "kind": "body",
+  "en": 216,
+  "max": 378
+ },
+ "n.lib.geofence.location-unverified": {
+  "kind": "body",
+  "en": 105,
+  "max": 184
+ },
+ "n.lib.geofence.m-away": {
+  "kind": "body",
+  "en": 10,
+  "max": 50
+ },
+ "n.lib.geofence.you-are-m-away-filing-checks": {
+  "kind": "body",
+  "en": 114,
+  "max": 200
  },
  "n.lib.location.could-not-get-a-gps-fix": {
   "kind": "body",
@@ -3464,6 +6949,11 @@
   "en": 40,
   "max": 80
  },
+ "n.lib.submit.server-busy-saved": {
+  "kind": "body",
+  "en": 109,
+  "max": 191
+ },
  "n.lib.submit.signed-out-your-signed-report-is": {
   "kind": "body",
   "en": 99,
@@ -3544,10 +7034,95 @@
   "en": 52,
   "max": 92
  },
+ "n.step.race": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.step.send": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.step.sheet": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.step.unit": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.step.venue": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.step.votes": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.step.what-happened": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "n.step.where": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "n.unit.federal.many": {
+  "kind": "body",
+  "en": 22,
+  "max": 62
+ },
+ "n.unit.federal.one": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.unit.lga.many": {
+  "kind": "body",
+  "en": 4,
+  "max": 44
+ },
+ "n.unit.lga.one": {
+  "kind": "body",
+  "en": 3,
+  "max": 43
+ },
+ "n.unit.senatorial.many": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "n.unit.senatorial.one": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "n.unit.state.many": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "n.unit.state.one": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
  "nav.alerts": {
   "kind": "heading",
   "en": 6,
   "max": 26
+ },
+ "nav.apply-as-captain": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
  },
  "nav.ask-hawkeye": {
   "kind": "heading",
@@ -3614,6 +7189,11 @@
   "en": 7,
   "max": 47
  },
+ "nav.situation-room": {
+  "kind": "heading",
+  "en": 14,
+  "max": 34
+ },
  "nav.take-part": {
   "kind": "body",
   "en": 9,
@@ -3644,15 +7224,40 @@
   "en": 14,
   "max": 28
  },
+ "observe.card-saved-with-photos": {
+  "kind": "body",
+  "en": 44,
+  "max": 84
+ },
  "observe.close-the-sheet": {
   "kind": "button",
   "en": 15,
   "max": 29
  },
+ "observe.copies-off-note": {
+  "kind": "body",
+  "en": 95,
+  "max": 167
+ },
  "observe.report-a-result": {
   "kind": "button",
   "en": 15,
   "max": 29
+ },
+ "observe.save-this-card": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "observe.saved-to-your-phone": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "observe.your-copy": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
  },
  "political.governing-party": {
   "kind": "body",
@@ -3714,6 +7319,11 @@
   "en": 18,
   "max": 58
  },
+ "practice.practice-polling-unit": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
+ },
  "practice.practise-again": {
   "kind": "button",
   "en": 14,
@@ -3725,19 +7335,39 @@
   "max": 20
  },
  "profile.choose-your-polling-unit": {
-  "kind": "heading",
+  "kind": "button",
   "en": 24,
-  "max": 44
+  "max": 38
  },
  "profile.delete-my-account": {
   "kind": "button",
   "en": 17,
   "max": 31
  },
+ "profile.invite": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
  "profile.my-profile": {
   "kind": "heading",
   "en": 10,
   "max": 30
+ },
+ "profile.none-yet": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "profile.observed": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "profile.people-you-invited": {
+  "kind": "body",
+  "en": 18,
+  "max": 58
  },
  "profile.save-this-unit": {
   "kind": "button",
@@ -3749,6 +7379,36 @@
   "en": 13,
   "max": 27
  },
+ "profile.signed-up": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "profile.your-invite-link": {
+  "kind": "body",
+  "en": 16,
+  "max": 56
+ },
+ "race.alphabetical-by-party": {
+  "kind": "body",
+  "en": 58,
+  "max": 102
+ },
+ "race.ballot-full-note": {
+  "kind": "body",
+  "en": 66,
+  "max": 116
+ },
+ "race.ballot-parties-note": {
+  "kind": "body",
+  "en": 194,
+  "max": 340
+ },
+ "race.ballot-parties-note-declared": {
+  "kind": "body",
+  "en": 120,
+  "max": 210
+ },
  "race.bid": {
   "kind": "body",
   "en": 3,
@@ -3758,6 +7418,11 @@
   "kind": "body",
   "en": 9,
   "max": 49
+ },
+ "race.candidate-name-not-published": {
+  "kind": "body",
+  "en": 28,
+  "max": 68
  },
  "race.candidates": {
   "kind": "body",
@@ -3844,6 +7509,26 @@
   "en": 12,
   "max": 26
  },
+ "race.map-facts-from-register": {
+  "kind": "body",
+  "en": 69,
+  "max": 121
+ },
+ "race.no-list-by-election": {
+  "kind": "body",
+  "en": 207,
+  "max": 363
+ },
+ "race.no-list-declared": {
+  "kind": "body",
+  "en": 153,
+  "max": 268
+ },
+ "race.none-published": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
  "race.on-date": {
   "kind": "body",
   "en": 10,
@@ -3853,6 +7538,16 @@
   "kind": "body",
   "en": 25,
   "max": 65
+ },
+ "race.parties-hint": {
+  "kind": "body",
+  "en": 117,
+  "max": 205
+ },
+ "race.parties-on-the-ballot": {
+  "kind": "body",
+  "en": 21,
+  "max": 61
  },
  "race.party": {
   "kind": "body",
@@ -3899,6 +7594,16 @@
   "en": 18,
   "max": 32
  },
+ "race.seat-narrowed-note": {
+  "kind": "body",
+  "en": 138,
+  "max": 242
+ },
+ "race.shared-lga-note": {
+  "kind": "body",
+  "en": 193,
+  "max": 338
+ },
  "race.source-n": {
   "kind": "body",
   "en": 10,
@@ -3944,6 +7649,146 @@
   "en": 5,
   "max": 25
  },
+ "ready.all-set": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "ready.allow": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "ready.approximate": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
+ "ready.camera": {
+  "kind": "body",
+  "en": 6,
+  "max": 46
+ },
+ "ready.choose-unit": {
+  "kind": "body",
+  "en": 11,
+  "max": 51
+ },
+ "ready.could-not-check": {
+  "kind": "body",
+  "en": 25,
+  "max": 65
+ },
+ "ready.lede": {
+  "kind": "body",
+  "en": 31,
+  "max": 71
+ },
+ "ready.location": {
+  "kind": "body",
+  "en": 8,
+  "max": 48
+ },
+ "ready.notifications": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "ready.sign-in-first": {
+  "kind": "body",
+  "en": 14,
+  "max": 54
+ },
+ "ready.signed-in": {
+  "kind": "body",
+  "en": 9,
+  "max": 49
+ },
+ "ready.state-blocked": {
+  "kind": "body",
+  "en": 7,
+  "max": 47
+ },
+ "ready.state-ready": {
+  "kind": "body",
+  "en": 5,
+  "max": 45
+ },
+ "ready.title": {
+  "kind": "button",
+  "en": 22,
+  "max": 36
+ },
+ "ready.unit-chosen": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "receipt.foot": {
+  "kind": "body",
+  "en": 74,
+  "max": 130
+ },
+ "receipt.ledger-entry": {
+  "kind": "body",
+  "en": 12,
+  "max": 52
+ },
+ "receipt.months": {
+  "kind": "body",
+  "en": 48,
+  "max": 88
+ },
+ "receipt.practice-chain-entry": {
+  "kind": "body",
+  "en": 20,
+  "max": 60
+ },
+ "receipt.reported": {
+  "kind": "body",
+  "en": 13,
+  "max": 53
+ },
+ "receipt.status-pending": {
+  "kind": "body",
+  "en": 65,
+  "max": 114
+ },
+ "receipt.status-practice": {
+  "kind": "body",
+  "en": 63,
+  "max": 111
+ },
+ "receipt.status-recorded": {
+  "kind": "body",
+  "en": 30,
+  "max": 70
+ },
+ "receipt.title-pending": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "receipt.title-practice": {
+  "kind": "body",
+  "en": 32,
+  "max": 72
+ },
+ "receipt.title-recorded": {
+  "kind": "body",
+  "en": 24,
+  "max": 64
+ },
+ "receipt.total-on-this-sheet": {
+  "kind": "body",
+  "en": 19,
+  "max": 59
+ },
+ "receipt.verify-at": {
+  "kind": "body",
+  "en": 36,
+  "max": 76
+ },
  "results.election": {
   "kind": "body",
   "en": 8,
@@ -3979,6 +7824,11 @@
   "en": 77,
   "max": 135
  },
+ "tour.next": {
+  "kind": "button",
+  "en": 4,
+  "max": 18
+ },
  "tour.report.body": {
   "kind": "body",
   "en": 94,
@@ -3994,9 +7844,19 @@
   "en": 68,
   "max": 119
  },
+ "tour.start": {
+  "kind": "button",
+  "en": 15,
+  "max": 29
+ },
  "tour.welcome": {
   "kind": "heading",
   "en": 18,
   "max": 38
+ },
+ "video-player.open": {
+  "kind": "button",
+  "en": 19,
+  "max": 33
  }
 }

@@ -327,7 +327,7 @@
 
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
-  <script src="capture.js?v=3"></script>
+  <script src="capture.js?v=4"></script>
   <script src="save-media.js?v=1"></script>
   <script src="video-player.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
@@ -351,7 +351,13 @@
     // when it has loaded, fall back to the English argument when it has not.
     // /i18n.js loads AFTER this block, so a call at parse time would get the
     // fallback — every call here happens on user action, long after load.
-    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    // {name} placeholders are filled AFTER the lookup, so they land in the
+    // translation as well as in the English (i18n.js's t() does not do it).
+    const T = (k, en, p) => {
+      let s = window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en;
+      for (const [a, b] of Object.entries(p || {})) s = String(s).split('{' + a + '}').join(b);
+      return s;
+    };
 
     /**
      * The instruction that stands in for a pre-selected kind, and the sentence
@@ -654,10 +660,10 @@
            * acknowledged.
            */
           if (window.HAWKEYE_ALERT) {
-            HAWKEYE_ALERT(`Only ${MAX_VIDEOS} videos per report`,
-              `You already have ${MAX_VIDEOS}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.`);
+            HAWKEYE_ALERT(T('incidents.only-n-videos-per-report', 'Only {v0} videos per report', { v0: MAX_VIDEOS }),
+              T('incidents.you-already-have-n-videos', 'You already have {v0}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.', { v0: MAX_VIDEOS }));
           } else {
-            $('status').textContent = `Up to ${MAX_VIDEOS} videos per report — add the rest as photos, or file a second report.`;
+            $('status').textContent = T('incidents.up-to-n-videos-per-report', 'Up to {v0} videos per report — add the rest as photos, or file a second report.', { v0: MAX_VIDEOS });
           }
           continue;
         }
@@ -678,10 +684,14 @@
            * loss, and it needs the same acknowledgement.
            */
           const mb = (use.size / 1048576).toFixed(1);
-          const title = isVideo ? 'That video is too large' : 'That photo is too large';
+          const title = isVideo
+            ? T('incidents.that-video-is-too-large', 'That video is too large')
+            : T('incidents.that-photo-is-too-large', 'That photo is too large');
           const body = isVideo
-            ? `It is ${mb} MB and the limit is ${Math.round(VIDEO_BYTES / 1048576)} MB. Record one here instead — the camera stops at ${MAX_VIDEO_SECONDS}s, which always fits — or trim it before attaching.`
-            : `It is ${mb} MB even after compressing, and the limit is ${Math.round(PHOTO_BYTES / 1048576)} MB.`;
+            ? T('incidents.video-too-large-body', 'It is {v0} MB and the limit is {v1} MB. Record one here instead — the camera stops at {v2}s, which always fits — or trim it before attaching.',
+              { v0: mb, v1: Math.round(VIDEO_BYTES / 1048576), v2: MAX_VIDEO_SECONDS })
+            : T('incidents.photo-too-large-body', 'It is {v0} MB even after compressing, and the limit is {v1} MB.',
+              { v0: mb, v1: Math.round(PHOTO_BYTES / 1048576) });
           if (window.HAWKEYE_ALERT) HAWKEYE_ALERT(title, body);
           else $('status').textContent = `${title}. ${body}`;
           continue;
@@ -910,7 +920,8 @@
         // are easy to scroll past, so the tap read as a dead button.
         $('kind').setAttribute('aria-invalid', 'true');
         if (window.HAWKEYE_ALERT) {
-          HAWKEYE_ALERT('Choose an incident type', 'Pick what happened from the list, then submit again.',
+          HAWKEYE_ALERT(T('incidents.choose-an-incident-type-title', 'Choose an incident type'),
+            T('incidents.pick-what-happened', 'Pick what happened from the list, then submit again.'),
             () => { $('kind').focus(); $('kind').scrollIntoView({ block: 'center' }); });
         } else {
           $('status').textContent = KIND_REQUIRED(); $('kind').focus();

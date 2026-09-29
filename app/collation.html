@@ -229,7 +229,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
   <script src="scan.js?v=8"></script>
-  <script src="capture.js?v=3"></script>
+  <script src="capture.js?v=4"></script>
   <script src="save-media.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
@@ -237,6 +237,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="menu.js?v=189"></script>
   <script>
     const $ = (id) => document.getElementById(id);
+    // Resolve through the runtime once it has loaded, else the English argument
+    // (the incidents.html/integrity.html helper). Every call is on user action.
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
     const token = localStorage.getItem('hawkeye_token');
     const FORM = { ward: 'EC8B', lga: 'EC8C', state: 'EC8D' };
 
@@ -501,9 +504,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     $('btn-submit').onclick = async () => {
       if (contestClosed()) {
         if (window.HAWKEYE_ALERT) {
-          HAWKEYE_ALERT('Reporting is not open yet',
-            'Collation reporting opens on election day, when polls open. Come back then.');
-        } else { $('status').textContent = 'Collation reporting opens on election day, when polls open. Come back then.'; }
+          HAWKEYE_ALERT(T('common.reporting-not-open-yet', 'Reporting is not open yet'),
+            T('collation.reporting-opens-on-election-day', 'Collation reporting opens on election day, when polls open. Come back then.'));
+        } else { $('status').textContent = T('collation.reporting-opens-on-election-day', 'Collation reporting opens on election day, when polls open. Come back then.'); }
         return;
       }
       $('btn-submit').disabled = true;
@@ -577,21 +580,21 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           $('btn-submit').disabled = false;
         } else {
           const M = {
-            already_submitted: 'You already reported this collation.',
-            photo_not_fresh: 'Photos too old — retake both and submit immediately.',
-            duplicate_image: 'One of these photos was already submitted.',
-            bad_signature: 'Signature check failed — refresh and retry.',
-            invalid_votes: 'Check the totals — whole numbers only.',
-            unknown_scope: 'That state/LGA/ward combination is not on the register.',
-            reporting_not_open: 'Collation reporting opens on election day, when polls open. Come back then.',
+            already_submitted: T('collation.err.already-submitted', 'You already reported this collation.'),
+            photo_not_fresh: T('collation.err.photo-not-fresh', 'Photos too old — retake both and submit immediately.'),
+            duplicate_image: T('collation.err.duplicate-image', 'One of these photos was already submitted.'),
+            bad_signature: T('collation.err.bad-signature', 'Signature check failed — refresh and retry.'),
+            invalid_votes: T('collation.err.invalid-votes', 'Check the totals — whole numbers only.'),
+            unknown_scope: T('collation.err.unknown-scope', 'That state/LGA/ward combination is not on the register.'),
+            reporting_not_open: T('collation.reporting-opens-on-election-day', 'Collation reporting opens on election day, when polls open. Come back then.'),
           };
-          const msg = M[b.error] || b.hint || b.error || 'Could not submit.';
+          const msg = M[b.error] || b.hint || b.error || T('collation.could-not-submit', 'Could not submit.');
           $('status').textContent = msg;
           // "Not open yet" is a refusal of the whole submission, not a hint about
           // a field — raise it as a dialog (same one the ⓘ dots use) so it cannot
           // be missed below a button the observer has already scrolled past.
           if (b.error === 'reporting_not_open') {
-            const title = window.HawkeyeI18n ? window.HawkeyeI18n.t('common.reporting-not-open-yet', 'Reporting is not open yet') : 'Reporting is not open yet';
+            const title = T('common.reporting-not-open-yet', 'Reporting is not open yet');
             if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL(title, msg, '');
             else hkAlert(msg, { title });
           }

@@ -778,7 +778,7 @@ export default function MapUnit() {
       if (!res.ok || !body.ok) {
         const code = body.error ?? `http_${res.status}`;
         notice.show(
-          removing ? 'Could not remove your polling unit' : i18nT('n.app.map-unit.could-not-save-your-polling-unit'),
+          removing ? i18nT('n.app.map-unit.could-not-remove-your-polling-unit') : i18nT('n.app.map-unit.could-not-save-your-polling-unit'),
           code === 'unknown_unit'
             ? i18nT('n.app.map-unit.is-not-in-the-register-http', { v0: unit.name, v1: code, v2: res.status })
             : i18nT('n.app.map-unit.please-check-your-connection-and-try', { v0: code, v1: res.status }),
@@ -859,7 +859,7 @@ export default function MapUnit() {
                 line: i18nT('n.app.map-unit.is-now-crowd-confirmed-observer-fixes', { v0: unit.name, v1: body.fixes }),
               }
             : {
-                title: body.replaced ? 'Fix updated' : i18nT('n.app.map-unit.fix-recorded'),
+                title: body.replaced ? i18nT('n.app.map-unit.fix-updated') : i18nT('n.app.map-unit.fix-recorded'),
                 line: i18nT('n.app.map-unit.of-observers-needed-to-confirm-ask', { v0: body.fixes, v1: body.needed, v2: unit.name }),
               },
         );
@@ -871,9 +871,9 @@ export default function MapUnit() {
         code === 'gps_accuracy_too_low'
           ? i18nT('n.app.map-unit.gps-accuracy-too-low-needs-m', { v0: body.maxAccuracyM ?? 100 })
           : code === 'too_far_from_unit'
-            ? 'You are too far from this unit — map it while standing at the unit.'
+            ? i18nT('n.app.map-unit.too-far-map-it-at-the-unit')
             : code === 'unknown_polling_unit'
-              ? 'That unit is not in the register.'
+              ? i18nT('n.app.map-unit.unit-not-in-register')
               : i18nT('n.app.map-unit.could-not-record-the-fix-http', { v0: code, v1: res.status }),
       );
     } catch (e) {

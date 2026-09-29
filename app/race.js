@@ -901,18 +901,30 @@
           if (!c) return;
           var at = Date.parse(c.opensAt || (c.date + 'T08:30:00+01:00'));
           if (!isFinite(at) || Date.now() >= at) return;
-          var when = new Date(at).toLocaleString('en-GB', {
-            weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit',
-          });
+          /* The instant in the READER'S language: weekday and month names come
+             from the practice-day keys (the one localised long date the web
+             has), the clock is 24-hour like native's lib/dates.ts. Built at the
+             click, not here, so a language switch after load is honoured. */
+          var whenText = function () {
+            var d = new Date(at);
+            var wd = T('practiceday.weekdays', 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday').split(',')[d.getDay()];
+            var mo = T('practiceday.months', 'January,February,March,April,May,June,July,August,September,October,November,December').split(',')[d.getMonth()];
+            return T('practiceday.date', '{weekday}, {day} {month}')
+              .replace('{weekday}', wd).replace('{day}', String(d.getDate())).replace('{month}', mo)
+              + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+          };
           reportBtn.addEventListener('click', function (e) {
             e.preventDefault();
             // The SAME dialog the submit path already raises for this, and the
             // same two sentences — naming the instant, because an observer told
-            // "not open" without a time comes back at random.
+            // "not open" without a time comes back at random. ONE key for both
+            // sentences, the time a placeholder inside it: "Reporting opens " +
+            // when + "." was a fragment no other language could reorder.
             if (window.HAWKEYE_MODAL) {
               window.HAWKEYE_MODAL(
                 T('common.reporting-not-open-yet', 'Reporting is not open yet'),
-                'Reporting opens ' + when + '. You can file from your polling unit as soon as polls open.',
+                T('race.reporting-opens-when', 'Reporting opens {when}. You can file from your polling unit as soon as polls open.')
+                  .replace('{when}', whenText()),
                 ''
               );
             } else {

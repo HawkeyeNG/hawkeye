@@ -14,6 +14,19 @@
  *    domains,
  *  - every character inside the script each language actually uses. That last
  *    one caught a Devanagari fragment I had typed into an Igbo string.
+ *
+ *   node scripts/i18n/native_bundles.mjs            # check, then write
+ *   node scripts/i18n/native_bundles.mjs --check    # check, then DIFF against the
+ *                                                   # bundles on disk; writes nothing
+ *   node scripts/i18n/native_bundles.mjs --control  # prove each rule can fire
+ *
+ * WHY --check EXISTS (2026-09-29). Forty keys had been written straight into the
+ * built bundles and never into the catalogue or native_tr*.mjs. This script then
+ * refused to write — correctly, since a write would have DELETED all forty and
+ * t() would have rendered their raw keys — but the only way to see that was to
+ * run it and hope. --check says, per bundle, what a write would add, remove or
+ * change, and exits non-zero unless the bundles on disk already match the
+ * sources. Run it before a write; a write should never remove a key.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -55,15 +68,28 @@ const SAME_OK = new Set([
   'race.lgas',
   'race.ward',
   'nav.osun-2026',
+  // "{v0}–{v1} WAT" — two clock times and the time-zone abbreviation, an
+  // identifier like LGA above, not a word to translate.
+  'n.components.practice-day-card.window',
 ]);
+
+/* A FORMAT PATTERN IS NOT PROSE. n.lib.dates.day-month is "{v0} {v1}" —
+   placeholders and punctuation, no word of its own: the words arrive through
+   the placeholders (month and weekday names are keys of their own), so every
+   language carries the same pattern. "Same as English" says nothing about such
+   a key, and listing each one here would hide the rule behind five names. A
+   single letter outside a placeholder makes it prose again, and checked. */
+const isPattern =(s) => !/\p{L}/u.test(String(s).replace(/\{\w+\}/g, ''));
 
 /* A NEWLINE IS ALLOWED. A paragraph break is not a script: the info-modal
    bodies are deliberately two paragraphs. This check exists to catch a
    Devanagari fragment typed into an Igbo string, which a line break cannot
    be, so passing over it is not a loophole. */
 /* Latin plus the marks these three orthographies need, punctuation, arrows and
-   the emoji the UI uses. Anything else is a typo from another keyboard. */
-const ALLOWED = /^[\n -~ -ɏɐ-ʯ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-➿⬀-⯿️\u{1F300}-\u{1FAFF}‘’“”‹›«»]*$/u;
+   the emoji the UI uses. Anything else is a typo from another keyboard.
+   ʼ (U+02BC, the modifier-letter apostrophe) is Hausa orthography — the
+   glottal stop in "Jummaʼa" and ʼy — and sits just past the IPA block. */
+const ALLOWED = /^[\n -~ -ɏɐ-ʯʼ̀-ͯḀ-ỿ -⁯₠-₿←-⇿∀-⋿✀-➿⬀-⯿️\u{1F300}-\u{1FAFF}‘’“”‹›«»]*$/u;
 
 /**
  * WEB COPY CARRIES MARKUP; NATIVE RENDERS PLAIN TEXT.
@@ -102,7 +128,7 @@ for (const code of ['ha', 'ig', 'yo']) {
     out[k] = v;
   }
   const orphan = Object.keys(tr[code]).filter((k) => !(k in cat));
-  const same = Object.entries(out).filter(([k, v]) => v === cat[k] && !SAME_OK.has(k));
+  const same = Object.entries(out).filter(([k, v]) => v === cat[k] && !SAME_OK.has(k) && !isPattern(cat[k]));
   // Strip BEFORE the checks read `out` — the markup check below is one of
   // them, and on the first attempt it correctly failed the build on markup
   // this line was about to remove.
@@ -150,9 +176,42 @@ if (process.argv.includes('--control')) {
   console.log('  ' + (!ALLOWED.test('A họrọला') ? 'fires' : 'DEAD ') + '  wrong script (Devanagari in an Igbo string)');
   console.log('  ' + (ALLOWED.test('Ẹ̀ka ìdìbò ɓ ụ — ↗ 📍 ©') ? 'passes' : 'DEAD ') + '  the real orthographies are accepted');
   console.log('  ' + (SAME_OK.has('n.app.osun.osun-2026') ? 'fires' : 'DEAD ') + '  the same-as-English allowlist is consulted');
+  console.log('  ' + (isPattern('{v0}, {v1} {v2}') && !isPattern('{v0} votes') && !isPattern('{v0} ọ̀kan')
+    ? 'fires' : 'DEAD ') + '  a format pattern is exempt from same-as-English, prose around a placeholder is not');
+}
+
+/* --check: what a write WOULD do, per bundle, against the files on disk. A value
+   change or a removal is the dangerous kind — a removed key renders as its raw
+   name — so those are listed first and in full. Key order is reported apart:
+   the bundles are written in catalogue order, and a hand-appended key sits out
+   of order without being wrong. */
+const CHECK = process.argv.includes('--check');
+if (CHECK) {
+  let drift = 0;
+  let orderOnly = 0;
+  console.log('\n--check against native/src/lib/i18n/ (nothing is written):');
+  for (const [code, obj] of Object.entries(bundles)) {
+    const p = path.join(OUT, code + '.json');
+    const cur = fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {};
+    const added = Object.keys(obj).filter((k) => !(k in cur));
+    const removed = Object.keys(cur).filter((k) => !(k in obj));
+    const changed = Object.keys(obj).filter((k) => k in cur && cur[k] !== obj[k]);
+    const sameOrder = JSON.stringify(Object.keys(cur)) === JSON.stringify(Object.keys(obj));
+    console.log(`  ${code}: +${added.length} added  -${removed.length} REMOVED  ~${changed.length} CHANGED`
+      + (added.length || removed.length || changed.length || sameOrder ? '' : '  (key order only)'));
+    for (const k of removed) console.log(`      removed: ${k}`);
+    for (const k of changed) console.log(`      changed: ${k}\n        disk:  ${JSON.stringify(cur[k])}\n        build: ${JSON.stringify(obj[k])}`);
+    for (const k of added.slice(0, 40)) console.log(`      added:   ${k}`);
+    if (added.length || removed.length || changed.length) drift++;
+    else if (!sameOrder) orderOnly++;
+  }
+  console.log(drift ? `\n${drift} bundle(s) differ from the sources`
+    : `\nbundles match the sources${orderOnly ? ` (${orderOnly} would be re-sorted into catalogue order; no value changes)` : ''}`);
+  if (drift) process.exitCode = 1;
 }
 
 if (bad) { console.log('\n' + bad + ' bundle(s) not written'); process.exitCode = 1; }
+else if (CHECK || process.argv.includes('--control')) { /* read-only modes */ }
 else {
   fs.mkdirSync(OUT, { recursive: true });
   for (const [code, obj] of Object.entries(bundles)) {

@@ -94,21 +94,32 @@ export default function Incidents() {
 
   // Returns the failure so the caller can decide how loudly to say it: a first
   // load has an empty screen to explain itself in, a pull-to-refresh does not.
-  const load = useCallback(async () => {
-    try {
-      const { incidents } = await api.incidents();
-      setRows(incidents);
-      setErr(null);
-      return null;
-    } catch (e) {
-      const msg = humanError(e);
-      setErr(msg);
-      return msg;
-    }
-  }, []);
+  //
+  // A plain promise with the state set in its callbacks — the captain.tsx shape.
+  // Written as an async function, react-hooks/set-state-in-effect read each
+  // setState in its body as running synchronously inside the effect below. None
+  // did (all sat after the await), but the callback form says so in a way the
+  // compiler can see, which beats a disable comment that would also hide a real
+  // synchronous setState added here later.
+  const load = useCallback(
+    (): Promise<string | null> =>
+      api.incidents().then(
+        ({ incidents }) => {
+          setRows(incidents);
+          setErr(null);
+          return null;
+        },
+        (e: unknown) => {
+          const msg = humanError(e);
+          setErr(msg);
+          return msg;
+        },
+      ),
+    [],
+  );
 
   useEffect(() => {
-    load();
+    void load();
   }, [load]);
 
   const onRefresh = async () => {
@@ -119,7 +130,7 @@ export default function Incidents() {
     // read. The pull was deliberate, so a failed one gets an answer that can't
     // be scrolled past.
     if (failed && rows?.length) {
-      notice.show('Could not refresh', i18nT('n.app.incidents.the-incident-feed-did-not-load', { v0: failed }));
+      notice.show(i18nT('n.common.could-not-refresh'), i18nT('n.app.incidents.the-incident-feed-did-not-load', { v0: failed }));
     }
   };
 

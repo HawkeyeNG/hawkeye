@@ -4,12 +4,12 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#00482b" />
-  <title data-i18n="my-groups.title">Hawkeye — Your groups</title>
+  <title data-i18n="my-groups.title">Hawkeye — My Groups</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193" />
-  <script src="native.js?v=121"></script>
+  <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=4"></script>
@@ -43,7 +43,7 @@
     <div class="wrap brand-row">
       <a class="brand" href="index.html">
         <span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
-        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="my-groups.your-groups">Your groups</span></div>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="my-groups.your-groups">My Groups</span></div>
       </a>
     </div>
   </header>
@@ -101,12 +101,12 @@ async function load() {
 
 function render() {
   if (!GROUPS.length) {
-    $('mg').innerHTML = `<h1>${T('my-groups.your-groups', 'Your groups')}</h1>
+    $('mg').innerHTML = `<h1>${T('my-groups.your-groups', 'My Groups')}</h1>
       <p class="none">${T('my-groups.none', 'You have not joined any campaign or observer group.<br />You do not need one — you can report on your own, exactly as you do now.')}</p>`;
     return;
   }
   $('mg').innerHTML = `
-    <h1>${T('my-groups.your-groups', 'Your groups')}</h1>
+    <h1>${T('my-groups.your-groups', 'My Groups')}</h1>
     <p class="lede">${T('my-groups.lede', 'These groups can see the reports you have filed since you joined them. They cannot see anything the public cannot, and they cannot change how your reports are checked or counted.')}</p>
     ${GROUPS.map(card).join('')}
     <p class="note">${T('my-groups.note', 'Being in a group never limits where you can report from. If you are sent somewhere else on the day, report from where you actually are — that report still counts, and your group will see where it came from.')}</p>`;

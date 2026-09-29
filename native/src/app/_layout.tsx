@@ -307,6 +307,8 @@ function RootShell() {
                   which opened in a signed-OUT browser tab (lib/web-routes.ts). */}
               <Stack.Screen name="my-groups" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="captain" options={{ presentation: 'fullScreenModal' }} />
+              {/* Native twin of coverage.html (More → Observer Coverage). */}
+              <Stack.Screen name="coverage" options={{ presentation: 'fullScreenModal' }} />
             </Stack>
             {/* After the Stack, so it draws over every screen and the tab bar. One
                 instance for the whole app: mounted per-screen it would forget where

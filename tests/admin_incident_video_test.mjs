@@ -12,6 +12,10 @@
  *      and the same page behaved differently on a phone, where the element is a
  *      large fraction of the screen.
  *
+ * The fix now is the site's own player (app/video-player.js): a tile that opens
+ * full screen, contained, sound on; the large inline player stays as the
+ * fallback when that script does not load.
+ *
  * Also asserts that a clip the server could not convert SAYS SO. `transcoded:
  * false` means the phone's original was kept, which on a recent handset is
  * HEVC: the AAC audio plays and the picture does not. A named warning beats a
@@ -122,19 +126,67 @@ await page.waitForTimeout(1200);
 await page.click('.tab[data-p="incidents"]');
 await page.waitForTimeout(800);
 
-console.log('=== the player is big enough to judge a clip by ===');
+/**
+ * THE CLIP OPENS OUR PLAYER (app/video-player.js), as on incidents.html and
+ * review.html: a poster tile in the card, and a tap plays it full screen with
+ * our own controls at every size — which is what the old 160px box lacked.
+ * The judging happens in the overlay, so that is what is measured.
+ */
+console.log('=== the clip opens our player, big enough to judge it by ===');
 {
+  const tiles = await page.evaluate(() => [...document.querySelectorAll('.inc .m .vid')].map((d) => !!d.querySelector('button.hk-vtile > video[data-hk-evidence]')));
+  check('every clip is a player tile', tiles.length === 2 && tiles.every(Boolean), JSON.stringify(tiles));
+  const size = await page.evaluate(() => { const q = document.querySelector('.inc .m button.hk-vtile').getBoundingClientRect(); return [Math.round(q.width), Math.round(q.height)]; });
+  check('the tile is the console size (240x180), not the 120x90 default', size[0] === 240 && size[1] === 180, JSON.stringify(size));
+  check('the unconverted clip keeps its direct-open link beside the tile',
+    await page.evaluate(() => !!document.querySelectorAll('.inc')[1].querySelector('.noconv a[href="/uploads/incidents/raw.mp4"]')));
+  await page.click('.inc .m button.hk-vtile');
+  await page.waitForTimeout(500);
   const r = await page.evaluate(() => {
-    const v = document.querySelector('.inc .m video');
-    const q = v.getBoundingClientRect();
-    return { w: Math.round(q.width), h: Math.round(q.height), fit: getComputedStyle(v).objectFit };
+    const ov = document.querySelector('.hk-vp');
+    const v = ov && ov.querySelector('video');
+    const q = v ? v.getBoundingClientRect() : { width: 0, height: 0 };
+    return { open: !!ov && !ov.hidden, src: v && v.getAttribute('src'), w: Math.round(q.width), h: Math.round(q.height),
+      fit: v && getComputedStyle(v).objectFit, muted: v && v.muted };
   });
-  console.log(`      video renders ${r.w}x${r.h}, object-fit: ${r.fit}`);
+  console.log(`      overlay video renders ${r.w}x${r.h}, object-fit: ${r.fit}, muted: ${r.muted}`);
+  check('a tap opens the full-screen player', r.open, JSON.stringify(r));
+  check('…on the clip itself', /\/uploads\/incidents\/converted\.mp4$/.test(r.src || ''), r.src);
   // 160px was the broken size, and is also roughly where Chrome starts dropping
   // controls. 320 is a floor with room to spare, not a magic number.
   check('the video is at least 320px wide', r.w >= 320, `got ${r.w}px`);
   check('it is not cropped (object-fit: contain)', r.fit === 'contain', r.fit);
+  check('with SOUND ON — a reviewer needs the audio', r.muted === false);
   control('the old 160px box would fail that width check', 160 >= 320);
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+}
+
+/* Without the script (blocked, failed to load) the markup still carries
+   `controls`, and the page's own rule keeps that inline player large. */
+console.log('\n=== FALLBACK: no player script, still a usable inline player ===');
+{
+  const ctx2 = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  await ctx2.route('**/video-player.js*', (route) => route.abort());
+  await ctx2.addInitScript(() => {
+    const jwt = `x.${btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 }))}.y`;
+    try { localStorage.setItem('hawkeye_token', jwt); sessionStorage.setItem('hawkeye_admin', 'harness-not-a-real-secret'); } catch { /* ignore */ }
+  });
+  const p2 = await ctx2.newPage();
+  await p2.goto(`${base}/admin.html`);
+  await p2.waitForTimeout(400);
+  await p2.evaluate(() => { const s = document.getElementById('console'); if (s) s.hidden = false; });
+  await p2.waitForTimeout(1200);
+  await p2.click('.tab[data-p="incidents"]');
+  await p2.waitForTimeout(800);
+  const r = await p2.evaluate(() => {
+    const v = document.querySelector('.inc .m video');
+    const q = v.getBoundingClientRect();
+    return { tile: !!document.querySelector('.hk-vtile'), controls: v.controls, w: Math.round(q.width), fit: getComputedStyle(v).objectFit };
+  });
+  check('CONTROL the script really was blocked (no tile)', r.tile === false);
+  check('the browser player is there, at least 320px wide, not cropped', r.controls && r.w >= 320 && r.fit === 'contain', JSON.stringify(r));
+  await ctx2.close();
 }
 
 console.log('\n=== an unconverted clip says so ===');

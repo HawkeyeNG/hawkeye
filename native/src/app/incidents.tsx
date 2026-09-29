@@ -207,7 +207,7 @@ export default function Incidents() {
                     <Pressable
                       key={m.file}
                       className="mb-2 mr-2 h-24 w-24 overflow-hidden rounded-xl bg-surface active:opacity-80"
-                      accessibilityLabel={i18nT('n.app.incidents.open-evidence-full-size', { v0: m.type === 'video' ? 'video' : 'photo' })}
+                      accessibilityLabel={m.type === 'video' ? i18nT('video-player.open') : i18nT('n.app.incidents.open-photo-full-size')}
                       onPress={() => (m.type === 'video' ? openVideo(m.file) : setPhoto(mediaUrl(m.file)))}
                     >
                       {m.type === 'video' ? (

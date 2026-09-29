@@ -89,6 +89,10 @@ const TABLE = [
   ['a page this rule does not cover goes through untouched', 'https://hawkeye.com.ng/results.html', null],
   ['an /open link goes through untouched (open.tsx owns it)', '/open?to=report&pu=1', null],
   ['a malformed /join/ token goes through untouched', 'https://hawkeye.com.ng/join/x', null],
+  ['coverage.html (public, but it has a native screen)', 'https://hawkeye.com.ng/coverage.html', '/coverage'],
+  ['coverage.html?state= carries the state', 'https://hawkeye.com.ng/coverage.html?state=Lagos', '/coverage?state=Lagos'],
+  ['...decoded once and re-encoded, spaces and all', 'https://hawkeye.com.ng/coverage.html?state=Akwa+Ibom', '/coverage?state=Akwa%20Ibom'],
+  ['...and nothing but the state', 'https://hawkeye.com.ng/coverage.html?lga=Ikeja&ward=X', '/coverage'],
 ];
 for (const [label, url, want] of TABLE) check(label, W.webPageRoute(url), want);
 
@@ -115,7 +119,18 @@ check('open.tsx knows groups and captain', /groups: '\/my-groups'/.test(open) &&
 const join = read(`${N}app/join/[token].tsx`);
 check('the Continue after joining goes to the native screen', /router\.replace\('\/my-groups'/.test(join), true);
 check('...and the join screen no longer opens a browser at all', /openBrowserAsync|WebBrowser/.test(join), false);
-check('the screens are registered', ['my-groups', 'captain'].every((n) => new RegExp(`name="${n}"`).test(read(`${N}app/_layout.tsx`))), true);
+check('the screens are registered', ['my-groups', 'captain', 'coverage'].every((n) => new RegExp(`name="${n}"`).test(read(`${N}app/_layout.tsx`))), true);
+/* Observer coverage: the public floor is the LGA. The screen reads the public
+   endpoint only — never the owner's, and never a ward or an lga filter. */
+/* Code only: the screen's own comment names the admin endpoint to say it is
+   never called, and a comment is not a request. */
+const uncomment = (s) => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1');
+const cov = uncomment(read(`${N}app/coverage.tsx`));
+const belowFloor = (s) => /admin\/coverage|[?&](lga|ward)=/.test(s);
+check('the coverage screen reads the public endpoint', /\/api\/coverage/.test(cov), true);
+check('...and never the admin one, nor below the LGA', belowFloor(cov), false);
+check('CONTROL the floor check flags an admin or ward read', [belowFloor('`${BASE}/api/admin/coverage`'), belowFloor("'/api/coverage?state=X&ward=Y'")], [true, true]);
+check('CONTROL ...but not a comment that names one', belowFloor(uncomment('/* not /api/admin/coverage */\n// nor ?ward=\nfetch(`${BASE}/api/coverage`);')), false);
 
 // ========================================================= 2. call sites
 console.log('\n=== 2. no browser-opening call is handed one of these pages or a photo ===');
@@ -170,14 +185,20 @@ for (const f of ['app/ledger.tsx', 'app/case.tsx', 'app/incidents.tsx']) {
   check(`${f} shows photos in the native viewer`, /<ImageViewer\b/.test(read(`${N}${f}`)), true);
 }
 
-/* The More screen opens any non-`native:` row in the browser; none of those may
-   be one of these pages. */
+/* The More screen opens any non-`native:` row in the browser. Observer
+   Coverage was the last such row; with its native screen, there are none. */
 const more = read(`${N}app/(tabs)/more.tsx`);
-const webRows = [...more.matchAll(/href: '([^']+)'/g)].map((m) => m[1]).filter((h) => !/^(native|action):/.test(h));
-check('CONTROL More has web rows to inspect', webRows.length >= 1, true);
+const rowsOf = (src) => [...src.matchAll(/href: '([^']+)'/g)].map((m) => m[1]);
+const webRowsOf = (src) => rowsOf(src).filter((h) => !/^(native|action):/.test(h));
+const webRows = webRowsOf(more);
+check('CONTROL the row scan reaches the menu', rowsOf(more).length >= 20, true);
+check('CONTROL a planted web row is caught', webRowsOf("{ label: 'X', href: 'coverage.html' }"), ['coverage.html']);
+check('no More row opens a web page at all', webRows, []);
 check('no More row opens a groups / captain page on the web', webRows.filter((h) => FORBIDDEN.test(h)), []);
-check('More carries Your groups and Apply as Captain, natively',
+check('More carries My Groups and Apply as Captain, natively',
   /href: 'native:\/my-groups'/.test(more) && /labelKey: 'nav\.apply-as-captain', href: 'native:\/captain'/.test(more), true);
+check('More carries Observer Coverage, natively',
+  /labelKey: 'coverage\.observer-coverage', href: 'native:\/coverage'/.test(more), true);
 
 // ========================================================== 3. OTA safety
 console.log('\n=== 3. over the air: expo-video is the one new native module, and it is guarded ===');

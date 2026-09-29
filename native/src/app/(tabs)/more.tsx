@@ -15,9 +15,9 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { LANGS, LANG_NAMES, t as i18nT, useI18n } from '@/lib/i18n';
 
 /**
- * More — the menu.js panel groups, carried over 1:1. Until each page is
- * rebuilt natively, entries open the live site in an in-app browser tab,
- * so nothing the web app offers is unreachable from the native shell.
+ * More — the menu.js panel groups, carried over 1:1. Every row is a native
+ * screen now; the in-app-browser branch below is only for a row without a
+ * `native:` href, and none is left (tests/native_no_web_pages_test.mjs).
  */
 type Icon = keyof typeof Feather.glyphMap;
 type MenuLink = { label: string; labelKey: string; href: string; icon: Icon };
@@ -68,12 +68,13 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       },
       { label: 'Practice Run', labelKey: 'nav.practice-run', href: 'native:/practice', icon: 'play-circle' },
       { label: 'Map a Polling Unit', labelKey: 'common.map-a-polling-unit', href: 'native:/map-unit', icon: 'map-pin' },
-      // YOUR GROUPS — campaigns and observer groups you joined by invite. The
+      // MY GROUPS — campaigns and observer groups you joined by invite. The
       // join screen's consent notice promises "every group you are in is listed
-      // under Your groups", and in the app that list had no door of its own:
+      // under My Groups", and in the app that list had no door of its own:
       // only the Continue after joining, or an alert. Native screen, never the
-      // website's page (a signed-out tab — see lib/web-routes.ts).
-      { label: 'Your groups', labelKey: 'my-groups.your-groups', href: 'native:/my-groups', icon: 'users' },
+      // website's page (a signed-out tab — see lib/web-routes.ts). Title case,
+      // to sit beside "My Profile" above it.
+      { label: 'My Groups', labelKey: 'my-groups.your-groups', href: 'native:/my-groups', icon: 'users' },
       // Last, where app/menu.js puts it in Take part. The captain's guide rides
       // inside this screen rather than as a web page.
       { label: 'Apply as Captain', labelKey: 'nav.apply-as-captain', href: 'native:/captain', icon: 'flag' },
@@ -107,10 +108,11 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
       // pinned to the menu. The filter the accordion was reaching for already
       // lives on /races.
       { label: 'Races', labelKey: 'races.races', href: 'native:/races', icon: 'trending-up' },
-      // OBSERVER COVERAGE — where menu.js puts it, after Races. No native screen
-      // yet, so it opens the live page in the in-app browser like any
-      // non-`native:` row (the `go` handlers below). Units counted, never people.
-      { label: 'Observer Coverage', labelKey: 'coverage.observer-coverage', href: 'coverage.html', icon: 'users' },
+      // OBSERVER COVERAGE — where menu.js puts it, after Races. The native twin
+      // of coverage.html (app/coverage.tsx), over the same public endpoint; it
+      // used to open the website in the in-app browser. Units counted, never
+      // people, and never below local government level.
+      { label: 'Observer Coverage', labelKey: 'coverage.observer-coverage', href: 'native:/coverage', icon: 'users' },
       { label: 'Public Reports Log', labelKey: 'common.public-reports-log', href: 'native:/reports-log', icon: 'list' },
       { label: 'Political Data', labelKey: 'common.political-data', href: 'native:/political', icon: 'pie-chart' },
     ],

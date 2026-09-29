@@ -89,8 +89,9 @@ console.log('=== native + web source: where it may and may not appear ===');
   check('no web report page loads or calls it', /invite-unit\.js|HawkeyeInviteUnit/.test(webReport), false);
 
   const more = fs.readFileSync(`${ROOT}/native/src/app/(tabs)/more.tsx`, 'utf8');
-  check('More lists Observer coverage', /labelKey: 'coverage\.observer-coverage', href: 'coverage\.html'/.test(more), true);
-  check('and a non-native row opens the live site in the in-app browser',
+  // A native screen now (app/coverage.tsx), not the website in a browser tab.
+  check('More lists Observer coverage', /labelKey: 'coverage\.observer-coverage', href: 'native:\/coverage'/.test(more), true);
+  check('and a non-native row would still open the live site in the in-app browser',
     /WebBrowser\.openBrowserAsync\(`https:\/\/hawkeye\.com\.ng\/\$\{it\.href\}`\)/.test(more), true);
 
   // Sign-up must actually carry the invite code: observe.html runs app.js,

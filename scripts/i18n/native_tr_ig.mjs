@@ -59,7 +59,7 @@ export default {
   "n.app.incidents.late-materials": "Igbu oge akụrụngwa ntuli aka",
   "n.app.incidents.min-ago": "nkeji {v0} gara aga",
   "n.app.incidents.no-incidents-published-yet": "E bipụtabeghị ihe merenụ ọ bụla",
-  "n.app.incidents.open-evidence-full-size": "Mepee ihe akaebe {v0} na nha zuru ezu",
+  "n.app.incidents.open-photo-full-size": "Mepee foto ihe akaebe na nha zuru ezu",
   "n.app.incidents.reports-appear-here-once-a-moderator": "Akụkọ na-apụta ebe a mgbe onye nlekọta nyochachara ha.",
   "n.app.incidents.the-incident-feed-did-not-load": "Ndepụta ihe merenụ adọnyeghị. ({v0})",
   "n.app.incidents.video": "Vidiyo",
@@ -1034,4 +1034,5 @@ export default {
   "n.components.video-viewer.open-in-browser": "Mepee n’ihe nchọgharị",
   "n.components.video-viewer.show-controls": "Gosi njikwa vidiyo",
   "n.components.video-viewer.hide-controls": "Zoo njikwa vidiyo",
+  "n.app.coverage.empty": "Enwebeghị ọnụọgụgụ mkpuchi. Dọrọ ala ka ị nwaa ọzọ.",
 };

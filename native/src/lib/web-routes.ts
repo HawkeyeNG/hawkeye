@@ -1,5 +1,6 @@
 /**
- * OUR OWN WEB PAGES THAT NOW HAVE A NATIVE SCREEN — groups, invites, captains.
+ * OUR OWN WEB PAGES THAT NOW HAVE A NATIVE SCREEN — groups, invites, captains,
+ * and observer coverage (public, but native gets native screens all the same).
  *
  * WHY THIS EXISTS. These pages used to open in an in-app browser tab, and that
  * tab does not share the app's session: it is a separate browser, signed OUT.
@@ -70,6 +71,14 @@ export function webPageRoute(url: string): string | null {
   if (file === 'captain.html' || file === 'captain') return '/captain';
   // The guide is shown inside the native captain screen, opened.
   if (file === 'captain-guide.html') return '/captain?guide=1';
+  // Observer coverage is public, but it has a native screen, so the app never
+  // opens the page. ?state= carries over (the screen reads it); nothing else does.
+  if (file === 'coverage.html' || file === 'coverage') {
+    const st = /(?:^|&)state=([^&]*)/.exec(query)?.[1];
+    let state = '';
+    try { state = st ? decodeURIComponent(st.replace(/\+/g, ' ')).trim() : ''; } catch { state = ''; }
+    return state ? `/coverage?state=${encodeURIComponent(state)}` : '/coverage';
+  }
   return null;
 }
 

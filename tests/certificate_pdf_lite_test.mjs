@@ -43,6 +43,10 @@ const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 
 const KEY = JSON.parse(/QUIZ_ANSWERS = (\[[^\]]+\])/.exec(fs.readFileSync(`${REPO}/backend/src/services/certificates.js`, 'utf8'))[1]);
 // The control for the Lite verify page: the page exactly as it was before this change.
 const OLD_VERIFY = execSync("git -c safe.directory='*' show c2b8a2af:app/verify-cert.html", { cwd: REPO, encoding: 'utf8' });
+/* The same old page with its scripts written as LIVE urls — what the Lite shell
+   used to make of its root-relative ones — so the script half of the check
+   still has something it must catch now that native.js leaves scripts alone. */
+const LIVE_SCRIPTS = OLD_VERIFY.replace(/<script src="\/(?!native\.js)/g, '<script src="https://hawkeye.com.ng/');
 
 const CODE = 'ABCD-EFGH';
 const NAME = 'Zainab Qwertyuiop-Okafor';
@@ -62,6 +66,7 @@ const server = http.createServer((req, res) => {
   const u = new URL(req.url, 'http://x');
   if (u.pathname.startsWith('/api/')) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify(api(u))); }
   if (u.pathname === '/__old_verify.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(OLD_VERIFY); }
+  if (u.pathname === '/__live_scripts.html') { res.writeHead(200, { 'content-type': 'text/html' }); return res.end(LIVE_SCRIPTS); }
   const f = path.join(APP, decodeURIComponent(u.pathname === '/' ? '/index.html' : u.pathname));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
   res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
@@ -219,12 +224,11 @@ check('Lite Android: then offered by the Share plugin as ONE file:// path to tha
   Array.isArray(sh.files) && sh.files.length === 1 && sh.files[0] === 'file:///storage/emulated/0/Android/media/ng.com.hawkeye.lite/Hawkeye/hawkeye-observer-certificate.pdf', sh);
 check('Lite Android: "PDF saved to your phone." shows', (await r.pg.textContent('#cert-status')).trim() === 'PDF saved to your phone.');
 check('Lite Android: the name is in no network request', carries(r.log, NAME).length === 0, carries(r.log, NAME));
-/* /monitor.js, /i18n.js and /lang.js are root-relative on EVERY page (52 of
-   them), so native.js sends them to the live site in Lite — site-wide and
-   older than this change; anything else would be new. */
-const SITEWIDE = new Set(['/monitor.js', '/i18n.js', '/lang.js']);
+/* No exemptions: /monitor.js, /i18n.js and /lang.js are root-relative on every
+   page, and native.js used to send them to the live site in Lite. It leaves
+   scripts alone now, so they come from the bundle like everything else. */
 check('Lite Android: nothing of the certificate flow fetched from the live site (API aside)',
-  r.offBundle.filter((p) => !SITEWIDE.has(p)).length === 0, r.offBundle);
+  r.offBundle.length === 0, r.offBundle);
 check('Lite: no chat bubble on the certificate', (await r.pg.$('#hk-fab')) === null);
 // Following the check link: the bundled page, in the app.
 await Promise.all([r.pg.waitForURL(/verify-cert\.html/, { timeout: 10000 }).catch(() => {}), r.pg.click('#cert-link')]);
@@ -247,8 +251,9 @@ async function shellOf(page) {
   const x = await open(page, { mode: 'android' });
   // The page's OWN <script src>s (menu.js and monitor.js inject outbox.js and
   // Sentry themselves, site-wide, and are not this page's markup).
-  const file = page.startsWith('__old_verify') ? OLD_VERIFY : fs.readFileSync(path.join(APP, page.replace(/\?.*$/, '')), 'utf8');
-  const own = [...file.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1].replace(/^\//, ''));
+  const file = page.startsWith('__old_verify') ? OLD_VERIFY : page.startsWith('__live_scripts') ? LIVE_SCRIPTS
+    : fs.readFileSync(path.join(APP, page.replace(/\?.*$/, '')), 'utf8');
+  const own = [...file.matchAll(/<script[^>]+src="([^"]+)"/g)].map((m) => m[1].replace(/^https:\/\/hawkeye\.com\.ng/, '').replace(/^\//, ''));
   const s = await x.pg.evaluate((ownSrcs) => {
     const pane = document.getElementById('page-scroll');
     const live = (u) => /^https:\/\/hawkeye\.com\.ng\//.test(u);
@@ -272,8 +277,16 @@ check('Lite verify-cert: nothing but the API fetched from the live site', vc.off
 check('Lite verify-cert: no chat bubble', !vc.fab);
 check('Lite verify-cert: no page errors', vc.errs.length === 0, vc.errs);
 const old = await shellOf(`__old_verify.html?code=${CODE}`);
-check('control: the page AS IT WAS sent its links and scripts to the website from Lite',
-  old.liveLinks.length >= 5 && old.liveScripts.length >= 3, { links: old.liveLinks.length, scripts: old.liveScripts.length });
+check('control: the page AS IT WAS sent its links to the website from Lite',
+  old.liveLinks.length >= 5, { links: old.liveLinks.length });
+/* Its root-relative scripts used to go there too (native.js rewrote every
+   leading-slash src). It leaves scripts alone now, so even this page's load
+   from the bundle — the fix for Lite pages coming up untranslated offline. */
+check('…but even its root-relative scripts now load from the bundle',
+  old.liveScripts.length === 0 && old.offBundle.filter((p) => p.endsWith('.js')).length === 0, { scripts: old.liveScripts, off: old.offBundle });
+const planted = await shellOf(`__live_scripts.html?code=${CODE}`);
+check('control: the script check catches a page whose scripts ARE on the website',
+  planted.liveScripts.length >= 3, { scripts: planted.liveScripts.length });
 
 /* -------------------------------------------- 5. the chat bubble placement */
 const pr = await shellOf('practice.html');

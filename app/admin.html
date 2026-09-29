@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193" />
-  <script src="native.js?v=121"></script>
+  <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
 /* ---- from review.html ---- */
@@ -56,12 +56,18 @@
        make it bigger either. That is why it behaved differently on a phone,
        where the same element is a large fraction of the screen.
        `contain`, never `cover`: cropping evidence to fit a box is exactly the
-       wrong trade here. */
+       wrong trade here.
+       NOW: video-player.js (the incidents.html / review.html player) turns the
+       clip into a poster tile and plays it full screen, `contain`, sound on,
+       with its own controls at every size. The tile is only a way in, so it is
+       larger than review.html's thumbnails but still a tile. The large inline
+       rule below is the fallback for a load where the script never ran. */
     .inc .m .vid { flex: 1 1 100%; max-width: 520px; }
-    .inc .m video {
+    .inc .m video:not(.hk-vt-v) {
       width: 100%; height: auto; max-height: 60vh; object-fit: contain;
       background: #000; border-radius: 6px; border: 1px solid var(--border);
     }
+    .inc .m .vid button.hk-vtile { width: 240px; height: 180px; }
     /* A clip the server could not convert may simply not decode in this
        browser. Saying so beats a black rectangle the reviewer has to guess at. */
     .inc .m .noconv {
@@ -730,6 +736,10 @@
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">&copy; 2026 IniXien, LLC. All rights reserved.</p>
   </div></footer>
 
+  <!-- Evidence videos in the Incidents queue: the same player as incidents.html
+       and review.html (a poster tile that opens our full-screen player, sound
+       on). Same ?v= as those pages and sw.js's shell list. -->
+  <script src="video-player.js?v=1"></script>
   <script>
   // post.html's script. Wrapped: it declares $, secret, hdr and setStatus at
   // top level, exactly as review.html's does.
@@ -1156,9 +1166,11 @@
           const warn = m.transcoded === false
             ? `<p class="noconv">⚠ Not converted on the server${m.transcodeError ? ` (${m.transcodeError})` : ''} — this is the phone's original recording. If it will not play here, open it directly: <a href="/uploads/${m.file}" target="_blank" rel="noopener">${m.file.split('/').pop()}</a></p>`
             : '';
-          // NOT muted: a reviewer judging an incident needs the audio, and the
-          // attribute only set the initial state anyway.
-          return `<div class="vid">${warn}<video src="/uploads/${m.file}" controls playsinline preload="metadata"></video></div>`;
+          // data-hk-evidence: video-player.js turns this into a poster tile that
+          // opens our full-screen player — with SOUND ON, which is what a
+          // reviewer judging an incident needs. `controls` stays for the case
+          // where the script never loads: the browser's own player is still there.
+          return `<div class="vid">${warn}<video data-hk-evidence src="/uploads/${m.file}" controls playsinline preload="metadata"></video></div>`;
         }).join('');
         const gps = (i.lat != null && i.lng != null)
           ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';

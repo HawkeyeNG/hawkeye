@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=193" />
-  <script src="native.js?v=121"></script>
+  <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <!-- NO authgate.js, deliberately. This page has to be readable SIGNED OUT:
@@ -154,7 +154,7 @@ function showCard(g) {
              my-groups.html. Do not add a line before the screen that honours it
              exists: a promise with nothing behind it reads as handled. -->
         <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and every
-          group you are in is listed under <a class="plain" href="my-groups.html">Your groups</a>.</span></li>
+          group you are in is listed under <a class="plain" href="my-groups.html">My Groups</a>.</span></li>
       </ul>
       <button id="go">${signedIn() ? T('join.button-join', 'Join {name}', { name: esc(g.name) }) : T('join.button-sign-in', 'Sign in to join')}</button>
       <p class="fine" lang="en">Hawkeye is not run by any party, candidate or campaign, and joining a
@@ -236,7 +236,7 @@ function showJoined(g, b) {
     <p>${b.already ? '' : T('join.can-now-see', '{name} can now see the reports you file from here on.', { name })}
       ${b.proposed_pu ? T('join.saved-unit', 'They have your saved polling unit (<span class="num">{pu}</span>) as a starting point, and may confirm or change it.', { pu: esc(b.proposed_pu) }) : ''}</p>
     <p style="margin-top:14px"><a class="plain" href="observe.html">${T('observe.report-a-result', 'Report a result')}</a> &middot;
-       <a class="plain" href="my-groups.html">${T('my-groups.your-groups', 'Your groups')}</a></p>
+       <a class="plain" href="my-groups.html">${T('my-groups.your-groups', 'My Groups')}</a></p>
   </div>`;
 }
 

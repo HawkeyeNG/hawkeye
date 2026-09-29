@@ -60,7 +60,7 @@ export default {
     "n.app.incidents.late-materials": "Jinkirin kayan zaɓe",
     "n.app.incidents.min-ago": "minti {v0} da suka wuce",
     "n.app.incidents.no-incidents-published-yet": "Ba a wallafa wani lamari ba tukuna",
-    "n.app.incidents.open-evidence-full-size": "Buɗe shaidar {v0} cikin cikakken girma",
+    "n.app.incidents.open-photo-full-size": "Buɗe hoton shaida cikin cikakken girma",
     "n.app.incidents.reports-appear-here-once-a-moderator": "Rahotanni na bayyana nan bayan mai daidaitawa ya duba su.",
     "n.app.incidents.the-incident-feed-did-not-load": "An kasa loda jerin lamurra. ({v0})",
     "n.app.incidents.video": "Bidiyo",
@@ -1035,5 +1035,6 @@ export default {
     "n.components.video-viewer.open-in-browser": "Buɗe a burauza",
     "n.components.video-viewer.show-controls": "Nuna maɓallan bidiyon",
     "n.components.video-viewer.hide-controls": "Ɓoye maɓallan bidiyon",
+    "n.app.coverage.empty": "Babu alkaluman rufewa tukuna. Ja ƙasa ka sake gwadawa.",
   },
 };

@@ -25,7 +25,7 @@
   "join.you-are-in": "You are in",
   "join.can-now-see": "{name} can now see the reports you file from here on.",
   "join.saved-unit": "They have your saved polling unit (<span class=\"num\">{pu}</span>) as a starting point, and may confirm or change it.",
-  "my-groups.your-groups": "Your groups",
+  "my-groups.your-groups": "My Groups",
   "my-groups.none": "You have not joined any campaign or observer group.<br />You do not need one — you can report on your own, exactly as you do now.",
   "my-groups.lede": "These groups can see the reports you have filed since you joined them. They cannot see anything the public cannot, and they cannot change how your reports are checked or counted.",
   "my-groups.note": "Being in a group never limits where you can report from. If you are sent somewhere else on the day, report from where you actually are — that report still counts, and your group will see where it came from.",

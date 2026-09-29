@@ -59,7 +59,7 @@ export default {
   "n.app.incidents.late-materials": "Ohun èlò tí ó pẹ́",
   "n.app.incidents.min-ago": "ìṣẹ́jú {v0} sẹ́yìn",
   "n.app.incidents.no-incidents-published-yet": "A kò tíì tẹ ìṣẹlẹ̀ kankan jáde",
-  "n.app.incidents.open-evidence-full-size": "Ṣí ẹ̀rí {v0} ní kíkún",
+  "n.app.incidents.open-photo-full-size": "Ṣí fọ́tò ẹ̀rí ní kíkún",
   "n.app.incidents.reports-appear-here-once-a-moderator": "Àwọn ìròyìn máa ń hàn níbí lẹ́yìn tí alábòójútó bá ti ṣàyẹ̀wò wọn.",
   "n.app.incidents.the-incident-feed-did-not-load": "A kò lè gbé àtòjọ iṣẹlẹ wọlé. ({v0})",
   "n.app.incidents.video": "Fídíò",
@@ -1034,4 +1034,5 @@ export default {
   "n.components.video-viewer.open-in-browser": "Ṣí i nínú aṣàwákiri",
   "n.components.video-viewer.show-controls": "Fi àwọn bọ́tìnnì fídíò hàn",
   "n.components.video-viewer.hide-controls": "Fi àwọn bọ́tìnnì fídíò pamọ́",
+  "n.app.coverage.empty": "Kò tíì sí ìkànìyàn ìbòòrí. Fa sísàlẹ̀ láti tún gbìyànjú.",
 };

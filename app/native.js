@@ -362,8 +362,18 @@
     origFetch(input && input.url ? new Request(abs(input.url), input) : abs(input), init);
 
   // Evidence photos, logo, map GeoJSON etc. are referenced with a leading slash.
+  //
+  // SCRIPTS ARE NOT REWRITTEN. A root-relative <script src="/i18n.js"> is our own
+  // code, shipped in this bundle, and in the shell it already resolves to the
+  // bundled copy (https://localhost/i18n.js). Every page loads /i18n.js,
+  // /lang.js and /monitor.js that way (root-relative so nested pages work on the
+  // web), and the observer below reached them before the parser fetched them —
+  // so Lite fetched all three from the live site, and offline a page came up
+  // with no translations, no language prompt and no error reporting. The
+  // scripts strip_web_assets.sh removes (tesseract, opencv) are referenced
+  // relatively and the shell uses ML Kit instead, so no script needed it.
   const fixEl = (el) => {
-    if (!el.getAttribute) return;
+    if (!el.getAttribute || el.tagName === 'SCRIPT') return;
     for (const a of ['src', 'href']) {
       const v = el.getAttribute(a);
       if (v && v[0] === '/' && v[1] !== '/') el.setAttribute(a, BASE + v);

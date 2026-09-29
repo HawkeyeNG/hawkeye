@@ -82,6 +82,11 @@
   <div class="phase-banner"><div class="wrap"><strong data-i18n="practice.practice">Practice</strong> <span data-i18n="practice.nothing-here-is-published-or-counted">— nothing here is published or counted.</span></div></div>
 
   <main class="wrap" id="main">
+    <!-- Unreachable is not closed: a failed /api/practice fetch shows this, never #closed. -->
+    <section id="unreachable" hidden>
+      <p data-i18n="captain.err.network" class="lede">Could not reach Hawkeye. Check your connection and try again.</p>
+      <button type="button" id="cfg-retry" class="btn" data-i18n="practiceday.try-again">Try again</button>
+    </section>
     <section id="closed" hidden>
       <h1 data-i18n="practice.practice-is-closed-right-now">Practice Is Closed Right Now</h1>
       <p data-i18n-html="practice.the-practice-election-has-ended-a-fresh" class="lede">The practice election has ended. A fresh practice run will reopen after the Osun election so you can prepare for the 2027 general elections. In the meantime you can <a href="how.html">read how Hawkeye works</a> or <a href="observe.html?intent=observe">become an observer</a>.</p>
@@ -227,7 +232,7 @@
 
   <script src="device.js"></script>
   <script src="save-media.js?v=1"></script>
-  <script src="practice.js?v=9"></script>
+  <script src="practice.js?v=10"></script>
   <script src="invite-unit.js?v=2"></script>
   <script>
     /* The second-observer card on the completion screen. Not a real report —

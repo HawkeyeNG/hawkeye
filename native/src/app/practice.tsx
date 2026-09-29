@@ -2,7 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
 import { router } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -577,12 +577,32 @@ export default function Practice() {
     loadHistory();
   }, []);
 
-  useEffect(() => {
+  /**
+   * UNREACHABLE IS NOT CLOSED. A failed fetch used to set { active: false }, so a
+   * weak venue network showed "Practice Is Closed" mid-demo (2026-09-29) while the
+   * server said open. Now: one silent retry, then a "could not reach" screen with
+   * Try again. Only the server's own { active: false } shows "closed".
+   */
+  const [cfgUnreachable, setCfgUnreachable] = useState(false);
+  const loadCfg = useCallback((retriesLeft = 1) => {
+    setCfgUnreachable(false);
     fetch(`${BASE}/api/practice`)
-      .then((r) => r.json())
-      .then(setCfg)
-      .catch(() => setCfg({ active: false }));
+      .then((r) => {
+        if (!r.ok) throw new Error(`practice ${r.status}`);
+        return r.json();
+      })
+      .then((j: PracticeConfig) => {
+        if (typeof j?.active !== 'boolean') throw new Error('practice: bad shape');
+        setCfg(j);
+      })
+      .catch(() => {
+        if (retriesLeft > 0) setTimeout(() => loadCfg(retriesLeft - 1), 1500);
+        else setCfgUnreachable(true);
+      });
   }, []);
+  useEffect(() => {
+    loadCfg();
+  }, [loadCfg]);
 
   useEffect(() => {
     api.contests().then(setContests).catch(() => {});
@@ -1134,6 +1154,23 @@ export default function Practice() {
     setSheetMiss('');
     setStep('sheet');
   };
+
+  if (!cfg && cfgUnreachable) {
+    return (
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
+        <Feather name="wifi-off" size={28} color={ui.tint.good.ink} />
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
+          {i18nT('n.app.tabs.index.could-not-reach')}
+        </Text>
+        <Pressable
+          className="mt-5 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
+          onPress={() => loadCfg()}
+        >
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.practice-day.try-again')}</Text>
+        </Pressable>
+      </SafeScreen>
+    );
+  }
 
   if (!cfg) {
     return (

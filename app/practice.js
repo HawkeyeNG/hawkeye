@@ -198,8 +198,21 @@
   // ---- boot ----
   (async () => {
     let cfg;
-    try { cfg = await fetch('/api/practice').then((r) => r.json()); }
-    catch { cfg = { active: false }; }
+    // UNREACHABLE IS NOT CLOSED (2026-09-29: a venue network showed "closed" mid-demo).
+    // One silent retry; then a retry screen. Only the server's own active:false is "closed".
+    const getCfg = () => fetch('/api/practice').then((r) => {
+      if (!r.ok) throw new Error('practice ' + r.status);
+      return r.json();
+    }).then((j) => { if (typeof (j && j.active) !== 'boolean') throw new Error('bad shape'); return j; });
+    try { cfg = await getCfg(); }
+    catch {
+      try { await new Promise((ok) => setTimeout(ok, 1500)); cfg = await getCfg(); }
+      catch {
+        $('unreachable').hidden = false;
+        $('cfg-retry').addEventListener('click', () => location.reload());
+        return;
+      }
+    }
     if (!cfg.active) { $('closed').hidden = false; return; }
 
     PARTIES = cfg.parties || [];

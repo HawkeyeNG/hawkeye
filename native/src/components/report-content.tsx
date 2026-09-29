@@ -21,12 +21,17 @@ import { t as i18nT } from '@/lib/i18n';
 // backend; production blocks cross-origin calls. See lib/api.ts.
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 
-/** Reason codes the server accepts (FLAG_REASONS in routes/incidents.js). */
-const REASONS: { key: 'abuse' | 'false' | 'privacy' | 'other'; label: string }[] = [
-  { key: 'abuse', label: 'Abusive or harmful' },
-  { key: 'false', label: 'False or misleading' },
-  { key: 'privacy', label: 'Privacy violation' },
-  { key: 'other', label: 'Something else' },
+/**
+ * Reason codes the server accepts (FLAG_REASONS in routes/incidents.js). The
+ * label is a KEY, resolved at render — the web flag dialog (incidents.html,
+ * incident-reports.html) uses the same four, so both clients say the same
+ * thing in all four languages. The English stays beside it as documentation.
+ */
+const REASONS: { key: 'abuse' | 'false' | 'privacy' | 'other'; labelKey: string; label: string }[] = [
+  { key: 'abuse', labelKey: 'flag.reason-abuse', label: 'Abusive or harmful' },
+  { key: 'false', labelKey: 'flag.reason-false', label: 'False or misleading' },
+  { key: 'privacy', labelKey: 'flag.reason-privacy', label: 'Privacy violation' },
+  { key: 'other', labelKey: 'flag.reason-other', label: 'Something else' },
 ];
 
 /**
@@ -96,7 +101,7 @@ export function ReportContent({
           color={sent ? ui.tint.good.ink : ui.faint}
         />
         <Text className={`pl-1.5 text-xs ${sent ? 'font-bold text-good-ink' : 'text-faint'}`}>
-          {sent ? 'Reported — our team will review' : label}
+          {sent ? i18nT('n.components.report-content.reported') : label}
         </Text>
       </Pressable>
 
@@ -144,7 +149,7 @@ export function ReportContent({
                     reason === r.key ? 'font-bold text-hawk-gold' : 'text-ink'
                   }`}
                 >
-                  {r.label}
+                  {i18nT(r.labelKey)}
                 </Text>
               </Pressable>
             ))}

@@ -11,7 +11,7 @@
   <!-- One directory deeper than the rest of the site: this file is served as
        /open (not /open.html) so the URL is a valid Expo Router route on the
        native side. Hence the ../ on every asset. -->
-  <link rel="stylesheet" href="../styles.css?v=193" />
+  <link rel="stylesheet" href="../styles.css?v=194" />
 </head>
 <body>
   <!--
@@ -38,6 +38,8 @@
         activity: '../profile.html', ask: '../index.html',
         // App Store In-App Events (National Practice Day) deep-link Lite here.
         practiceday: '../practice-day.html',
+        // The election-day readiness check (native: /ready).
+        ready: '../ready.html',
         // The same names native's app/open.tsx routes to its own screens.
         groups: '../my-groups.html', captain: '../captain.html',
         // An invite link (invite-unit.js, profile.html, native lib/referral.ts):

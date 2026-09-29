@@ -63,7 +63,7 @@ const ctx = await b.newContext();
 const p = await ctx.newPage();
 const errs = [];
 p.on('pageerror', (e) => errs.push(String(e)));
-p.on('dialog', (d) => d.accept());   // the apply confirmation
+p.on('dialog', (d) => { errs.push('native dialog: ' + d.message()); d.dismiss(); });   // none expected: dialogs are in-page
 
 // admin.html sits behind authgate.js, which bounces a signed-OUT visitor to the
 // observer sign-in before the console is even in the DOM. So the page needs a
@@ -106,7 +106,11 @@ check('Apply is now unlocked', await p.$eval('#reg-apply', (e) => e.disabled), f
 
 console.log('\n=== apply writes, and reads back the real counts ===');
 await p.click('#reg-apply');
-await p.waitForFunction || null;
+// The confirmation is Hawkeye's own dialog now (app/dialog.js), not window.confirm.
+await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 5000 });
+check('it asks first, in our dialog, styled as destructive', await p.$eval('.hk-dlg .hk-dlg-ok', (b) => b.classList.contains('danger')), true);
+check('CONTROL nothing is written while the question is open', calls, [{ apply: false }]);
+await p.click('.hk-dlg .hk-dlg-ok');
 for (let i = 0; i < 40 && calls.length < 2; i++) await new Promise((r) => setTimeout(r, 250));
 check('it asked to apply', calls, [{ apply: false }, { apply: true }]);
 check('it confirms the senatorial target was hit', await p.textContent('#reg-out'),

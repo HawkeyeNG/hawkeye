@@ -19,8 +19,9 @@
        manifest takes one scope, not two. -->
   <link rel="manifest" href="room.webmanifest?v=3" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=4"></script>
@@ -1019,7 +1020,7 @@ async function setupForm() {
     e.preventDefault();
     const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
     const scope = shape.kind === 'national' ? '' : twoStep ? $('mk-race').value : $('mk-state').value;
-    if (shape.kind !== 'national' && !scope) return alert(T('situation-room.pick-the-race-this-room-is-watching', 'Pick the race this room is watching.'));
+    if (shape.kind !== 'national' && !scope) return void hkAlert(T('situation-room.pick-the-race-this-room-is-watching', 'Pick the race this room is watching.'));
     const { status, body } = await api('/api/groups', {
       method: 'POST',
       body: JSON.stringify({
@@ -1027,7 +1028,9 @@ async function setupForm() {
         party: $('mk-party').value, contest: $('mk-contest').value, scope,
       }),
     });
-    if (status !== 201) return alert(body.error === 'unknown_scope' ? 'That race is not in the register.' : (body.error || 'Could not create the group.'));
+    if (status !== 201) return void hkAlert(body.error === 'unknown_scope'
+      ? T('situation-room.race-not-in-register', 'That race is not in the register.')
+      : T('situation-room.could-not-create-the-room', 'Could not create the room.'));
     await boot(body.id);
   });
 }
@@ -2569,7 +2572,7 @@ async function runAction(b) {
   if (b.dataset.act === 'demote') {
     if (!await ask(T('situation-room.remove-this-manager-they-keep-their-place', 'Remove this manager? They keep their place on the roster as an observer.'))) return;
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + id, { method: 'DELETE' });
-    if (status !== 200) return alert(roleError(body.error));
+    if (status !== 200) return void hkAlert(roleError(body.error));
     return afterRoleChange();
   }
   if (b.dataset.act === 'remove') return removeObserver(id, b.dataset.name || ('Observer #' + id));
@@ -2609,7 +2612,7 @@ const roleError = (e) => e === 'owner_only'
 async function removeObserver(observerId, who) {
   if (!await ask(T('situation-room.remove-observer-confirm', "Remove {who} from this campaign? Every report they have filed stays in the public record and still counts. They can rejoin with a new invite.", { who }))) return;
   const { status, body } = await api('/api/groups/' + S.gid + '/members/' + observerId, { method: 'DELETE' });
-  if (status !== 200) return alert(roleError(body.error));
+  if (status !== 200) return void hkAlert(roleError(body.error));
   S.team = S.coverage = S.discrepancies = null;
   await loadGroup();
 }
@@ -2631,7 +2634,7 @@ async function renameRoom() {
     method: 'PATCH', body: JSON.stringify({ name: name.trim() }),
   });
   if (status !== 200) {
-    return alert(body.error === 'owner_only'
+    return void hkAlert(body.error === 'owner_only'
       ? T('situation-room.only-owner-can-rename', "Only the owner can rename this room.")
       : T('situation-room.could-not-rename-room', "Could not rename this room."));
   }
@@ -2745,13 +2748,13 @@ function bindRosterTools() {
 
 async function copyMembers() {
   const from = $('copy-from') && $('copy-from').value;
-  if (!from) return alert(T('situation-room.pick-a-campaign', "Pick the campaign to bring observers from."));
+  if (!from) return void hkAlert(T('situation-room.pick-a-campaign', "Pick the campaign to bring observers from."));
   const src = (S.sources || []).find((x) => String(x.id) === String(from));
   if (!await ask(T('situation-room.copy-confirm', "Ask everyone on {name} to observe with {target} as well? Each of them decides. Nobody who is already here is asked twice.", { name: (src && src.name) || '', target: S.group.name }))) return;
   const { status, body } = await api('/api/groups/' + S.gid + '/copy-members', {
     method: 'POST', body: JSON.stringify({ from_group_id: Number(from) }),
   });
-  if (status !== 200) return alert(roleError(body.error));
+  if (status !== 200) return void hkAlert(roleError(body.error));
   await afterInvite(body.invited);
 }
 
@@ -2762,7 +2765,7 @@ async function downloadRoster() {
   const res = await fetch('/api/groups/' + S.gid + '/roster.csv', {
     headers: { authorization: 'Bearer ' + (localStorage.getItem('hawkeye_token') || '') },
   });
-  if (!res.ok) return alert(T('situation-room.could-not-build-roster', "Could not build that roster file."));
+  if (!res.ok) return void hkAlert(T('situation-room.could-not-build-roster', "Could not build that roster file."));
   const url = URL.createObjectURL(await res.blob());
   const a = document.createElement('a');
   a.href = url;
@@ -2794,18 +2797,18 @@ async function importRoster(e) {
      code, so a mis-picked file does not silently import its first row. */
   if (col < 0) {
     if (/^[0-9A-HJKMNP-TV-Z]{12}$/i.test(head[0] || '')) { rows.unshift(head.join(',')); col = 0; } else {
-      return alert(T('situation-room.no-share-code-column', "That file has no share_code column. Use a roster downloaded from Hawkeye."));
+      return void hkAlert(T('situation-room.no-share-code-column', "That file has no share_code column. Use a roster downloaded from Hawkeye."));
     }
   }
   const codes = rows.map((l) => (l.split(',')[col] || '').trim().replace(/^"|"$/g, '')).filter(Boolean);
-  if (!codes.length) return alert(T('situation-room.roster-empty', "There are no observers in that file."));
+  if (!codes.length) return void hkAlert(T('situation-room.roster-empty', "There are no observers in that file."));
   if (!await ask(codes.length === 1
     ? T('situation-room.import-confirm-one', "Ask {v0} observer from that file to join {target}? They decide.", { v0: n(codes.length), target: S.group.name })
     : T('situation-room.import-confirm-many', "Ask {v0} observers from that file to join {target}? Each of them decides.", { v0: n(codes.length), target: S.group.name }))) return;
   const { status, body } = await api('/api/groups/' + S.gid + '/import-roster', {
     method: 'POST', body: JSON.stringify({ codes }),
   });
-  if (status !== 200) return alert(roleError(body.error));
+  if (status !== 200) return void hkAlert(roleError(body.error));
   await afterInvite(body.invited, body.unknown);
 }
 
@@ -2818,7 +2821,7 @@ async function afterInvite(invited, unknown) {
   if (!invited) bits.push(T('situation-room.nobody-new', "Everyone in that list is already on this roster."));
   if (unknown) bits.push(T('situation-room.unknown-codes', "{v0} row(s) were not recognised and were skipped.", { v0: n(unknown) }));
   bits.push(T('situation-room.asked-note', "They appear here once they accept."));
-  alert(bits.join(' '));
+  hkAlert(bits.join(' '));
   S.team = S.sources = null;
   await loadGroup();
 }
@@ -2925,7 +2928,7 @@ async function assign(observerId, puCode) {
     method: 'PATCH', body: JSON.stringify({ pu_code: puCode }),
   });
   if (status !== 200) {
-    alert(body.error === 'no_such_unit' ? T('situation-room.no-such-unit', "No polling unit has that code.")
+    hkAlert(body.error === 'no_such_unit' ? T('situation-room.no-such-unit', "No polling unit has that code.")
       : body.error === 'outside_your_scope' ? T('situation-room.outside-your-unit-area', "That unit is outside the area you cover.")
       : T('situation-room.could-not-save-assignment', "Could not save that assignment."));
     return false;
@@ -3127,11 +3130,11 @@ async function promote(observerId, who) {
         scope_lga: picked.lga || '',
       }
       : { role };
-    if (role === 'coordinator' && !payload.scope_value) return alert(T('situation-room.pick-the-area-they-will-cover', 'Pick the area they will cover.'));
+    if (role === 'coordinator' && !payload.scope_value) return void hkAlert(T('situation-room.pick-the-area-they-will-cover', 'Pick the area they will cover.'));
     const { status, body } = await api('/api/groups/' + S.gid + '/managers/' + observerId, {
       method: 'POST', body: JSON.stringify(payload),
     });
-    if (status !== 200) return alert(roleError(body.error));
+    if (status !== 200) return void hkAlert(roleError(body.error));
     sheet.close();
     afterRoleChange();
   });
@@ -3144,7 +3147,7 @@ async function rename(observerId) {
   const { status } = await api('/api/groups/' + S.gid + '/members/' + observerId, {
     method: 'PATCH', body: JSON.stringify({ label: label.trim() }),
   });
-  if (status !== 200) return alert(T('situation-room.could-not-save-that-name', 'Could not save that name.'));
+  if (status !== 200) return void hkAlert(T('situation-room.could-not-save-that-name', 'Could not save that name.'));
   S.team = null;
   loadTab(true);
 }
@@ -3182,11 +3185,11 @@ async function deleteRoom() {
       ? T('situation-room.delete-prompt-one', 'Deleting {name} removes its roster, assignments and invite links for {n} observer. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ })
       : T('situation-room.delete-prompt-many', 'Deleting {name} removes its roster, assignments and invite links for {n} observers. Their reports stay in the public record and still count.\n\nType the room name to confirm:', { name: g.name, n: n_ }));
     if (typed === null) return;
-    if (typed.trim() !== g.name) return alert(T('situation-room.that-did-not-match-the-name-nothing', 'That did not match the name. Nothing was deleted.'));
+    if (typed.trim() !== g.name) return void hkAlert(T('situation-room.that-did-not-match-the-name-nothing', 'That did not match the name. Nothing was deleted.'));
   }
   const { status, body } = await api('/api/groups/' + S.gid, { method: 'DELETE' });
   if (status !== 200) {
-    return alert(body.error === 'owner_only'
+    return void hkAlert(body.error === 'owner_only'
       ? T('situation-room.only-the-owner-can-delete', 'Only the owner can delete this room.')
       : T('situation-room.could-not-delete-that-room', 'Could not delete that room.'));
   }
@@ -3198,7 +3201,7 @@ async function deleteRoom() {
 async function leaveRoom() {
   if (!await ask(T('situation-room.confirm-stop-managing', 'Stop managing {name}? You will lose access to this room unless the owner adds you back.', { name: S.group.name }))) return;
   const { status } = await api('/api/groups/' + S.gid + '/managers/' + S.group.me_id, { method: 'DELETE' });
-  if (status !== 200) return alert(T('situation-room.could-not-step-back-from-this-room', 'Could not step back from this room.'));
+  if (status !== 200) return void hkAlert(T('situation-room.could-not-step-back-from-this-room', 'Could not step back from this room.'));
   S.gid = null; S.group = null;
   boot();
 }

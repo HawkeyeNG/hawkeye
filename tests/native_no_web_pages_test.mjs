@@ -93,6 +93,8 @@ const TABLE = [
   ['coverage.html?state= carries the state', 'https://hawkeye.com.ng/coverage.html?state=Lagos', '/coverage?state=Lagos'],
   ['...decoded once and re-encoded, spaces and all', 'https://hawkeye.com.ng/coverage.html?state=Akwa+Ibom', '/coverage?state=Akwa%20Ibom'],
   ['...and nothing but the state', 'https://hawkeye.com.ng/coverage.html?lga=Ikeja&ward=X', '/coverage'],
+  ['ready.html (the election-day readiness check; the eve reminder links it)', 'https://hawkeye.com.ng/ready.html', '/ready'],
+  ['...and /ready, as a bare path', '/ready', '/ready'],
 ];
 for (const [label, url, want] of TABLE) check(label, W.webPageRoute(url), want);
 

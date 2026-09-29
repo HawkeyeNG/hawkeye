@@ -253,8 +253,8 @@
     loadSheet(item.key);
     updatePartySum();
     $('rv-submit').onclick = () => commitBlind(false);
-    $('rv-unreadable').onclick = () => {
-      if (window.confirm('Record this sheet as impossible to read? This is a finding in its own right.')) {
+    $('rv-unreadable').onclick = async () => {
+      if (await hkConfirm('Record this sheet as impossible to read? This is a finding in its own right.')) {
         commitBlind(true);
       }
     };

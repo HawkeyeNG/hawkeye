@@ -1,3 +1,4 @@
+import Feather from '@expo/vector-icons/Feather';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, RefreshControl, Text, View } from 'react-native';
@@ -167,6 +168,18 @@ export default function PracticeDayScreen() {
             ) : null}
           </View>
         )}
+
+        {/* The next step after practising: check the phone itself is set for
+            the day (app/ready.tsx) — the same link app/practice-day.html has. */}
+        <Pressable
+          onPress={() => router.push('/ready' as never)}
+          className="mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-80"
+          accessibilityRole="link"
+        >
+          <Feather name="check-circle" size={18} color={ui.tint.good.ink} />
+          <Text className="flex-1 pl-3 text-sm font-semibold text-good-ink">{i18nT('ready.title')}</Text>
+          <Feather name="chevron-right" size={18} color={ui.faint} />
+        </Pressable>
 
         {days.length > 1 || (days.length === 1 && days[0].date !== day?.date) ? (
           <>

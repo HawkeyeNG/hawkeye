@@ -9,9 +9,10 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
+  <script src="dialog.js?v=1"></script>
   <style>
     .tabs { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
     .tab { border: 1px solid var(--border); background: var(--card); padding: 6px 14px; border-radius: 999px; cursor: pointer; font-weight: 700; font-size: 0.9rem; }
@@ -292,7 +293,7 @@
     }
 
     window.act = async (id, action) => {
-      if (action === 'reject' && !confirm('Reject and hide this report?')) return;
+      if (action === 'reject' && !(await hkConfirm('Reject and hide this report?', { ok: 'Reject', danger: true }))) return;
       const r = await fetch(`/api/admin/incidents/${id}/${action}`, { method: 'POST', headers: hdr() });
       await r.json().catch(() => ({}));
       load();
@@ -349,7 +350,7 @@
              <div class="lab-grid">${doneRows.join('')}</div></details>` : '');
     }
     window.qa = async (key, action) => {
-      if (action === 'deny' && !confirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.')) return;
+      if (action === 'deny' && !(await hkConfirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.', { ok: 'Deny', danger: true }))) return;
       const r = await fetch(`/api/training/${action}`, {
         method: 'POST',
         headers: { ...hdr(), 'content-type': 'application/json' },

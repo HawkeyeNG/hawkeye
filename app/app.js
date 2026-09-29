@@ -187,14 +187,14 @@ async function apiTry(path, { tries = 2, timeoutMs = 20000, ...opts } = {}) {
 }
 /**
  * A blocking refusal, shown as a dialog. Reuses menu.js's info modal so there is
- * one dialog implementation, and degrades to alert() if menu.js has not loaded
- * (the shell is cached separately, so that is a real possibility) — a refusal
- * must never fail silently, which is the whole reason it stopped being a line of
- * text under the submit button.
+ * one dialog implementation, and degrades to dialog.js's hkAlert if menu.js has
+ * not loaded (the shell is cached separately, so that is a real possibility) — a
+ * refusal must never fail silently, which is the whole reason it stopped being a
+ * line of text under the submit button.
  */
 function notifyBlocked(title, body) {
   if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL(title, body, '');
-  else alert(body);
+  else if (window.hkAlert) window.hkAlert(body, { title });
   const s = $('submit-status');
   if (s) s.textContent = body; // still recorded in place for screen readers
 }
@@ -687,12 +687,16 @@ const ORG_ERRORS = {
 async function orgSignUp(phone) {
   const code = typedOrgCode($('ref-input').value);
   if (!code) { if ($('ref-err')) $('ref-err').hidden = false; $('ref-input').focus(); return; }
-  if (!phone) return alert('Enter your phone number.');
+  if (!phone) return void hkAlert(T('auth.enter-your-phone-number', 'Enter your phone number.'));
   const newPw = $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (newPw.length < 8) return alert('Your password must be at least 8 characters.');
+  if (newPw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
   // No code comes back to prove the number, so the number is the one thing to
-  // get right: the code is tied to it for good.
-  if (!confirm(T('auth.org-confirm-number', 'This code will be tied to {phone} for good. Is this your number?', { phone }))) return;
+  // get right: the code is tied to it for good. Native's sheet uses the same
+  // two answers (native sign-in.tsx, n.auth.org-confirm-yes / -no).
+  if (!(await hkConfirm(T('auth.org-confirm-number', 'This code will be tied to {phone} for good. Is this your number?', { phone }), {
+    ok: T('auth.org-confirm-yes', 'Yes, create my account'),
+    cancel: T('auth.org-confirm-no', 'Change number'),
+  }))) return;
   const pair = await ensureKeys();
   const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
   const { status, body } = await api('/api/observers/org-signup', {
@@ -702,7 +706,7 @@ async function orgSignUp(phone) {
   });
   if (status !== 200) {
     const m = ORG_ERRORS[body && body.error];
-    return alert(m ? T(m[0], m[1]) : explain(body || {}));
+    return void hkAlert(m ? T(m[0], m[1]) : explain(body || {}));
   }
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
@@ -712,7 +716,8 @@ async function orgSignUp(phone) {
     headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
     body: JSON.stringify({ password: newPw }),
   });
-  if (r.status !== 200) alert('Signed in, but saving your password failed (' + explain(r.body) + '). Set one on My Profile so you can sign in with it next time.');
+  // Awaited: afterVerified() below navigates, and would take the notice with it.
+  if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
   $('ref-input').value = '';
   paintCodeKind();
   resetAuthPane();
@@ -994,14 +999,14 @@ $('btn-auth').onclick = async () => {
     const phone = input.value.trim();
     if (orgCodeTyped()) { await orgSignUp(phone); return; }
     const channel = pickedChannel();
-    if (!channel) return alert('Choose where to receive your code — WhatsApp or Telegram.');
+    if (!channel) return void hkAlert(T('auth.choose-code-channel', 'Choose where to receive your code — WhatsApp or Telegram.'));
     if (!inviteFieldOk()) return;
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ phone, channel, lang: chosenLang() }),
     });
-    if (status !== 200) return alert(explain(body));
+    if (status !== 200) return void hkAlert(explain(body));
     // same pane flips to OTP entry
     pendingPhone = phone;
     pendingChannel = channel;
@@ -1032,12 +1037,12 @@ $('btn-auth').onclick = async () => {
   // (authMode 'password') sets nothing; it uses the existing password.
   const settingPw = authMode !== 'password';
   const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (settingPw && newPw.length < 8) return alert('Your password must be at least 8 characters.');
+  if (settingPw && newPw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
   if (authMode !== 'password' && !inviteFieldOk()) return;
 
   if (authMode === 'password') {
-    if (!input.value.trim()) return alert('Enter your phone number.');
-    if (!$('pw-signin-input').value) return alert('Enter your password.');
+    if (!input.value.trim()) return void hkAlert(T('auth.enter-your-phone-number', 'Enter your phone number.'));
+    if (!$('pw-signin-input').value) return void hkAlert(T('auth.enter-your-password', 'Enter your password.'));
   }
 
   const pair = await ensureKeys();
@@ -1056,7 +1061,7 @@ $('btn-auth').onclick = async () => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (status !== 200) return alert(explain(body));
+  if (status !== 200) return void hkAlert(explain(body));
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
@@ -1069,14 +1074,15 @@ $('btn-auth').onclick = async () => {
       headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
       body: JSON.stringify({ password: newPw }),
     });
-    if (r.status !== 200) alert('Signed in, but saving your password failed (' + explain(r.body) + '). Set one on My Profile so you can sign in with it next time.');
+    // Awaited: afterVerified() below navigates, and would take the notice with it.
+    if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
   }
   resetAuthPane();
   // /login has no isNew, so a password sign-in can never be taken for a sign-up.
   afterVerified(body.isNew === true || body.needsUnit === true);
 
   } catch {
-    alert('Network problem — check your connection and try again.');
+    hkAlert(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
   } finally {
     $('btn-auth').disabled = false;
   }
@@ -2277,7 +2283,7 @@ async function finalizeShot(target, blob) {
     img.hidden = true;
     img.removeAttribute('src');
     URL.revokeObjectURL(raw);
-    alert('No GPS fix — photos must be location-stamped. Move to open sky and retake.');
+    hkAlert(T('observe.no-gps-fix-retake', 'No GPS fix — photos must be location-stamped. Move to open sky and retake.'));
     return false;
   }
   shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
@@ -2313,7 +2319,7 @@ $('btn-submit').onclick = async () => {
   }
   const auto = [...document.querySelectorAll('#vote-inputs input.ocr-filled')]
     .map((i) => `${i.dataset.party}: ${i.value || 0}`);
-  if (auto.length && !confirm(`These counts were auto-filled from your sheet photo — confirm they match the sheet:\n\n${auto.join('\n')}\n\nSubmit with these numbers?`)) {
+  if (auto.length && !(await hkConfirm(T('observe.auto-filled-confirm', 'These counts were auto-filled from your sheet photo — confirm they match the sheet:\n\n{v0}\n\nSubmit with these numbers?', { v0: auto.join('\n') })))) {
     $('submit-status').textContent = T('observe.check-the-highlighted-counts-against-your-sheet', 'Check the highlighted counts against your sheet, then submit again.');
     return;
   }
@@ -2840,7 +2846,7 @@ function armTelegramLogin() {
     } catch (e) {
       btn.disabled = false;
       btn.textContent = T('observe.continue-with-telegram-no-code-needed', '✈️ Continue with Telegram — no code needed');
-      alert('Telegram sign-in did not complete — you can use the SMS option below.');
+      hkAlert(T('observe.telegram-sign-in-failed', 'Telegram sign-in did not complete — you can use the SMS option below.'));
     }
   };
 }

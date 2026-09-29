@@ -1042,4 +1042,9 @@ export default {
   "n.lib.geofence.location-unverified": "A kò tíì fìdí ibùdó múlẹ̀: Hawkeye kò lè fìdí ibi tí ẹ̀ka yìí wà lórí máàpù múlẹ̀, nítorí náà a kò fi bí ó ṣe jìnnà tó hàn.",
   "n.lib.geofence.m-away": "{v0}m sí ibí",
   "n.lib.geofence.you-are-m-away-filing-checks": "O wà ní {v0}m sí i. Fífi ìròyìn ránṣẹ́ máa ń fi ibi tí o wà wé ibi tí ẹ̀ka yìí gan-an wà — jábọ̀ láti ẹ̀ka náà fúnra rẹ̀.",
+  "n.app.ready.blocked": "A ti pa á nínú Ètò.",
+  "n.app.ready.location-off": "A ti pa Ibùdó lórí fóònù yìí.",
+  "n.app.ready.turn-on": "Tàn án",
+  "n.app.ready.photos": "Ibi ìpamọ́ fọ́tò",
+  "n.components.report-content.reported": "A ti jábọ̀ — ẹgbẹ́ wa yóò ṣàyẹ̀wò rẹ̀",
 };

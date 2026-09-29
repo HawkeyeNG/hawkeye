@@ -73,6 +73,10 @@ export function webPageRoute(url: string): string | null {
   if (file === 'captain-guide.html') return '/captain?guide=1';
   // Observer coverage is public, but it has a native screen, so the app never
   // opens the page. ?state= carries over (the screen reads it); nothing else does.
+  // The election-day readiness check: the reminder before polling day links
+  // here (backend services/electionReminders.js), and the app answers with its
+  // own screen, whose buttons ask the phone rather than the browser.
+  if (file === 'ready.html' || file === 'ready') return '/ready';
   if (file === 'coverage.html' || file === 'coverage') {
     const st = /(?:^|&)state=([^&]*)/.exec(query)?.[1];
     let state = '';

@@ -9,8 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     .pcard { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; margin: 10px 0; }
@@ -710,10 +711,17 @@
     $('btn-signout').onclick = () => { localStorage.removeItem('hawkeye_token'); location.href = 'index.html'; };
 
     $('btn-delete').onclick = async () => {
-      if (!confirm('Delete your account? Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).')) return;
+      if (!(await hkConfirm(T('profile.delete-confirm-body', 'Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).'), {
+        title: T('profile.delete-your-account', 'Delete your account?'),
+        ok: T('profile.delete-my-account', 'Delete My Account'),
+        danger: true,
+      }))) return;
       const { status } = await api('/api/observers/delete', { method: 'POST' });
-      if (status === 200) { localStorage.removeItem('hawkeye_token'); alert('Identity deleted.'); location.href = 'index.html'; }
-      else alert('Could not delete — try again.');
+      if (status === 200) {
+        localStorage.removeItem('hawkeye_token');
+        await hkAlert(T('profile.account-deleted', 'Your account has been deleted.'));
+        location.href = 'index.html';
+      } else hkAlert(T('profile.could-not-delete', 'Could not delete — try again.'));
     };
 
     load();
@@ -724,7 +732,7 @@
   <script src="invite-unit.js?v=2"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=188"></script>
+  <script src="menu.js?v=189"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

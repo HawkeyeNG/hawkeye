@@ -296,6 +296,8 @@ function RootShell() {
                   so it has to be framed exactly like report/result. */}
               <Stack.Screen name="practice" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="practice-day" options={{ presentation: 'fullScreenModal' }} />
+              {/* Election-day readiness (More → Take part, Practice Day, the eve reminder). */}
+              <Stack.Screen name="ready" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="certificate" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="verify-cert" options={{ presentation: 'fullScreenModal' }} />
               <Stack.Screen name="incidents" options={{ presentation: 'fullScreenModal' }} />

@@ -1,0 +1,127 @@
+{
+  "ready.title": {
+    "ha": "A shirye don ranar zaɓe",
+    "ig": "Dị njikere maka ụbọchị ntuli aka",
+    "yo": "Ṣetán fún ọjọ́ ìdìbò"
+  },
+  "ready.lede": {
+    "ha": "Duba waɗannan kafin ranar zaɓe.",
+    "ig": "Lelee ndị a tupu ụbọchị ntuli aka.",
+    "yo": "Ṣàyẹ̀wò ìwọ̀nyí ṣáájú ọjọ́ ìdìbò."
+  },
+  "ready.all-set": {
+    "ha": "Ka shirya don ranar zaɓe.",
+    "ig": "Ị dị njikere maka ụbọchị ntuli aka.",
+    "yo": "O ti ṣetán fún ọjọ́ ìdìbò."
+  },
+  "ready.signed-in": {
+    "ha": "An shiga",
+    "ig": "Abanyela",
+    "yo": "Ti wọlé"
+  },
+  "ready.unit-chosen": {
+    "ha": "An zaɓi rukunin zaɓe",
+    "ig": "Ahọrọla ngalaba ntuli aka",
+    "yo": "A ti yan ẹ̀ka ìdìbò"
+  },
+  "ready.camera": {
+    "ha": "Kamara",
+    "ig": "Igwefoto",
+    "yo": "Kámẹ́rà"
+  },
+  "ready.location": {
+    "ha": "Wuri",
+    "ig": "Ebe",
+    "yo": "Ibùdó"
+  },
+  "ready.notifications": {
+    "ha": "Sanarwa",
+    "ig": "Ọkwa",
+    "yo": "Ìkìlọ̀"
+  },
+  "ready.state-ready": {
+    "ha": "A shirye",
+    "ig": "Dị njikere",
+    "yo": "Ó ti ṣetán"
+  },
+  "ready.state-blocked": {
+    "ha": "An toshe",
+    "ig": "Egbochiri",
+    "yo": "A ti dí i"
+  },
+  "ready.allow": {
+    "ha": "Ba da izini",
+    "ig": "Kwe",
+    "yo": "Gbà á láàyè"
+  },
+  "ready.choose-unit": {
+    "ha": "Zaɓi rukuni",
+    "ig": "Họrọ ngalaba",
+    "yo": "Yan ẹ̀ka"
+  },
+  "ready.sign-in-first": {
+    "ha": "Shiga tukuna.",
+    "ig": "Banye mbụ.",
+    "yo": "Wọlé ná."
+  },
+  "ready.could-not-check": {
+    "ha": "Ba a iya dubawa yanzu ba.",
+    "ig": "Enweghị ike ilele ya ugbu a.",
+    "yo": "A kò lè ṣàyẹ̀wò rẹ̀ báyìí."
+  },
+  "ready.approximate": {
+    "ha": "Wurin ƙiyasi kawai aka yarda. Kunna Wuri Daidai.",
+    "ig": "Naanị ebe dị nso ka ekwere. Gbanye Ebe Kpọmkwem.",
+    "yo": "Ibùdó àkàmọ̀ nìkan ni a gbà láàyè. Tan Ibùdó Pàtó."
+  },
+  "common.not-yet": {
+    "ha": "Ba yanzu ba",
+    "ig": "Ọ dịbeghị",
+    "yo": "Kò tíì"
+  },
+  "flag.reason-abuse": {
+    "ha": "Cin mutunci ko mai cutarwa",
+    "ig": "Mkparị ma ọ bụ ihe na-emerụ ahụ",
+    "yo": "Àbùkù tàbí tó lè ṣe ìpalára"
+  },
+  "flag.reason-false": {
+    "ha": "Ƙarya ko mai ɓatarwa",
+    "ig": "Ụgha ma ọ bụ ihe na-eduhie eduhie",
+    "yo": "Irọ́ tàbí tó ń ṣini lọ́nà"
+  },
+  "flag.reason-privacy": {
+    "ha": "Keta sirri",
+    "ig": "Mmebi nzuzo",
+    "yo": "Rírú àṣírí ẹni"
+  },
+  "flag.reason-other": {
+    "ha": "Wani abu daban",
+    "ig": "Ihe ọzọ",
+    "yo": "Nǹkan mìíràn"
+  },
+  "n.app.ready.blocked": {
+    "ha": "An kashe a Saiti.",
+    "ig": "Agbanyụrụ ya na Ntọala.",
+    "yo": "A ti pa á nínú Ètò."
+  },
+  "n.app.ready.location-off": {
+    "ha": "An kashe Wuri a wannan wayar.",
+    "ig": "Agbanyụrụ Ebe na ekwentị a.",
+    "yo": "A ti pa Ibùdó lórí fóònù yìí."
+  },
+  "n.app.ready.turn-on": {
+    "ha": "Kunna",
+    "ig": "Gbanye",
+    "yo": "Tàn án"
+  },
+  "n.app.ready.photos": {
+    "ha": "Ma'ajiyar hotuna",
+    "ig": "Ọba foto",
+    "yo": "Ibi ìpamọ́ fọ́tò"
+  },
+  "n.components.report-content.reported": {
+    "ha": "An kai rahoto — ƙungiyarmu za ta duba",
+    "ig": "Akọọla — ndị otu anyị ga-enyocha ya",
+    "yo": "A ti jábọ̀ — ẹgbẹ́ wa yóò ṣàyẹ̀wò rẹ̀"
+  }
+}

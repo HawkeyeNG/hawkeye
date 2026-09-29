@@ -9,8 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193">
+  <link rel="stylesheet" href="styles.css?v=194">
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     /* The step-5 facts block. Page-local on purpose — styles.css is pinned by
@@ -228,12 +229,12 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
   <script src="scan.js?v=8"></script>
-  <script src="capture.js?v=2"></script>
+  <script src="capture.js?v=3"></script>
   <script src="save-media.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=188"></script>
+  <script src="menu.js?v=189"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -315,7 +316,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
 
     async function onShot(blob, target) {
       const fix = await getFix();
-      if (!fix) { alert('No GPS fix — move to open sky and retake.'); return false; }
+      if (!fix) { hkAlert(window.HawkeyeI18n ? window.HawkeyeI18n.t('collation.no-gps-fix-retake', 'No GPS fix — move to open sky and retake.') : 'No GPS fix — move to open sky and retake.'); return false; }
       shots[target] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
       const img = $(`preview-${target}`);
       img.src = URL.createObjectURL(blob); img.hidden = false;
@@ -590,10 +591,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           // a field — raise it as a dialog (same one the ⓘ dots use) so it cannot
           // be missed below a button the observer has already scrolled past.
           if (b.error === 'reporting_not_open') {
-            if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL(
-              (window.HawkeyeI18n ? window.HawkeyeI18n.t('common.reporting-not-open-yet', 'Reporting is not open yet') : 'Reporting is not open yet'),
-              msg, '');
-            else alert(msg);
+            const title = window.HawkeyeI18n ? window.HawkeyeI18n.t('common.reporting-not-open-yet', 'Reporting is not open yet') : 'Reporting is not open yet';
+            if (window.HAWKEYE_MODAL) window.HAWKEYE_MODAL(title, msg, '');
+            else hkAlert(msg, { title });
           }
           $('btn-submit').disabled = false;
         }

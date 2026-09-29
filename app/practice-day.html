@@ -10,7 +10,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -30,6 +30,8 @@
     .pday-days li { margin: 4px 0; }
     .pday-days a { color: var(--link); font-weight: 600; }
     .pday-error { color: var(--warn-ink, #8a5a00); font-weight: 600; }
+    .pday-ready { display: block; text-align: center; padding: 11px 12px; margin: 12px 0 0; border: 1px solid var(--line); border-radius: 10px; font-weight: 700; color: var(--link); text-decoration: none; }
+    .pday-ready:hover { background: var(--tint); }
     .pday-retry { background: transparent; border: 1.5px solid var(--border); color: var(--link); font-weight: 700; border-radius: 999px; padding: 10px 18px; width: auto; }
   </style>
   <!-- No authgate.js: like practice.html this page is open to everyone, signed
@@ -63,6 +65,8 @@
     <h1 data-i18n="practiceday.title">National Practice Day</h1>
     <p class="lede" data-i18n="practiceday.page-lede">On a National Practice Day every observer runs the same mock election (Party A–F) on the same day. Only the combined count is shown here, never who practised or where.</p>
     <section class="card" id="pday-page" aria-live="polite"><p class="hint" data-i18n="practiceday.loading">Loading…</p></section>
+    <!-- The next step after practising: check the phone itself is set for the day. -->
+    <a class="pday-ready" href="ready.html" data-i18n="ready.title">Ready for election day</a>
   </main>
 
   <footer class="gov-footer"><div class="wrap">
@@ -75,7 +79,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=188"></script>
+  <script src="menu.js?v=189"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

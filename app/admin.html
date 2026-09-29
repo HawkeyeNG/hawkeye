@@ -18,9 +18,10 @@
   <link rel="manifest" href="admin.webmanifest?v=3" />
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
   <script src="/monitor.js?v=3" defer></script>
+  <script src="dialog.js?v=1"></script>
   <style>
 /* ---- from review.html ---- */
 
@@ -1189,7 +1190,7 @@
     }
 
     window.act = async (id, action) => {
-      if (action === 'reject' && !confirm('Reject and hide this report?')) return;
+      if (action === 'reject' && !(await hkConfirm('Reject and hide this report?', { ok: 'Reject', danger: true }))) return;
       const r = await fetch(`/api/admin/incidents/${id}/${action}`, { method: 'POST', headers: hdr() });
       await r.json().catch(() => ({}));
       load();
@@ -1319,12 +1320,12 @@
     }
     window.qa = async (key, action) => {
       const body = { key };
-      if (action === 'deny' && !confirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.')) return;
+      if (action === 'deny' && !(await hkConfirm('Deny this label? It is deleted and the sheet returns to the open pool for re-labeling.', { ok: 'Deny', danger: true }))) return;
       if (action === 'illegible') {
         // The reason is the finding. "Unreadable" on its own tells a reader
         // nothing about whether INEC published a bad scan, a dark photograph or
         // a genuinely blank form, and those are different claims.
-        const reason = prompt(
+        const reason = await hkPrompt(
           'Why can this sheet not be read? (e.g. "scan cut off at the party table", '
           + '"too dark to resolve figures", "photographed at an angle, words column unreadable")\n\n'
           + 'This is recorded as a finding about the published record, and the sheet leaves every queue.',
@@ -1338,7 +1339,7 @@
         body: JSON.stringify(body),
       });
       if (r.status === 401) { logout(); return; }
-      if (!r.ok) { alert(`Failed: ${r.status}`); return; }
+      if (!r.ok) { hkAlert(`Failed: ${r.status}`); return; }
       loadLabels();
     };
 
@@ -1480,9 +1481,10 @@
       if (!dryRun) {
         // Typed confirmation, not a click. The audience is in the prompt so the
         // last thing seen before sending is how many people this reaches.
-        const typed = prompt(
+        const typed = await hkPrompt(
           `Send to ${audienceNow} device(s)? This cannot be undone.\n\n`
           + `"${c.title}"\n${c.body}\n\nType SEND to confirm.`,
+          { ok: 'Send', danger: true, code: true },
         );
         if (typed !== 'SEND') { $('push-out').textContent = 'Not sent.'; return; }
       }
@@ -1658,10 +1660,14 @@
        the summary line says so rather than implying more than it is. */
     const REVIEWER_KEY = 'hawkeye_reviewer_id';
     const reviewerId = () => {
-      let v = '';
-      try { v = localStorage.getItem(REVIEWER_KEY) || ''; } catch (e) { v = ''; }
+      try { return localStorage.getItem(REVIEWER_KEY) || ''; } catch (e) { return ''; }
+    };
+    /* Asked once, when the pairs tab first opens (pairsInit awaits it), so every
+       pairApi call after that reads the stored name synchronously. */
+    const askReviewerId = async () => {
+      let v = reviewerId();
       if (!v) {
-        v = (prompt('Your reviewer name or initials — this distinguishes your readings from a colleague\'s. It is not a login.') || '').trim();
+        v = ((await hkPrompt('Your reviewer name or initials — this distinguishes your readings from a colleague\'s. It is not a login.')) || '').trim();
         if (v) { try { localStorage.setItem(REVIEWER_KEY, v); } catch (e) { /* private mode */ } }
       }
       return v;
@@ -1702,7 +1708,7 @@
     };
 
     async function pairsInit() {
-      const who = reviewerId();
+      const who = await askReviewerId();
       $('pairs-who').textContent = who
         ? 'Reviewing as ' + who + ' — your readings are kept apart from other reviewers\'.'
         : 'No reviewer name set; the queue needs one.';
@@ -2052,8 +2058,8 @@
     }
 
     dryBtn.onclick = () => call(false);
-    applyBtn.onclick = () => {
-      if (!confirm('Rewrite the register spellings on PRODUCTION?\n\nThis updates thousands of polling-unit rows. It is idempotent and safe to repeat, but it is a live write.')) return;
+    applyBtn.onclick = async () => {
+      if (!(await hkConfirm('Rewrite the register spellings on PRODUCTION?\n\nThis updates thousands of polling-unit rows. It is idempotent and safe to repeat, but it is a live write.', { ok: 'Rewrite', danger: true }))) return;
       call(true);
     };
   })();
@@ -2142,8 +2148,8 @@
     }
 
     dryBtn.onclick = () => call(false);
-    applyBtn.onclick = () => {
-      if (!confirm('Close these races on PRODUCTION?\n\nThis deletes the follow rows and sends a push to everyone who was following. A push cannot be recalled.')) return;
+    applyBtn.onclick = async () => {
+      if (!(await hkConfirm('Close these races on PRODUCTION?\n\nThis deletes the follow rows and sends a push to everyone who was following. A push cannot be recalled.', { ok: 'Close races', danger: true }))) return;
       call(true);
     };
   })();
@@ -2680,7 +2686,7 @@
       }
       if (revoke) {
         const id = Number(revoke.getAttribute('data-revoke'));
-        if (!confirm(fill(T('orgcode.admin.revoke-confirm', 'Withdraw batch {id}? Its unused codes stop working at once. Accounts already created stay.'), { id }))) return;
+        if (!(await hkConfirm(fill(T('orgcode.admin.revoke-confirm', 'Withdraw batch {id}? Its unused codes stop working at once. Accounts already created stay.'), { id }), { danger: true }))) return;
         revoke.disabled = true;
         try {
           const r = await post('/api/admin/org-codes/batches/' + id + '/revoke');

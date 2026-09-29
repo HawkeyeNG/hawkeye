@@ -67,6 +67,9 @@ const GROUPS: { title: string; titleKey: string; items: MenuItem[] }[] = [
         ],
       },
       { label: 'Practice Run', labelKey: 'nav.practice-run', href: 'native:/practice', icon: 'play-circle' },
+      // Straight after the practice run, as in app/menu.js: rehearse, then check
+      // the phone itself is set — signed in, unit, camera, location, alerts.
+      { label: 'Ready for election day', labelKey: 'ready.title', href: 'native:/ready', icon: 'check-circle' },
       { label: 'Map a Polling Unit', labelKey: 'common.map-a-polling-unit', href: 'native:/map-unit', icon: 'map-pin' },
       // MY GROUPS — campaigns and observer groups you joined by invite. The
       // join screen's consent notice promises "every group you are in is listed

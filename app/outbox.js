@@ -66,7 +66,9 @@
     const I = G.HawkeyeI18n;
     const line = I ? I.t('observe.a-queued-report-was-dropped', 'A queued report was dropped \u2014 {v0}.')
       : 'A queued report was dropped \u2014 {v0}.';
-    alert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${d.why}`)).join('\n\n'));
+    // dialog.js is loaded by every page that loads this file; without it the
+    // drop is still on record (K_DROPPED) for Profile to show.
+    if (G.hkAlert) G.hkAlert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${d.why}`)).join('\n\n'));
   };
   // A page records a drop and says so at once. The service worker has neither
   // localStorage nor anyone to tell, so it parks the drop for the next page.

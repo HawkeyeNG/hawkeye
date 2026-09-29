@@ -8,8 +8,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193" />
+  <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=4"></script>
@@ -170,28 +171,28 @@ async function act(b) {
   const gid = b.dataset.gid;
   if (b.dataset.act === 'accept') {
     const { status } = await api('/api/groups/' + gid + '/accept', { method: 'POST' });
-    if (status !== 200) return alert(T('my-groups.accept-failed', 'Could not accept just now.'));
+    if (status !== 200) return void hkAlert(T('my-groups.accept-failed', 'Could not accept just now.'));
     return load();
   }
   /* Refusing REMOVES the row rather than marking it refused: a campaign that
      could keep a list of the people who said no would have been handed exactly
      the fact the person withheld. Same endpoint as leaving, for that reason. */
   if (b.dataset.act === 'refuse') {
-    if (!confirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', { name: b.dataset.name }))) return;
+    if (!(await hkConfirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', { name: b.dataset.name }), { ok: T('my-groups.no-thanks', 'No thanks') }))) return;
     const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
-    if (status !== 200) return alert(T('my-groups.refuse-failed', 'Could not do that just now.'));
+    if (status !== 200) return void hkAlert(T('my-groups.refuse-failed', 'Could not do that just now.'));
     return load();
   }
   if (b.dataset.act === 'decline') {
     const { status } = await api('/api/groups/' + gid + '/decline', { method: 'POST' });
-    if (status !== 200) return alert(T('my-groups.send-failed', 'Could not send that just now.'));
+    if (status !== 200) return void hkAlert(T('my-groups.send-failed', 'Could not send that just now.'));
     return load();
   }
   /* Confirmed, because leaving is not reversible from here — the invite link
      may be spent, revoked, or simply not to hand any more. */
-  if (!confirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', { name: b.dataset.name }))) return;
+  if (!(await hkConfirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', { name: b.dataset.name }), { ok: T('my-groups.leave', 'Leave this group'), danger: true }))) return;
   const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
-  if (status !== 200) return alert(T('my-groups.leave-failed', 'Could not leave just now.'));
+  if (status !== 200) return void hkAlert(T('my-groups.leave-failed', 'Could not leave just now.'));
   load();
 }
 

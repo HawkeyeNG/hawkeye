@@ -5,7 +5,6 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -15,6 +14,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { PasswordField } from '@/components/password-field';
 import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import {
@@ -127,6 +127,8 @@ export default function SignIn() {
    */
   const [inviteCode, setInviteCode] = useState('');
   const [inviteBad, setInviteBad] = useState(false);
+  /** The "is this your number?" sheet before an organisation code is spent. */
+  const [orgConfirm, setOrgConfirm] = useState(false);
 
   /**
    * ONE FIELD, TWO KINDS OF CODE (owner decision, 2026-09-28), told apart by
@@ -232,15 +234,9 @@ export default function SignIn() {
     }
     setInviteBad(false);
     // No code comes back to prove the number, so the number is the one thing
-    // to get right: the organisation code is tied to it for good.
-    Alert.alert(
-      authT('n.auth.org-confirm-title'),
-      authT('n.auth.org-confirm-body', { phone: phone.trim() }),
-      [
-        { text: authT('n.auth.org-confirm-no'), style: 'cancel' },
-        { text: authT('n.auth.org-confirm-yes'), onPress: () => { void runOrgSignup(); } },
-      ],
-    );
+    // to get right: the organisation code is tied to it for good. The app's
+    // own sheet (ConfirmSheet), not a system Alert — rendered at the end.
+    setOrgConfirm(true);
   };
   const runOrgSignup = async () => {
     setBusy(true);
@@ -951,6 +947,19 @@ export default function SignIn() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      <ConfirmSheet
+        visible={orgConfirm}
+        icon="smartphone"
+        title={authT('n.auth.org-confirm-title')}
+        body={authT('n.auth.org-confirm-body', { phone: phone.trim() })}
+        confirmLabel={authT('n.auth.org-confirm-yes')}
+        cancelLabel={authT('n.auth.org-confirm-no')}
+        onConfirm={() => {
+          setOrgConfirm(false);
+          void runOrgSignup();
+        }}
+        onCancel={() => setOrgConfirm(false)}
+      />
     </SafeAreaView>
   );
 }

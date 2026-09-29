@@ -234,7 +234,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // screen. The guide stays under Learn & about: Take part is hidden on
     // desktop, and the guide is the public page that leads to this one.
     // "My Groups" (my-groups.html) sits just before it, where native has it.
-    ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'map-unit.html', 'my-groups.html', 'captain.html'], 'tp'],
+    // "Ready for election day" (ready.html) follows the practice run — rehearse,
+    // then check the phone is set — where native's More screen has it too.
+    ['Take part', ['profile.html', { acc: 'Report', hrefs: ['observe.html', 'collation.html', 'incidents.html'] }, 'practice.html', 'ready.html', 'map-unit.html', 'my-groups.html', 'captain.html'], 'tp'],
     ['Trust & verify', ['ledger.html', 'integrity.html', 'docket.html', 'incident-reports.html']],
     // Races is ONE LINK, not an accordion. It listed All Races / Osun 2026 /
     // Presidency 2027 — a hand-kept list of three, hardcoded in the menu, while
@@ -385,6 +387,15 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       pr.href = 'practice.html';
       i18nSet(pr, 'nav.practice-run', 'Practice Run');
       panel.appendChild(pr);
+    }
+    // The election-day readiness check (ready.html), in Take part after the
+    // practice run. Injected for the same reason: no page static-lists it.
+    // Public — signed out is one of the rows it reports.
+    if (!panel.querySelector('a[href="ready.html"]')) {
+      const rd = document.createElement('a');
+      rd.href = 'ready.html';
+      i18nSet(rd, 'ready.title', 'Ready for election day');
+      panel.appendChild(rd);
     }
     /**
      * SHARE HAWKEYE. An election tool spreads by one person handing it to

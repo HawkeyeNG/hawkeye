@@ -1042,4 +1042,9 @@ export default {
   "n.lib.geofence.location-unverified": "Enweghị nkwenye ebe: Hawkeye enweghị ike ịkwado ebe ngalaba a dị na maapụ, ya mere egosighi otú o si dị anya.",
   "n.lib.geofence.m-away": "{v0}m n'anya",
   "n.lib.geofence.you-are-m-away-filing-checks": "Ị nọ {v0}m n'anya. Iziga akụkọ na-atụnyere ebe ị nọ na ebe ngalaba a n'onwe ya dị — kọọ akụkọ site na ngalaba ahụ n'onwe ya.",
+  "n.app.ready.blocked": "Agbanyụrụ ya na Ntọala.",
+  "n.app.ready.location-off": "Agbanyụrụ Ebe na ekwentị a.",
+  "n.app.ready.turn-on": "Gbanye",
+  "n.app.ready.photos": "Ọba foto",
+  "n.components.report-content.reported": "Akọọla — ndị otu anyị ga-enyocha ya",
 };

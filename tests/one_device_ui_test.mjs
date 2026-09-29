@@ -277,9 +277,13 @@ try {
     await p.fill('#pw-opt-input', 'a good password');
     await p.fill('#ref-input', 'org abcd efgh jkmn');
     check('a whole ORG- code is named as one', await kindLine(p), { hint: false, invite: false, org: true, picker: false, button: 'Create account' });
-    let confirmText = '';
-    p.on('dialog', (d) => { confirmText = d.message(); d.accept(); });
+    // The confirmation is Hawkeye's own dialog (app/dialog.js), not window.confirm.
     await p.click('#btn-auth');
+    await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 8000 }).catch(() => {});
+    const confirmText = await p.$eval('.hk-dlg .hk-dlg-msg', (e) => e.textContent).catch(() => '');
+    check('the confirmation names the answers, not OK/Cancel',
+      await p.$$eval('.hk-dlg button', (bs) => bs.map((b) => b.textContent)).catch(() => []), ['Change number', 'Yes, create my account']);
+    await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
     await p.waitForURL(/choose-unit\.html\?onboard=1/, { timeout: 15000 }).catch(() => {});
     check('the number is confirmed before the code is spent', confirmText, (t) => t.includes('08031234567') && /tied to/.test(t));
     const org = calls.find((c) => c.url === '/api/observers/org-signup');
@@ -319,10 +323,16 @@ try {
     await p.fill('#auth-input', '08031234567');
     await p.fill('#pw-opt-input', 'a good password');
     await p.fill('#ref-input', 'ORG-ABCD-EFGH-JKMN');
+    // Two in-page dialogs in turn: the number confirmation, then the refusal.
     const msgs = [];
-    p.on('dialog', (d) => { msgs.push(d.message()); d.accept(); });
     await p.click('#btn-auth');
-    await p.waitForTimeout(1500);
+    for (let i = 0; i < 2; i++) {
+      await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 8000 }).catch(() => {});
+      msgs.push(await p.$eval('.hk-dlg .hk-dlg-msg', (e) => e.textContent).catch(() => ''));
+      await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
+      await p.waitForTimeout(300);
+    }
+    await p.waitForTimeout(500);
     check('an existing number: the conditional wording, no token stored', [msgs[1] || '', await p.evaluate(() => localStorage.getItem('hawkeye_token'))],
       (v) => /can only create a new account/.test(v[0]) && /If you deleted your account/.test(v[0]) && v[1] === null);
     await ctx.close();
@@ -405,6 +415,9 @@ try {
     check('the batch is listed with its counts and a way to withdraw it',
       await p.evaluate(() => document.getElementById('org-adm-out').textContent), (t) => /Batch 7 · 3 codes/.test(t) && /0 accounts · 3 unused/.test(t));
     await p.click('[data-revoke="7"]');
+    // Asked in Hawkeye's own dialog (app/dialog.js), destructive styling.
+    await p.waitForSelector('.hk-dlg .hk-dlg-ok.danger', { timeout: 5000 }).catch(() => {});
+    await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
     await p.waitForFunction(() => /Withdrawn/.test(document.getElementById('org-adm-out').textContent), null, { timeout: 8000 }).catch(() => {});
     check('withdraw posts the revoke and the row says so',
       [calls.some((c) => c.url === '/api/admin/org-codes/batches/7/revoke'), await p.evaluate(() => !document.querySelector('[data-revoke="7"]'))], [true, true]);

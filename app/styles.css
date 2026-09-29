@@ -1804,6 +1804,25 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
 .hk-alert h3 { margin: 0 0 8px; font-size: 1.05rem; }
 .hk-alert p { margin: 0 0 16px; color: var(--muted); font-size: 0.94rem; }
 .hk-alert button { width: 100%; }
+/* THE SAME CARD FOR EVERY DIALOG WE RAISE — confirm, prompt, choice and plain
+   notice, replacing the browser's grey alert()/confirm()/prompt() box. Painted
+   by app/dialog.js; it layers on .hk-alert above so the backdrop, card and
+   z-index band stay the one rule modal_layering already knows about. */
+.hk-dlg .hk-alert-card { max-height: calc(100vh - 44px); overflow-y: auto; }
+.hk-dlg .hk-dlg-msg { color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; }
+.hk-dlg .hk-dlg-title + .hk-dlg-msg { color: var(--muted); }
+.hk-dlg .hk-dlg-input { margin: 0 0 16px; width: 100%; box-sizing: border-box; padding: 11px 13px; font-size: 1rem; }
+.hk-dlg textarea.hk-dlg-input { resize: vertical; min-height: 4.5rem; }
+.hk-dlg .hk-dlg-label { display: block; margin: 4px 0 6px; font-weight: 600; font-size: 0.9rem; }
+.hk-dlg .hk-dlg-choices { display: grid; gap: 8px; margin: 0 0 14px; }
+.hk-dlg .hk-dlg-choice {
+  display: flex; align-items: center; gap: 4px; margin: 0; padding: 10px 12px;
+  border: 1.5px solid var(--border); border-radius: 10px; cursor: pointer; font-weight: 600;
+}
+.hk-dlg .hk-dlg-choice:has(input:checked) { border-color: var(--link); background: var(--tint); }
+.hk-dlg .hk-dlg-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.hk-dlg .hk-dlg-btns button { flex: 1 1 8rem; width: auto; margin: 0; }
+.hk-dlg button.danger { background: var(--danger); box-shadow: none; }
 
 .tabbar .tab.tour-lit .ti {
   border-radius: 999px; outline: 2px solid var(--gold); outline-offset: 4px;

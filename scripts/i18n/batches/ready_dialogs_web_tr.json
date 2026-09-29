@@ -1,0 +1,252 @@
+{
+  "auth.choose-code-channel": {
+    "ha": "Zaɓi inda za ka karɓi lambarka — WhatsApp ko Telegram.",
+    "ig": "Họrọ ebe ị ga-anata koodu gị — WhatsApp ma ọ bụ Telegram.",
+    "yo": "Yan ibi tí o ti fẹ́ gba kóòdù rẹ — WhatsApp tàbí Telegram."
+  },
+  "auth.enter-your-password": {
+    "ha": "Shigar da kalmar sirrinka.",
+    "ig": "Tinye okwuntughe gị.",
+    "yo": "Tẹ ọ̀rọ̀ ìpamọ́ rẹ."
+  },
+  "auth.enter-your-phone-number": {
+    "ha": "Shigar da lambar wayarka.",
+    "ig": "Tinye nọmba ekwentị gị.",
+    "yo": "Tẹ nọ́mbà fóònù rẹ."
+  },
+  "auth.org-confirm-no": {
+    "ha": "Canza lamba",
+    "ig": "Gbanwee nọmba",
+    "yo": "Yí nọ́mbà padà"
+  },
+  "auth.org-confirm-yes": {
+    "ha": "Ee, buɗe asusuna",
+    "ig": "Ee, mepee akaụntụ m",
+    "yo": "Bẹ́ẹ̀ ni, ṣí àkàǹtì mi"
+  },
+  "auth.password-save-failed": {
+    "ha": "An shiga, amma adana kalmar sirrinka ya gaza ({v0}). Saita ɗaya a Bayanaina domin ka shiga da ita a gaba.",
+    "ig": "Ị banyela, mana ichekwa okwuntughe gị dara ada ({v0}). Tọọ otu na Profaịlụ M ka i jiri ya banye oge ọzọ.",
+    "yo": "O ti wọlé, ṣùgbọ́n fífi ọ̀rọ̀ ìpamọ́ rẹ pamọ́ kùnà ({v0}). Ṣètò ọ̀kan ní Àkọọ́lẹ̀ Mi kí o lè fi wọlé nígbà míì."
+  },
+  "auth.password-too-short": {
+    "ha": "Kalmar sirrinka dole ta kasance aƙalla haruffa 8.",
+    "ig": "Okwuntughe gị ga-enwerịrị opekempe mkpụrụedemede 8.",
+    "yo": "Ọ̀rọ̀ ìpamọ́ rẹ gbọ́dọ̀ ní ó kéré tán àmì-ìkọ 8."
+  },
+  "capture.camera-access-required": {
+    "ha": "Ana buƙatar izinin kamara — Hawkeye yana karɓar hotunan da aka ɗauka yanzu kawai. Idan ka ƙi, ba wannan shafin izinin Kamara (taɓa alamar makulli/ⓘ kusa da sandar adireshi → Izini) ka sake gwadawa.",
+    "ig": "Achọrọ ohere igwefoto — Hawkeye na-anabata naanị foto e sere ugbu a. Ọ bụrụ na ị jụrụ ya, nye saịtị a ohere Igwefoto (pịa akara mkpọchi/ⓘ dị n'akụkụ ogwe adreesị → Ikike) wee nwaa ọzọ.",
+    "yo": "A nílò àṣẹ kámẹ́rà — Hawkeye gba fọ́tò tí a yà ní àkókò yẹn nìkan. Tí o bá kọ̀ ọ́, fún ojú-òpó yìí ní àṣẹ Kámẹ́rà (tẹ àmì àgádágodo/ⓘ lẹ́gbẹ̀ẹ́ ọ̀pá àdírẹ́sì → Àwọn àṣẹ) kí o sì gbiyanju lẹ́ẹ̀kan sí."
+  },
+  "capture.use-this-photo-anyway": {
+    "ha": "{v0} A yi amfani da wannan hoton duk da haka?",
+    "ig": "{v0} Jiri foto a n'agbanyeghị?",
+    "yo": "{v0} Ṣé kí a lo fọ́tò yìí bẹ́ẹ̀?"
+  },
+  "collation.no-gps-fix-retake": {
+    "ha": "Ba a samu GPS ba — matsa zuwa sararin sama ka sake ɗauka.",
+    "ig": "Enweghị GPS — gaa n'ebe mbara igwe meghere ma see ọzọ.",
+    "yo": "Kò sí GPS — lọ sí ibi tí ojú ọ̀run ti ṣí sílẹ̀ kí o sì yà á lẹ́ẹ̀kan sí."
+  },
+  "flag.detail": {
+    "ha": "Ƙara wani bayani (na zaɓi)",
+    "ig": "Tinye nkọwa ọ bụla (nhọrọ)",
+    "yo": "Fi àlàyé kún un (àṣàyàn)"
+  },
+  "flag.reason-abuse": {
+    "ha": "Cin mutunci ko mai cutarwa",
+    "ig": "Mkparị ma ọ bụ ihe na-emerụ ahụ",
+    "yo": "Àbùkù tàbí tó lè ṣe ìpalára"
+  },
+  "flag.reason-false": {
+    "ha": "Ƙarya ko mai ɓatarwa",
+    "ig": "Ụgha ma ọ bụ ihe na-eduhie eduhie",
+    "yo": "Irọ́ tàbí tó ń ṣini lọ́nà"
+  },
+  "flag.reason-other": {
+    "ha": "Wani abu daban",
+    "ig": "Ihe ọzọ",
+    "yo": "Nǹkan mìíràn"
+  },
+  "flag.reason-privacy": {
+    "ha": "Keta sirri",
+    "ig": "Mmebi nzuzo",
+    "yo": "Rírú àṣírí ẹni"
+  },
+  "flag.reported": {
+    "ha": "✓ An kai rahoto — ƙungiyarmu za ta duba",
+    "ig": "✓ Akọọla — ndị otu anyị ga-enyocha ya",
+    "yo": "✓ A ti jábọ̀ — ẹgbẹ́ wa yóò ṣàyẹ̀wò rẹ̀"
+  },
+  "flag.send": {
+    "ha": "Aika rahoto",
+    "ig": "Zipu akụkọ",
+    "yo": "Fi ìròyìn ránṣẹ́"
+  },
+  "flag.send-failed": {
+    "ha": "An kasa aika rahoton — duba haɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike izipu akụkọ ahụ — lelee njikọ gị wee nwaa ọzọ.",
+    "yo": "A kò lè fi ìròyìn náà ránṣẹ́ — ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbiyanju lẹ́ẹ̀kan sí."
+  },
+  "flag.title": {
+    "ha": "Kai rahoton wannan abun",
+    "ig": "Kọọ ọdịnaya a",
+    "yo": "Jábọ̀ àkóónú yìí"
+  },
+  "flag.why": {
+    "ha": "Ka gaya mana abin da ba daidai ba a kansa. Mai daidaitawa yana duba kowane rahoto.",
+    "ig": "Gwa anyị ihe na-ezighi ezi na ya. Onye nlekọta na-enyocha akụkọ ọ bụla.",
+    "yo": "Sọ fún wa ohun tí kò tọ́ nípa rẹ̀. Alábòójútó ń ṣàyẹ̀wò gbogbo ìròyìn."
+  },
+  "observe.auto-filled-confirm": {
+    "ha": "An cika waɗannan ƙidayar kai tsaye daga hoton takardarka — tabbatar sun yi daidai da takardar:\n\n{v0}\n\nA aika da waɗannan lambobin?",
+    "ig": "E jupụtara ọnụọgụ ndị a na-akpaghị aka site na foto mpempe akwụkwọ gị — kwado na ha dabara na mpempe akwụkwọ ahụ:\n\n{v0}\n\nZipu ya na ọnụọgụ ndị a?",
+    "yo": "A fi àwọn iye yìí kún un láìfọwọ́kàn láti inú fọ́tò ìwé rẹ — jẹ́rìí pé wọ́n bá ìwé náà mu:\n\n{v0}\n\nṢé kí a fi àwọn nọ́mbà yìí ránṣẹ́?"
+  },
+  "observe.no-gps-fix-retake": {
+    "ha": "Ba a samu GPS ba — dole ne hotuna su kasance da alamar wuri. Matsa zuwa sararin sama ka sake ɗauka.",
+    "ig": "Enweghị GPS — foto ga-enwerịrị akara ebe. Gaa n'ebe mbara igwe meghere ma see ọzọ.",
+    "yo": "Kò sí GPS — àwọn fọ́tò gbọ́dọ̀ ní àmì ibùdó. Lọ sí ibi tí ojú ọ̀run ti ṣí sílẹ̀ kí o sì yà á lẹ́ẹ̀kan sí."
+  },
+  "observe.telegram-sign-in-failed": {
+    "ha": "Shiga ta Telegram bai kammala ba — za ka iya amfani da zaɓin SMS da ke ƙasa.",
+    "ig": "Ịbanye site na Telegram emechaghị — ị nwere ike iji nhọrọ SMS dị n'okpuru.",
+    "yo": "Wíwọlé pẹ̀lú Telegram kò parí — o lè lo àṣàyàn SMS ní ìsàlẹ̀."
+  },
+  "practice.no-camera-sample-photo": {
+    "ha": "Babu kamara — ana amfani da hoton misali don atisaye.",
+    "ig": "Enweghị igwefoto — a na-eji foto ihe atụ maka omume.",
+    "yo": "Kò sí kámẹ́rà — a ń lo fọ́tò àpẹẹrẹ fún àdánwò."
+  },
+  "profile.account-deleted": {
+    "ha": "An share asusunka.",
+    "ig": "E hichapụla akaụntụ gị.",
+    "yo": "A ti pa àkàǹtì rẹ rẹ́."
+  },
+  "profile.could-not-delete": {
+    "ha": "An kasa sharewa — sake gwadawa.",
+    "ig": "Enweghị ike ihichapụ — nwaa ọzọ.",
+    "yo": "A kò lè pa á rẹ́ — gbiyanju lẹ́ẹ̀kan sí."
+  },
+  "profile.delete-confirm-body": {
+    "ha": "Za a goge makullinka, haɗin na'ura, haɗin Telegram da rajistar sanarwa. Rahotannin littafin jama'a suna nan (na jama'a ne kuma na dindindin).",
+    "ig": "A ga-ehichapụ igodo gị, njikọ ngwaọrụ, njikọ Telegram na ndenye aha. Akụkọ ndị dị n'akwụkwọ ndekọ ga-adịgide (ha bụ nke ọha, ha na-adịgidekwa).",
+    "yo": "A ó pa kọ́kọ́rọ́ rẹ, ìsopọ̀ ẹ̀rọ, ìsopọ̀ Telegram àti àwọn ìforúkọsílẹ̀ rẹ rẹ́. Àwọn ìròyìn inú ìwé àkọsílẹ̀ yóò wà (wọ́n wà ní gbangba, wọ́n sì jẹ́ àyérayé)."
+  },
+  "profile.delete-your-account": {
+    "ha": "Share asusunka?",
+    "ig": "Hichapụ akaụntụ gị?",
+    "yo": "Pa àkàǹtì rẹ rẹ́?"
+  },
+  "ready.all-set": {
+    "ha": "Ka shirya don ranar zaɓe.",
+    "ig": "Ị dị njikere maka ụbọchị ntuli aka.",
+    "yo": "O ti ṣetán fún ọjọ́ ìdìbò."
+  },
+  "ready.allow": {
+    "ha": "Ba da izini",
+    "ig": "Kwe",
+    "yo": "Gbà á láàyè"
+  },
+  "ready.approximate": {
+    "ha": "Wurin ƙiyasi kawai aka yarda. Kunna Wuri Daidai.",
+    "ig": "Naanị ebe dị nso ka ekwere. Gbanye Ebe Kpọmkwem.",
+    "yo": "Ibùdó àkàmọ̀ nìkan ni a gbà láàyè. Tan Ibùdó Pàtó."
+  },
+  "ready.blocked-browser": {
+    "ha": "An toshe — ba da izini a saitin burauzarka don wannan shafin.",
+    "ig": "Egbochiri — kwe ya na ntọala ihe nchọgharị gị maka saịtị a.",
+    "yo": "A ti dí i — gbà á láàyè nínú ètò aṣàwákiri rẹ fún ojú-òpó yìí."
+  },
+  "ready.blocked-phone": {
+    "ha": "An toshe — ba Hawkeye izini a Saitin wayarka.",
+    "ig": "Egbochiri — kwe ya maka Hawkeye na Ntọala ekwentị gị.",
+    "yo": "A ti dí i — gbà á láàyè fún Hawkeye nínú Ètò fóònù rẹ."
+  },
+  "ready.camera": {
+    "ha": "Kamara",
+    "ig": "Igwefoto",
+    "yo": "Kámẹ́rà"
+  },
+  "ready.choose-unit": {
+    "ha": "Zaɓi rukuni",
+    "ig": "Họrọ ngalaba",
+    "yo": "Yan ẹ̀ka"
+  },
+  "ready.could-not-check": {
+    "ha": "Ba a iya dubawa yanzu ba.",
+    "ig": "Enweghị ike ilele ya ugbu a.",
+    "yo": "A kò lè ṣàyẹ̀wò rẹ̀ báyìí."
+  },
+  "ready.lede": {
+    "ha": "Duba waɗannan kafin ranar zaɓe.",
+    "ig": "Lelee ndị a tupu ụbọchị ntuli aka.",
+    "yo": "Ṣàyẹ̀wò ìwọ̀nyí ṣáájú ọjọ́ ìdìbò."
+  },
+  "ready.location": {
+    "ha": "Wuri",
+    "ig": "Ebe",
+    "yo": "Ibùdó"
+  },
+  "ready.no-camera": {
+    "ha": "Ba a sami kamara a wannan na'urar ba.",
+    "ig": "Achọtaghị igwefoto na ngwaọrụ a.",
+    "yo": "A kò rí kámẹ́rà lórí ẹ̀rọ yìí."
+  },
+  "ready.no-location": {
+    "ha": "Wannan burauzar ba za ta iya raba wurinka ba.",
+    "ig": "Ihe nchọgharị a enweghị ike ịkekọrịta ebe ị nọ.",
+    "yo": "Aṣàwákiri yìí kò lè pín ibùdó rẹ."
+  },
+  "ready.notifications": {
+    "ha": "Sanarwa",
+    "ig": "Ọkwa",
+    "yo": "Ìkìlọ̀"
+  },
+  "ready.page-title": {
+    "ha": "A Shirye don Ranar Zaɓe — Hawkeye",
+    "ig": "Dị Njikere maka Ụbọchị Ntuli Aka — Hawkeye",
+    "yo": "Ṣetán fún Ọjọ́ Ìdìbò — Hawkeye"
+  },
+  "ready.sign-in-first": {
+    "ha": "Shiga tukuna.",
+    "ig": "Banye mbụ.",
+    "yo": "Wọlé ná."
+  },
+  "ready.signed-in": {
+    "ha": "An shiga",
+    "ig": "Abanyela",
+    "yo": "Ti wọlé"
+  },
+  "ready.state-blocked": {
+    "ha": "An toshe",
+    "ig": "Egbochiri",
+    "yo": "A ti dí i"
+  },
+  "ready.state-ready": {
+    "ha": "A shirye",
+    "ig": "Dị njikere",
+    "yo": "Ó ti ṣetán"
+  },
+  "ready.title": {
+    "ha": "A shirye don ranar zaɓe",
+    "ig": "Dị njikere maka ụbọchị ntuli aka",
+    "yo": "Ṣetán fún ọjọ́ ìdìbò"
+  },
+  "ready.unit-chosen": {
+    "ha": "An zaɓi rukunin zaɓe",
+    "ig": "Ahọrọla ngalaba ntuli aka",
+    "yo": "A ti yan ẹ̀ka ìdìbò"
+  },
+  "situation-room.could-not-create-the-room": {
+    "ha": "Ba a iya ƙirƙirar ɗakin ba.",
+    "ig": "Enweghị ike ịmepụta ọnụ ụlọ ahụ.",
+    "yo": "A kò lè ṣẹ̀dá yàrá náà."
+  },
+  "situation-room.race-not-in-register": {
+    "ha": "Wannan takarar ba ta cikin rajista.",
+    "ig": "Asọmpi ahụ adịghị na ndekọ aha.",
+    "yo": "Ìdíje yẹn kò sí nínú àkọsílẹ̀."
+  }
+}

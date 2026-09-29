@@ -62,7 +62,7 @@
       stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
     } catch {
       // No camera / denied — in practice that's fine, just mark it done.
-      alert('No camera available — using a sample photo for practice.');
+      hkAlert(T('practice.no-camera-sample-photo', 'No camera available — using a sample photo for practice.'));
       markSlot(which);
       return;
     }

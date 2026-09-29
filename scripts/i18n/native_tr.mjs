@@ -1043,5 +1043,10 @@ export default {
     "n.lib.geofence.location-unverified": "Ba a tabbatar da wuri ba: Hawkeye ba zai iya tabbatar da inda wannan rukunin yake a taswira ba, don haka ba a nuna nisansa ba.",
     "n.lib.geofence.m-away": "nisan {v0}m",
     "n.lib.geofence.you-are-m-away-filing-checks": "Kana da nisan {v0}m. Aika rahoto yana kwatanta matsayinka da ainihin wurin wannan rukunin — ka kai rahoto daga rukunin da kansa.",
+    "n.app.ready.blocked": "An kashe a Saiti.",
+    "n.app.ready.location-off": "An kashe Wuri a wannan wayar.",
+    "n.app.ready.turn-on": "Kunna",
+    "n.app.ready.photos": "Ma'ajiyar hotuna",
+    "n.components.report-content.reported": "An kai rahoto — ƙungiyarmu za ta duba",
   },
 };

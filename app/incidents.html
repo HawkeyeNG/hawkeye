@@ -9,8 +9,9 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=193">
+  <link rel="stylesheet" href="styles.css?v=194">
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     .feed-item { background: var(--card); border: 1px solid var(--border); padding: 12px; margin-bottom: 10px; }
@@ -326,7 +327,7 @@
 
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
-  <script src="capture.js?v=2"></script>
+  <script src="capture.js?v=3"></script>
   <script src="save-media.js?v=1"></script>
   <script src="video-player.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
@@ -337,7 +338,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=188"></script>
+  <script src="menu.js?v=189"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
@@ -1011,7 +1012,7 @@
             // attribute, which stays only as the fallback if that script never loads.
             ? `<video data-hk-evidence src="/uploads/${safeFile(m.file)}" preload="metadata" controls muted></video>`
             : `<img src="/uploads/${safeFile(m.file)}" alt="${esc(T('incidents.incident-evidence', 'Incident evidence'))}" loading="lazy" />`).join('')}</div>` : ''}
-          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
+          <button type="button" class="flag-btn" data-flag="${i.id}">⚑ ${esc(T('flag.title', 'Report this content'))}</button>
         </div>`).join('');
       // Store-policy requirement (Play UGC / App Store 1.2): every piece of
       // published user content carries an in-app way to object to it.
@@ -1019,23 +1020,29 @@
     }
 
     async function flagContent(id, btn) {
-      const reason = prompt(
-        'Report this content — why?\n1 Abusive or harmful\n2 False or misleading\n3 Privacy violation\n4 Other\n\nEnter 1-4:');
-      if (!reason) return;
-      const map = { 1: 'abuse', 2: 'false', 3: 'privacy', 4: 'other' };
-      if (!map[reason.trim()]) return alert('Enter a number from 1 to 4.');
-      const detail = prompt('Add any detail (optional):') || '';
+      const picked = await hkChoose(T('flag.why', 'Tell us what is wrong with it. A moderator reviews every report.'), [
+        { value: 'abuse', label: T('flag.reason-abuse', 'Abusive or harmful') },
+        { value: 'false', label: T('flag.reason-false', 'False or misleading') },
+        { value: 'privacy', label: T('flag.reason-privacy', 'Privacy violation') },
+        { value: 'other', label: T('flag.reason-other', 'Something else') },
+      ], {
+        title: T('flag.title', 'Report this content'),
+        detail: T('flag.detail', 'Add any detail (optional)'),
+        ok: T('flag.send', 'Send report'),
+      });
+      if (!picked) return;
+      const detail = picked.text || '';
       try {
         const r = await fetch('/api/flags', {
           method: 'POST',
           headers: { 'content-type': 'application/json', ...(token ? { authorization: 'Bearer ' + token } : {}) },
-          body: JSON.stringify({ kind: 'incident', targetId: id, reason: map[reason.trim()], detail: detail.slice(0, 500) }),
+          body: JSON.stringify({ kind: 'incident', targetId: id, reason: picked.value, detail: detail.slice(0, 500) }),
         });
         if (!r.ok) throw new Error();
-        btn.textContent = '✓ Reported — our team will review';
+        btn.textContent = T('flag.reported', '✓ Reported — our team will review');
         btn.disabled = true;
       } catch {
-        alert('Could not send the report — check your connection and try again.');
+        hkAlert(T('flag.send-failed', 'Could not send the report — check your connection and try again.'));
       }
     }
 

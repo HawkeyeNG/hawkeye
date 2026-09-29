@@ -26,6 +26,11 @@ so the existing `?pu=&contest=&votes=` handoff from `/report` keeps working.
 | `results`  | `/(tabs)/results`    | `results.html`    |
 | `activity` | `/profile`           | `profile.html`    |
 | `ask`      | `/assistant`         | `index.html`      |
+| `ready`    | `/ready`             | `ready.html`      |
+
+`ready` is the election-day readiness check. A plain link to `ready.html`
+(a notification url, a pasted link) also opens the native screen: it is in
+`native/src/lib/web-routes.ts`.
 
 Anything unknown lands on the site's home page rather than erroring.
 

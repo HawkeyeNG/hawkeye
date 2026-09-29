@@ -96,6 +96,43 @@ function mayAdd(ML: MediaLibrary): Promise<boolean> {
   return permission;
 }
 
+/**
+ * Where saving to this phone stands, for the election-day readiness screen
+ * (app/ready.tsx). A CHECK, never a prompt. 'none' = this build carries no
+ * media module, so there is nothing to set up.
+ */
+export type PhotoAccess = 'ready' | 'ask' | 'blocked' | 'none';
+
+export async function photoLibraryAccess(): Promise<PhotoAccess> {
+  // Android 11+ adds its own files with no permission at all (see the header).
+  if (Platform.OS === 'android' && Number(Platform.Version) >= 30) return 'ready';
+  const ML = await loadMediaLibrary();
+  if (!ML) return 'none';
+  try {
+    const now = await ML.getPermissionsAsync(true);
+    if (now.granted) return 'ready';
+    return now.canAskAgain ? 'ask' : 'blocked';
+  } catch {
+    return 'none';
+  }
+}
+
+/**
+ * The system prompt itself — add-only on iOS, the same request mayAdd() makes —
+ * straight from the readiness screen's button, with nothing of ours before it.
+ */
+export async function askPhotoLibrary(): Promise<void> {
+  const ML = await loadMediaLibrary();
+  if (!ML) return;
+  try {
+    await ML.requestPermissionsAsync(true);
+  } catch {
+    /* the next check reports whatever happened */
+  }
+  // The session's cached answer predates this one.
+  permission = null;
+}
+
 async function saveOne(ML: MediaLibrary, uri: string): Promise<void> {
   try {
     if (Platform.OS !== 'android') {

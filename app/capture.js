@@ -19,6 +19,12 @@
  * mechanics live here.
  */
 (function () {
+  // Same helper as app.js: the English stays in the source as the fallback.
+  const T = (key, english, params) => {
+    let out = window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+    for (const [k, v] of Object.entries(params || {})) out = String(out).split('{' + k + '}').join(v);
+    return out;
+  };
   const $ = (id) => document.getElementById(id);
   let stream = null;
   let target = null;
@@ -67,7 +73,7 @@
       let blob;
       if (target === 'sheet' && window.DocScanner) {
         const scan = await DocScanner.capture();
-        if (scan.warnings.length && !confirm(`${scan.warnings.join(' ')} Use this photo anyway?`)) {
+        if (scan.warnings.length && !(await hkConfirm(T('capture.use-this-photo-anyway', '{v0} Use this photo anyway?', { v0: scan.warnings.join(' ') })))) {
           DocScanner.rearm();
           return;
         }
@@ -123,7 +129,7 @@
         audio: false,
       });
     } catch {
-      return alert('Camera access is required — Hawkeye only accepts live photos. If you denied it, allow Camera for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.');
+      return void hkAlert(T('capture.camera-access-required', 'Camera access is required — Hawkeye only accepts live photos. If you denied it, allow Camera for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.'));
     }
     $('camera-title').textContent = (labels[t] || {}).title || '';
     $('btn-capture').textContent = (labels[t] || {}).action || 'Capture';

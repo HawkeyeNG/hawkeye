@@ -69,14 +69,19 @@ const JWT = () => `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() /
 const browser = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome' });
 
 /** The Lite shell at a small phone size: native-app class, tab bar, #page-scroll. */
-async function open(page = 'choose-unit.html?current=37-06-02-141', lang = null) {
+/**
+ * `grant`: whether location is ALREADY allowed. With it, choose-unit.html opens
+ * Near me and searches on arrival (no tap, no prompt left to spring); without
+ * it, nothing runs until a tab is tapped. Sections that are about a reader
+ * arriving cold pass grant:false.
+ */
+async function open(page = 'choose-unit.html?current=37-06-02-141', lang = null, { grant = true } = {}) {
   const ctx = await browser.newContext({
     viewport: { width: 390, height: 780 },
     // Headless Chromium stops producing frames after a cross-document view
     // transition; the site skips it for reduced motion, so this is real.
     reducedMotion: 'reduce',
-    permissions: ['geolocation'],
-    geolocation: { latitude: 9.033, longitude: 7.49 },
+    ...(grant ? { permissions: ['geolocation'], geolocation: { latitude: 9.033, longitude: 7.49 } } : {}),
   });
   await ctx.addInitScript(([t, l]) => {
     Object.defineProperty(window, 'HAWKEYE', { value: { native: true, apiBase: '' }, writable: false, configurable: false });
@@ -134,7 +139,8 @@ console.log('\n=== nothing empty is painted above Save ===');
 
 console.log('\n=== gold marks what to do next ===');
 {
-  const { ctx, p } = await open();
+  // A reader who has never allowed location: nothing opens by itself.
+  const { ctx, p } = await open(undefined, null, { grant: false });
   const bg = (sel) => p.evaluate((s) => getComputedStyle(document.querySelector(s)).backgroundColor, sel);
   check('no tab is open on arrival', await p.evaluate(() => [...document.querySelectorAll('[role="tab"]')].every((t) => t.getAttribute('aria-selected') === 'false')));
   check('so nothing is gold in the strip', await bg('#tab-near'), (c) => c !== 'rgb(245, 179, 1)');
@@ -153,9 +159,11 @@ console.log('\n=== gold marks what to do next ===');
 
 console.log('\n=== near me returns rows, and picking one enables a gold Save ===');
 {
+  // Location already allowed, so Near me opens and searches ON ARRIVAL — a tap
+  // on the tab here would fold it away again.
   const { ctx, p } = await open();
-  await p.click('#tab-near');
   await p.waitForTimeout(1500);
+  check('with location already allowed, Near me opened by itself', await p.evaluate(() => document.getElementById('tab-near').getAttribute('aria-selected')), 'true');
   const near = await p.evaluate(() => ({
     status: document.getElementById('unit-near-status').textContent.trim(),
     names: [...document.querySelectorAll('#unit-near-results .pu-option strong')].map((s) => s.textContent),
@@ -232,9 +240,9 @@ console.log('\n=== translated at render, not at load ===');
 {
   const { ctx, p } = await open('choose-unit.html?current=37-06-02-141', 'ha');
   const ha = JSON.parse(fs.readFileSync(`${APP}/i18n/ha.json`, 'utf8'));
-  await p.waitForTimeout(500);
-  await p.click('#tab-near');
-  await p.waitForTimeout(1500);
+  // Near me runs by itself (location already allowed), so its status line is
+  // painted by the script with no tap.
+  await p.waitForTimeout(2000);
   const r = await p.evaluate(() => ({
     save: document.getElementById('btn-unit-save').textContent.trim(),
     eyebrow: document.getElementById('cu-eyebrow').textContent.trim(),

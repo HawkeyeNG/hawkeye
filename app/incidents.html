@@ -451,7 +451,7 @@
         cell.innerHTML = (f.type.startsWith('video')
           ? `<img class="vthumb" alt="" /><span class="vbadge" aria-hidden="true">▶</span>`
           : `<img src="${url}" alt="" />`)
-          + `<button type="button" class="rm" data-i="${i}" aria-label="Remove">✕</button>`;
+          + `<button type="button" class="rm" data-i="${i}" aria-label="${esc(T('incidents.remove-attachment', 'Remove'))}">✕</button>`;
         $('preview').appendChild(cell);
         if (f.type.startsWith('video')) grabFrame(f, cell.querySelector('.vthumb'), url);
       });
@@ -463,8 +463,9 @@
         const add = document.createElement('button');
         add.type = 'button';
         add.className = 'addmore';
-        add.setAttribute('aria-label', `Add another photo or video (${attachments.length} of ${MAX_FILES} added)`);
-        add.innerHTML = '＋<span>ADD</span>';
+        add.setAttribute('aria-label', T('incidents.add-another-photo-or-video', 'Add another photo or video ({v0} of {v1} added)')
+          .replace('{v0}', attachments.length).replace('{v1}', MAX_FILES));
+        add.innerHTML = `＋<span>${esc(T('incidents.add-tile', 'ADD'))}</span>`;
         $('preview').appendChild(add);
       }
       paintVideoCount();
@@ -851,7 +852,8 @@
         .then((r) => (r.ok ? r.json() : null))
         .then((d) => {
           if (d && d.unit) {
-            const label = `My saved unit — ${d.unit.name || d.unit.pu_code || ''}${d.unit.ward ? ', ' + d.unit.ward : ''}`;
+            const label = T('incidents.my-saved-unit', 'My saved unit — {v0}')
+              .replace('{v0}', `${d.unit.name || d.unit.pu_code || ''}${d.unit.ward ? ', ' + d.unit.ward : ''}`);
             $('saved-unit-name').textContent = label;
             $('use-saved').value = d.unit.pu_code || '';
             // A RADIO WITH NO TEXT IS JUST A DOT. my-unit LEFT JOINs the
@@ -873,8 +875,8 @@
       // trigger — a control that still reads "Find units near me" looks like
       // work the observer has yet to do.
       nearAutoRan = true;
-      $('btn-near').textContent = 'Search Near Me Again';
-      $('pu-status').textContent = 'Finding units near you…';
+      $('btn-near').textContent = T('observe.search-near-me-again', 'Search Near Me Again');
+      $('pu-status').textContent = T('incidents.finding-units-near-you', 'Finding units near you…');
       const { coords: c, err } = await getPos();
       // No tail: attaching a unit is already optional here, the retry is the
       // button directly above this line, and the saved-unit radio is the other
@@ -883,14 +885,14 @@
       try {
         const r = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`);
         const { units = [] } = await r.json();
-        if (!units.length) { $('pu-near-list').innerHTML = ''; $('pu-status').textContent = 'No mapped units within range — you can still submit without one.'; return; }
-        $('pu-status').textContent = `${units.length} near you — pick the one where it happened:`;
+        if (!units.length) { $('pu-near-list').innerHTML = ''; $('pu-status').textContent = T('incidents.no-mapped-units-within-range-you', 'No mapped units within range — you can still submit without one.'); return; }
+        $('pu-status').textContent = T('incidents.near-you-pick-the-one-where', '{v0} near you — pick the one where it happened:').replace('{v0}', units.length);
         $('pu-near-list').innerHTML = units.map((u) => `
           <label class="pu-opt" style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;font-weight:400;border-top:1px solid var(--line)">
             <input type="radio" name="pu-choice" value="${esc(u.pu_code)}" style="width:auto;margin-top:3px" />
-            <span><strong>${esc(u.name || u.pu_code)}</strong><br /><small class="hint">${esc(u.ward || '')}${u.ward ? ' · ' : ''}${esc(u.lga || '')} · ${u.distanceM} m away</small></span>
+            <span><strong>${esc(u.name || u.pu_code)}</strong><br /><small class="hint">${esc(u.ward || '')}${u.ward ? ' · ' : ''}${esc(u.lga || '')} · ${esc(T('common.m-away', '{v0} m away').replace('{v0}', u.distanceM))}</small></span>
           </label>`).join('');
-      } catch { $('pu-status').textContent = 'Could not load nearby units — try again.'; }
+      } catch { $('pu-status').textContent = T('incidents.could-not-load-nearby-units-try', 'Could not load nearby units — try again.'); }
     };
 
     $('btn-submit') && ($('btn-submit').onclick = async () => {
@@ -1008,7 +1010,7 @@
             // that opens our full-screen player and strips the controls
             // attribute, which stays only as the fallback if that script never loads.
             ? `<video data-hk-evidence src="/uploads/${safeFile(m.file)}" preload="metadata" controls muted></video>`
-            : `<img src="/uploads/${safeFile(m.file)}" alt="incident evidence" loading="lazy" />`).join('')}</div>` : ''}
+            : `<img src="/uploads/${safeFile(m.file)}" alt="${esc(T('incidents.incident-evidence', 'Incident evidence'))}" loading="lazy" />`).join('')}</div>` : ''}
           <button type="button" class="flag-btn" data-flag="${i.id}">⚑ Report this content</button>
         </div>`).join('');
       // Store-policy requirement (Play UGC / App Store 1.2): every piece of

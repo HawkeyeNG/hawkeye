@@ -426,11 +426,31 @@ function updateScopeNotice() {
   updateSubmitState();
 }
 
+/* Keys, not words: a module-level map of T() results would freeze in English
+   before the dictionary lands, so the label is resolved where it is drawn. */
 const TIER_LABEL = {
-  verified: '📍 location verified',
-  crowd: '◌ crowd-confirmed location',
-  geocoded: '◌ located from map data (unconfirmed)',
-  unmapped: '⚠ location not yet verified',
+  verified: ['common.tier-verified', '📍 location verified'],
+  crowd: ['common.tier-crowd', '◌ crowd-confirmed location'],
+  geocoded: ['common.tier-geocoded', '◌ located from map data (unconfirmed)'],
+  unmapped: ['common.tier-unmapped', '⚠ location not yet verified'],
+  unverified: ['common.tier-unverified', '⚠ location unverified — its map position could not be confirmed'],
+};
+const tierLabel = (tier) => T(...(TIER_LABEL[tier] || TIER_LABEL.unmapped));
+/**
+ * A pin more than 25 km from the unit's own envelope is not a position. The
+ * INEC locator load numbered FCT 15 where the register numbers it 37, so every
+ * state from Gombe to FCT carries its predecessor's pins — Kubwa units sit in
+ * Zamfara, 436 km from an observer standing 20 km away. The server now withholds
+ * such a pin (backend/src/services/pin-trust.js, same rule); this catches rows
+ * from an older server or a cache. Mirrors native/src/lib/geofence.ts.
+ */
+const pinContradictsEnvelope = (u) => {
+  if (u.lat == null || u.lng == null || u.approx_lat == null || u.approx_lng == null) return false;
+  const rad = (d) => (d * Math.PI) / 180;
+  const a = Math.sin(rad(u.approx_lat - u.lat) / 2) ** 2
+    + Math.cos(rad(u.lat)) * Math.cos(rad(u.approx_lat)) * Math.sin(rad(u.approx_lng - u.lng) / 2) ** 2;
+  const m = 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+  return m > Math.max(25000, (Number(u.approx_radius_m) || 0) * 1.5 + 2000);
 };
 // `crowd_mapped` is graded FIRST, ahead of the server's own tier: /api/polling-units
 // runs pollingUnits.js:tierOf(), which calls any row holding `lat` 'verified' — including
@@ -438,9 +458,11 @@ const TIER_LABEL = {
 // coords_source='crowd_mapped'). Matches native's rowTier (native/src/app/map-unit.tsx),
 // so a crowd-confirmed location is never overstated as verified.
 const tierOf = (u) =>
-  u.coords_source === 'crowd_mapped'
-    ? 'crowd'
-    : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
+  u.pin_unverified || pinContradictsEnvelope(u)
+    ? 'unverified'
+    : u.coords_source === 'crowd_mapped'
+      ? 'crowd'
+      : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
 
 // ---------- state ----------
 let selectedPu = null;
@@ -1194,7 +1216,7 @@ $('btn-locate').onclick = async () => {
     // no LGA, and "Akogun, " with a dangling comma reads as broken in a list
     // someone is scanning under time pressure.
     const where = [u.ward, u.lga].filter(Boolean).join(', ');
-    const facts = [u.pu_code, where, `${u.distanceM} m away`, TIER_LABEL[tierOf(u)]]
+    const facts = [u.pu_code, where, T('common.m-away', '{v0} m away', { v0: u.distanceM }), tierLabel(tierOf(u))]
       .filter(Boolean).join(' · ');
     btn.innerHTML = `<strong>${u.name}</strong><br /><small>${facts}</small>`;
     btn.onclick = () => selectUnit(u);
@@ -1342,7 +1364,7 @@ $('sel-ward').onchange = async () => {
   for (const u of body.units || []) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';
-    btn.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${TIER_LABEL[tierOf(u)]}</small>`;
+    btn.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${tierLabel(tierOf(u))}</small>`;
     btn.onclick = () => selectUnit(u);
     $('register-units').appendChild(btn);
   }
@@ -2527,11 +2549,16 @@ $('btn-submit').onclick = async () => {
   const r = body.result;
   const locLabel =
     r.locationStatus === 'verified'
-      ? TIER_LABEL.verified
+      ? tierLabel('verified')
       : r.locationStatus === 'provisional'
-        ? `${TIER_LABEL.crowd} (${r.locationConfidence}% of reports agree)`
-        : TIER_LABEL.unmapped;
-  const venueLabel = r.venueMatches > 0 ? ` · 🏫 ${r.venueMatches} venue photo pair(s) match` : '';
+        ? `${tierLabel('crowd')} ${T('common.pct-of-reports-agree', '({v0}% of reports agree)', { v0: r.locationConfidence })}`
+        : tierLabel('unmapped');
+  // One whole phrase per count — never "pair(s)", and never an English "s".
+  const venueLabel = r.venueMatches > 0
+    ? ' · ' + (r.venueMatches === 1
+      ? T('common.venue-photo-pair-matches-one', '🏫 {v0} venue photo pair matches', { v0: r.venueMatches })
+      : T('common.venue-photo-pairs-match', '🏫 {v0} venue photo pairs match', { v0: r.venueMatches }))
+    : '';
   $('entry-hash').textContent = body.entryHash;
   const contestName = (contests.find((c) => c.code === r.contest) || {}).name || r.contest;
   $('result-summary').innerHTML = `

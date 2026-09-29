@@ -71,6 +71,9 @@ export default function VerifyCertScreen() {
 
         <View className="rounded-2xl bg-card px-4 py-4">
           <Text className="pb-1 text-sm font-bold text-ink">{i18nT('cert.verify-label')}</Text>
+          {/* No letter spacing on this field, however much a code looks better
+              spaced: kerning on a TextInput survives iOS's view recycling and
+              spaces out the NEXT screen's placeholder (tests/choose_unit_test.mjs). */}
           <TextInput
             value={input}
             onChangeText={(v) => setInput(v.toUpperCase().slice(0, 12))}
@@ -83,7 +86,7 @@ export default function VerifyCertScreen() {
             placeholder="ABCD-EFGH"
             placeholderTextColor={ui.faint}
             accessibilityLabel={i18nT('cert.verify-label')}
-            className="rounded-xl border-2 border-faint bg-surface px-3 py-3 text-lg font-bold tracking-widest text-ink"
+            className="rounded-xl border-2 border-faint bg-surface px-3 py-3 text-lg font-bold text-ink"
           />
           <Pressable
             onPress={check}

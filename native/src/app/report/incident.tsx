@@ -358,7 +358,7 @@ const NearbyRow = ({
         {n.name}
       </Text>
       <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
-        {n.puCode} · {n.ward} · {n.distanceM}m away
+        {n.puCode} · {n.ward} · {i18nT('n.lib.geofence.m-away', { v0: n.distanceM })}
       </Text>
       <View className="flex-row items-center pt-0.5">
         <TierDot tier={n.tier} />

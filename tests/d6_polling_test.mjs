@@ -1,8 +1,9 @@
 /**
  * D6: SIGNED-IN READS ARE PUSH-DRIVEN PLUS 120 s, AND A HIDDEN BOARD DOES NOT POLL.
  *
- * MEASURED, not grepped: the same scenarios run against the committed app/
- * (git HEAD, "before") and the working tree ("after"), each served by its own
+ * MEASURED, not grepped: the same scenarios run against app/ as it was just
+ * before D6 landed (the parent of commit 7a85b845, "before") and the working
+ * tree ("after"), each served by its own
  * local server that counts every /api request. Nothing leaves this machine:
  * the signed-in endpoints are fixtures, /api/national and /api/contests are the
  * real backend router over a throwaway database, and every other host is
@@ -33,10 +34,21 @@ process.env.DB_PATH = path.join(tmp, 'd6.db');
 process.env.UPLOAD_DIR = path.join(tmp, 'uploads');
 const { nationalRouter } = await import(path.join(ROOT, 'backend/src/routes/national.js'));
 
-/* The BEFORE tree: app/ exactly as committed. */
+/*
+ * The BEFORE tree: app/ as it was immediately BEFORE D6, pinned to a commit.
+ *
+ * This used to archive HEAD, which was right only while D6 sat uncommitted in
+ * the working tree. Once 7a85b845 committed it, HEAD *was* the fix, "before"
+ * and "after" became the same behaviour, and the four controls below (which
+ * demand that the old code really did poll) went red on every run since —
+ * a test measuring the fix against itself. The claim is about what D6
+ * changed, so "before" is D6's parent, permanently.
+ */
+const D6_COMMIT = '7a85b845';
+const BEFORE_REF = `${D6_COMMIT}^`;
 const beforeDir = path.join(tmp, 'before');
 fs.mkdirSync(beforeDir);
-execFileSync('bash', ['-c', `git -C '${ROOT}' archive HEAD app | tar -x -C '${beforeDir}'`]);
+execFileSync('bash', ['-c', `git -C '${ROOT}' archive '${BEFORE_REF}' app | tar -x -C '${beforeDir}'`]);
 const TREES = { before: path.join(beforeDir, 'app'), after: path.join(ROOT, 'app') };
 
 let failed = 0;
@@ -269,9 +281,13 @@ console.log('\n=== the situation room is unchanged ===');
    page's script pins (authgate.js, native.js, menu.js …) without changing the
    page itself. */
 const unpinned = (buf) => buf.toString('utf8').replace(/\?v=\d+/g, '?v=');
-const sameAsHead = (rel) => unpinned(execFileSync('git', ['-C', ROOT, 'show', `HEAD:${rel}`])) === unpinned(fs.readFileSync(path.join(ROOT, rel)));
-check('situation-room.html is byte-identical to HEAD (script ?v= aside)', sameAsHead('app/situation-room.html'));
-check('dashboard.html is byte-identical to HEAD (script ?v= aside)', sameAsHead('app/dashboard.html'));
+/* "D6 left the room alone" is a claim about D6's own change set, so it is
+   checked there — the commit against its parent — rather than against whatever
+   later work has since done to these pages for reasons of its own. */
+const gitShow = (ref, rel) => execFileSync('git', ['-C', ROOT, 'show', `${ref}:${rel}`]);
+const untouchedByD6 = (rel) => unpinned(gitShow(BEFORE_REF, rel)) === unpinned(gitShow(D6_COMMIT, rel));
+check('situation-room.html is byte-identical across D6 (script ?v= aside)', untouchedByD6('app/situation-room.html'));
+check('dashboard.html is byte-identical across D6 (script ?v= aside)', untouchedByD6('app/dashboard.html'));
 check('CONTROL one changed character still counts as a change',
   unpinned(Buffer.from('<p>a</p><script src="x.js?v=1">')) !== unpinned(Buffer.from('<p>b</p><script src="x.js?v=2">')));
 const room = {};

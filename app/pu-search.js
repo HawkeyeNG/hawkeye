@@ -12,19 +12,36 @@
 // far. The rows are the same shape /api/register/units returns, so a caller's
 // existing selectUnit() works unchanged.
 (function () {
-  const TIER_LABEL = {
-    verified: '📍 location verified',
-    crowd: '◌ crowd-confirmed location',
-    geocoded: '◌ located from map data (unconfirmed)',
-    unmapped: '⚠ location not yet verified',
-  };
-  const tierOf = (u) =>
-    u.coords_source === 'crowd_mapped'
-      ? 'crowd'
-      : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
   /* Same shape as race.js's helper: the English stays inline as the fallback,
      so the widget still reads correctly with i18n.js absent or still loading. */
   const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+  /* Keys, resolved where they are drawn (a map of T() results would freeze in
+     English before the dictionary lands). Same keys as app.js. */
+  const TIER_LABEL = {
+    verified: ['common.tier-verified', '📍 location verified'],
+    crowd: ['common.tier-crowd', '◌ crowd-confirmed location'],
+    geocoded: ['common.tier-geocoded', '◌ located from map data (unconfirmed)'],
+    unmapped: ['common.tier-unmapped', '⚠ location not yet verified'],
+    unverified: ['common.tier-unverified', '⚠ location unverified — its map position could not be confirmed'],
+  };
+  const tierLabel = (tier) => T(...(TIER_LABEL[tier] || TIER_LABEL.unmapped));
+  /* A pin more than 25 km from the unit's own envelope is not a position (the
+     state-shifted INEC locator load — see app.js pinContradictsEnvelope and
+     backend/src/services/pin-trust.js, same rule). */
+  const pinContradictsEnvelope = (u) => {
+    if (u.lat == null || u.lng == null || u.approx_lat == null || u.approx_lng == null) return false;
+    const rad = (d) => (d * Math.PI) / 180;
+    const a = Math.sin(rad(u.approx_lat - u.lat) / 2) ** 2
+      + Math.cos(rad(u.lat)) * Math.cos(rad(u.approx_lat)) * Math.sin(rad(u.approx_lng - u.lng) / 2) ** 2;
+    const m = 2 * 6371000 * Math.asin(Math.min(1, Math.sqrt(a)));
+    return m > Math.max(25000, (Number(u.approx_radius_m) || 0) * 1.5 + 2000);
+  };
+  const tierOf = (u) =>
+    u.pin_unverified || pinContradictsEnvelope(u)
+      ? 'unverified'
+      : u.coords_source === 'crowd_mapped'
+        ? 'crowd'
+        : u.locationTier || (u.lat != null ? 'verified' : u.crowd_lat != null ? 'crowd' : 'unmapped');
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
   /**
@@ -153,7 +170,7 @@
           : (units.length === 1 ? T('pu.one-match', '1 match.') : T('pu.n-matches', '{v0} matches.').replace('{v0}', units.length));
         list.innerHTML = units.map((u, i) =>
           `<button type="button" class="pu-option" data-i="${i}"><strong>${esc(u.name)}</strong><br />`
-          + `<small>${esc(u.pu_code)} · ${esc(u.ward)}, ${esc(u.lga)}, ${esc(u.state)} · ${TIER_LABEL[tierOf(u)]}</small></button>`).join('');
+          + `<small>${esc(u.pu_code)} · ${esc(u.ward)}, ${esc(u.lga)}, ${esc(u.state)} · ${tierLabel(tierOf(u))}</small></button>`).join('');
         list.querySelectorAll('.pu-option').forEach((b) => {
           b.onclick = () => o.onSelect && o.onSelect(units[+b.dataset.i]);
         });

@@ -51,20 +51,27 @@ async function jget<T>(path: string): Promise<T> {
 function locationLine(r: Row) {
   const head =
     r.locationStatus === 'verified'
-      ? '📍 location verified'
+      ? i18nT('n.app.reports-log.location-verified')
       : r.locationStatus === 'provisional'
         ? i18nT('n.app.reports-log.crowd-confirmed-location-of-reports-agree', { v0: r.locationConfidence })
         : i18nT('n.app.reports-log.location-unverified-gps-agreement', { v0: r.locationConfidence ?? 0 });
+  /**
+   * One WHOLE phrase per count, never an English "s" glued into a translated
+   * one: "{v0} venue photo pair{v1} match" rendered "pairs" inside Hausa,
+   * Igbo and Yorùbá, and "1 … pair match" in English.
+   */
   const venue =
     r.venueMatches > 0
-      ? i18nT('n.app.reports-log.venue-photo-pair-match', { v0: r.venueMatches, v1: r.venueMatches > 1 ? 's' : '' })
+      ? i18nT(r.venueMatches === 1 ? 'n.app.reports-log.venue-photo-pair-matches-one' : 'n.app.reports-log.venue-photo-pairs-match', { v0: r.venueMatches })
       : '';
   const clash =
     r.locationPlausibility === 'inconsistent'
-      ? ' · ⚠ GPS reports contradict this unit’s expected area'
+      ? i18nT('n.app.reports-log.gps-reports-contradict-this-unit-s-expected')
       : '';
-  const score = r.locationScore != null ? i18nT('n.app.reports-log.location-evidence-100', { v0: r.locationScore }) : '';
-  return head + venue + clash + score;
+  const score = r.locationScore != null ? i18nT('n.app.reports-log.location-evidence', { v0: r.locationScore }) : '';
+  // The separators live here, not inside the translations, so every language
+  // gets the same " · " between the same parts.
+  return [head, venue, clash, score].filter(Boolean).join(' · ');
 }
 
 /**

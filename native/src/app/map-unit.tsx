@@ -1278,7 +1278,7 @@ export default function MapUnit() {
               submit, and it is the only statement of the number for the large
               majority of envelopes, which the map does not draw. */}
           <Text className="pb-2 text-xs leading-4 text-muted">
-            Selected: <Text className="font-semibold text-ink">{unit.name}</Text>
+            {i18nT('n.app.map-unit.selected-label')} <Text className="font-semibold text-ink">{unit.name}</Text>
             {envelopeM
               ? i18nT('n.app.map-unit.its-position-is-known-only-to', { v0: envelopeM.toLocaleString() })
               : selUnlocated

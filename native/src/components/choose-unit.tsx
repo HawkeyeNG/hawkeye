@@ -32,7 +32,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { getIdentity } from '@/lib/identity';
 import { inviteAfterSave, isUnitCode, shareInviteUnit } from '@/lib/invite-unit';
-import { describeFixFailure, DISCOVERY_RADIUS_M, tryQuickFix, type Fix } from '@/lib/location';
+import { describeFixFailure, DISCOVERY_RADIUS_M, locationAlreadyAllowed, tryQuickFix, type Fix } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
 import * as SecureStore from '@/lib/secure-store';
 import { useUi } from '@/lib/theme';
@@ -749,6 +749,40 @@ export function ChooseUnitScreen({
     }
     if (t === 'register' && !states.length && !regBusy) loadStates();
   };
+
+  /**
+   * NEAR ME OPENS ITSELF WHEN LOCATION IS ALREADY ALLOWED.
+   *
+   * Choosing the tab has always been the search — no second tap. What stays the
+   * observer's own act is the FIRST permission prompt, so nothing asks on
+   * arrival. But once permission exists there is no prompt left to spring, and
+   * a search that starts by itself saves the one tap everybody makes anyway.
+   * Not over an invited unit (that arrival is already a choice), and never
+   * once the observer has opened a tab or picked something themselves. The web
+   * chooser (app/choose-unit.html) does the same through the Permissions API.
+   */
+  // The check is async, so it reads the CURRENT tab and pick through refs —
+  // the closure would only ever see the values from the first render.
+  const tabNow = useRef(tab);
+  const pickedNow = useRef(picked);
+  useEffect(() => {
+    tabNow.current = tab;
+    pickedNow.current = picked;
+  }, [tab, picked]);
+  useEffect(() => {
+    if (invited) return;
+    let live = true;
+    void locationAlreadyAllowed().then((ok) => {
+      if (!live || !ok || nearRan.current || tabNow.current !== null || pickedNow.current) return;
+      nearRan.current = true;
+      setTab('near');
+      void findNearby();
+    });
+    return () => {
+      live = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const save = async (unit: Row) => {
     setSaving(true);

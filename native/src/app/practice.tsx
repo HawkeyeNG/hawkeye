@@ -47,6 +47,7 @@ import {
   envelopeHardLimitM,
   GROSS_MISMATCH_M,
   haversineM,
+  locationUnverified,
   unitPoint,
   warnRadiusM,
 } from '@/lib/geofence';
@@ -382,7 +383,7 @@ const NearbyRow = ({
           {n.name}
         </Text>
         <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
-          {n.puCode} · {n.ward} · {n.distanceM}m away
+          {n.puCode} · {n.ward} · {i18nT('n.lib.geofence.m-away', { v0: n.distanceM })}
         </Text>
         <View className="flex-row items-center pt-0.5">
           <TierDot tier={n.tier} />
@@ -1629,13 +1630,17 @@ export default function Practice() {
             <Text className="pb-1 text-xs text-muted" numberOfLines={1}>
               {unit ? i18nT('n.app.practice.selected', { v0: unit.name }) : i18nT('n.app.practice.no-unit-chosen-you-ll-practise')}
             </Text>
+            {unit && locationUnverified(unit) ? (
+              <Text className="pb-2 text-xs text-muted">
+                {i18nT('n.lib.geofence.location-unverified')}
+              </Text>
+            ) : null}
             {/* THE REAL FLOW'S SENTENCE, WORD FOR WORD, AT THE REAL FLOW'S
                 DISTANCE (report/result.tsx, same `warnRadiusM` call). The point
                 of the rehearsal is that this warning is not new on the day. */}
             {tooFar && pickedRow ? (
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
-                You are {pickedRow.distanceM}m away. Filing checks your position against this
-                unit&apos;s own coordinates — report from the unit itself.
+                {i18nT('n.lib.geofence.you-are-m-away-filing-checks', { v0: pickedRow.distanceM })}
               </Text>
             ) : null}
             {/* The approx unit's real gate, and it is not the distance above:
@@ -1643,9 +1648,7 @@ export default function Practice() {
                 reason has to name that centre. Same sentence as the real flow. */}
             {envelopeGate ? (
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
-                Hawkeye knows this unit only by a mapped area, and you are {envelopeGate.centreM}m
-                from that area&apos;s centre — past the {envelopeGate.limitM}m filing allows, so a
-                real report would be refused after the photos.
+                {i18nT('n.app.practice.envelope-gate', { v0: envelopeGate.centreM, v1: envelopeGate.limitM })}
               </Text>
             ) : null}
             {!tooFar && !envelopeGate ? (
@@ -2014,10 +2017,12 @@ export default function Practice() {
         title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
-            ? i18nT('n.app.practice.is-in-about', { v0: farUnit.name, v1: farUnit.lga, v2: farUnit.state }) +
-              i18nT('n.app.practice.km-from-where-you-are-now', { v0: farUnit.km.toLocaleString() }) +
-              'A result can only be filed from the polling unit itself, so this one cannot be ' +
-              'selected from here. If you are travelling there, choose it once you arrive.'
+            ? i18nT('n.lib.geofence.far-unit-body', {
+                v0: farUnit.name,
+                v1: farUnit.lga,
+                v2: farUnit.state,
+                v3: farUnit.km.toLocaleString(),
+              })
             : ''
         }
         confirmLabel={i18nT('n.app.practice.choose-another-unit')}

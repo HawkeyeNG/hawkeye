@@ -7,6 +7,7 @@ import Svg, { Circle as SvgCircle, Path } from 'react-native-svg';
 import type { MapStyleElement, Region } from 'react-native-maps';
 
 import { BRAND } from '@/lib/api';
+import { pinIsTrusted, type Placed } from '@/lib/geofence';
 import { DISCOVERY_RADIUS_M } from '@/lib/location';
 import { useUi } from '@/lib/theme';
 import { t as i18nT, lazyT } from '@/lib/i18n';
@@ -153,12 +154,16 @@ export const REGISTER_TIER_LABEL: Record<RegisterTier, string> = lazyT({
   ...TIER_LABEL,
   unmapped: 'n.app.map-unit.not-located-yet',
 });
-export function registerTier(u: {
-  coords_source?: string | null;
-  locationTier?: string;
-  lat?: number | null;
-  crowd_lat?: number | null;
-}): RegisterTier {
+export function registerTier(u: Placed & { locationTier?: string }): RegisterTier {
+  /**
+   * A pin that contradicts the unit's own envelope is not "Verified location",
+   * whatever the row says: 37-02-09-003 (Kubwa) wore that badge over a pin in
+   * Zamfara (lib/geofence.ts). Graded before the server's own tier because an
+   * older server — and anything cached from one — still calls it 'verified'.
+   */
+  if ((u.lat != null && !pinIsTrusted(u)) || u.pin_unverified) {
+    return u.approx_lat != null ? 'approx' : 'unmapped';
+  }
   if (u.coords_source === 'crowd_mapped') return 'crowd';
   if (u.locationTier) return u.locationTier === 'unmapped' ? 'unmapped' : toTier(u.locationTier);
   if (u.lat != null) return 'verified';

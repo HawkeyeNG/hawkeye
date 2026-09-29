@@ -132,9 +132,11 @@ const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 
   '.css': 'text/css', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2' };
 const posts = [];
 let meHits = 0;
+let nearHits = 0;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (v, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
+  if (url === '/api/mapping/nearby' || url === '/api/polling-units') nearHits++;
   if (url.startsWith('/api/observers/me')) {
     meHits++;
     return json({ observerId: 1, createdAt: Date.now(), identityHash: 'abc', hasPassword: true,
@@ -240,6 +242,58 @@ const signedIn = async (ctx) => ctx.addInitScript(() => {
   check('which re-reads the saved unit', meHits > meBefore, true);
   check('no page error', errs.slice(0, 2), []);
   await ctx.close();
+}
+
+/**
+ * NEAR ME IS THE SEARCH — and it starts itself once location is ALLOWED.
+ *
+ * Choosing the tab has always run the lookup (no second tap). The first
+ * permission prompt stays the reader's own act, so a reader who has never
+ * allowed location is not asked on arrival; one who already has gets the
+ * search at once. Measured by the GPS calls and near-me requests the page
+ * actually makes, with the granted run as the control that the unprompted run
+ * could have failed.
+ */
+console.log('\n=== web: Near me runs itself only when location is already allowed ===');
+{
+  const run = async ({ grant, query = '' }) => {
+    const ctx = await b.newContext({
+      ...ctxOpts,
+      ...(grant ? { permissions: ['geolocation'], geolocation: { latitude: 9.146, longitude: 7.32 } } : {}),
+    });
+    await signedIn(ctx);
+    await ctx.addInitScript(() => {
+      window.__gpsCalls = 0;
+      const g = navigator.geolocation;
+      if (g) {
+        const orig = g.getCurrentPosition.bind(g);
+        g.getCurrentPosition = (...a) => { window.__gpsCalls++; return orig(...a); };
+      }
+    });
+    const p = await ctx.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(String(e)));
+    const hits0 = nearHits;
+    await p.goto(`${base}/choose-unit.html${query}`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(1500);
+    const s = await p.evaluate(() => ({
+      nearSelected: document.getElementById('tab-near').getAttribute('aria-selected'),
+      paneShown: !document.getElementById('pane-near').hidden,
+      gps: window.__gpsCalls,
+    }));
+    s.lookups = nearHits - hits0;
+    s.errs = errs.slice(0, 2);
+    await ctx.close();
+    return s;
+  };
+  const cold = await run({ grant: false });
+  check('never allowed: nothing runs on arrival (no GPS call, no lookup, tab closed)',
+    [cold.gps, cold.lookups, cold.nearSelected], [0, 0, 'false']);
+  const warm = await run({ grant: true });
+  check('already allowed: Near me opens and searches with no tap', [warm.nearSelected, warm.paneShown, warm.gps > 0, warm.lookups > 0], ['true', true, true, true]);
+  const invited = await run({ grant: true, query: '?unit=37-06-01-105' });
+  check('an invited unit is not overridden by the auto search', [invited.nearSelected, invited.lookups], ['false', 0]);
+  check('no page error', [...cold.errs, ...warm.errs, ...invited.errs], []);
 }
 
 console.log('\n=== web: the sign-up step ===');

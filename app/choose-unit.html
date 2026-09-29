@@ -52,8 +52,9 @@
     .cu-banner svg { flex: none; margin-top: 2px; color: var(--link); }
 
     /* Near me / Browse register. Both start UNSELECTED: nothing runs — no GPS
-       fix, no register fetch — until a tab is tapped. Tapping the open one folds
-       it away. */
+       fix, no register fetch — until a tab is tapped, EXCEPT that Near me opens
+       and searches by itself when location is already allowed (no prompt can
+       appear then). Tapping the open one folds it away. */
     .cu-tabs {
       display: flex; gap: 4px; margin: 16px 0 0; padding: 4px;
       border: 1px solid var(--border); border-radius: 999px; background: var(--card);
@@ -633,6 +634,24 @@
       $('tab-near').addEventListener('click', () => openTab('near'));
       $('tab-reg').addEventListener('click', () => openTab('register'));
 
+      /*
+       * NEAR ME OPENS ITSELF WHEN LOCATION IS ALREADY ALLOWED.
+       *
+       * Choosing the tab has always been the search — no second tap. What stays
+       * the reader's own act is the FIRST location prompt: someone who has never
+       * allowed location is not asked on arrival. Someone who already has loses
+       * nothing by the search starting at once, so the tab opens and searches
+       * itself (native's chooser does the same). Not over an invited unit — that
+       * arrival is already a choice — nor once the reader has done anything.
+       */
+      (async () => {
+        if (INVITED || !navigator.geolocation || !navigator.permissions || !navigator.permissions.query) return;
+        try {
+          const st = await navigator.permissions.query({ name: 'geolocation' });
+          if (st.state === 'granted' && tab === null && !picked && !nearRan) openTab('near');
+        } catch { /* no Permissions API for geolocation here: the tab waits for a tap */ }
+      })();
+
       // -- search (pu-search.js, the picker every web PU flow mounts) ---------
       const host = $('unit-search-host');
       host.addEventListener('click', (e) => {
@@ -783,7 +802,7 @@
   </script>
   <script src="device.js"></script>
   <script src="register-store.js?v=3"></script>
-  <script src="pu-search.js?v=8"></script>
+  <script src="pu-search.js?v=9"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="menu.js?v=188"></script>

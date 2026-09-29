@@ -35,21 +35,93 @@ export type Placed = {
   crowd_lng?: number | null;
   approx_lat?: number | null;
   approx_lng?: number | null;
+  approx_radius_m?: number | null;
+  coords_source?: string | null;
+  /** Set by the server when it withheld a pin that contradicts the envelope. */
+  pin_unverified?: boolean;
 };
 
 /**
- * The best position the register offers for a unit, in the same order of
- * confidence the server uses: verified pin, then crowd/geocoded median, then
- * the GRID3 envelope centre. Null when the register places it nowhere at all —
- * 14,464 units — in which case NOTHING is claimed about distance. Unknown must
- * never be rendered as far.
+ * How far a pin may sit from the unit's own envelope centre and still be
+ * believed — backend/src/services/pin-trust.js, PIN_ENVELOPE_TOLERANCE_M, and
+ * the rule native/src/lib/races.ts has used for its centroids since August.
+ *
+ * WHY (2026-09-29): an observer at Games Village, Abuja picked 37-02-09-003
+ * "Kukwaba I / Kukwaba Market" — Kubwa, ~20 km away — and was refused as
+ * "about 436 km" away, under a "Verified location" badge. Its pin (12.7052,
+ * 6.0749, coords_source 'inec_locator') is in Bakura, Zamfara; its own GRID3
+ * envelope (9.146, 7.320) is in Kubwa. The INEC locator crawl numbered FCT 15
+ * and the register numbers it 37, so every state from Gombe to FCT was loaded
+ * with its alphabetical predecessor's pins. Those pins still sit on production
+ * until backend/scripts/fix_locator_state_shift.mjs runs, and a phone keeps
+ * whatever it cached, so the client judges each pin for itself.
  */
-export const unitPoint = (u: Placed): { lat: number; lng: number } | null => {
-  if (u.lat != null && u.lng != null) return { lat: u.lat, lng: u.lng };
-  if (u.crowd_lat != null && u.crowd_lng != null) return { lat: u.crowd_lat, lng: u.crowd_lng };
-  if (u.approx_lat != null && u.approx_lng != null) return { lat: u.approx_lat, lng: u.approx_lng };
-  return null;
+export const PIN_ENVELOPE_TOLERANCE_M = 25_000;
+
+/** true = agrees with the unit's own envelope, false = contradicts it, null = nothing to check against. */
+const agreesWithEnvelope = (u: Placed, lat: number, lng: number): boolean | null => {
+  if (u.approx_lat == null || u.approx_lng == null) return null;
+  const limit = Math.max(PIN_ENVELOPE_TOLERANCE_M, (u.approx_radius_m ?? 0) * 1.5 + 2000);
+  return haversineM(lat, lng, u.approx_lat, u.approx_lng) <= limit;
 };
+
+/** Crowd points written by observers (see pin-trust.js) rather than the bulk geocode. */
+const crowdFromObservers = (u: Placed) => u.coords_source == null || u.coords_source === 'crowd_mapped';
+
+/**
+ * A position the register offers for a unit that nothing contradicts, in the
+ * same order of confidence the server uses: the pin, then an observer crowd
+ * point, then the GRID3 envelope centre.
+ *
+ * - A pin or crowd point that contradicts the unit's own envelope is skipped.
+ * - A bulk-geocoded point (~33% block-shifted, hawkeye-geocode-corruption) is
+ *   never used on its own word: only the envelope can place such a unit.
+ *
+ * `unverified` is true when the register DID offer a position and every one of
+ * them was rejected — the screen must then say the location is unverified, not
+ * quote a distance and not refuse on one. Unknown is never rendered as far.
+ */
+export const placeUnit = (
+  u: Placed,
+): { point: { lat: number; lng: number } | null; basis: 'pin' | 'crowd' | 'envelope' | null; unverified: boolean } => {
+  const hasPin = u.lat != null && u.lng != null;
+  const hasCrowd = u.crowd_lat != null && u.crowd_lng != null;
+  if (hasPin && !u.pin_unverified && agreesWithEnvelope(u, u.lat!, u.lng!) !== false) {
+    return { point: { lat: u.lat!, lng: u.lng! }, basis: 'pin', unverified: false };
+  }
+  if (hasCrowd) {
+    const ok = agreesWithEnvelope(u, u.crowd_lat!, u.crowd_lng!);
+    if (ok === true || (ok === null && crowdFromObservers(u))) {
+      return { point: { lat: u.crowd_lat!, lng: u.crowd_lng! }, basis: 'crowd', unverified: false };
+    }
+  }
+  if (u.approx_lat != null && u.approx_lng != null) {
+    return { point: { lat: u.approx_lat, lng: u.approx_lng }, basis: 'envelope', unverified: false };
+  }
+  return { point: null, basis: null, unverified: hasPin || hasCrowd || !!u.pin_unverified };
+};
+
+/**
+ * The position to measure a unit's distance from, or null when there is no
+ * position anyone should measure from (see placeUnit).
+ */
+export const unitPoint = (u: Placed): { lat: number; lng: number } | null => placeUnit(u).point;
+
+/**
+ * Whether a register pin can be shown as "Verified location": a pin that
+ * contradicts the unit's own envelope, or that the server withheld, cannot.
+ */
+export const pinIsTrusted = (u: Placed): boolean =>
+  u.lat != null && u.lng != null && !u.pin_unverified && agreesWithEnvelope(u, u.lat, u.lng) !== false;
+
+/**
+ * Whether the screen must say "location unverified" for this unit: the
+ * register held a pin and it was rejected (here, or by the server, which then
+ * withholds it and sets `pin_unverified`), or it offered positions and none
+ * survived. Such a unit is never refused on distance and no km is quoted.
+ */
+export const locationUnverified = (u: Placed): boolean =>
+  placeUnit(u).unverified || !!u.pin_unverified || (u.lat != null && u.lng != null && !pinIsTrusted(u));
 
 /**
  * Metres between two positions — the same arithmetic as

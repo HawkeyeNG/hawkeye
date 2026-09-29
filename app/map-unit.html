@@ -142,7 +142,7 @@
 
   <script src="device.js"></script>
   <script src="register-store.js?v=3"></script>
-  <script src="pu-search.js?v=8"></script>
+  <script src="pu-search.js?v=9"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <!-- Vector basemap: our own Nigeria PMTiles, OpenFreeMap if ours fails (basemap.js).
        Replaces tile.openstreetmap.org, whose usage policy forbids election-night load. -->
@@ -417,7 +417,7 @@
       // auto-fire below) — a control still reading "Near me" looks like work
       // the observer has yet to do.
       nearAutoRan = true;
-      $('btn-near').textContent = '📍 Search Near Me Again';
+      $('btn-near').textContent = '📍 ' + T('observe.search-near-me-again', 'Search Near Me Again');
       $('near-status').textContent = 'Getting your position…';
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;

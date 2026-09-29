@@ -147,6 +147,19 @@ async function ensureUsable(mayPrompt: boolean): Promise<FixFailure | null> {
   return null;
 }
 
+/**
+ * Whether location is ALREADY allowed — a check, never a prompt.
+ *
+ * For screens where Near me is one choice among several (the unit chooser): the
+ * first permission prompt stays the observer's own act, but once permission
+ * exists there is no prompt left to spring on anyone, so the search can start
+ * by itself. False on any error, which leaves the screen waiting for a tap.
+ */
+export async function locationAlreadyAllowed(): Promise<boolean> {
+  const perm = await Location.getForegroundPermissionsAsync().catch(() => null);
+  return !!perm?.granted;
+}
+
 /** One bounded attempt. Separates "deadline passed" from "provider threw". */
 async function attempt(
   accuracy: Location.LocationAccuracy,

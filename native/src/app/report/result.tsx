@@ -36,6 +36,7 @@ import {
   envelopeHardLimitM,
   GROSS_MISMATCH_M,
   haversineM,
+  locationUnverified,
   unitPoint,
   warnRadiusM,
 } from '@/lib/geofence';
@@ -485,7 +486,7 @@ const NearbyRow = ({
             {n.name}
           </Text>
           <Text className={`text-xs ${selected ? 'text-emerald-100' : 'text-muted'}`}>
-            {n.puCode} · {n.ward} · {n.distanceM}m away
+            {n.puCode} · {n.ward} · {i18nT('n.lib.geofence.m-away', { v0: n.distanceM })}
           </Text>
           {/* Same words and same colour as the pin this row refers to —
               TierDot carries the map's palette down onto the list. */}
@@ -1383,7 +1384,7 @@ export default function ReportResult() {
           // "(timed out after 12s)" is the kind of detail that belongs in the
           // console: the dialog already says it took too long, and the number
           // does not change what to do about it.
-          ? 'That took too long. Check your signal and tap it again.'
+          ? i18nT('n.app.report.result.that-took-too-long-check-your-signal')
           : humanError(e, i18nT('n.app.report.result.check-your-connection-and-retry')),
       );
     } finally {
@@ -2071,8 +2072,13 @@ export default function ReportResult() {
         {step === 'unit' && unit ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Text className="pb-2 text-xs text-muted" numberOfLines={1}>
-              Selected: {unit.name}
+              {i18nT('n.app.report.result.selected', { v0: unit.name })}
             </Text>
+            {locationUnverified(unit) ? (
+              <Text className="pb-2 text-xs text-muted">
+                {i18nT('n.lib.geofence.location-unverified')}
+              </Text>
+            ) : null}
             {/* Discovery reaches further than the geofence does, so a located
                 unit can be listed and still be too far to file from. Say it
                 here rather than after two photos and a full tally — at the
@@ -2083,8 +2089,7 @@ export default function ReportResult() {
                 unconfirmed row does not know. */}
             {tooFar && pickedRow ? (
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
-                You are {pickedRow.distanceM}m away. Filing checks your position against this
-                unit&apos;s own coordinates — report from the unit itself.
+                {i18nT('n.lib.geofence.you-are-m-away-filing-checks', { v0: pickedRow.distanceM })}
               </Text>
             ) : null}
             {/* The approx unit's real gate, and it is not the distance above:
@@ -2094,10 +2099,7 @@ export default function ReportResult() {
                 two photos and a full tally are spent on a 403. */}
             {envelopeGate ? (
               <Text className="pb-2 text-xs font-semibold text-warn-ink">
-                Hawkeye knows this unit only by a mapped area, and you are {envelopeGate.centreM}m
-                from that area&apos;s centre — past the {envelopeGate.limitM}m filing allows, so
-                this report would be refused after the photos. Move closer to the unit, or map it
-                from where it stands.
+                {i18nT('n.lib.geofence.envelope-gate', { v0: envelopeGate.centreM, v1: envelopeGate.limitM })}
               </Text>
             ) : null}
             {/* Only once the contest list is in — before that, "no election
@@ -2642,10 +2644,12 @@ export default function ReportResult() {
         title={i18nT('n.app.practice.that-unit-is-too-far-away')}
         body={
           farUnit
-            ? i18nT('n.app.report.result.is-in-about', { v0: farUnit.name, v1: farUnit.lga, v2: farUnit.state }) +
-              i18nT('n.app.report.result.km-from-where-you-are-now', { v0: farUnit.km.toLocaleString() }) +
-              'A result can only be filed from the polling unit itself, so this one cannot be ' +
-              'selected from here. If you are travelling there, choose it once you arrive.'
+            ? i18nT('n.lib.geofence.far-unit-body', {
+                v0: farUnit.name,
+                v1: farUnit.lga,
+                v2: farUnit.state,
+                v3: farUnit.km.toLocaleString(),
+              })
             : ''
         }
         confirmLabel={i18nT('n.app.practice.choose-another-unit')}

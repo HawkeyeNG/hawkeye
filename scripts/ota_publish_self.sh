@@ -38,6 +38,7 @@ APP_URL="https://updates.hawkeye.com.ng/manifest"   # must equal native/app.json
 BASE="${OTA_BASE_URL:-https://updates.hawkeye.com.ng}"; BASE="${BASE%/}"
 VERIFY_EXTRA=(); case "$BASE" in http://127.0.0.1:*) VERIFY_EXTRA=(--allow-http) ;; esac   # the local test server
 BUCKET="${OTA_R2_BUCKET:-hawkeye-updates}"
+export OTA_MAPS_KEY_PRESENT="${OTA_MAPS_KEY_PRESENT:-1}"   # store builds carry the Maps key; see native/app.config.js
 export EXPO_UPDATES_PRIVATE_KEY_FILE="${EXPO_UPDATES_PRIVATE_KEY_FILE:-$HOME/hawkeye-secrets/expo-updates/private-key.pem}"
 
 die() { echo "ota_publish_self: $*" >&2; exit 1; }

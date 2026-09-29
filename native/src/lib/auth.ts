@@ -227,6 +227,155 @@ export async function orgSignup(
 }
 
 /**
+ * WHATSAPP IN REVERSE — "SEND US THE CODE" (free).
+ *
+ * Instead of paying to send the observer a code, the server shows one
+ * (HK-XXXXXX) and the observer sends it FROM the WhatsApp on the number they
+ * typed TO ours. Meta's webhook matches sender + code, and this device collects
+ * its session with a poll token only it holds (backend services/waInbound.js).
+ * Offered only while /api/health says `waInbound` (api.waInboundEnabled).
+ *
+ * The same device proof as /verify: this device's key and id ride on the
+ * start, and the session that comes back is bound to them. The server counts a
+ * WhatsApp proof as fresh phone proof, so /set-password takes a new password
+ * without the old one, exactly as after a code.
+ *
+ * A POST with a deadline and the HTTP status beside the body: a poll that
+ * hangs on a stalled socket would stop the waiting screen dead (React Native's
+ * fetch has no timeout of its own), and 410 is an answer while a 502 page is
+ * not. Throws only when the network failed or the reply was not JSON.
+ */
+async function postStatus<T>(path: string, body: object, headers: Record<string, string> = {}): Promise<{ status: number; body: T }> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 12_000);
+  try {
+    const res = await fetch(`${BASE}${path}`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-device-class': 'phone', ...headers },
+      body: JSON.stringify(body),
+      signal: ctl.signal,
+    });
+    return { status: res.status, body: (await res.json()) as T };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type WaStartResult =
+  | { ok: true; code: string; waLink: string; waNumber: string; pollToken: string; expiresInS: number; pollAfterMs: number }
+  | { ok: false; error?: string };
+
+/**
+ * Start a WhatsApp sign-in. `wa_inbound_unavailable` (the server's 503, or a
+ * reply this build cannot use) means: send the paid code instead, silently.
+ */
+export async function waStart(
+  phone: string,
+  /** As verifyOtp: sign-up's typed invite (null = none); omitted = the parked one. */
+  opts: { referralCode?: string | null } = {},
+): Promise<WaStartResult> {
+  const id = await getIdentity();
+  const referralCode = opts.referralCode === undefined ? await pendingInviteCode() : opts.referralCode || undefined;
+  const r = await postStatus<{
+    ok?: boolean; code?: string; waLink?: string; waNumber?: string; pollToken?: string;
+    expiresInS?: number; pollAfterMs?: number; error?: string;
+  }>(
+    '/api/observers/wa-start',
+    { phone, publicKeyJwk: id.publicKeyJwk, lang: currentLangForOtp(), referralCode },
+    { 'x-device-id': id.deviceId },
+  );
+  const b = r.body ?? {};
+  if (r.status === 200 && b.ok) {
+    // Only a link that opens WhatsApp is ever handed to the OS.
+    const linkOk = typeof b.waLink === 'string' && /^(https:\/\/(wa\.me|api\.whatsapp\.com)\/|whatsapp:\/\/)/.test(b.waLink);
+    if (typeof b.code !== 'string' || !b.code || !linkOk || typeof b.pollToken !== 'string' || !b.pollToken) {
+      return { ok: false, error: 'wa_inbound_unavailable' };
+    }
+    return {
+      ok: true,
+      code: b.code,
+      waLink: b.waLink as string,
+      waNumber: typeof b.waNumber === 'string' ? b.waNumber : '',
+      pollToken: b.pollToken,
+      expiresInS: Number(b.expiresInS) > 0 ? Number(b.expiresInS) : 600,
+      pollAfterMs: Number(b.pollAfterMs) > 0 ? Number(b.pollAfterMs) : 2000,
+    };
+  }
+  if (r.status === 503) return { ok: false, error: 'wa_inbound_unavailable' };
+  return { ok: false, error: b.error };
+}
+
+/** What /wa-status hands over once the message has arrived: /verify's shape. */
+export type WaSession = {
+  observerId: number;
+  token: string;
+  isNew?: boolean;
+  needsUnit?: boolean;
+  hasPassword?: boolean;
+};
+
+export type WaStatusResult =
+  | { status: 'pending'; mismatch: boolean; retryAfterMs: number }
+  | { status: 'verified'; session: WaSession }
+  /** Expired, used, cancelled or another device's — one answer (410). */
+  | { status: 'expired' }
+  /** An answer that decides nothing (429, 5xx): ask again later. */
+  | { status: 'retry' };
+
+/**
+ * One poll. Stores NOTHING: the caller adopts a verified session with
+ * adoptWaSession() only if it still wants it — a reply that lands after the
+ * observer tapped "Use a different number" must not sign anyone in behind
+ * their back.
+ */
+export async function waStatus(pollToken: string): Promise<WaStatusResult> {
+  const id = await getIdentity();
+  const r = await postStatus<{
+    ok?: boolean; status?: string; mismatch?: boolean; retryAfterMs?: number;
+    observerId?: number; token?: string; isNew?: boolean; needsUnit?: boolean; hasPassword?: boolean;
+  }>('/api/observers/wa-status', { pollToken }, { 'x-device-id': id.deviceId });
+  const b = r.body ?? {};
+  if (r.status === 410) return { status: 'expired' };
+  if (r.status === 200 && b.status === 'verified' && b.token && b.observerId) {
+    return {
+      status: 'verified',
+      session: { observerId: b.observerId, token: b.token, isNew: b.isNew, needsUnit: b.needsUnit, hasPassword: b.hasPassword },
+    };
+  }
+  if (r.status === 200 && b.status === 'pending') {
+    return { status: 'pending', mismatch: b.mismatch === true, retryAfterMs: Number(b.retryAfterMs) || 0 };
+  }
+  return { status: 'retry' };
+}
+
+/**
+ * Keep a WhatsApp-proved session — stored exactly as verifyOtp stores one.
+ * Returns what verifyOtp returns, `hadPassword` being the server's
+ * `hasPassword`, so the sign-in screen runs ONE success path for both proofs.
+ */
+export async function adoptWaSession(
+  r: WaSession,
+): Promise<{ isNew?: boolean; needsUnit?: boolean; hadPassword?: boolean }> {
+  await SecureStore.setItemAsync(K_TOKEN, r.token);
+  await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+  await SecureStore.deleteItemAsync(K_OPTED_OUT);
+  await clearSignedOutElsewhere();
+  await settleInviteAfterVerify(r);
+  set({ status: 'signedIn', observerId: r.observerId, token: r.token });
+  return { isNew: r.isNew, needsUnit: r.needsUnit, hadPassword: r.hasPassword };
+}
+
+/** "Use a different number", or leaving the step: the code on screen stops working. */
+export async function waCancel(pollToken: string): Promise<void> {
+  try {
+    const id = await getIdentity();
+    await postStatus('/api/observers/wa-cancel', { pollToken }, { 'x-device-id': id.deviceId });
+  } catch {
+    /* best effort — an abandoned code also expires on its own */
+  }
+}
+
+/**
  * Password sign-in — phone + password on any device, no OTP. The server treats
  * success exactly like a fresh OTP verify: the signing key rotates to this
  * device. Its 401 hints are user-ready copy; surface them verbatim.

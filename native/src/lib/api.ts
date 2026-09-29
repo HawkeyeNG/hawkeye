@@ -289,17 +289,47 @@ async function contestsWithCache(): Promise<Contest[]> {
  * mobile data does not decide this.
  */
 async function smsOtpEnabled(): Promise<boolean> {
-  try {
-    const h = await get<{ smsOtp?: boolean }>('/api/health');
-    return h?.smsOtp === true;
-  } catch {
-    return false;
+  const h = await health();
+  return h?.smsOtp === true;
+}
+
+/**
+ * Whether the WhatsApp choice runs IN REVERSE — the observer sends US a code
+ * from their own WhatsApp, which costs nobody anything — instead of us sending
+ * them a paid one. /api/health's `waInbound`, set only while the server can
+ * actually receive those messages.
+ *
+ * FAILS CLOSED, like smsOtp: no answer means the WhatsApp chip keeps sending
+ * the paid code exactly as before. A 503 from /wa-start later says the same
+ * thing and the sign-in screen falls back without a word.
+ */
+async function waInboundEnabled(): Promise<boolean> {
+  const h = await health();
+  return h?.waInbound === true;
+}
+
+/**
+ * ONE /api/health request for every switch read in the same moment. The
+ * sign-in screen asks for SMS and WhatsApp together on mount; two identical
+ * requests on the slowest link of the day would be one too many. Shared only
+ * while in flight, so a later mount still gets a fresh answer. Never rejects:
+ * a failure is `null`, which every reader treats as "off".
+ */
+type Health = { smsOtp?: boolean; waInbound?: boolean };
+let healthInFlight: Promise<Health | null> | null = null;
+function health(): Promise<Health | null> {
+  if (!healthInFlight) {
+    healthInFlight = get<Health>('/api/health')
+      .catch(() => null)
+      .finally(() => { healthInFlight = null; });
   }
+  return healthInFlight;
 }
 
 export const api = {
   contests: contestsWithCache,
   smsOtpEnabled,
+  waInboundEnabled,
   /**
    * A contest's board. `state` crops it to one state and subdivides one level
    * finer; `level` asks for a specific breakdown — a race map draws LGAs, and a

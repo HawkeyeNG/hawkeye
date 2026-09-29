@@ -117,6 +117,11 @@ module.exports = ({ config }) => {
     // A boolean, not the key: nothing in the JS layer needs the value, and the
     // presence check is all the UI can honestly act on anyway — a key restricted
     // to the wrong package or SHA-1 still renders grey and says nothing.
-    extra: { ...config.extra, mapsKeyPresent: !!apiKey },
+    // An OTA update REPLACES the runtime config, and the self-hosted OTA export
+    // runs without the Maps key (it is baked into the store build's manifest,
+    // not the JS). Without this, every OTA hid the map behind "This build has no
+    // Google Maps key" on store builds that have one (1.0.10, 2026-09-30). Store
+    // builds cannot ship keyless (play-upload.yml refuses), so the OTA says so.
+    extra: { ...config.extra, mapsKeyPresent: !!apiKey || process.env.OTA_MAPS_KEY_PRESENT === '1' },
   };
 };

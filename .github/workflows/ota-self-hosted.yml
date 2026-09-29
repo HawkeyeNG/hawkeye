@@ -64,6 +64,9 @@ jobs:
       PLATFORM: ${{ inputs.platform }}
       MESSAGE: ${{ inputs.message }}
       APPLY: ${{ inputs.apply }}
+      # The Maps key lives in the store build's manifest, not the JS; tell the
+      # exported config it is there, or the map is hidden (native/app.config.js).
+      OTA_MAPS_KEY_PRESENT: '1'
     steps:
       - uses: actions/checkout@v4
 

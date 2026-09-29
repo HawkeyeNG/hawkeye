@@ -5,7 +5,9 @@ import * as WebBrowser from 'expo-web-browser';
 import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  AppState,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   Text,
@@ -25,6 +27,7 @@ import {
   setPassword as savePassword,
   signOut,
   verifyOtp,
+  waStart,
   type RegisterResult,
 } from '@/lib/auth';
 import { BASE, BRAND, api } from '@/lib/api';
@@ -33,6 +36,7 @@ import { typedInviteCode } from '@/lib/invite-parse';
 import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import { startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
 
@@ -49,6 +53,9 @@ type Channel = 'whatsapp' | 'telegram' | 'sms';
  *   password      phone + password            (default; also ?intent=signin)
  *   request       phone + channel -> send OTP (?intent=signup, forgot, rescue)
  *   otp           enter the 6-digit code
+ *   wa-send       WhatsApp in reverse: the observer sends US a code (free);
+ *                 replaces request -> otp for WhatsApp while /api/health says
+ *                 `waInbound`, and ends exactly where a verified code does
  *   set-password  choose + confirm a password (mandatory when the account has none)
  *
  * `purpose` is what the OTP is FOR, and it drives every line of copy on the
@@ -59,7 +66,7 @@ type Channel = 'whatsapp' | 'telegram' | 'sms';
  * made the button spin for a whole round-trip, which reads as a slow app. On
  * failure we drop back to the request step with the error line.
  */
-type Step = 'password' | 'request' | 'otp' | 'set-password' | 'exists';
+type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'set-password' | 'exists';
 /** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
 type Purpose = 'signup' | 'reset' | 'no-password';
 
@@ -76,11 +83,25 @@ export default function SignIn() {
   const [channel, setChannel] = useState<Channel | null>(null);
   // Offered only when the SERVER says it can deliver it — see api.smsOtpEnabled.
   const [smsOk, setSmsOk] = useState(false);
+  // WhatsApp in reverse (free) — same fail-closed switch; see api.waInboundEnabled.
+  const [waOk, setWaOk] = useState(false);
   useEffect(() => {
     let alive = true;
     api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
+    api.waInboundEnabled().then((ok) => { if (alive) setWaOk(ok); });
     return () => { alive = false; };
   }, []);
+  /**
+   * The free WhatsApp route for this screen: the code the observer sends us,
+   * the link that opens WhatsApp with it typed, our number, and what the
+   * waiting line says. The poller itself lives in a ref (lib/wa-signin.ts), so
+   * no re-render can restart or cancel its timer.
+   */
+  const [wa, setWa] = useState<{ code: string; waLink: string; waNumber: string } | null>(null);
+  const [waWait, setWaWait] = useState<WaWait | 'verified'>('waiting');
+  const waPoller = useRef<WaPoller | null>(null);
+  /** The server refused another free code for this number (429): WhatsApp sends the paid one from now on. */
+  const [waLimited, setWaLimited] = useState(false);
   const [otp, setOtp] = useState('');
   /**
    * How the 'exists' step was reached. BEFORE a code the server refused to send
@@ -141,6 +162,8 @@ export default function SignIn() {
    */
   const kind = codeKind(inviteCode);
   const withOrgCode = purpose === 'signup' && looksLikeOrgCode(inviteCode);
+  /** WhatsApp, and the server can receive: the observer sends US the code, free (step 'wa-send'). */
+  const freeWhatsapp = channel === 'whatsapp' && waOk && !waLimited;
   useEffect(() => {
     let alive = true;
     pendingInviteCode().then((c) => {
@@ -175,7 +198,9 @@ export default function SignIn() {
     return i18nT('n.app.sign-in.code-sent-to', { v0: phone });
   };
 
-  const send = (verb: string) => {
+  // `via` defaults to the chip; the WhatsApp step's fallbacks name theirs, since
+  // a setChannel() in the same tap has not reached this closure yet.
+  const send = (verb: string, via: Channel = channel as Channel) => {
     setLine(i18nT('n.app.sign-in.code-to', { v0: verb, v1: phone.trim() }));
     setCooldown(30);
     // Non-null: Send code is disabled until a channel is picked.
@@ -183,7 +208,7 @@ export default function SignIn() {
     // an OTP costs money and that sign-up has only one possible outcome. Reset
     // and rescue deliberately do not pass it: they need a code on a number that
     // IS registered.
-    requestOtp(phone.trim(), channel as Channel, purpose === 'signup' ? 'signup' : undefined)
+    requestOtp(phone.trim(), via, purpose === 'signup' ? 'signup' : undefined)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
           // Telegram needs a one-time bot link — that UI lives on the request step.
@@ -281,9 +306,77 @@ export default function SignIn() {
     }
     setInviteBad(false);
     setTgLink(null);
+    if (freeWhatsapp) {
+      void startWa();
+      return;
+    }
     setStep('otp');
     setTimeout(() => otpRef.current?.focus(), 250);
     send('Sending');
+  };
+
+  /** The code comes TO the observer (paid): the WhatsApp step's fallbacks, and a server that cannot receive. */
+  const paidCode = (via: Channel) => {
+    setChannel(via);
+    setLine(null);
+    setStep('otp');
+    setTimeout(() => otpRef.current?.focus(), 250);
+    send('Sending', via);
+  };
+
+  /**
+   * Start (or restart) WhatsApp in reverse: the server hands over a code, the
+   * observer sends it from their own WhatsApp, the poller collects the session
+   * and hands it to afterProof — the same tail as a typed code. A server that
+   * cannot receive right now (503) gets the paid WhatsApp code instead, exactly
+   * as before and without a word. Same validation as a send: onRequest has
+   * already checked the invite field, and an ORG- code never reaches here.
+   */
+  const startWa = async () => {
+    setBusy(true);
+    setLine(null);
+    try {
+      // The invite rides as it does on /verify: sign-up sends the field (null
+      // when empty), reset and rescue the parked one.
+      const r = await waStart(
+        phone.trim(),
+        purpose === 'signup' ? { referralCode: typedInviteCode(inviteCode) || null } : {},
+      );
+      if (r.ok) {
+        waPoller.current?.stop(true); // "Start again": the old code is done with
+        setWa({ code: r.code, waLink: r.waLink, waNumber: r.waNumber });
+        setWaWait('waiting');
+        setStep('wa-send');
+        waPoller.current = startWaPoller({
+          pollToken: r.pollToken,
+          expiresInS: r.expiresInS,
+          pollAfterMs: r.pollAfterMs,
+          onWait: setWaWait,
+          onVerified: (proof) => {
+            waPoller.current = null;
+            setWaWait('verified');
+            // Through the ref: the render that started this poll is minutes old.
+            void afterProofRef.current(proof);
+          },
+        });
+        return;
+      }
+      if (r.error === 'wa_inbound_unavailable') {
+        setWaOk(false);
+        paidCode('whatsapp');
+        return;
+      }
+      if (r.error === 'too_many_requests') setWaLimited(true);
+      setLine(
+        r.error === 'too_many_requests' ? i18nT('n.auth.wa-too-many')
+        : r.error === 'invalid_phone' ? i18nT('n.auth.wa-invalid-phone')
+        : i18nT('n.app.sign-in.could-not-send-a-code-check'),
+      );
+    } catch {
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   const onVerify = async () => {
@@ -306,8 +399,27 @@ export default function SignIn() {
         );
         return;
       }
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await afterProof(r);
+    } catch {
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
+    } finally {
+      setBusy(false);
+    }
+  };
 
+  /**
+   * THE PHONE IS PROVED — by a typed code (/verify) or by the observer's own
+   * WhatsApp message (/wa-status). The session is already stored; this decides
+   * where they go next, for the purpose they came in with. ONE tail for both
+   * proofs, so the free WhatsApp route cannot drift from the code route.
+   * `hadPassword` is the server's hasPassword on arrival (lib/auth.ts).
+   */
+  const afterProof = async (r: WaProof) => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    // Busy across the password-status round trip below: the WhatsApp route has
+    // no button of its own holding it.
+    setBusy(true);
+    try {
       // Signed in. Now: does this account still need a password? `no-password`
       // already knows the answer (the server said so), `reset` is here on
       // purpose, and a sign-up on a number that turns out to be an existing
@@ -337,7 +449,8 @@ export default function SignIn() {
         // Only when the account also has a password. An account without one
         // still needs the create-password step below, whatever its age.
         if (r.isNew === false && r.hadPassword) {
-          // Reached only when the pre-send refusal did not fire: an older
+          // Reached only when no pre-send refusal fired: the WhatsApp route
+          // (/wa-start answers every number alike, by design), an older
           // server, or the account gained a password between the two calls.
           setExistsAfterOtp(true);
           setLine(null);
@@ -372,6 +485,31 @@ export default function SignIn() {
       setBusy(false);
     }
   };
+  // The latest afterProof for the WhatsApp poller, whose callback outlives the
+  // render that created it. Updated after every commit, never during render.
+  const afterProofRef = useRef(afterProof);
+  useEffect(() => {
+    afterProofRef.current = afterProof;
+  });
+
+  /**
+   * WHILE THE WHATSAPP STEP IS UP: coming back to the app (from WhatsApp, most
+   * likely with the message just sent) asks at once instead of waiting out the
+   * backoff. LEAVING IT BY ANY ROUTE — a fallback, "Use a different number",
+   * the close button, a proof that moved on — stops the poll and kills the code
+   * on screen. Keyed on the step alone, so no re-render can cancel the poll.
+   */
+  useEffect(() => {
+    if (step !== 'wa-send') return;
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') waPoller.current?.pollNow();
+    });
+    return () => {
+      sub.remove();
+      waPoller.current?.stop(true);
+      waPoller.current = null;
+    };
+  }, [step]);
 
   /**
    * A blank password is a legitimate submission here, not junk input.
@@ -543,6 +681,15 @@ export default function SignIn() {
 
   const pwSaveDisabled = busy || newPw.length < 8 || newPw2.length < 8;
 
+  /** The WhatsApp step's live line. `mismatch`: the code came from another number (dual SIM). */
+  const waLine =
+    waWait === 'verified' ? i18nT('n.auth.wa-verified')
+    : waWait === 'expired' ? i18nT('n.auth.wa-expired')
+    : waWait === 'offline' ? i18nT('n.auth.wa-offline')
+    : waWait === 'mismatch' ? i18nT('n.auth.wa-mismatch', { phone: phone.trim() })
+    : i18nT('n.auth.wa-waiting');
+  const waCalm = waWait === 'waiting' || waWait === 'verified';
+
   return (
     <SafeAreaView className="flex-1 bg-surface">
       <KeyboardAvoidingView
@@ -706,7 +853,10 @@ export default function SignIn() {
                 }`}
               >
                 {busy ? (
-                  <ActivityIndicator color={BRAND.gold} />
+                  <ActivityIndicator
+                    color={BRAND.gold}
+                    accessibilityLabel={freeWhatsapp && !withOrgCode ? i18nT('n.auth.wa-starting') : undefined}
+                  />
                 ) : (
                   <Text className="text-base font-bold text-hawk-gold">
                     {withOrgCode ? authT('n.auth.org-create-account') : i18nT('n.app.profile.send-code')}
@@ -841,6 +991,91 @@ export default function SignIn() {
                   <Text className="text-sm font-semibold text-muted">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               )}
+            </>
+          ) : step === 'wa-send' ? (
+            <>
+              {/* WHATSAPP IN REVERSE (free). The observer sends US this code
+                  from the WhatsApp on the number they typed; lib/wa-signin.ts
+                  collects the session. The code is a selectable Text, never a
+                  TextInput — see the letterSpacing note on the OTP box below.
+                  Twin of app/observe.html #wa-send. */}
+              <Text className="text-2xl font-bold text-ink">{i18nT('n.auth.wa-title')}</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">
+                {i18nT('n.auth.wa-body', { phone: phone.trim() })}
+              </Text>
+              <View className="items-center rounded-2xl bg-card px-4 py-5">
+                <Text
+                  selectable
+                  accessibilityLabel={i18nT('n.auth.wa-code-a11y', { code: (wa?.code ?? '').split('').join(' ') })}
+                  className={`text-3xl font-bold ${waWait === 'expired' ? 'text-faint' : 'text-ink'}`}
+                >
+                  {wa?.code}
+                </Text>
+              </View>
+              {waWait === 'expired' ? (
+                <Pressable
+                  disabled={busy}
+                  onPress={() => void startWa()}
+                  accessibilityRole="button"
+                  className={`mt-5 items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={BRAND.gold} accessibilityLabel={i18nT('n.auth.wa-starting')} />
+                  ) : (
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.auth.wa-again')}</Text>
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  disabled={waWait === 'verified'}
+                  onPress={() => {
+                    if (wa) Linking.openURL(wa.waLink).catch(() => {});
+                  }}
+                  accessibilityRole="button"
+                  className="mt-5 flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+                >
+                  <Feather name="message-circle" size={18} color={BRAND.gold} />
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('n.auth.wa-open')}</Text>
+                </Pressable>
+              )}
+              {wa?.waNumber ? (
+                <Text selectable className="pt-3 text-center text-sm text-muted">
+                  {i18nT('n.auth.wa-number', { number: wa.waNumber })}
+                </Text>
+              ) : null}
+              <View className="flex-row items-center justify-center gap-2 pt-4" accessibilityLiveRegion="polite">
+                {waCalm ? <ActivityIndicator size="small" color={ui.muted} /> : null}
+                <Text className={`shrink text-center text-sm ${waCalm ? 'text-muted' : 'text-warn-ink'}`}>
+                  {waLine}
+                </Text>
+              </View>
+              <Text className="pt-3 text-center text-xs text-muted">{i18nT('n.auth.wa-safety')}</Text>
+              {waWait !== 'verified' ? (
+                <>
+                  <Pressable className="mt-4 items-center" disabled={busy} onPress={() => paidCode('whatsapp')}>
+                    <Text className="text-center text-sm font-semibold text-good-ink">
+                      {i18nT('n.auth.wa-fallback-whatsapp')}
+                    </Text>
+                  </Pressable>
+                  {smsOk ? (
+                    <Pressable className="mt-3 items-center" disabled={busy} onPress={() => paidCode('sms')}>
+                      <Text className="text-center text-sm font-semibold text-good-ink">
+                        {i18nT('n.auth.wa-fallback-sms')}
+                      </Text>
+                    </Pressable>
+                  ) : null}
+                  <Pressable
+                    className="mt-3 items-center"
+                    disabled={busy}
+                    onPress={() => {
+                      setLine(null);
+                      setStep('request');
+                    }}
+                  >
+                    <Text className="text-sm font-semibold text-muted">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
+                  </Pressable>
+                </>
+              ) : null}
             </>
           ) : step === 'otp' ? (
             <>

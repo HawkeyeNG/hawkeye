@@ -517,6 +517,13 @@ const shots = { sheet: null, venue: null }; // { blob, capturedAt }
 // ---------- registration (single pane: phone first, then OTP in the same input) ----------
 let authMode = 'phone';
 let pendingPhone = '';
+/* /api/health waInbound: the WhatsApp choice runs in reverse (free). Set by
+   revealSmsOptionIfEnabled(); false until the server says otherwise. */
+let WA_INBOUND = false;
+/* The free WhatsApp route in progress (startWaSend), or null. Declared up here
+   because resetAuthPane() reads it. */
+let wa = null;   // { pollToken, code, link, deadline, delay, timer, busy, fails, newPw, gen }
+let waGen = 0;
 
 // Why the user is registering, from the CTA (?intent=observe|map|incident).
 // Drives the verification heading and where we send them once verified.
@@ -577,6 +584,7 @@ function applySignInMode() {
   // practice link still belongs here (a practice link on every auth screen).
   if ($('starter-card')) $('starter-card').hidden = true;
   if ($('practice-line')) $('practice-line').hidden = false;
+  paintPasskeySignIn();
 }
 // Sign-up mode (everything that isn't ?intent=signin). Mirror image of the above:
 // no "have a password?" toggle (a new observer can't have one), a link across to
@@ -791,6 +799,9 @@ function afterVerified(isNew) {
 }
 
 function resetAuthPane() {
+  // Leaving a WhatsApp send-us-the-code wait: that code stops working.
+  waStop(true);
+  showWaPane(false);
   authMode = 'phone';
   pendingPhone = '';
   const input = $('auth-input');
@@ -798,6 +809,8 @@ function resetAuthPane() {
   input.placeholder = T('observe.enter-phone-number', 'Enter Phone Number');
   input.type = 'tel';
   input.inputMode = 'tel';
+  // The OTP step retitles this to "Enter OTP"; a new number wants its own label back.
+  if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.nigerian-mobile-number', 'Nigerian Mobile Number');
   $('btn-auth').textContent = T('observe.request-otp', 'Request OTP');
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
@@ -843,6 +856,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
   $('pw-link').textContent = toPw ? 'Forgot your password?' : 'Sign in with your password instead';
   $('otp-hint').textContent = '';
+  paintPasskeySignIn();   // the passkey button belongs to the password step only
 };
 
 // The delivery channel picked on the form ('telegram' | 'whatsapp'; 'sms' is
@@ -870,10 +884,21 @@ function revealSmsOptionIfEnabled(tries = 2) {
   // between two files that have no other reason to care about each other. The
   // shell already publishes the host it uses; read it.
   const base = (window.HAWKEYE && window.HAWKEYE.apiBase) || API || '';
-  fetch(base + '/api/health')
-    .then((r) => (r.ok ? r.json() : null))
+  const p = fetch(base + '/api/health').then((r) => (r.ok ? r.json() : null));
+  // passkey.js reads the same answer rather than asking the server twice.
+  window.__hkHealthP = p.catch(() => null);
+  p
     .then((h) => {
-      if (h && h.smsOtp === true) { opt.hidden = false; return; }
+      // WhatsApp runs in reverse (the observer sends US the code, free) only
+      // when the server says so; otherwise the WhatsApp choice sends a paid
+      // code exactly as before. Same fail-closed contract as SMS below.
+      if (h && h.waInbound === true) WA_INBOUND = true;
+      paintPasskeySignIn();
+      if (h && h.smsOtp === true) {
+        opt.hidden = false;
+        if ($('wa-sms-line')) $('wa-sms-line').hidden = false;
+        return;
+      }
       // A null body means the request completed but said nothing useful; only a
       // THROWN failure is worth a second attempt.
     })
@@ -1011,34 +1036,28 @@ $('btn-auth').onclick = async () => {
     const channel = pickedChannel();
     if (!channel) return void hkAlert(T('auth.choose-code-channel', 'Choose where to receive your code — WhatsApp or Telegram.'));
     if (!inviteFieldOk()) return;
+    // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
+    // the code. Anything that stops it (server says unavailable) drops through
+    // to the paid code below, so the choice always does something.
+    if (channel === 'whatsapp' && WA_INBOUND) {
+      const pw = $('pw-opt-input') ? $('pw-opt-input').value : '';
+      if ($('pw-opt') && $('pw-opt').hidden) {
+        // Forgotten-password route: the new password is chosen BEFORE the
+        // sign-in, because the sign-in completes by itself when the message lands.
+        $('pw-opt').hidden = false;
+        $('pw-opt-input').focus();
+        return void hkAlert(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'));
+      }
+      if (pw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
+      if (await startWaSend(phone, pw)) return;
+    }
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ phone, channel, lang: chosenLang() }),
     });
     if (status !== 200) return void hkAlert(explain(body));
-    // same pane flips to OTP entry
-    pendingPhone = phone;
-    pendingChannel = channel;
-    authMode = 'otp';
-    input.value = '';
-    input.placeholder = T('observe.enter-otp', 'Enter OTP');
-    input.inputMode = 'numeric';
-    // The LABEL has to move with the field. It kept saying "Nigerian Mobile
-    // Number" over an input that now wants a code, which is the one thing on
-    // this screen the observer reads before typing.
-    if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.enter-otp', 'Enter OTP');
-    $('btn-auth').textContent = T('observe.verify-otp', 'Verify OTP');
-    $('auth-reset').hidden = false;
-    if ($('otp-resend')) $('otp-resend').hidden = false;
-    // A code is in flight — every "go somewhere else to sign in" link is noise
-    // now. The create-a-password option stays (it applies on verify).
-    if ($('pw-link')) $('pw-link').hidden = true;
-    if ($('signin-line')) $('signin-line').hidden = true;
-    if ($('signup-line')) $('signup-line').hidden = true;
-    if ($('pw-opt')) $('pw-opt').hidden = false;
-    if ($('channel-pick')) $('channel-pick').hidden = true;
-    renderOtpSent(body);
+    enterOtpMode(phone, channel, body);
     return;
   }
 
@@ -1089,7 +1108,8 @@ $('btn-auth').onclick = async () => {
   }
   resetAuthPane();
   // /login has no isNew, so a password sign-in can never be taken for a sign-up.
-  afterVerified(body.isNew === true || body.needsUnit === true);
+  // A returning sign-in may first be offered a passkey (inline, skippable).
+  offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
 
   } catch {
     hkAlert(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
@@ -1102,6 +1122,311 @@ $('auth-reset').onclick = (e) => {
   e.preventDefault();
   resetAuthPane();
 };
+
+/* The pane flips to code entry once a code has gone out: the same input now
+   takes the code, and the links that lead elsewhere step aside. Shared by
+   "Request OTP" and the WhatsApp-reverse fallbacks below. */
+function enterOtpMode(phone, channel, body) {
+  const input = $('auth-input');
+  pendingPhone = phone;
+  pendingChannel = channel;
+  authMode = 'otp';
+  input.value = '';
+  input.placeholder = T('observe.enter-otp', 'Enter OTP');
+  input.inputMode = 'numeric';
+  // The LABEL has to move with the field. It kept saying "Nigerian Mobile
+  // Number" over an input that now wants a code, which is the one thing on
+  // this screen the observer reads before typing.
+  if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.enter-otp', 'Enter OTP');
+  $('btn-auth').textContent = T('observe.verify-otp', 'Verify OTP');
+  $('auth-reset').hidden = false;
+  if ($('otp-resend')) $('otp-resend').hidden = false;
+  // A code is in flight — every "go somewhere else to sign in" link is noise
+  // now. The create-a-password option stays (it applies on verify).
+  if ($('pw-link')) $('pw-link').hidden = true;
+  if ($('signin-line')) $('signin-line').hidden = true;
+  if ($('signup-line')) $('signup-line').hidden = true;
+  if ($('pw-opt')) $('pw-opt').hidden = false;
+  if ($('channel-pick')) $('channel-pick').hidden = true;
+  paintPasskeySignIn();
+  renderOtpSent(body);
+}
+
+/* ---------- WhatsApp, free: "send us the code" ----------
+ * The server shows a code (HK-XXXXXX); the observer sends it FROM the WhatsApp
+ * on the number they typed TO our number (wa.me link, message prefilled);
+ * Meta's webhook matches sender + code; this page collects the session with a
+ * poll token only it holds. backend/src/services/waInbound.js has the rules.
+ *
+ * Polling is BOUNDED: first after the server's pollAfterMs, then x1.5 up to
+ * 10 s, never past the code's expiry, and at once when the page comes back
+ * into view (the observer returning from WhatsApp). One poll in flight at a
+ * time. The paid WhatsApp code and SMS stay one tap away. */
+function showWaPane(on) {
+  if ($('wa-send')) $('wa-send').hidden = !on;
+  for (const id of ['auth-input', 'auth-input-label', 'btn-auth']) if ($(id)) $(id).hidden = on;
+  if (on) {
+    for (const id of ['channel-pick', 'pw-opt', 'ref-opt', 'otp-resend', 'pw-link', 'signin-line', 'signup-line']) if ($(id)) $(id).hidden = true;
+    if ($('otp-hint')) $('otp-hint').textContent = '';
+    if ($('auth-reset')) $('auth-reset').hidden = false;
+  }
+  paintPasskeySignIn();
+}
+function waStatus(text) { if ($('wa-status')) $('wa-status').textContent = text; }
+function waStop(cancelOnServer) {
+  if (!wa) return;
+  clearTimeout(wa.timer);
+  if (cancelOnServer) {
+    const pollToken = wa.pollToken;
+    api('/api/observers/wa-cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pollToken }) }).catch(() => {});
+  }
+  wa = null;
+}
+/** Start (or restart) the free WhatsApp route. False = not available: send the paid code instead. */
+async function startWaSend(phone, newPw) {
+  waStop(true);
+  $('otp-hint').textContent = T('auth.wa-starting', 'Getting your code…');
+  const pair = await ensureKeys();
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+  const { status, body } = await api('/api/observers/wa-start', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone, publicKeyJwk, lang: chosenLang(), referralCode: referralForVerify() }),
+  });
+  $('otp-hint').textContent = '';
+  if (status === 503) { WA_INBOUND = false; return false; }
+  if (status === 429) { hkAlert(T('auth.wa-too-many', 'Too many tries for this number. Wait an hour, or get a code on WhatsApp instead.')); return true; }
+  if (status !== 200) { hkAlert(explain(body)); return true; }
+  pendingPhone = phone;
+  pendingChannel = 'whatsapp';
+  authMode = 'wa';
+  wa = {
+    pollToken: body.pollToken, code: body.code, link: body.waLink, newPw, gen: ++waGen,
+    deadline: Date.now() + (Number(body.expiresInS) || 600) * 1000,
+    delay: Number(body.pollAfterMs) || 2000, timer: 0, busy: false, fails: 0,
+  };
+  $('wa-body').textContent = T('auth.wa-body', "Tap the button to open WhatsApp with the message ready, then press Send. It's free. Send it from the WhatsApp on {phone}.", { phone });
+  $('wa-code').textContent = body.code;
+  wa.number = body.waNumber;
+  $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: body.waNumber });
+  if ($('wa-again-line')) $('wa-again-line').hidden = true;
+  if ($('wa-open')) $('wa-open').hidden = false;
+  waStatus(T('auth.wa-waiting', 'Waiting for your message…'));
+  showWaPane(true);
+  waSchedule(wa.delay);
+  return true;
+}
+function waSchedule(ms) {
+  if (!wa) return;
+  clearTimeout(wa.timer);
+  const left = wa.deadline - Date.now();
+  wa.timer = setTimeout(waPoll, Math.max(0, Math.min(ms, left + 250)));
+}
+async function waPoll() {
+  if (!wa || wa.busy) return;
+  const mine = wa;
+  if (Date.now() > mine.deadline) return waExpired();
+  mine.busy = true;
+  let r = null;
+  try {
+    r = await api('/api/observers/wa-status', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pollToken: mine.pollToken }),
+    });
+  } catch { r = null; }
+  mine.busy = false;
+  if (wa !== mine) return;                       // cancelled or restarted meanwhile
+  mine.delay = Math.min(10000, Math.round(mine.delay * 1.5));
+  if (!r || r.status === 0 || r.status === 429 || r.status >= 500) {
+    mine.fails += 1;
+    if (mine.fails >= 2) waStatus(T('auth.wa-offline', "Can't reach Hawkeye — check your connection. We'll keep checking."));
+    return waSchedule(mine.delay);
+  }
+  mine.fails = 0;
+  if (r.status === 410) return waExpired();
+  if (r.status === 200 && r.body.status === 'verified') return waFinish(r.body);
+  if (r.status === 200 && r.body.mismatch) {
+    waStatus(T('auth.wa-mismatch', 'We got the code from a different number. Send it from the WhatsApp on {phone}, or go back and enter the number your WhatsApp uses.', { phone: pendingPhone }));
+  } else {
+    waStatus(T('auth.wa-waiting', 'Waiting for your message…'));
+  }
+  waSchedule(mine.delay);
+}
+function waExpired() {
+  if (!wa) return;
+  clearTimeout(wa.timer);
+  wa.timer = 0;
+  wa.deadline = 0;
+  waStatus(T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
+  if ($('wa-open')) $('wa-open').hidden = true;
+  if ($('wa-again-line')) $('wa-again-line').hidden = false;
+}
+async function waFinish(body) {
+  const newPw = wa && wa.newPw;
+  waStop(false);
+  waStatus(T('auth.wa-verified', 'Verified — signing you in…'));
+  localStorage.setItem('hawkeye_token', body.token);
+  clearSignedOutElsewhere();
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
+  // Every phone-proof sign-in on this page ends with a password (sign-up or
+  // reset); it was chosen before the code went out. The WhatsApp proof is
+  // fresh phone proof, so no current password is needed.
+  if (newPw) {
+    const r = await api('/api/observers/set-password', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
+      body: JSON.stringify({ password: newPw }),
+    });
+    if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
+  }
+  resetAuthPane();
+  offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
+}
+/* Leave the free route for a code sent TO the observer (paid). */
+async function waFallback(channel) {
+  const phone = pendingPhone;
+  waStop(true);
+  showWaPane(false);
+  if (!IS_SIGNIN && $('ref-opt')) $('ref-opt').hidden = false;
+  $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
+  try {
+    const { status, body } = await api('/api/observers/register', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ phone, channel, lang: chosenLang() }),
+    });
+    if (status !== 200) {
+      $('otp-hint').textContent = '';
+      resetAuthPane();
+      return void hkAlert(explain(body));
+    }
+    enterOtpMode(phone, channel, body);
+  } catch {
+    $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.');
+  }
+}
+if ($('wa-open')) $('wa-open').onclick = () => {
+  // A new tab (Lite: the system opens WhatsApp) so this page keeps waiting.
+  if (wa && wa.link) window.open(wa.link, '_blank', 'noopener');
+};
+if ($('wa-copy')) $('wa-copy').onclick = async (e) => {
+  e.preventDefault();
+  const code = $('wa-code') ? $('wa-code').textContent : '';
+  try {
+    await navigator.clipboard.writeText(code);
+    e.target.textContent = T('auth.wa-copied', 'Copied');
+    setTimeout(() => { e.target.textContent = T('auth.wa-copy', 'Copy code'); }, 2000);
+  } catch { /* the code is selectable on screen */ }
+};
+if ($('wa-again')) $('wa-again').onclick = () => {
+  const pw = wa && wa.newPw;
+  startWaSend(pendingPhone, pw || ($('pw-opt-input') ? $('pw-opt-input').value : '')).then((started) => {
+    if (!started) waFallback('whatsapp');
+  });
+};
+if ($('wa-paid')) $('wa-paid').onclick = (e) => { e.preventDefault(); waFallback('whatsapp'); };
+if ($('wa-sms')) $('wa-sms').onclick = (e) => { e.preventDefault(); waFallback('sms'); };
+// Back from WhatsApp: check straight away instead of waiting out the backoff.
+function waWake() {
+  if (!wa || document.hidden || !wa.deadline) return;
+  clearTimeout(wa.timer);
+  waPoll();
+}
+document.addEventListener('visibilitychange', waWake);
+window.addEventListener('focus', waWake);
+window.addEventListener('pageshow', waWake);
+
+/* ---------- Passkeys (passkey.js) ----------
+ * Sign-in: one ordinary button on the password step, only where a passkey can
+ * work. Offer: after a RETURNING sign-in on a device that can make one, an
+ * inline card before the page moves on — never on a brand-new sign-up, never
+ * again for 30 days after "Not now", never once this device has one. */
+async function paintPasskeySignIn() {
+  const wrap = $('pk-signin-wrap');
+  if (!wrap) return;
+  const want = IS_SIGNIN && authMode === 'password' && !!window.HawkeyePasskey;
+  if (!want) { wrap.hidden = true; return; }
+  let ok = false;
+  try { ok = await window.HawkeyePasskey.supported(); } catch { ok = false; }
+  // Re-read: the mode may have changed while support was being checked.
+  wrap.hidden = !(ok && IS_SIGNIN && authMode === 'password');
+}
+if ($('pk-signin')) $('pk-signin').onclick = async () => {
+  const btn = $('pk-signin');
+  if (btn.disabled) return;
+  btn.disabled = true;
+  const hint = $('pk-signin-hint');
+  const was = hint ? hint.textContent : '';
+  if (hint) hint.textContent = T('passkey.signing-in', 'Waiting for your passkey…');
+  try {
+    const pair = await ensureKeys();
+    const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+    const r = await window.HawkeyePasskey.signIn(api, publicKeyJwk);
+    if (!r || r.error || !r.token) {
+      if (hint) hint.textContent = was;
+      if (r && r.error === 'cancelled') return;
+      return void hkAlert(window.HawkeyePasskey.errorText(r));
+    }
+    localStorage.setItem('hawkeye_token', r.token);
+    clearSignedOutElsewhere();
+    try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
+    resetAuthPane();
+    // A returning sign-in, like the password: no sign-up routing.
+    afterVerified(false);
+  } finally {
+    btn.disabled = false;
+  }
+};
+const K_PK_LATER = 'hawkeye_pk_offer_later';
+async function offerPasskeyThen(isNew, next) {
+  let eligible = false;
+  try {
+    const later = Number(localStorage.getItem(K_PK_LATER) || 0);
+    eligible = !isNew && !PREFILL && !!window.HawkeyePasskey && !!$('pk-offer')
+      && !localStorage.getItem('hawkeye_pk_here')
+      && Date.now() - later > 30 * 24 * 3600_000
+      && await window.HawkeyePasskey.canCreateHere();
+  } catch { eligible = false; }
+  if (!eligible) return next();
+  const card = $('auth-card');
+  const offer = $('pk-offer');
+  const yes = $('pk-offer-yes');
+  const no = $('pk-offer-no');
+  const msg = $('pk-offer-msg');
+  if (card) card.hidden = true;
+  if ($('practice-line')) $('practice-line').hidden = true;
+  offer.hidden = false;
+  msg.textContent = '';
+  yes.textContent = T('passkey.offer-yes', 'Use fingerprint or face');
+  no.hidden = false;
+  let done = false;
+  const finish = () => {
+    if (done) return;
+    done = true;
+    offer.hidden = true;
+    if (card) card.hidden = false;
+    next();
+  };
+  const authed = (p, o = {}) => api(p, { ...o, headers: { ...(o.headers || {}), authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } });
+  yes.onclick = async () => {
+    if (yes.dataset.saved) return finish();
+    yes.disabled = true;
+    const r = await window.HawkeyePasskey.register(authed);
+    yes.disabled = false;
+    if (r && r.ok) {
+      msg.textContent = T('passkey.saved', 'Passkey saved. Next time, tap "Sign in with a passkey".');
+      yes.dataset.saved = '1';
+      yes.textContent = T('passkey.continue', 'Continue');
+      no.hidden = true;
+      return;
+    }
+    msg.textContent = window.HawkeyePasskey.errorText(r);
+  };
+  no.onclick = (e) => {
+    e.preventDefault();
+    try { localStorage.setItem(K_PK_LATER, String(Date.now())); } catch { /* asked again next time */ }
+    finish();
+  };
+  yes.focus();
+}
 
 /**
  * The one-sentence reason a location attempt failed.
@@ -2762,6 +3087,14 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
             : orgCodeTyped()
               ? T('auth.org-create-account', 'Create account')
               : T('observe.request-otp', 'Request OTP');
+      }
+      // Waiting on a WhatsApp code: the mode painters above re-showed the
+      // sign-up fields, so hide them again and repaint the panel's own lines.
+      if (authMode === 'wa' && wa) {
+        showWaPane(true);
+        $('wa-body').textContent = T('auth.wa-body', "Tap the button to open WhatsApp with the message ready, then press Send. It's free. Send it from the WhatsApp on {phone}.", { phone: pendingPhone });
+        if (wa.number) $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: wa.number });
+        waStatus(wa.deadline ? T('auth.wa-waiting', 'Waiting for your message…') : T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
       }
       paintElsewhere();
     }

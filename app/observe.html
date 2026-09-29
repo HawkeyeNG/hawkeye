@@ -232,7 +232,7 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
         </span>
       </a>
-      <div class="card">
+      <div class="card" id="auth-card">
         <!-- app.js retitles this to "Enter OTP" once a code is in flight: the
              field itself switches from a phone number to the code, so a label
              still reading "Nigerian mobile number" describes the wrong input. -->
@@ -269,6 +269,24 @@
           <input data-i18n-attr="placeholder:observe.your-password" id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
         </div>
         <p id="otp-hint" class="hint"></p>
+        <!-- WHATSAPP, FREE: "send us the code" (app.js startWaSend). Shown in place
+             of the code box when the WhatsApp choice runs in reverse — /api/health
+             waInbound:true. The observer sends the code FROM their WhatsApp to our
+             number; the page polls until Meta's webhook has matched it. The paid
+             WhatsApp code and SMS stay one tap away underneath. -->
+        <div id="wa-send" hidden>
+          <p id="wa-body" class="hint" style="margin:6px 0 10px"></p>
+          <p id="wa-code" aria-live="polite" data-i18n-attr="aria-label:auth.wa-code-aria" aria-label="Your sign-in code"
+             style="font:700 1.9rem/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.06em;text-align:center;margin:6px 0;user-select:all"></p>
+          <button type="button" id="wa-open" data-i18n="auth.wa-open">Open WhatsApp</button>
+          <p class="hint" style="text-align:center;margin:8px 0 0"><a href="#" class="btn-link" id="wa-copy" data-i18n="auth.wa-copy">Copy code</a></p>
+          <p id="wa-number" class="hint"></p>
+          <p id="wa-status" class="hint" role="status" aria-live="polite"></p>
+          <p class="hint" data-i18n="auth.wa-safety">Only send it if you started this sign-in yourself.</p>
+          <p id="wa-again-line" class="hint" hidden><button type="button" class="secondary" id="wa-again" data-i18n="auth.wa-start-again">Start again</button></p>
+          <p class="hint auth-alt"><a href="#" class="btn-link" id="wa-paid" data-i18n="auth.wa-paid">Can't send it? Get a code on WhatsApp instead</a></p>
+          <p class="hint auth-alt" id="wa-sms-line" hidden><a href="#" class="btn-link" id="wa-sms" data-i18n="auth.wa-sms">Get a code by SMS instead</a></p>
+        </div>
         <!-- Sign-up only (app.js reveals it): a first-time observer has no
              password to "have", so what belongs on this page is CREATING one.
              Applied straight after the OTP verifies — fresh phone proof, so no
@@ -308,6 +326,14 @@
           </div>
         </div>
         <button id="btn-auth" disabled>Request OTP</button>
+        <!-- PASSKEY SIGN-IN, sign-in mode only, and only where a passkey can work
+             (passkey.js supported(): a browser on hawkeye.com.ng, server on).
+             An ordinary button: pressing it opens the browser's own passkey sheet,
+             with nothing of ours in front of it. -->
+        <div id="pk-signin-wrap" hidden style="margin-top:10px">
+          <button type="button" class="secondary" id="pk-signin" data-i18n="passkey.signin-button">Sign in with a passkey</button>
+          <p class="hint" id="pk-signin-hint" data-i18n="passkey.signin-hint" style="text-align:center">Use your fingerprint, face or screen lock. No code needed.</p>
+        </div>
         <!-- Sign-up mode: the only link that makes sense under "Request OTP" is
              the way OVER to sign-in — someone signing up for the first time
              cannot already have a password. -->
@@ -324,6 +350,19 @@
         <p data-i18n-html="observe.try-a-practice-run-first-no-sign" class="hint auth-alt" id="practice-line" hidden><a href="practice.html">Try a practice run first — no sign-up needed</a></p>
         <p data-i18n-html="observe.resend-code-2" class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
         <p data-i18n-html="observe.use-a-different-number-2" class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
+      </div>
+      <!-- "SIGN IN FASTER NEXT TIME" — offered once, inline, right after a
+           returning sign-in on a device that can make a passkey (app.js
+           offerPasskeyThen). Not a pop-up and not before any system prompt:
+           the button IS the way to the browser's passkey sheet, and "Not now"
+           carries on. Never on a brand-new sign-up (that goes to choosing a
+           unit); Profile offers it any time. -->
+      <div class="card" id="pk-offer" hidden>
+        <h2 data-i18n="passkey.offer-title" style="margin-top:0">Sign in faster next time</h2>
+        <p class="hint" data-i18n="passkey.offer-body">Use your fingerprint, face or screen lock instead of a code or password. Your fingerprint or face never leaves this device.</p>
+        <button type="button" id="pk-offer-yes" data-i18n="passkey.offer-yes">Use fingerprint or face</button>
+        <p id="pk-offer-msg" class="hint" role="status" aria-live="polite"></p>
+        <p class="hint" style="text-align:center"><a href="#" class="btn-link" id="pk-offer-no" data-i18n="passkey.offer-no">Not now</a></p>
       </div>
     </section>
 
@@ -591,7 +630,8 @@
        sign-up went out with no code: the invite page parked it in storage and
        nothing read it back. Also catches ?r=/&unit= arriving here directly. -->
   <script src="referral.js?v=2"></script>
-  <script src="app.js?v=178" defer></script>
+  <script src="passkey.js?v=1"></script>
+  <script src="app.js?v=179" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

@@ -1,0 +1,87 @@
+{
+  "n.auth.wa-title": {
+    "ha": "Aiko mana wannan lambar ta WhatsApp",
+    "ig": "Zitere anyị koodu a na WhatsApp",
+    "yo": "Fi kóòdù yìí ránṣẹ́ sí wa lórí WhatsApp"
+  },
+  "n.auth.wa-body": {
+    "ha": "Taɓa maɓallin don buɗe WhatsApp da saƙon a rubuce, sannan ka danna maɓallin aikawa. Kyauta ne. Aika shi daga WhatsApp ɗin da ke kan {phone}.",
+    "ig": "Pịa bọtịnụ ahụ ka imepe WhatsApp na ozi ahụ edeelarị, wee pịa bọtịnụ izipu. Ọ bụ n'efu. Zipu ya site na WhatsApp dị na {phone}.",
+    "yo": "Tẹ bọ́tìnì náà láti ṣí WhatsApp pẹ̀lú ìfiránṣẹ́ tí a ti kọ sílẹ̀, lẹ́yìn náà tẹ bọ́tìnì ìfiránṣẹ́. Ọ̀fẹ́ ni. Fi ránṣẹ́ láti WhatsApp tó wà lórí {phone}."
+  },
+  "n.auth.wa-code-a11y": {
+    "ha": "Lambar da za ka aika: {code}",
+    "ig": "Koodu ị ga-ezipu: {code}",
+    "yo": "Kóòdù tí o máa fi ránṣẹ́: {code}"
+  },
+  "n.auth.wa-open": {
+    "ha": "Buɗe WhatsApp",
+    "ig": "Mepee WhatsApp",
+    "yo": "Ṣí WhatsApp"
+  },
+  "n.auth.wa-number": {
+    "ha": "Ko ka aika lambar da kanka zuwa {number}.",
+    "ig": "Ma ọ bụ zipu koodu ahụ n'onwe gị na {number}.",
+    "yo": "Tàbí fi kóòdù náà ránṣẹ́ fúnra rẹ sí {number}."
+  },
+  "n.auth.wa-waiting": {
+    "ha": "Muna jiran saƙonka…",
+    "ig": "Anyị na-eche ozi gị…",
+    "yo": "À ń dúró de ìfiránṣẹ́ rẹ…"
+  },
+  "n.auth.wa-mismatch": {
+    "ha": "Mun karɓi lambar daga wata lambar waya daban. Aika ta daga WhatsApp ɗin da ke kan {phone}, ko ka koma ka shigar da lambar wayar da WhatsApp ɗinka ke amfani da ita.",
+    "ig": "Anyị natara koodu ahụ site na nọmba ọzọ. Zipu ya site na WhatsApp dị na {phone}, ma ọ bụ laghachi ma tinye nọmba WhatsApp gị na-eji.",
+    "yo": "A gba kóòdù náà láti nọ́mbà mìíràn. Fi ránṣẹ́ láti WhatsApp tó wà lórí {phone}, tàbí padà sẹ́yìn kí o tẹ nọ́mbà tí WhatsApp rẹ ń lò."
+  },
+  "n.auth.wa-expired": {
+    "ha": "Wannan lambar ta ƙare. Sake farawa don samun sabuwa.",
+    "ig": "Koodu a agwụla. Malite ọzọ ka ị nweta nke ọhụrụ.",
+    "yo": "Kóòdù yìí ti parí. Tún bẹ̀rẹ̀ láti gba tuntun."
+  },
+  "n.auth.wa-again": {
+    "ha": "Sake farawa",
+    "ig": "Malite ọzọ",
+    "yo": "Tún bẹ̀rẹ̀"
+  },
+  "n.auth.wa-safety": {
+    "ha": "Ka aika ta kawai idan kai da kanka ka fara wannan shigar.",
+    "ig": "Zipu ya naanị ma ọ bụrụ na gị onwe gị malitere ịbanye a.",
+    "yo": "Fi ránṣẹ́ kìkì bí ìwọ fúnra rẹ bá bẹ̀rẹ̀ wíwọlé yìí."
+  },
+  "n.auth.wa-fallback-whatsapp": {
+    "ha": "Ba za ka iya aikawa ba? Samu lamba ta WhatsApp",
+    "ig": "Ị nweghị ike izipu ya? Nweta koodu na WhatsApp kama",
+    "yo": "O kò lè fi ránṣẹ́? Gba kóòdù lórí WhatsApp dípò"
+  },
+  "n.auth.wa-fallback-sms": {
+    "ha": "Samu lamba ta SMS maimakon haka",
+    "ig": "Nweta koodu site na SMS kama",
+    "yo": "Gba kóòdù nípasẹ̀ SMS dípò"
+  },
+  "n.auth.wa-offline": {
+    "ha": "Ba a iya isa ga Hawkeye ba — duba haɗin intanet ɗinka. Za mu ci gaba da dubawa.",
+    "ig": "Enweghị ike iru Hawkeye — lelee njikọ gị. Anyị ga-aga n'ihu na-enyocha.",
+    "yo": "A kò lè dé ọ̀dọ̀ Hawkeye — ṣàyẹ̀wò ìsopọ̀ rẹ. A ó máa ṣàyẹ̀wò lọ."
+  },
+  "n.auth.wa-starting": {
+    "ha": "Ana samo lambarka…",
+    "ig": "A na-enweta koodu gị…",
+    "yo": "À ń gba kóòdù rẹ…"
+  },
+  "n.auth.wa-too-many": {
+    "ha": "An yi ƙoƙari da yawa don wannan lambar. Jira awa ɗaya, ko ka samu lamba ta WhatsApp maimakon haka.",
+    "ig": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ nweta koodu na WhatsApp kama.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù fún nọ́mbà yìí. Dúró fún wákàtí kan, tàbí gba kóòdù lórí WhatsApp dípò."
+  },
+  "n.auth.wa-verified": {
+    "ha": "An tabbatar — ana shigar da kai…",
+    "ig": "Enyochala ya — anyị na-abanye gị…",
+    "yo": "A ti fìdí rẹ̀ múlẹ̀ — à ń mú ọ wọlé…"
+  },
+  "n.auth.wa-invalid-phone": {
+    "ha": "Shigar da lambar wayar Najeriya, misali 08031234567.",
+    "ig": "Tinye nọmba ekwentị Naịjirịa, dịka 08031234567.",
+    "yo": "Tẹ nọ́mbà fóònù Nàìjíríà sí i, fún àpẹẹrẹ 08031234567."
+  }
+}

@@ -1,0 +1,237 @@
+{
+  "auth.wa-body": {
+    "ha": "Danna maɓallin don buɗe WhatsApp da saƙon a shirye, sannan ka danna Aika. Kyauta ne. Aika shi daga WhatsApp ɗin da ke kan {phone}.",
+    "ig": "Pịa bọtịnụ ahụ ka imepe WhatsApp na ozi ahụ dị njikere, wee pịa Ziga. Ọ bụ n'efu. Ziga ya site na WhatsApp dị na {phone}.",
+    "yo": "Tẹ bọ́tìnnì náà láti ṣí WhatsApp pẹ̀lú ìfiránṣẹ́ tí a ti pèsè, lẹ́yìn náà tẹ Firánṣẹ́. Ọ̀fẹ́ ni. Fi ránṣẹ́ láti WhatsApp tó wà lórí {phone}."
+  },
+  "auth.wa-code-aria": {
+    "ha": "Lambar shigarka",
+    "ig": "Koodu mbanye gị",
+    "yo": "Kóòdù ìwọlé rẹ"
+  },
+  "auth.wa-copied": {
+    "ha": "An kwafa",
+    "ig": "E depụtaghachila ya",
+    "yo": "A ti dà á kọ"
+  },
+  "auth.wa-copy": {
+    "ha": "Kwafa lambar",
+    "ig": "Depụtaghachi koodu",
+    "yo": "Da kóòdù kọ"
+  },
+  "auth.wa-expired": {
+    "ha": "Wannan lambar ta ƙare. Sake farawa don samun sabuwa.",
+    "ig": "Koodu a agwụla. Malite ọzọ ka ị nweta nke ọhụrụ.",
+    "yo": "Kóòdù yìí ti parí. Bẹ̀rẹ̀ lẹ́ẹ̀kan sí i láti gba tuntun."
+  },
+  "auth.wa-mismatch": {
+    "ha": "Mun karɓi lambar daga wata lambar waya daban. Aika ta daga WhatsApp ɗin da ke kan {phone}, ko ka koma ka shigar da lambar da WhatsApp ɗinka ke amfani da ita.",
+    "ig": "Anyị natara koodu ahụ site na nọmba ọzọ. Ziga ya site na WhatsApp dị na {phone}, ma ọ bụ laghachi tinye nọmba WhatsApp gị na-eji.",
+    "yo": "A gba kóòdù náà láti nọ́mbà mìíràn. Fi ránṣẹ́ láti WhatsApp tó wà lórí {phone}, tàbí padà sẹ́yìn kí o tẹ nọ́mbà tí WhatsApp rẹ ń lò."
+  },
+  "auth.wa-number": {
+    "ha": "Ko ka aika lambar da kanka zuwa {number}.",
+    "ig": "Ma ọ bụ ziga koodu ahụ n'onwe gị na {number}.",
+    "yo": "Tàbí fi kóòdù náà ránṣẹ́ fúnra rẹ sí {number}."
+  },
+  "auth.wa-offline": {
+    "ha": "Ba za a iya isa Hawkeye ba — duba haɗin intanet ɗinka. Za mu ci gaba da dubawa.",
+    "ig": "Enweghị ike iru Hawkeye — lelee njikọ gị. Anyị ga-anọgide na-elele.",
+    "yo": "A kò lè dé Hawkeye — ṣàyẹ̀wò ìsopọ̀ rẹ. A ó máa ṣàyẹ̀wò síbẹ̀."
+  },
+  "auth.wa-open": {
+    "ha": "Buɗe WhatsApp",
+    "ig": "Mepee WhatsApp",
+    "yo": "Ṣí WhatsApp"
+  },
+  "auth.wa-paid": {
+    "ha": "Ba za ka iya aikawa ba? Karɓi lamba ta WhatsApp maimakon haka",
+    "ig": "Ị nweghị ike iziga ya? Nata koodu na WhatsApp kama",
+    "yo": "O kò lè fi ránṣẹ́? Gba kóòdù lórí WhatsApp dípò bẹ́ẹ̀"
+  },
+  "auth.wa-password-first": {
+    "ha": "Da farko zaɓi kalmar sirri (aƙalla haruffa 8) a akwatin da ke sama, sannan ka ci gaba.",
+    "ig": "Buru ụzọ họrọ okwuntughe (opekata mpe mkpụrụedemede 8) n'igbe dị n'elu, wee gaa n'ihu.",
+    "yo": "Kọ́kọ́ yan ọ̀rọ̀ ìpamọ́ (ó kéré tán lẹ́tà 8) nínú àpótí lókè, lẹ́yìn náà tẹ̀síwájú."
+  },
+  "auth.wa-safety": {
+    "ha": "Ka aika ta kawai idan kai da kanka ka fara wannan shigar.",
+    "ig": "Ziga ya naanị ma ọ bụrụ na ọ bụ gị n'onwe gị malitere mbanye a.",
+    "yo": "Fi ránṣẹ́ kìkì bí ìwọ fúnra rẹ ni o bẹ̀rẹ̀ ìwọlé yìí."
+  },
+  "auth.wa-sms": {
+    "ha": "Karɓi lamba ta SMS maimakon haka",
+    "ig": "Nata koodu site na SMS kama",
+    "yo": "Gba kóòdù nípasẹ̀ SMS dípò bẹ́ẹ̀"
+  },
+  "auth.wa-start-again": {
+    "ha": "Sake farawa",
+    "ig": "Malite ọzọ",
+    "yo": "Bẹ̀rẹ̀ lẹ́ẹ̀kan sí i"
+  },
+  "auth.wa-starting": {
+    "ha": "Ana samo lambarka…",
+    "ig": "A na-enweta koodu gị…",
+    "yo": "À ń gba kóòdù rẹ…"
+  },
+  "auth.wa-too-many": {
+    "ha": "Ƙoƙari ya yi yawa don wannan lambar. Jira awa ɗaya, ko ka karɓi lamba ta WhatsApp maimakon haka.",
+    "ig": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ nata koodu na WhatsApp kama.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù fún nọ́mbà yìí. Dúró fún wákàtí kan, tàbí gba kóòdù lórí WhatsApp dípò bẹ́ẹ̀."
+  },
+  "auth.wa-verified": {
+    "ha": "An tabbatar — ana shigar da kai…",
+    "ig": "E kwadoro ya — a na-abanye gị…",
+    "yo": "A ti fìdí rẹ̀ múlẹ̀ — à ń mú ọ wọlé…"
+  },
+  "auth.wa-waiting": {
+    "ha": "Ana jiran saƙonka…",
+    "ig": "A na-eche ozi gị…",
+    "yo": "À ń dúró de ìfiránṣẹ́ rẹ…"
+  },
+  "passkey.add": {
+    "ha": "Ƙara passkey a wannan na'urar",
+    "ig": "Tinye passkey na ngwaọrụ a",
+    "yo": "Fi passkey kún ẹ̀rọ yìí"
+  },
+  "passkey.added": {
+    "ha": "An ƙara passkey. Nan gaba, ka shiga da shi.",
+    "ig": "E tinyela passkey. Oge ọzọ, jiri ya banye.",
+    "yo": "A ti fi passkey kún un. Nígbà míì, fi í wọlé."
+  },
+  "passkey.added-on": {
+    "ha": "An ƙara {date}",
+    "ig": "E tinyere ya {date}",
+    "yo": "A fi kún un {date}"
+  },
+  "passkey.already-here": {
+    "ha": "Wannan na'urar tana da passkey don asusunka tuni.",
+    "ig": "Ngwaọrụ a enweelarị passkey maka akaụntụ gị.",
+    "yo": "Ẹ̀rọ yìí ti ní passkey fún àkọọ́lẹ̀ rẹ tẹ́lẹ̀."
+  },
+  "passkey.cancelled": {
+    "ha": "An soke. Ba a canza komai ba.",
+    "ig": "Akagburu ya. Ọ dịghị ihe gbanwere.",
+    "yo": "A ti fagi lé e. Kò sí ohun tí a yí padà."
+  },
+  "passkey.continue": {
+    "ha": "Ci gaba",
+    "ig": "Gaa n'ihu",
+    "yo": "Tẹ̀síwájú"
+  },
+  "passkey.count": {
+    "ha": "{n} an adana",
+    "ig": "{n} echekwara",
+    "yo": "{n} ti wà ní ìpamọ́"
+  },
+  "passkey.count-none": {
+    "ha": "Babu",
+    "ig": "Ọ dịghị",
+    "yo": "Kò sí"
+  },
+  "passkey.failed": {
+    "ha": "Wannan passkey ɗin bai yi aiki a nan ba. Shiga ta wata hanya.",
+    "ig": "Passkey ahụ arụghị ọrụ ebe a. Banye n'ụzọ ọzọ.",
+    "yo": "Passkey náà kò ṣiṣẹ́ níbí. Wọlé ní ọ̀nà mìíràn."
+  },
+  "passkey.failed-generic": {
+    "ha": "Wani abu ya faru da passkey ɗin. Sake gwadawa, ko ka shiga ta wata hanya.",
+    "ig": "Ihe mebiri emebi na passkey ahụ. Nwaa ọzọ, ma ọ bụ banye n'ụzọ ọzọ.",
+    "yo": "Nǹkan kan ṣẹlẹ̀ sí passkey náà. Gbìyànjú lẹ́ẹ̀kan sí i, tàbí wọlé ní ọ̀nà mìíràn."
+  },
+  "passkey.last-used": {
+    "ha": "an yi amfani da shi na ƙarshe {date}",
+    "ig": "ejiri ya mee ihe ikpeazụ {date}",
+    "yo": "a lò ó kẹ́yìn {date}"
+  },
+  "passkey.modal-body": {
+    "ha": "Passkey yana ba ka damar shiga da sawun yatsanka, fuskarka ko makullin allonka maimakon lamba ko kalmar sirri.",
+    "ig": "Passkey na-ekwe ka i jiri mkpịsị aka gị, ihu gị ma ọ bụ mkpọchi ihuenyo gị banye kama koodu ma ọ bụ okwuntughe.",
+    "yo": "Passkey jẹ́ kí o wọlé pẹ̀lú ìka ọwọ́ rẹ, ojú rẹ tàbí títìpa ìbòjú rẹ dípò kóòdù tàbí ọ̀rọ̀ ìpamọ́."
+  },
+  "passkey.network": {
+    "ha": "Ba a iya isa Hawkeye ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike iru Hawkeye. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "A kò lè dé Hawkeye. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbìyànjú lẹ́ẹ̀kan sí i."
+  },
+  "passkey.none-yet": {
+    "ha": "Babu passkey tukuna.",
+    "ig": "Enweghị passkey ka ugbu a.",
+    "yo": "Kò sí passkey síbẹ̀."
+  },
+  "passkey.not-here": {
+    "ha": "Za ka iya ƙara passkey a hawkeye.com.ng a cikin burauzar yanar gizo ta zamani. Manhajojin Hawkeye ba za su iya ƙara shi ba tukuna.",
+    "ig": "Ị nwere ike itinye passkey na hawkeye.com.ng n'ihe nchọgharị weebụ ọhụrụ. Ngwa Hawkeye enweghị ike itinye ya ka ugbu a.",
+    "yo": "O lè fi passkey kún un ní hawkeye.com.ng nínú aṣàwákiri wẹ́ẹ̀bù tuntun. Àwọn áàpù Hawkeye kò tíì lè fi kún un."
+  },
+  "passkey.offer-body": {
+    "ha": "Yi amfani da sawun yatsanka, fuskarka ko makullin allonka maimakon lamba ko kalmar sirri. Sawun yatsanka ko fuskarka ba sa barin wannan na'urar.",
+    "ig": "Jiri mkpịsị aka gị, ihu gị ma ọ bụ mkpọchi ihuenyo gị kama koodu ma ọ bụ okwuntughe. Mkpịsị aka gị ma ọ bụ ihu gị anaghị ahapụ ngwaọrụ a.",
+    "yo": "Lo ìka ọwọ́ rẹ, ojú rẹ tàbí títìpa ìbòjú rẹ dípò kóòdù tàbí ọ̀rọ̀ ìpamọ́. Ìka ọwọ́ tàbí ojú rẹ kì í kúrò lórí ẹ̀rọ yìí."
+  },
+  "passkey.offer-no": {
+    "ha": "Ba yanzu ba",
+    "ig": "Ọ bụghị ugbu a",
+    "yo": "Kì í ṣe báyìí"
+  },
+  "passkey.offer-title": {
+    "ha": "Shiga da sauri nan gaba",
+    "ig": "Banye ngwa ngwa oge ọzọ",
+    "yo": "Wọlé ní kíákíá nígbà míì"
+  },
+  "passkey.offer-yes": {
+    "ha": "Yi amfani da sawun yatsa ko fuska",
+    "ig": "Jiri mkpịsị aka ma ọ bụ ihu",
+    "yo": "Lo ìka ọwọ́ tàbí ojú"
+  },
+  "passkey.profile-row": {
+    "ha": "Maɓallan shiga (passkeys)",
+    "ig": "Igodo mbanye (passkeys)",
+    "yo": "Kọ́kọ́rọ́ ìwọlé (passkeys)"
+  },
+  "passkey.remove": {
+    "ha": "Cire",
+    "ig": "Wepụ",
+    "yo": "Yọ kúrò"
+  },
+  "passkey.remove-aria": {
+    "ha": "Cire passkey {label}",
+    "ig": "Wepụ passkey {label}",
+    "yo": "Yọ passkey {label} kúrò"
+  },
+  "passkey.removed": {
+    "ha": "An cire.",
+    "ig": "E wepụla ya.",
+    "yo": "A ti yọ ọ́ kúrò."
+  },
+  "passkey.saved": {
+    "ha": "An adana passkey. Nan gaba, danna \"Shiga da passkey\".",
+    "ig": "Echekwala passkey. Oge ọzọ, pịa \"Jiri passkey banye\".",
+    "yo": "A ti fi passkey pamọ́. Nígbà míì, tẹ \"Fi passkey wọlé\"."
+  },
+  "passkey.signin-button": {
+    "ha": "Shiga da passkey",
+    "ig": "Jiri passkey banye",
+    "yo": "Fi passkey wọlé"
+  },
+  "passkey.signin-hint": {
+    "ha": "Yi amfani da sawun yatsanka, fuskarka ko makullin allonka. Ba a buƙatar lamba.",
+    "ig": "Jiri mkpịsị aka gị, ihu gị ma ọ bụ mkpọchi ihuenyo gị. Ọ dịghị mkpa koodu.",
+    "yo": "Lo ìka ọwọ́ rẹ, ojú rẹ tàbí títìpa ìbòjú rẹ. Kò sí kóòdù tí a nílò."
+  },
+  "passkey.signing-in": {
+    "ha": "Ana jiran passkey ɗinka…",
+    "ig": "A na-eche passkey gị…",
+    "yo": "À ń dúró de passkey rẹ…"
+  },
+  "passkey.too-many": {
+    "ha": "Wannan asusun yana da mafi yawan passkeys da zai iya ɗauka. Cire ɗaya a shafin bayananka tukuna.",
+    "ig": "Akaụntụ a nwere passkeys kachasị nke ọ nwere ike ijide. Buru ụzọ wepụ otu na profaịlụ gị.",
+    "yo": "Àkọọ́lẹ̀ yìí ti ní iye passkeys tó pọ̀ jù tí ó lè gbà. Kọ́kọ́ yọ ọ̀kan kúrò lórí profaili rẹ."
+  },
+  "passkey.unavailable": {
+    "ha": "Passkeys ba sa samuwa a nan. Shiga ta wata hanya.",
+    "ig": "Passkeys adịghị ebe a. Banye n'ụzọ ọzọ.",
+    "yo": "Passkeys kò sí níbí. Wọlé ní ọ̀nà mìíràn."
+  }
+}

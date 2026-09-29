@@ -1,0 +1,51 @@
+{
+  "n.app.map-unit.selected-label": { "ha": "An zaɓa:", "ig": "A họrọla:", "yo": "A yàn:" },
+  "n.app.practice.envelope-gate": {
+    "ha": "Hawkeye ya san wannan rukunin ne kawai ta wani yanki da aka zana a taswira, kuma kana da nisan {v0}m daga tsakiyar yankin — fiye da {v1}m da ake yarda da shi wajen aika rahoto, don haka da za a ƙi ainihin rahoto bayan hotunan.",
+    "ig": "Hawkeye maara ngalaba a naanị site na mpaghara e sere na maapụ, ị nọkwa {v0}m site n'etiti mpaghara ahụ — karịa {v1}m a na-anabata maka iziga akụkọ, ya mere a ga-ajụ ezigbo akụkọ mgbe foto gasịrị.",
+    "yo": "Hawkeye mọ ẹ̀ka yìí nípasẹ̀ agbègbè kan tí a yà sórí máàpù nìkan, o sì wà ní {v0}m sí àárín agbègbè náà — ó ju {v1}m tí a gbà láàyè fún fífi ìròyìn ránṣẹ́ lọ, nítorí náà a ó kọ ìròyìn gidi lẹ́yìn àwọn fọ́tò."
+  },
+  "n.app.report.result.that-took-too-long-check-your-signal": {
+    "ha": "Hakan ya ɗauki lokaci da yawa. Duba siginarka sannan ka sake taɓa shi.",
+    "ig": "Nke ahụ were ogologo oge. Lelee signal gị ma pịa ya ọzọ.",
+    "yo": "Ìyẹn pẹ́ jù. Ṣàyẹ̀wò àmì nẹ́tíwọ̀ọ̀kì rẹ kí o sì tún tẹ̀ ẹ́."
+  },
+  "n.app.reports-log.gps-reports-contradict-this-unit-s-expected": {
+    "ha": "⚠ rahotannin GPS sun saɓa wa yankin da ake tsammanin wannan rukunin yake",
+    "ig": "⚠ akụkọ GPS na-emegide mpaghara a tụrụ anya na ngalaba a dị",
+    "yo": "⚠ àwọn ìròyìn GPS tako agbègbè tí a retí pé ẹ̀ka yìí wà"
+  },
+  "n.app.reports-log.location-evidence": { "ha": "shaidar wuri {v0}/100", "ig": "ihe akaebe ebe {v0}/100", "yo": "ẹ̀rí ibùdó {v0}/100" },
+  "n.app.reports-log.location-verified": { "ha": "📍 an tabbatar da wurin", "ig": "📍 ebe a kwadoro", "yo": "📍 a ti fìdí ibùdó múlẹ̀" },
+  "n.app.reports-log.venue-photo-pair-matches-one": {
+    "ha": "🏫 haɗin hotunan wuri {v0} ya yi daidai",
+    "ig": "🏫 ụzọ foto ebe {v0} dabara",
+    "yo": "🏫 ìbejì fọ́tò ibi {v0} bára mu"
+  },
+  "n.app.reports-log.venue-photo-pairs-match": {
+    "ha": "🏫 haɗe-haɗen hotunan wuri {v0} sun yi daidai",
+    "ig": "🏫 ụzọ foto ebe {v0} dabara",
+    "yo": "🏫 ìbejì fọ́tò ibi {v0} bára mu"
+  },
+  "n.lib.geofence.envelope-gate": {
+    "ha": "Hawkeye ya san wannan rukunin ne kawai ta wani yanki da aka zana a taswira, kuma kana da nisan {v0}m daga tsakiyar yankin — fiye da {v1}m da ake yarda da shi wajen aika rahoto, don haka za a ƙi wannan rahoton bayan hotunan. Matsa kusa da rukunin, ko ka zana shi a taswira daga inda yake.",
+    "ig": "Hawkeye maara ngalaba a naanị site na mpaghara e sere na maapụ, ị nọkwa {v0}m site n'etiti mpaghara ahụ — karịa {v1}m a na-anabata maka iziga akụkọ, ya mere a ga-ajụ akụkọ a mgbe foto gasịrị. Bịaruo ngalaba ahụ nso, ma ọ bụ tụọ ya na maapụ site n'ebe ọ dị.",
+    "yo": "Hawkeye mọ ẹ̀ka yìí nípasẹ̀ agbègbè kan tí a yà sórí máàpù nìkan, o sì wà ní {v0}m sí àárín agbègbè náà — ó ju {v1}m tí a gbà láàyè fún fífi ìròyìn ránṣẹ́ lọ, nítorí náà a ó kọ ìròyìn yìí lẹ́yìn àwọn fọ́tò. Súnmọ́ ẹ̀ka náà, tàbí ya máàpù rẹ̀ láti ibi tí ó wà."
+  },
+  "n.lib.geofence.far-unit-body": {
+    "ha": "{v0} yana a {v1}, {v2}, kimanin {v3} km daga inda kake yanzu.\n\nAna iya aika sakamako ne kawai daga rukunin zaɓen da kansa, don haka ba za a iya zaɓar wannan daga nan ba. Idan kana tafiya can, ka zaɓe shi idan ka isa.",
+    "ig": "{v0} dị na {v1}, {v2}, ihe dịka {v3} km site n'ebe ị nọ ugbu a.\n\nA pụrụ iziga nsonaazụ naanị site na ngalaba ntuli aka ahụ n'onwe ya, ya mere a pụghị ịhọrọ nke a site ebe a. Ọ bụrụ na ị na-aga ebe ahụ, họrọ ya mgbe ị rutere.",
+    "yo": "{v0} wà ní {v1}, {v2}, ní nǹkan bí {v3} km sí ibi tí o wà báyìí.\n\nLáti ẹ̀ka ìdìbò náà fúnra rẹ̀ nìkan ni a ti lè fi èsì ránṣẹ́, nítorí náà a kò lè yan èyí láti ibí. Tí o bá ń lọ síbẹ̀, yàn án nígbà tí o bá dé."
+  },
+  "n.lib.geofence.location-unverified": {
+    "ha": "Ba a tabbatar da wuri ba: Hawkeye ba zai iya tabbatar da inda wannan rukunin yake a taswira ba, don haka ba a nuna nisansa ba.",
+    "ig": "Enweghị nkwenye ebe: Hawkeye enweghị ike ịkwado ebe ngalaba a dị na maapụ, ya mere egosighi otú o si dị anya.",
+    "yo": "A kò tíì fìdí ibùdó múlẹ̀: Hawkeye kò lè fìdí ibi tí ẹ̀ka yìí wà lórí máàpù múlẹ̀, nítorí náà a kò fi bí ó ṣe jìnnà tó hàn."
+  },
+  "n.lib.geofence.m-away": { "ha": "nisan {v0}m", "ig": "{v0}m n'anya", "yo": "{v0}m sí ibí" },
+  "n.lib.geofence.you-are-m-away-filing-checks": {
+    "ha": "Kana da nisan {v0}m. Aika rahoto yana kwatanta matsayinka da ainihin wurin wannan rukunin — ka kai rahoto daga rukunin da kansa.",
+    "ig": "Ị nọ {v0}m n'anya. Iziga akụkọ na-atụnyere ebe ị nọ na ebe ngalaba a n'onwe ya dị — kọọ akụkọ site na ngalaba ahụ n'onwe ya.",
+    "yo": "O wà ní {v0}m sí i. Fífi ìròyìn ránṣẹ́ máa ń fi ibi tí o wà wé ibi tí ẹ̀ka yìí gan-an wà — jábọ̀ láti ẹ̀ka náà fúnra rẹ̀."
+  }
+}

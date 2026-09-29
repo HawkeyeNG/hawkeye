@@ -1,0 +1,15 @@
+{
+  "n.app.map-unit.selected-label": "Selected:",
+  "n.app.practice.envelope-gate": "Hawkeye knows this unit only by a mapped area, and you are {v0}m from that area’s centre — past the {v1}m filing allows, so a real report would be refused after the photos.",
+  "n.app.report.result.that-took-too-long-check-your-signal": "That took too long. Check your signal and tap it again.",
+  "n.app.reports-log.gps-reports-contradict-this-unit-s-expected": "⚠ GPS reports contradict this unit’s expected area",
+  "n.app.reports-log.location-evidence": "location evidence {v0}/100",
+  "n.app.reports-log.location-verified": "📍 location verified",
+  "n.app.reports-log.venue-photo-pair-matches-one": "🏫 {v0} venue photo pair matches",
+  "n.app.reports-log.venue-photo-pairs-match": "🏫 {v0} venue photo pairs match",
+  "n.lib.geofence.envelope-gate": "Hawkeye knows this unit only by a mapped area, and you are {v0}m from that area’s centre — past the {v1}m filing allows, so this report would be refused after the photos. Move closer to the unit, or map it from where it stands.",
+  "n.lib.geofence.far-unit-body": "{v0} is in {v1}, {v2}, about {v3} km from where you are now.\n\nA result can only be filed from the polling unit itself, so this one cannot be selected from here. If you are travelling there, choose it once you arrive.",
+  "n.lib.geofence.location-unverified": "Location unverified: Hawkeye cannot confirm where this unit is on the map, so no distance to it is shown.",
+  "n.lib.geofence.m-away": "{v0}m away",
+  "n.lib.geofence.you-are-m-away-filing-checks": "You are {v0}m away. Filing checks your position against this unit’s own coordinates — report from the unit itself."
+}

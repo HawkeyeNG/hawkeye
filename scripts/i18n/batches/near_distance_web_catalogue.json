@@ -1,0 +1,20 @@
+{
+  "common.m-away": "{v0} m away",
+  "common.pct-of-reports-agree": "({v0}% of reports agree)",
+  "common.tier-crowd": "◌ crowd-confirmed location",
+  "common.tier-geocoded": "◌ located from map data (unconfirmed)",
+  "common.tier-unmapped": "⚠ location not yet verified",
+  "common.tier-unverified": "⚠ location unverified — its map position could not be confirmed",
+  "common.tier-verified": "📍 location verified",
+  "common.venue-photo-pair-matches-one": "🏫 {v0} venue photo pair matches",
+  "common.venue-photo-pairs-match": "🏫 {v0} venue photo pairs match",
+  "incidents.add-another-photo-or-video": "Add another photo or video ({v0} of {v1} added)",
+  "incidents.add-tile": "ADD",
+  "incidents.could-not-load-nearby-units-try": "Could not load nearby units — try again.",
+  "incidents.finding-units-near-you": "Finding units near you…",
+  "incidents.incident-evidence": "Incident evidence",
+  "incidents.my-saved-unit": "My saved unit — {v0}",
+  "incidents.near-you-pick-the-one-where": "{v0} near you — pick the one where it happened:",
+  "incidents.no-mapped-units-within-range-you": "No mapped units within range — you can still submit without one.",
+  "incidents.remove-attachment": "Remove"
+}

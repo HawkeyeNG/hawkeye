@@ -1,0 +1,21 @@
+{
+  "common.m-away": { "ha": "nisan mita {v0}", "ig": "{v0} m n'anya", "yo": "{v0} m sí ibí" },
+  "common.pct-of-reports-agree": { "ha": "({v0}% na rahotanni sun yi daidai)", "ig": "({v0}% nke akụkọ kwekọrọ)", "yo": "({v0}% ìròyìn fohùn ṣọ̀kan)" },
+  "common.tier-crowd": { "ha": "◌ jama'a sun tabbatar da wurin", "ig": "◌ ebe ìgwè mmadụ kwadoro", "yo": "◌ ibùdó tí ìjọ ènìyàn fìdí rẹ̀ múlẹ̀" },
+  "common.tier-geocoded": { "ha": "◌ an samo wurin daga bayanan taswira (ba a tabbatar ba)", "ig": "◌ e nwetara ebe ahụ site na data maapụ (enweghị nkwenye)", "yo": "◌ a rí ibùdó láti inú dátà máàpù (a kò tíì fìdí rẹ̀ múlẹ̀)" },
+  "common.tier-unmapped": { "ha": "⚠ ba a tabbatar da wurin ba tukuna", "ig": "⚠ enwebeghị nkwenye ebe ahụ", "yo": "⚠ a kò tíì fìdí ibùdó múlẹ̀" },
+  "common.tier-unverified": { "ha": "⚠ ba a tabbatar da wurin ba — ba a iya tabbatar da matsayinsa a taswira ba", "ig": "⚠ ebe — enweghị nkwenye: a pụghị ịkwado ọnọdụ ya na maapụ", "yo": "⚠ a kò tíì fìdí ibùdó múlẹ̀ — a kò lè fìdí ipò rẹ̀ lórí máàpù múlẹ̀" },
+  "common.tier-verified": { "ha": "📍 an tabbatar da wurin", "ig": "📍 ebe a kwadoro", "yo": "📍 a ti fìdí ibùdó múlẹ̀" },
+  "common.venue-photo-pair-matches-one": { "ha": "🏫 haɗin hotunan wuri {v0} ya yi daidai", "ig": "🏫 ụzọ foto ebe {v0} dabara", "yo": "🏫 ìbejì fọ́tò ibi {v0} bára mu" },
+  "common.venue-photo-pairs-match": { "ha": "🏫 haɗe-haɗen hotunan wuri {v0} sun yi daidai", "ig": "🏫 ụzọ foto ebe {v0} dabara", "yo": "🏫 ìbejì fọ́tò ibi {v0} bára mu" },
+  "incidents.add-another-photo-or-video": { "ha": "Ƙara wani hoto ko bidiyo (an ƙara {v0} cikin {v1})", "ig": "Tinye foto ma ọ bụ vidiyo ọzọ (etinyela {v0} n'ime {v1})", "yo": "Fi fọ́tò tàbí fídíò mìíràn kún un (a ti fi {v0} nínú {v1} kún un)" },
+  "incidents.add-tile": { "ha": "ƘARA", "ig": "TINYE", "yo": "FI KÚN" },
+  "incidents.could-not-load-nearby-units-try": { "ha": "Ba a iya loda rukunan da ke kusa ba — sake gwadawa.", "ig": "Enweghị ike ibudata ngalaba ndị dị nso — nwaa ọzọ.", "yo": "A kò lè gbé àwọn ẹ̀ka tó wà nítòsí wá — tún gbìyànjú." },
+  "incidents.finding-units-near-you": { "ha": "Ana neman rukunan da ke kusa da kai…", "ig": "Na-achọ ngalaba ndị dị gị nso…", "yo": "À ń wá àwọn ẹ̀ka tó wà nítòsí rẹ…" },
+  "incidents.incident-evidence": { "ha": "Shaidar lamarin da ya faru", "ig": "Ihe akaebe nke ihe merenụ", "yo": "Ẹ̀rí iṣẹlẹ" },
+  "incidents.my-saved-unit": { "ha": "Rukunin da na ajiye — {v0}", "ig": "Ngalaba m chekwara — {v0}", "yo": "Ẹ̀ka tí mo fi pamọ́ — {v0}" },
+  "incidents.near-you-pick-the-one-where": { "ha": "{v0} a kusa da kai — zaɓi wanda abin ya faru a can:", "ig": "{v0} dị gị nso — họrọ ebe ihe ahụ mere:", "yo": "{v0} wà nítòsí rẹ — yan èyí tí ó ti ṣẹlẹ̀:" },
+  "incidents.no-mapped-units-within-range-you": { "ha": "Babu rukunin da aka zana a taswira a kusa — har yanzu kana iya aikawa ba tare da ɗaya ba.", "ig": "Enweghị ngalaba a tụrụ na maapụ dị nso — ị ka nwere ike izipu na-enweghị otu.", "yo": "Kò sí ẹ̀ka tí a yà sórí máàpù nítòsí — o ṣì lè fi ránṣẹ́ láìsí ọ̀kan." },
+  "incidents.remove-attachment": { "ha": "Cire", "ig": "Wepụ", "yo": "Yọ kúrò" },
+  "nav.osun-2026": { "ha": "Zaɓen Osun 2026", "ig": "Ntuli aka Osun 2026", "yo": "Ìdìbò Osun 2026" }
+}

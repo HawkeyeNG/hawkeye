@@ -499,6 +499,22 @@
         <p id="org-adm-status" class="status" role="status"></p>
         <div id="org-adm-out"></div>
       </details>
+      <!-- ROOM REQUESTS (services/roomLabels.js). A situation room with a party
+           label admits nobody until approved here, so nobody can run a fake
+           party room and recruit that party's agents. English only, like the
+           rest of the owner's console. Everything from the server is escaped
+           and actions are delegated off data-* ids — no inline handlers built
+           from room names. Loads on first open. -->
+      <details id="rr-wrap" style="margin-top:10px">
+        <summary style="cursor:pointer;font-weight:700">Room requests</summary>
+        <p class="hint">A situation room that carries a party label admits nobody — no invite link, join or copied roster works — until you approve the label here. Every party is checked the same way, and at most one room per party per race and area can be approved. Rejecting keeps the room, without the label; rejecting an approved room withdraws its label.</p>
+        <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
+          <button id="rr-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+          <button id="rr-legacy" class="secondary" style="width:auto;margin:0">Rooms labelled before verification</button>
+        </div>
+        <p id="rr-status" class="status" role="status"></p>
+        <div id="rr-out"></div>
+      </details>
 
       </div><div class="panel" data-p="incidents" hidden><h1 data-i18n="common.incident-review" style="margin-top:34px">Incident Review</h1>
       <div class="tabs" id="tabs">
@@ -2704,6 +2720,162 @@
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
     document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); else paintStatic(); });
     paintStatic();
+  })();
+  </script>
+  <script>
+  /**
+   * ROOM REQUESTS — GET /api/admin/room-requests, POST …/:id/approve,
+   * POST …/:id/reject { reason } (also withdraws an approved label) and
+   * POST …/backfill (counts; applies only with { apply: true, mode }).
+   * Own <script> and helpers, like Organisation codes above. Every value from
+   * the server goes through esc() — which here escapes the single quote too —
+   * and the buttons carry only a numeric data-id, read back with Number().
+   */
+  (function () {
+    const panel = document.getElementById('rr-wrap');
+    const out = document.getElementById('rr-out');
+    const status = document.getElementById('rr-status');
+    const refresh = document.getElementById('rr-refresh');
+    const legacyBtn = document.getElementById('rr-legacy');
+    if (!panel || !out) return;
+
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const secret = () => sessionStorage.getItem('hawkeye_admin') || '';
+    const when = (ms) => (ms ? new Date(ms).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+    const btn = 'style="width:auto;margin:0 8px 0 0"';
+
+    let data = null;
+    let loaded = false;
+    let seq = 0;
+    const say = (text, ok) => { status.textContent = text || ''; status.className = 'status' + (text ? (ok ? ' ok' : ' bad') : ''); };
+
+    function who(c) {
+      if (!c || c.missing) return 'account #' + esc(c && c.id) + ' (deleted)';
+      const reach = [c.telegram ? 'Telegram' : '', c.push ? 'push ×' + esc(c.push) : ''].filter(Boolean).join(', ') || 'no alert channel';
+      return 'account #' + esc(c.id) + ' · <code>' + esc(c.hash) + '…</code> · ' + reach
+        + (c.status !== 'active' ? ' · <b>' + esc(c.status) + '</b>' : '')
+        + ' · since ' + esc(when(c.since))
+        + (c.issuer ? ' · signed up with a <b>' + esc(c.issuer.kind) + '</b> code from <b>' + esc(c.issuer.name) + '</b>' : '')
+        + (c.requests24h > 1 ? ' · <b>' + esc(c.requests24h) + ' party-room requests in 24h</b>' : '');
+    }
+
+    function card(r, decided) {
+      const race = esc(r.contest) + ' · ' + (r.scope ? esc(r.scope) : 'nationwide');
+      const flags = [];
+      if (r.status === 'legacy') flags.push('<b>Existing room</b> — labelled before verification; still admitting until you decide');
+      if (r.duplicate_of) flags.push('<b>DUPLICATE</b> — ' + esc(r.party) + ' already has an approved room for this race and area: #' + esc(r.duplicate_of.id) + ' “' + esc(r.duplicate_of.name) + '”. Approving is refused until that label is withdrawn.');
+      if (r.also_asking && r.also_asking.length) flags.push('<b>Also asking</b> for the same party, race and area: ' + r.also_asking.map((x) => '#' + esc(x.id) + ' “' + esc(x.name) + '”').join(', '));
+      const state = decided
+        ? (r.status === 'approved' ? '<b>Approved</b>' : '<b>Rejected</b>') + ' ' + esc(when(r.decided_at))
+          + (r.last && r.last.reason ? ' · reason: ' + esc(r.last.reason) : '')
+        : 'Asked ' + esc(when(r.created_at));
+      const acts = decided
+        ? (r.status === 'approved'
+          ? '<button type="button" class="secondary" ' + btn + ' data-rr-reject="' + Number(r.id) + '">Withdraw label</button>'
+          : '<button type="button" class="secondary" ' + btn + ' data-rr-approve="' + Number(r.id) + '">Approve after all</button>')
+        : '<button type="button" ' + btn + ' data-rr-approve="' + Number(r.id) + '"' + (r.duplicate_of ? ' disabled title="Another room already holds this label for this race and area"' : '') + '>Approve</button>'
+          + '<button type="button" class="secondary" ' + btn + ' data-rr-reject="' + Number(r.id) + '">Reject</button>';
+      return '<div class="card" style="margin:10px 0;padding:10px 12px">'
+        + '<p><b>' + esc(r.party) + '</b> · ' + race + ' · <span class="meta">#' + esc(r.id) + '</span></p>'
+        + '<p>“' + esc(r.name) + '” <span class="meta">/room/' + esc(r.slug || '') + ' · ' + esc(r.members) + ' on roster</span></p>'
+        + '<p class="meta">' + state + ' · by ' + who(r.creator) + '</p>'
+        + flags.map((f) => '<p class="meta">' + f + '</p>').join('')
+        + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px">' + acts + '</div>'
+        + '</div>';
+    }
+
+    function paint(err) {
+      if (err) { out.innerHTML = '<p class="status bad">' + esc(err) + '</p>'; return; }
+      if (!data) { out.innerHTML = '<p class="empty">Loading…</p>'; return; }
+      out.innerHTML = (data.pending.length
+        ? data.pending.map((r) => card(r, false)).join('')
+        : '<p class="empty">No room is waiting for a decision.</p>')
+        + (data.decided.length
+          ? '<details style="margin-top:10px"><summary style="cursor:pointer">Decided — ' + esc(data.decided.length) + '</summary>'
+            + data.decided.map((r) => card(r, true)).join('') + '</details>'
+          : '');
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      if (!secret()) { paint('Unlock the console first.'); return; }
+      paint();
+      try {
+        const r = await fetch('/api/admin/room-requests', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body || !Array.isArray(body.pending)) { paint('Could not load room requests (' + ((body && body.error) || 'HTTP ' + r.status) + ').'); return; }
+        data = body;
+        paint();
+      } catch (e) {
+        if (mine === seq) paint('Could not load room requests.');
+      }
+    }
+
+    async function post(path, body) {
+      const r = await fetch(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+        body: JSON.stringify(body || {}),
+      });
+      return { status: r.status, body: await r.json().catch(() => null) };
+    }
+    const failText = (b, st) => {
+      const code = (b && b.error) || ('HTTP ' + st);
+      if (code === 'duplicate_approved') return 'Refused: another room already holds this label for this race and area (#' + (b.twin ? b.twin.id : '?') + '). Withdraw that one first.';
+      if (code === 'already_approved') return 'Already approved.';
+      if (code === 'already_rejected') return 'Already rejected.';
+      if (code === 'no_such_group') return 'That room no longer exists.';
+      return 'Could not complete (' + code + ').';
+    };
+
+    out.addEventListener('click', async (e) => {
+      const a = e.target.closest('[data-rr-approve]');
+      const j = e.target.closest('[data-rr-reject]');
+      if (!a && !j) return;
+      const id = Number((a || j).getAttribute(a ? 'data-rr-approve' : 'data-rr-reject'));
+      const row = data && [...data.pending, ...data.decided].find((x) => x.id === id);
+      if (!row) return;
+      const label = row.party + ' · ' + row.contest + ' · ' + (row.scope || 'nationwide');
+      let r;
+      if (a) {
+        if (!(await hkConfirm('Approve “' + row.name + '” as the ' + label + ' room? Its invite links start working and its creator is told.'))) return;
+        a.disabled = true;
+        r = await post('/api/admin/room-requests/' + id + '/approve').catch(() => null);
+      } else {
+        const reason = await hkPrompt((row.status === 'approved' ? 'Withdraw the ' : 'Reject the ') + label + ' label on “' + row.name
+          + '”? The room stays, without the label. Optional reason — the creator sees it as typed:', { danger: true, placeholder: 'Reason (optional)' });
+        if (reason === null) return;
+        j.disabled = true;
+        r = await post('/api/admin/room-requests/' + id + '/reject', { reason }).catch(() => null);
+      }
+      if (r && r.status === 200) say((r.body.action === 'approved' ? 'Approved' : r.body.action === 'revoked' ? 'Label withdrawn from' : 'Rejected') + ' room #' + id + '. The creator has been told.', true);
+      else say(r ? failText(r.body, r.status) : 'Could not reach the server.', false);
+      await load();
+    });
+
+    /* Rooms labelled before this existed: counts first, and a bulk action only
+       behind a typed confirmation. Deploying changed nothing for them. */
+    legacyBtn.addEventListener('click', async () => {
+      if (!secret()) { say('Unlock the console first.', false); return; }
+      const r = await post('/api/admin/room-requests/backfill', {}).catch(() => null);
+      if (!r || r.status !== 200) { say(r ? failText(r.body, r.status) : 'Could not reach the server.', false); return; }
+      const b = r.body;
+      const lines = b.legacy + ' room(s) carry a party label from before verification (' + b.legacyWithMembers + ' with members; ' + b.legacyMembers + ' people on those rosters). '
+        + b.grandfatherable + ' are alone in their party, race and area; ' + b.contested.length + ' share one with another room. '
+        + b.unlabelledNamingParty.length + ' room(s) with no verified label have a name that names a party. '
+        + 'Type PENDING to stop all of them admitting until you approve each one, GRANDFATHER to approve every room that is alone in its race and area (the rest stay in this queue), or leave empty to do nothing.';
+      const pick = await hkPrompt(lines, { placeholder: 'PENDING / GRANDFATHER', code: true });
+      const mode = pick && pick.trim().toUpperCase() === 'PENDING' ? 'pending' : pick && pick.trim().toUpperCase() === 'GRANDFATHER' ? 'grandfather' : null;
+      if (!mode) { say('Nothing changed.', true); return; }
+      const done = await post('/api/admin/room-requests/backfill', { mode, apply: true }).catch(() => null);
+      say(done && done.status === 200 ? done.body.changed + ' room(s) changed (' + mode + ').' : 'Could not complete.', !!(done && done.status === 200));
+      await load();
+    });
+
+    refresh.addEventListener('click', load);
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
   })();
   </script>
   <script>

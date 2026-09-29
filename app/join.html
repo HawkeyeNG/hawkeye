@@ -113,6 +113,10 @@ async function main() {
       ? bad('join.withdrawn-title', 'That invitation was withdrawn', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.')
       : bad('join.expired-title', 'That invitation has expired', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.');
   }
+  /* 409: the room's party label is still being verified by Hawkeye (or its
+     name names a party it is not verified for). The name is withheld on
+     purpose — it is the unchecked claim — so this says only that it is shut. */
+  if (res.status === 409) return bad('join.held-title', 'This room is not open yet', 'join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.');
   if (!res.ok) return bad('join.went-wrong-title', 'Something went wrong', 'join.try-again-moment', 'Try the link again in a moment.');
   paint(() => showCard(g));
 }
@@ -225,7 +229,9 @@ async function go(g) {
     if (!r.ok) {
       $('go').disabled = false;
       $('go').textContent = T('join.try-again', 'Try again');
-      return void hkAlert(b.error === 'invite_expired' ? T('join.alert-expired', 'That invitation has expired.') : T('join.alert-failed', 'Could not join just now.'));
+      return void hkAlert(b.error === 'invite_expired' ? T('join.alert-expired', 'That invitation has expired.')
+        : r.status === 409 ? T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.')
+          : T('join.alert-failed', 'Could not join just now.'));
     }
     paint(() => showJoined(g, b));
 }

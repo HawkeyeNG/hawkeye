@@ -171,6 +171,8 @@ async function act(b) {
   const gid = b.dataset.gid;
   if (b.dataset.act === 'accept') {
     const { status } = await api('/api/groups/' + gid + '/accept', { method: 'POST' });
+    // 409: the room's party label is still being verified — it admits nobody yet.
+    if (status === 409) return void hkAlert(T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.'));
     if (status !== 200) return void hkAlert(T('my-groups.accept-failed', 'Could not accept just now.'));
     return load();
   }

@@ -167,6 +167,11 @@ export default function MyGroups() {
       const r = verb === 'accept' ? await authedSend('POST', `/api/groups/${id}/accept`)
         : verb === 'decline' ? await authedSend('POST', `/api/groups/${id}/decline`)
           : await authedSend('DELETE', `/api/groups/${id}/membership`);
+      // 409 on accept: the room's party label is still being verified — it admits nobody yet.
+      if (verb === 'accept' && r.status === 409) {
+        notice.show(i18nT('join.held-title'), i18nT('join.held-body'));
+        return;
+      }
       if (r.status !== 200) throw new Error(String(r.status));
       forgetRooms();
       await load();

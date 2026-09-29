@@ -235,6 +235,8 @@
   "integrity.statistical-tripwires": "Statistical Tripwires",
   "integrity.vision-count-mismatch": "Vision count mismatch",
   "integrity.vote-share-outlier": "Vote-share outlier",
+  "join.held-body": "It is not accepting observers yet. Try the link again later, or ask whoever sent it.",
+  "join.held-title": "This room is not open yet",
   "lang.later": "Not now",
   "map-unit.save-your-polling-unit-you-ll-get": "Save your polling unit — you'll get alerts for it and a reminder on election day.",
   "map-unit.skip-for-now": "Skip for now",

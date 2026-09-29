@@ -801,6 +801,26 @@ const iOutrank = (obsId) => {
   return rankOfRow(t) > myRank();
 };
 
+/* WHY NOBODY NEW CAN JOIN, in the room's own words. A party label is checked
+   by Hawkeye before the room admits anyone (routes/groups.js admissionBlock);
+   the manager must be told that, not left with invite links that fail. */
+function heldText(g, code) {
+  return (code || (g && g.admission_block)) === 'room_name_names_party'
+    ? T('situation-room.name-block-banner', 'This room’s name names a party it is not verified for, so nobody new can join. Rename the room to open it.')
+    : T('situation-room.pending-banner', 'Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
+      { v0: (g && (g.party_claim || g.party)) || '' });
+}
+/* The two refusals the name rule produces, at create and at rename. */
+function nameError(body) {
+  if (body && body.error === 'name_names_party') {
+    return T('situation-room.name-names-party', 'That name names a party ({v0}). Only a room verified for that party may use it — choose the party when you set the room up, or pick another name.', { v0: body.party || '' });
+  }
+  if (body && body.error === 'too_many_party_rooms') {
+    return T('situation-room.too-many-party-rooms', 'You have asked for several party rooms today. Try again tomorrow.');
+  }
+  return null;
+}
+
 function render() {
   if (!S.groups.length) return renderWelcome();
   const g = S.group || {};
@@ -816,7 +836,10 @@ function render() {
         ${[
           g.kind === 'cso' ? T('situation-room.civil-society', 'Civil society')
             : T('my-groups.kind-campaign', 'Campaign'),
-          g.party || '',
+          /* `party` arrives VERIFIED OR NOT AT ALL; an unverified label comes as
+             party_claim and says so, with no emblem (services/roomLabels.js). */
+          g.party || (g.party_claim
+            ? T('situation-room.party-pending', '{v0} (pending verification)', { v0: g.party_claim }) : ''),
           g.contest || '',
           scope,
           g.members === 1
@@ -834,6 +857,7 @@ function render() {
       <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="${iSeeDeployment() ? 3 : 2}">${T('situation-room.team', 'Team')}</button>
       <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="${iSeeDeployment() ? 4 : 3}">${T('situation-room.incidents', 'Incidents')}</button>
     </div>
+    ${iManage() && g.admission_block ? `<div class="sr-note" role="status" id="sr-held">${esc(heldText(g))}</div>` : ''}
     <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
 
   /* The four console actions live in the green header bar. Painted here rather
@@ -921,7 +945,8 @@ function renderWelcome() {
         <div id="mk-party-row"><label for="mk-party">${T('results.party', 'Party')}</label>
           <div class="sr-party-pick"><select id="mk-party"><option value="">${T('situation-room.not-saying', 'Not saying')}</option></select>
             <span class="sr-party-mark" id="mk-party-mark"></span></div>
-          <p class="sr-fine">${T('situation-room.only-used-to-put-your-emblem-on', 'Only used to put your emblem on your own console.')}</p></div>
+          <p class="sr-fine">${T('situation-room.only-used-to-put-your-emblem-on', 'Only used to put your emblem on your own console.')}</p>
+          <p class="sr-fine">${T('situation-room.party-check-note', 'Hawkeye checks a party room before its invite links work — every party the same way.')}</p></div>
         <div><label for="mk-contest">${T('situation-room.which-election', 'Which election')}</label><select id="mk-contest"></select></div>
         <div id="mk-state-row" hidden><label for="mk-state">${T('common.state', 'State')}</label><select id="mk-state"></select></div>
         <div id="mk-race-row" hidden><label for="mk-race" id="mk-race-label">${T('situation-room.seat', 'Seat')}</label><select id="mk-race"></select></div>
@@ -1028,9 +1053,9 @@ async function setupForm() {
         party: $('mk-party').value, contest: $('mk-contest').value, scope,
       }),
     });
-    if (status !== 201) return void hkAlert(body.error === 'unknown_scope'
+    if (status !== 201) return void hkAlert(nameError(body) || (body.error === 'unknown_scope'
       ? T('situation-room.race-not-in-register', 'That race is not in the register.')
-      : T('situation-room.could-not-create-the-room', 'Could not create the room.'));
+      : T('situation-room.could-not-create-the-room', 'Could not create the room.')));
     await boot(body.id);
   });
 }
@@ -2587,7 +2612,9 @@ async function runAction(b) {
 
 /* One place the server's refusals are turned into sentences, because three
    screens raise the same three of them. */
-const roleError = (e) => e === 'owner_only'
+const roleError = (e) => (e === 'room_pending_verification' || e === 'room_name_names_party')
+  ? heldText(S.group, e)
+  : e === 'owner_only'
   ? T('situation-room.only-the-owner-can-manage', 'Only the owner can change who manages this room.')
   : e === 'above_your_level'
     ? T('situation-room.above-your-level', "That is above the level you can give. You can only appoint coordinators below your own, inside your own area.")
@@ -2634,9 +2661,9 @@ async function renameRoom() {
     method: 'PATCH', body: JSON.stringify({ name: name.trim() }),
   });
   if (status !== 200) {
-    return void hkAlert(body.error === 'owner_only'
+    return void hkAlert(nameError(body) || (body.error === 'owner_only'
       ? T('situation-room.only-owner-can-rename', "Only the owner can rename this room.")
-      : T('situation-room.could-not-rename-room', "Could not rename this room."));
+      : T('situation-room.could-not-rename-room', "Could not rename this room.")));
   }
   const row = S.groups.find((x) => x.id === S.gid);
   if (row) row.name = body.name;
@@ -3214,11 +3241,17 @@ async function leaveRoom() {
  * describing a screen that does not exist: it reads as handled.
  */
 async function showInvite(sheet) {
+  /* A room whose party label is still being verified admits nobody, so its
+     links are not offered — listing old ones would say "anyone with a live
+     link can join" about links that do not work. */
+  if (S.group && S.group.admission_block) return void hkAlert(heldText(S.group));
   const { body } = await api('/api/groups/' + S.gid + '/invites');
   const all = Array.isArray(body) ? body : [];
   const live = all.filter((t) => !t.revoked && t.expires_at > Date.now());
   if (!live.length) {
-    await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
+    const made = await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
+    // Never loop on a refusal: the recursion below assumes a link now exists.
+    if (!(made.status >= 200 && made.status < 300)) return void hkAlert(roleError(made.body && made.body.error));
     return showInvite(sheet);
   }
   const days = (t) => Math.max(1, Math.round((t.expires_at - Date.now()) / 86400000));

@@ -98,7 +98,10 @@ export default function JoinGroup() {
   const { token: session } = useAuth();
   const t = useT();
   const [invite, setInvite] = useState<Invite | null>(null);
-  const [state, setState] = useState<'loading' | 'ready' | 'gone' | 'joining' | 'done'>('loading');
+  /* 'held': the server answered 409 — the room's party label is still being
+     verified by Hawkeye (or its name names a party it is not verified for), so
+     it admits nobody yet. Not 'gone': the link is fine and will work later. */
+  const [state, setState] = useState<'loading' | 'ready' | 'gone' | 'held' | 'joining' | 'done'>('loading');
   const code = String(token || '');
 
   useEffect(() => {
@@ -107,6 +110,7 @@ export default function JoinGroup() {
       try {
         const r = await fetch(`${BASE}/api/join/${encodeURIComponent(code)}`);
         if (!live) return;
+        if (r.status === 409) { setState('held'); return; }
         if (!r.ok) { setState('gone'); return; }
         setInvite(await r.json());
         setState('ready');
@@ -125,7 +129,7 @@ export default function JoinGroup() {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
       });
-      setState(r.ok ? 'done' : 'gone');
+      setState(r.ok ? 'done' : r.status === 409 ? 'held' : 'gone');
     } catch {
       setState('ready');
     }
@@ -157,12 +161,16 @@ export default function JoinGroup() {
     );
   }
 
-  if (state === 'gone') {
+  if (state === 'gone' || state === 'held') {
     return (
       <Frame>
         <Crest />
-        <Text className="text-center text-xl font-bold text-ink">{t('n.app.join.expired-title')}</Text>
-        <Text className="pt-3 text-center text-sm leading-5 text-muted">{t('n.app.join.expired-body')}</Text>
+        <Text className="text-center text-xl font-bold text-ink">
+          {state === 'held' ? t('join.held-title') : t('n.app.join.expired-title')}
+        </Text>
+        <Text className="pt-3 text-center text-sm leading-5 text-muted">
+          {state === 'held' ? t('join.held-body') : t('n.app.join.expired-body')}
+        </Text>
         <Action tone="quiet" label={t('n.app.join.back-home')} onPress={() => router.replace('/(tabs)')} />
       </Frame>
     );

@@ -1,0 +1,17 @@
+// Same shape as expo-application's (SDK 57): the Expo module Gradle plugin
+// supplies Kotlin, expo-modules-core and the publishing setup.
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'ng.com.hawkeye'
+version = '1.0.0'
+
+android {
+  namespace "expo.modules.hawkeyedevice"
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}

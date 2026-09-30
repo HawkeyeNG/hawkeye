@@ -24,6 +24,7 @@ import { flagLabel } from '@/lib/flags';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { getIdentity } from '@/lib/identity';
+import { deviceSignalsField } from '@/lib/device-signals';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -146,6 +147,9 @@ export default function CaseScreen() {
     try {
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
       const ident = await getIdentity();
+      // One voice per juror (lib/device-signals.ts): unsigned, advisory, and
+      // absent on builds without the native pieces.
+      const signals = await deviceSignalsField();
       const res = await fetch(`${BASE}/api/docket/${c.id}/verdict`, {
         method: 'POST',
         headers: {
@@ -158,6 +162,7 @@ export default function CaseScreen() {
           counts: answers.counts,
           flags,
           comment: comment.trim(),
+          ...(signals ? { signals } : {}),
         }),
       });
       const r = (await res.json().catch(() => ({}))) as {

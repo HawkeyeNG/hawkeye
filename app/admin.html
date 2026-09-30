@@ -515,6 +515,21 @@
         <p id="rr-status" class="status" role="status"></p>
         <div id="rr-out"></div>
       </details>
+      <!-- LINKED ACCOUNTS (services/clusters.js). Accounts the server counts as
+           ONE in every agreement count — one app used by two accounts, both apps
+           on one phone, a re-used photo, or repeated same place / moment /
+           network. Read-only: nothing here bans anyone and none of it is ever
+           shown publicly. Account ids are masked by the server; every value is
+           escaped here. English only, like the rest of the owner's console. -->
+      <details id="la-wrap" style="margin-top:10px">
+        <summary style="cursor:pointer;font-weight:700">Linked accounts</summary>
+        <p class="hint">Accounts counted as one voice in every agreement count (results, the photo quorum, docket verdicts). A cluster keeps what its FIRST report said. Nobody is banned or told; honest observers see nothing different. Account ids are masked; no network address or location is stored or shown.</p>
+        <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
+          <button id="la-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+        </div>
+        <p id="la-status" class="status" role="status"></p>
+        <div id="la-out"></div>
+      </details>
 
       </div><div class="panel" data-p="incidents" hidden><h1 data-i18n="common.incident-review" style="margin-top:34px">Incident Review</h1>
       <div class="tabs" id="tabs">
@@ -2977,6 +2992,113 @@
       say(done && done.status === 200 ? done.body.changed + ' room(s) changed (' + mode + ').' : 'Could not complete.', !!(done && done.status === 200));
       await load();
     });
+
+    refresh.addEventListener('click', load);
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
+  })();
+  </script>
+  <script>
+  /**
+   * LINKED ACCOUNTS — GET /api/admin/linked-accounts (read-only). Own <script>
+   * and helpers, like Room requests above. Everything from the server goes
+   * through esc(), which escapes the single quote too, and nothing from the
+   * server is built into an attribute or a handler.
+   */
+  (function () {
+    const panel = document.getElementById('la-wrap');
+    const out = document.getElementById('la-out');
+    const status = document.getElementById('la-status');
+    const refresh = document.getElementById('la-refresh');
+    if (!panel || !out) return;
+
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const secret = () => sessionStorage.getItem('hawkeye_admin') || '';
+    const when = (ms) => (ms ? new Date(ms).toLocaleString([], { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '');
+    const KIND = {
+      device: 'Same app install, two accounts',
+      shared: 'Same iPhone (shared keychain id, both apps)',
+      photo: 'Near-identical photo, same unit and race',
+      place: 'Same place, moment and network',
+    };
+    let loaded = false;
+    let seq = 0;
+
+    function evidenceLine(kind, e) {
+      if (!e || typeof e !== 'object') return '';
+      const bits = [esc(when(e.at))];
+      if (e.puCode) bits.push(esc(e.puCode));
+      if (Array.isArray(e.puCodes)) bits.push(e.puCodes.map(esc).join(', '));
+      if (e.contest) bits.push(esc(e.contest));
+      if (Array.isArray(e.contests)) bits.push(e.contests.map(esc).join(', '));
+      if (kind === 'photo') bits.push(esc(e.slot) + ' photo, dhash ' + esc(e.d64) + ' / fine ' + esc(e.d256) + ' bits apart');
+      if (kind === 'place') {
+        bits.push(esc(e.secondsApart) + ' s and ' + esc(e.metresApart) + ' m apart, same network'
+          + (e.sameAddress ? ', same address' : '') + (e.siblingApps ? ', <b>both apps on one phone</b>' : ''));
+      }
+      return '<li>' + bits.filter(Boolean).join(' · ') + '</li>';
+    }
+
+    function linkBlock(l) {
+      const ev = Array.isArray(l.evidence) ? l.evidence : [];
+      return '<p class="meta"><b>' + esc(KIND[l.kind] || l.kind) + '</b> · <code>' + esc(l.a) + '</code> + <code>' + esc(l.b) + '</code>'
+        + ' · ' + esc(l.occasions) + ' occasion' + (Number(l.occasions) === 1 ? '' : 's')
+        + ' · first ' + esc(when(l.firstAt)) + ', last ' + esc(when(l.lastAt)) + '</p>'
+        + (ev.length ? '<ul class="meta" style="margin:2px 0 6px 18px">' + ev.map((e) => evidenceLine(l.kind, e)).join('') + '</ul>' : '');
+    }
+
+    function paint(data, err) {
+      if (err) { out.innerHTML = '<p class="status bad">' + esc(err) + '</p>'; return; }
+      if (!data) { out.innerHTML = '<p class="empty">Loading…</p>'; return; }
+      const c = data.counts || {};
+      const r = data.rules || {};
+      let html = '<p class="meta">' + esc(c.clusters || 0) + ' cluster(s) · ' + esc(c.linkedAccounts || 0) + ' accounts in them · '
+        + esc(c.watching || 0) + ' pair(s) watched · photos: ' + esc(c.photoMerged || 0) + ' merged, ' + esc(c.photoReview || 0) + ' to review, '
+        + esc(c.photoReused || 0) + ' re-used elsewhere</p>'
+        + '<p class="hint">Rules: a photo merges at dhash ≤ ' + esc(r.nearDupStrongDhash) + ' and fine ≤ ' + esc(r.nearDupStrongFine)
+        + ' (same unit and race) and counts as re-used elsewhere at fine ≤ ' + esc(r.nearDupReuseFine) + '; place, moment and network link after '
+        + esc(r.linkMinOccasions) + ' occasions within ' + esc(Math.round((Number(r.linkWindowMs) || 0) / 60000)) + ' min and ' + esc(r.linkMaxM)
+        + ' m. Network hashes are kept ' + esc(r.signalRetentionDays) + ' days.</p>';
+      const clusters = Array.isArray(data.clusters) ? data.clusters : [];
+      html += clusters.length
+        ? clusters.map((k) => '<div class="card" style="margin:10px 0;padding:10px 12px">'
+            + '<p><b>Cluster <code>' + esc(k.cluster) + '</code></b> · ' + esc(k.accounts) + ' accounts · ' + esc(k.reports) + ' report(s)</p>'
+            + '<p class="meta">' + (Array.isArray(k.members) ? k.members.map((m) => '<code>' + esc(m) + '</code>').join(' ') : '') + '</p>'
+            + (Array.isArray(k.links) ? k.links.map(linkBlock).join('') : '')
+            + '</div>').join('')
+        : '<p class="empty">No accounts are linked.</p>';
+      const watching = Array.isArray(data.watching) ? data.watching : [];
+      if (watching.length) {
+        html += '<details style="margin-top:10px"><summary style="cursor:pointer">Watched, not linked yet — ' + esc(watching.length)
+          + '</summary><p class="hint">Seen together fewer times than the rule needs; still counted separately.</p>'
+          + watching.map(linkBlock).join('') + '</details>';
+      }
+      const photos = Array.isArray(data.photos) ? data.photos : [];
+      if (photos.length) {
+        html += '<details style="margin-top:10px"><summary style="cursor:pointer">Photo matches — ' + esc(photos.length) + '</summary>'
+          + '<ul class="meta" style="margin:6px 0 0 18px">' + photos.map((p) => '<li><b>' + esc(p.verdict) + '</b> · report ' + esc(p.report)
+            + ' vs ' + esc(p.other) + ' · ' + esc(p.puCode) + ' ' + esc(p.contest) + (p.sameRace ? '' : ' (other race)')
+            + ' · ' + esc(p.slot) + ' · dhash ' + esc(p.d64) + (p.d256 == null ? '' : ' / fine ' + esc(p.d256)) + ' · ' + esc(when(p.at)) + '</li>').join('')
+          + '</ul></details>';
+      }
+      out.innerHTML = html;
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      if (!secret()) { paint(null, 'Unlock the console first.'); return; }
+      paint(null);
+      try {
+        const r = await fetch('/api/admin/linked-accounts', { headers: { 'x-admin-secret': secret() } });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body || !Array.isArray(body.clusters)) { paint(null, 'Could not load linked accounts (' + ((body && body.error) || 'HTTP ' + r.status) + ').'); return; }
+        status.textContent = '';
+        paint(body);
+      } catch (e) {
+        if (mine === seq) paint(null, 'Could not load linked accounts.');
+      }
+    }
 
     refresh.addEventListener('click', load);
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });

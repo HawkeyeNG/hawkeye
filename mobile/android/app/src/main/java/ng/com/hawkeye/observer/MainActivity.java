@@ -30,6 +30,9 @@ public class MainActivity extends BridgeActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         SplashScreen splash = SplashScreen.installSplashScreen(this);
+        // App-local plugins are registered BEFORE super.onCreate, which builds
+        // the bridge. HawkeyeDevicePlugin: is the native app installed here?
+        registerPlugin(HawkeyeDevicePlugin.class);
         super.onCreate(savedInstanceState);
         if (firstLaunchOfThisBuild()) return;
         splash.setKeepOnScreenCondition(() -> !ready);

@@ -275,6 +275,8 @@
         const body = { sheet: val('sheet'), counts: val('counts'), flags, comment: $('comment').value.trim() };
         if (!body.sheet || !body.counts || Object.values(flags).some((v) => !v)) { say('case.answer-every-question', 'Answer every question.'); return; }
         $('cast').disabled = true;
+        // One voice per juror (device.js getDeviceSignals) — unsigned, advisory.
+        if (window.getDeviceSignals) { try { body.signals = JSON.stringify(await window.getDeviceSignals()); } catch { /* not sent */ } }
         const r = await fetch(`/api/docket/${qid}/verdict`, {
           method: 'POST',
           headers: { 'content-type': 'application/json', authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },

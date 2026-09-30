@@ -102,6 +102,26 @@ module.exports = ({ config }) => {
       entitlements: {
         ...config.ios?.entitlements,
         'aps-environment': production ? 'production' : 'development',
+        /**
+         * ONE ID FOR BOTH APPS ON ONE iPHONE (from 1.0.11; src/lib/device-signals.ts,
+         * backend services/clusters.js). Native and Lite are the same Apple team
+         * (G99KD9RW94), so both may join the access group
+         * G99KD9RW94.ng.com.hawkeye.shared and read the same random device id —
+         * which is how the server counts one phone running both apps once.
+         *
+         * THIS APP'S OWN ID STAYS FIRST. The first entry is the default group for
+         * every keychain item written without an explicit group; listing
+         * $(AppIdentifierPrefix)ng.com.hawkeye.observer first keeps it exactly the
+         * application-identifier group the token, signing key and device id
+         * already live in, so nothing existing moves or becomes visible to Lite.
+         * App Store profiles allow TEAMID.* for this key, so no App ID capability
+         * or profile regeneration is needed. Lite's half is in
+         * .github/workflows/ios-lite-release.yml (App.entitlements).
+         */
+        'keychain-access-groups': [
+          '$(AppIdentifierPrefix)ng.com.hawkeye.observer',
+          '$(AppIdentifierPrefix)ng.com.hawkeye.shared',
+        ],
       },
     },
     // WHETHER A KEY WAS INJECTED, published somewhere the RUNTIME can see it.

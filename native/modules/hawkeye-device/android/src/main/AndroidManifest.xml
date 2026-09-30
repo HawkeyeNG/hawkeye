@@ -1,0 +1,10 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+  <!-- Package visibility (Android 11+): the ONE other package this app may
+       ask about is Hawkeye Lite. Merged into the app manifest at build time.
+       The answer is a yes/no sent with a report (backend services/clusters.js:
+       both apps on one phone = one device); nothing about the other app's
+       account or ids is ever read. -->
+  <queries>
+    <package android:name="ng.com.hawkeye.lite" />
+  </queries>
+</manifest>

@@ -16,6 +16,7 @@ import { keepEvidence } from '@/lib/evidence';
 import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
 import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
+import { deviceSignalsField } from '@/lib/device-signals';
 // TYPE-ONLY, so this edge is erased at compile time and creates no runtime
 // require cycle. outbox.ts legitimately imports filePart/remintSession from
 // here; this file needed queueJob back, and the pair warned on every Metro
@@ -446,6 +447,11 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     };
   }
   const signature = id.sign(payload);
+  // Device signals (lib/device-signals.ts): outside the signed payload, so
+  // they change nothing evidentiary; the server uses them only to count one
+  // phone running both apps once. Queued with the fields, so a later flush
+  // carries them too.
+  const signals = await deviceSignalsField();
 
   // Fields and files kept apart from the FormData: the same pair feeds a live
   // attempt and, if that fails, the outbox job that replays it later.
@@ -470,6 +476,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     imageSha256,
     venueImageSha256,
     ...(input.sheetSerial ? { sheetSerial: input.sheetSerial } : {}),
+    ...(signals ? { signals } : {}),
   };
   // The outbox copies these files verbatim, so the hashes above — and therefore
   // the signature — still describe the bytes that eventually reach the server.

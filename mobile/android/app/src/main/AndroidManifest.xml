@@ -43,6 +43,14 @@
         </provider>
     </application>
 
+    <!-- Package visibility (Android 11+): the ONE other app Lite may ask about
+         is the native Hawkeye app. HawkeyeDevicePlugin reports only whether it
+         is installed (a yes/no sent with a report, so the server counts one
+         phone running both apps once — backend services/clusters.js). -->
+    <queries>
+        <package android:name="ng.com.hawkeye.observer" />
+    </queries>
+
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />

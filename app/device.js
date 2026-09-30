@@ -29,3 +29,39 @@ window.getDeviceId = (() => {
     return cached;
   };
 })();
+
+/* Device signals (backend services/clusters.js: count DEVICES, not accounts).
+ * Sent with a result report and a docket verdict as the `signals` field —
+ * outside the signed payload, so nothing evidentiary changes.
+ *
+ *   app      'lite' inside Hawkeye Lite, 'web' in a browser.
+ *   shared   iOS Lite only: a random id Lite and the native app both read from
+ *            one keychain access group (same Apple team), so one iPhone running
+ *            both apps is one device. The server keeps a keyed hash of it.
+ *   sibling  Android Lite only: whether the native Hawkeye app is installed on
+ *            this phone — a yes/no, nothing about that app's account.
+ *
+ * Both come from the HawkeyeDevice native plugin, which exists only in Lite
+ * store builds from 1.7 on. FEATURE-DETECTED: an older binary running this
+ * bundle has no plugin, and a browser has no Capacitor, so they send
+ * { app } alone and everything else behaves exactly as before. Never throws.
+ */
+window.getDeviceSignals = (() => {
+  let cached = null;
+  return function getDeviceSignals() {
+    if (cached) return cached;
+    cached = (async () => {
+      const out = { app: window.HAWKEYE && window.HAWKEYE.native ? 'lite' : 'web' };
+      try {
+        const P = window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.HawkeyeDevice;
+        if (P && typeof P.signals === 'function') {
+          const r = await P.signals();
+          if (r && /^[0-9a-f]{64}$/.test(String(r.shared || ''))) out.shared = String(r.shared);
+          if (r && typeof r.sibling === 'boolean') out.sibling = r.sibling;
+        }
+      } catch { /* a signal not sent */ }
+      return out;
+    })();
+    return cached;
+  };
+})();

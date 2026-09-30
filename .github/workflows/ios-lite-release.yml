@@ -465,12 +465,27 @@ jobs:
           else
             echo "::warning::the Lite profile lacks Associated Domains — building WITHOUT universal links"
           fi
+          # ONE ID FOR BOTH APPS ON ONE iPHONE (Lite 1.7+; backend services/clusters.js).
+          # Lite and the native app (same team) share the keychain access group
+          # ng.com.hawkeye.shared, read by HawkeyeDevicePlugin.swift. Lite's OWN
+          # id stays first, so the default group of every existing keychain item
+          # is unchanged. App Store profiles carry keychain-access-groups = TEAMID.*,
+          # so no capability or new profile is needed; added only when the
+          # profile carries the key, like Associated Domains above. Single quotes:
+          # $(AppIdentifierPrefix) is for Xcode to expand, not the shell.
+          KG=''
+          if security cms -D -i "$RUNNER_TEMP/build_pp.mobileprovision" 2>/dev/null | grep -q 'keychain-access-groups'; then
+            KG='<key>keychain-access-groups</key><array><string>$(AppIdentifierPrefix)ng.com.hawkeye.lite</string><string>$(AppIdentifierPrefix)ng.com.hawkeye.shared</string></array>'
+          else
+            echo "::warning::the Lite profile lacks keychain-access-groups — building WITHOUT the shared device id"
+          fi
           cat > ios/App/App/App.entitlements <<PLIST
           <?xml version="1.0" encoding="UTF-8"?>
           <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
           <plist version="1.0"><dict>
             <key>aps-environment</key><string>production</string>
             ${AD}
+            ${KG}
           </dict></plist>
           PLIST
           plutil -p ios/App/App/App.entitlements
@@ -646,6 +661,7 @@ jobs:
             || echo "    WARNING: no aps-environment in the signed entitlements — push will not work"
           codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'applinks:hawkeye.com.ng' \
             || echo "    WARNING: no applinks:hawkeye.com.ng in the signed entitlements — universal links will not open Lite"
+          codesign -d --entitlements - --xml "$APP" 2>/dev/null | plutil -p - | grep -i 'ng.com.hawkeye.shared'             || echo "    WARNING: no ng.com.hawkeye.shared keychain group in the signed entitlements — Lite and the native app will not share a device id"
 
       - name: Upload .ipa as an artifact
         uses: actions/upload-artifact@v4

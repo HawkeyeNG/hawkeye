@@ -2815,6 +2815,11 @@ $('btn-submit').onclick = async () => {
   form.set('signature', signature);
   const serialEl = $('sheet-serial');
   if (serialEl && serialEl.value.trim()) form.set('sheetSerial', serialEl.value.trim());
+  // Device signals (device.js getDeviceSignals): unsigned, advisory — the server
+  // counts one phone running both Hawkeye apps once. Rides the outbox too.
+  if (window.getDeviceSignals) {
+    try { form.set('signals', JSON.stringify(await window.getDeviceSignals())); } catch { /* not sent */ }
+  }
   form.set('photo', shots.sheet.blob, 'ec8a.jpg');
   form.set('venuePhoto', shots.venue.blob, 'venue.jpg');
 

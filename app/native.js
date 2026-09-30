@@ -251,6 +251,26 @@
     if (!launchDone && App.getLaunchUrl) App.getLaunchUrl().then((r) => r && r.url && route(r.url)).catch(() => {});
   })();
 
+  // APP SETTINGS: THIS app's own page in the phone's Settings (Android: App
+  // info, where Permissions and Notifications are; iOS: Settings › Hawkeye
+  // Lite). capacitor-native-settings, in Lite store builds from 1.7 (Android
+  // versionCode 25, iOS build 34). ready.html sends a refused camera /
+  // location / notification row here — the one switch a page cannot flip.
+  //
+  // FEATURE-DETECTED, NOT VERSION-GATED. The bridge exposes only the plugins a
+  // binary registered, so an older binary running a newer live bundle has no
+  // Plugins.NativeSettings: openAppSettings stays null and ready.html keeps its
+  // written instruction. That is why this needs no minBuild raise.
+  (function appSettings() {
+    const NS = Cap.Plugins && Cap.Plugins.NativeSettings;
+    window.HAWKEYE.openAppSettings = null;
+    if (!NS || typeof NS.open !== 'function') return;
+    // The plugin's enum values (AndroidSettings.ApplicationDetails,
+    // IOSSettings.App), written out because Lite loads no bundler. Android
+    // resolves when the reader comes BACK from Settings; iOS once it opens.
+    window.HAWKEYE.openAppSettings = () => NS.open({ optionAndroid: 'application_details', optionIOS: 'app' });
+  })();
+
   // Status-bar icons must contrast the themed header: it is a WHITE bar in light
   // mode (needs DARK icons) and a dark-green bar in dark mode (needs light icons).
   // Follow html[data-theme]. Capacitor names the style by BACKGROUND: Style.Light

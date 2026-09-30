@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=194" />
-  <script src="native.js?v=122"></script>
+  <script src="native.js?v=123"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
@@ -118,9 +118,12 @@
    *   Polling unit   choose-unit.html, which comes straight back here after a
    *                  save (its leave() knows ready.html) and the row re-checks.
    *   Permissions    not yet asked → the browser's / phone's own prompt;
-   *                  refused → where the switch is, in our dialog (a page
-   *                  cannot open the browser's settings, and Lite cannot open
-   *                  the app's until a store build carries a plugin for it);
+   *                  refused → in Lite 1.7+ (capacitor-native-settings,
+   *                  native.js HAWKEYE.openAppSettings) Hawkeye Lite's own
+   *                  page in the phone's Settings; in the browser, and in an
+   *                  older Lite binary running this page as a live bundle,
+   *                  where the switch is, in our dialog (a page cannot open
+   *                  the browser's settings);
    *                  already allowed → our dialog saying so.
    *
    * NO POP-UP OF OUR OWN BEFORE A PERMISSION PROMPT (owner rule). A tap that
@@ -180,9 +183,23 @@
       : ['ready.blocked-browser', 'Blocked — allow it in your browser’s settings for this site.'];
     const ALLOW = ['ready.allow', 'Allow'];
     const NO_CAMERA = ['ready.no-camera', 'No camera found on this device.'];
-    /* A tap on a refused row repeats where the switch is; a tap on an allowed
-       one says so. Both in our dialog, titled with the row. */
-    const REFUSED = { say: BLOCKED };
+    /* A tap on a refused row opens Hawkeye Lite's page in the phone's Settings
+       where this binary can (Lite 1.7+; FEATURE-DETECTED, so an older binary
+       running this page from a live bundle gets null here) — the row re-checks
+       on the way back (Android resolves the call then; iOS fires
+       hawkeye-foreground). Everywhere else it repeats where the switch is. A
+       tap on an allowed row says so. Dialogs are ours, titled with the row. */
+    const openAppSettings = LITE && window.HAWKEYE && typeof window.HAWKEYE.openAppSettings === 'function'
+      ? window.HAWKEYE.openAppSettings : null;
+    const REFUSED = openAppSettings
+      ? { label: ['ready.open-settings', 'Open Settings'], run: openSettings }
+      : { say: BLOCKED };
+    async function openSettings(id) {
+      try { await openAppSettings(); } catch (e) {
+        // Settings would not open: say where the switch is instead.
+        if (window.hkAlert) await window.hkAlert(L(BLOCKED), id && TITLES[id] ? { title: T(TITLES[id][0], TITLES[id][1]) } : undefined);
+      }
+    }
     const ALLOWED = {
       camera: { say: ['ready.camera-allowed', 'Camera is already allowed.'] },
       location: { say: ['ready.location-allowed', 'Location is already allowed.'] },
@@ -363,7 +380,7 @@
           if (!r.act.run) return;
           busy = id;
           b.disabled = true;
-          try { await r.act.run(); } finally { busy = null; await check(); }
+          try { await r.act.run(id); } finally { busy = null; await check(); }
         });
       });
     }

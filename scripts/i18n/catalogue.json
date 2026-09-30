@@ -1480,6 +1480,7 @@
   "ready.no-location": "This browser cannot share your location.",
   "ready.notifications": "Notifications",
   "ready.notifications-allowed": "Notifications are already allowed.",
+  "ready.open-settings": "Open Settings",
   "ready.page-title": "Ready for Election Day — Hawkeye",
   "ready.sign-in-first": "Sign in first.",
   "ready.signed-in": "Signed in",

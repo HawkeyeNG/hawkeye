@@ -2609,5 +2609,6 @@
   "notifications.check-connection": "Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
   "notifications.pull-down-to-try-again": "Ja ƙasa don sake gwadawa. ({v0})",
   "notifications.time-ago": "{v0} da suka wuce",
-  "my-groups.lede-short": "Ƙungiyoyi suna ganin rahotannin da ka aika tun lokacin da ka shiga cikinsu."
+  "my-groups.lede-short": "Ƙungiyoyi suna ganin rahotannin da ka aika tun lokacin da ka shiga cikinsu.",
+  "observe.device-owned-not-counted": "Wani asusu ya riga ya yi amfani da wannan wayar a wannan zaɓe, don haka an ajiye wannan rahoton don bita amma ba za a ƙirga shi ba."
 }

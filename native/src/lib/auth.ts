@@ -594,6 +594,21 @@ export async function expireSession(): Promise<void> {
 
 /** The observer asked to sign out. This one IS a choice, so it is remembered. */
 export async function signOut(): Promise<void> {
+  // Tell the server this phone's session has ended (POST /api/observers/sign-out).
+  // Until it hears, the account still holds this phone for the election soft
+  // lock (backend services/deviceClaims.js) — before polling day a signed-out
+  // owner is what lets another account's report claim the phone. Fire and
+  // forget with a deadline: signing out must work offline and never wait.
+  const token = state.token;
+  if (token) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 5_000);
+    void fetch(`${BASE}/api/observers/sign-out`, {
+      method: 'POST',
+      headers: { accept: 'application/json', authorization: `Bearer ${token}` },
+      signal: ctl.signal,
+    }).catch(() => null).finally(() => clearTimeout(timer));
+  }
   await expireSession();
   // Silent device-resume would sign this person straight back in on the next
   // launch, which makes an explicit sign-out look broken. Remember the choice.

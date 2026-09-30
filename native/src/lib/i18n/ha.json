@@ -857,6 +857,7 @@
   "n.app.report.result.could-not-open-that-unit": "An kasa buɗe wannan rukunin",
   "n.app.report.result.could-not-read-unit-code-off": "An kasa karanta lambar rukunin a takardar. Zaɓi rukuni a ƙasa.",
   "n.app.report.result.couldn-t-reach-the-server-tap": "Ba a iya isa uwar garke ba — danna don sake gwadawa",
+  "n.app.report.result.device-owned-not-counted": "Wani asusu ya riga ya yi amfani da wannan wayar a wannan zaɓe, don haka an ajiye wannan rahoton don bita amma ba za a ƙirga shi ba.",
   "n.app.report.result.election-list-not-loaded": "Ba a loda jerin zaɓukan ba",
   "n.app.report.result.find-your-report-in-the-public": "Nemo rahotonka a littafin jama'a ›",
   "n.app.report.result.from-sheet": "DAGA TAKARDAR",

@@ -1022,6 +1022,7 @@
   "observe.code-sent-whatsapp": "Code sent on WhatsApp to <strong>{phone}</strong>.",
   "observe.copies-off-note": "Copies to this phone are turned off in My Profile. Screenshot this card if you want to keep it.",
   "observe.create-a-password": "Create a Password",
+  "observe.device-owned-not-counted": "This phone was already used by another account this election, so this report is kept for review but not counted.",
   "observe.err.already-submitted": "You have already reported this election for this polling unit.",
   "observe.err.bad-signature": "Signature check failed — refresh and try again.",
   "observe.err.contest-not-applicable": "That election does not take place at this polling unit (the FCT has no governorship or state assembly).",

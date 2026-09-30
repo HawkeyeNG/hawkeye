@@ -2,6 +2,7 @@ package ng.com.hawkeye.observer;
 
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.provider.Settings;
 import com.getcapacitor.JSObject;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
@@ -24,6 +25,12 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * NOTE the Java package is ng.com.hawkeye.observer for historical reasons
  * (build.gradle namespace); this app's applicationId is ng.com.hawkeye.lite.
  * The package asked about below is the OTHER app's applicationId.
+ *
+ * Also `androidId`: Settings.Secure.ANDROID_ID, for one phone = one counting
+ * account per election (backend services/deviceClaims.js). One value per
+ * (Lite's signing key, user, phone); an uninstall/reinstall keeps it, a factory
+ * reset changes it. No permission needed; the server keeps only a peppered
+ * hash. Omitted when Android gives none.
  */
 @CapacitorPlugin(name = "HawkeyeDevice")
 public class HawkeyeDevicePlugin extends Plugin {
@@ -33,7 +40,17 @@ public class HawkeyeDevicePlugin extends Plugin {
     public void signals(PluginCall call) {
         JSObject ret = new JSObject();
         ret.put("sibling", isInstalled(NATIVE_APP));
+        String aid = androidId();
+        if (aid != null && !aid.isEmpty()) ret.put("androidId", aid);
         call.resolve(ret);
+    }
+
+    private String androidId() {
+        try {
+            return Settings.Secure.getString(getContext().getContentResolver(), Settings.Secure.ANDROID_ID);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @SuppressWarnings("deprecation")

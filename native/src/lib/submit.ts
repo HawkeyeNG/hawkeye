@@ -210,8 +210,13 @@ export type Receipt = ResultSummary & {
 };
 
 export type SubmitResult =
-  /** photosOnDevice: D1 hash-only — the photos were kept on this phone as evidence. */
-  | ({ ok: true; queued?: false; submissionId?: number; photosOnDevice?: boolean } & Receipt)
+  /**
+   * photosOnDevice: D1 hash-only — the photos were kept on this phone as evidence.
+   * counted: false — another account already reported from this phone this
+   * election, so the report is kept for review but not counted (backend
+   * services/deviceClaims.js). Older servers send nothing: counted.
+   */
+  | ({ ok: true; queued?: false; submissionId?: number; photosOnDevice?: boolean; counted?: boolean } & Receipt)
   /**
    * Held in the offline outbox — captured, signed and safe on disk, just not
    * delivered yet. Deliberately NOT ok:true: a screen that has not been taught
@@ -449,9 +454,10 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const signature = id.sign(payload);
   // Device signals (lib/device-signals.ts): outside the signed payload, so
   // they change nothing evidentiary; the server uses them only to count one
-  // phone running both apps once. Queued with the fields, so a later flush
-  // carries them too.
-  const signals = await deviceSignalsField();
+  // phone running both apps once, and one phone as one counting account per
+  // election (a report also carries a fresh DeviceCheck token on iOS builds
+  // that have one). Queued with the fields, so a later flush carries them too.
+  const signals = await deviceSignalsField({ deviceCheck: true });
 
   // Fields and files kept apart from the FormData: the same pair feeds a live
   // attempt and, if that fails, the outbox job that replays it later.
@@ -597,6 +603,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     distanceM?: number;
     allowedM?: number;
     retryAfterS?: number;
+    counted?: boolean;
   } & Receipt;
   if (res.ok && body.ok !== false) {
     return {
@@ -608,6 +615,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
       ocr: body.ocr,
       result: body.result,
       photosOnDevice: hashOnly,
+      counted: body.counted !== false,
     };
   }
   const code = body.error ?? `http_${res.status}`;

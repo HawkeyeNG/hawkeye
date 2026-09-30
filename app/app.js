@@ -2816,9 +2816,11 @@ $('btn-submit').onclick = async () => {
   const serialEl = $('sheet-serial');
   if (serialEl && serialEl.value.trim()) form.set('sheetSerial', serialEl.value.trim());
   // Device signals (device.js getDeviceSignals): unsigned, advisory — the server
-  // counts one phone running both Hawkeye apps once. Rides the outbox too.
+  // counts one phone running both Hawkeye apps once, and one phone as one
+  // counting account per election (a report asks for a DeviceCheck token too,
+  // on iOS Lite builds that have it). Rides the outbox too.
   if (window.getDeviceSignals) {
-    try { form.set('signals', JSON.stringify(await window.getDeviceSignals())); } catch { /* not sent */ }
+    try { form.set('signals', JSON.stringify(await window.getDeviceSignals({ deviceCheck: true }))); } catch { /* not sent */ }
   }
   form.set('photo', shots.sheet.blob, 'ec8a.jpg');
   form.set('venuePhoto', shots.venue.blob, 'venue.jpg');
@@ -2990,6 +2992,23 @@ $('btn-submit').onclick = async () => {
 
   keepCopies();
   const r = body.result;
+  // KEPT, NOT COUNTED (backend services/deviceClaims.js): another account
+  // already reported from this phone this election. The report is on the
+  // ledger, but the unit's result describes OTHER reports — or is null when
+  // none count — so this receipt shows the observer's own figures and says why.
+  if (body.counted === false || !r) {
+    const name = (contests.find((c) => c.code === contest) || {}).name || contest;
+    $('entry-hash').textContent = body.entryHash || '';
+    $('result-summary').innerHTML = `
+      <p><strong>${selectedPu.name}</strong> — ${name}</p>
+      ${body.counted === false ? `<p class="hint">${T('observe.device-owned-not-counted', 'This phone was already used by another account this election, so this report is kept for review but not counted.')}</p>` : ''}
+      ${body.photosOnDevice ? `<p class="hint">${T('observe.photos-kept-as-evidence', 'Your photos were kept on this phone as evidence.')}</p>` : ''}
+      <ul>${votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
+    $('receipt-wrap').hidden = true;
+    showReceipt(receiptData(name, votes, body.entryHash || ''));
+    show('screen-result');
+    return;
+  }
   const locLabel =
     r.locationStatus === 'verified'
       ? tierLabel('verified')

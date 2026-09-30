@@ -880,7 +880,16 @@
     document.addEventListener('DOMContentLoaded', () => { if (token()) pkLoad(); });
     document.addEventListener('hawkeye-lang', () => { if (!$('profile').hidden) pkPaint(); });
 
-    $('btn-signout').onclick = () => { localStorage.removeItem('hawkeye_token'); location.href = 'index.html'; };
+    // The server hears first (one phone, one counting account per election:
+    // backend services/deviceClaims.js); best effort, keepalive past the navigation.
+    $('btn-signout').onclick = () => {
+      try {
+        const tk = localStorage.getItem('hawkeye_token');
+        if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
+      } catch { /* signing out must work offline */ }
+      localStorage.removeItem('hawkeye_token');
+      location.href = 'index.html';
+    };
 
     $('btn-delete').onclick = async () => {
       if (!(await hkConfirm(T('profile.delete-confirm-body', 'Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).'), {
@@ -905,7 +914,7 @@
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=190"></script>
+  <script src="menu.js?v=191"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

@@ -40,6 +40,13 @@ const body = () => (hostile ? {
   }],
   watching: [{ a: X, b: S, kind: 'place', occasions: 1, linked: false, firstAt: 1, lastAt: 2, evidence: [X, null, { at: 'x', puCodes: 'not-an-array' }] }],
   photos: [{ report: X, other: Q, slot: S, verdict: X, sameRace: false, d64: Q, d256: S, at: 1, puCode: X, contest: Q }],
+  // One phone, one counting account per election (services/deviceClaims.js).
+  deviceOwned: {
+    deviceCheck: X, counts: { devices: X, keptReports: Q },
+    devices: [{ claim: X, election: Q, reason: S, owner: X, ids: [X, 'keychain'], frozen: true, claimedAt: 1,
+      accounts: [{ account: Q, owner: true, counted: X, kept: S, firstAt: 1, lastAt: 2 }, { account: X, owner: false, counted: 0, kept: 1, firstAt: 1, lastAt: 2 }] }],
+    log: [{ claim: S, election: X, action: Q, from: X, to: S, actor: Q, note: X, at: 1 }],
+  },
 } : {
   rules: { nearDupStrongDhash: 4, nearDupStrongFine: 8, nearDupReuseFine: 16, linkMinOccasions: 2, linkWindowMs: 600000, linkMaxM: 15, signalRetentionDays: 90 },
   counts: { clusters: 1, linkedAccounts: 2, watching: 0, photoMerged: 1, photoReview: 0, photoReused: 0 },
@@ -47,6 +54,12 @@ const body = () => (hostile ? {
     links: [{ a: 'acct-abc123', b: 'acct-def456', kind: 'shared', occasions: 1, linked: true, firstAt: 1, lastAt: 2, evidence: [{ at: 1, puCode: '01-01-01-001', contest: 'PRES' }] }] }],
   watching: [],
   photos: [{ report: 7, other: 5, slot: 'sheet', verdict: 'merged', sameRace: true, d64: 1, d256: 2, at: 1, puCode: '01-01-01-001', contest: 'PRES' }],
+  deviceOwned: {
+    deviceCheck: false, counts: { devices: 1, keptReports: 1 },
+    devices: [{ claim: 3, election: 'day:2027-01-16', reason: 'device owned by another account this election', owner: 'acct-abc123', ids: ['keychain', 'install'], frozen: true, claimedAt: 1,
+      accounts: [{ account: 'acct-abc123', owner: true, counted: 2, kept: 0, firstAt: 1, lastAt: 2 }, { account: 'acct-777777', owner: false, counted: 0, kept: 1, firstAt: 1, lastAt: 2 }] }],
+    log: [{ claim: 3, election: 'day:2027-01-16', action: 'reassign', from: 'acct-abc123', to: 'acct-777777', actor: 'admin', note: 'lent phone', at: 1 }],
+  },
 });
 
 const server = http.createServer((req, res) => {
@@ -104,6 +117,7 @@ async function open() {
       text: el.textContent,
       codes: el.querySelectorAll('code').length,
       bold: [...el.querySelectorAll('b')].map((x) => x.textContent),
+      options: [...el.querySelectorAll('select.dv-to option')].map((o) => o.textContent),
     };
   });
   await ctx.close();
@@ -125,6 +139,10 @@ check('cluster, members and the link kind label are shown', c.text, (t) => t.inc
 check('counts and rules are shown', c.text, (t) => t.includes('1 cluster(s)') && t.includes('fine ≤ 8') && t.includes('after 2 occasions within 10 min and 15 m'));
 check('the photo match is listed', c.text, (t) => t.includes('merged') && t.includes('01-01-01-001 PRES'));
 check('masked ids sit in <code>', c.codes, (n) => n >= 4);
+check('the kept-not-counted phone is listed with its reason, ids, owner and the other account', c.text, (t) => t.includes('Device owned by another account this election')
+  && t.includes('device owned by another account this election') && t.includes('iPhone keychain id, app install') && t.includes('acct-777777') && t.includes('frozen'));
+check('...the reassign control offers only the non-owner', c.options, ['acct-777777']);
+check('...and the owner change is in the log', c.text, (t) => t.includes('reassign') && t.includes('lent phone'));
 
 await b.close();
 server.close();

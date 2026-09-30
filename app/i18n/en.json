@@ -2582,5 +2582,6 @@
   "notifications.check-connection": "Check your connection and try again.",
   "notifications.pull-down-to-try-again": "Pull down to try again. ({v0})",
   "notifications.time-ago": "{v0} ago",
-  "my-groups.lede-short": "Groups see reports you filed since you joined them."
+  "my-groups.lede-short": "Groups see reports you filed since you joined them.",
+  "observe.device-owned-not-counted": "This phone was already used by another account this election, so this report is kept for review but not counted."
 }

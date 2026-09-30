@@ -3080,8 +3080,81 @@
             + ' · ' + esc(p.slot) + ' · dhash ' + esc(p.d64) + (p.d256 == null ? '' : ' / fine ' + esc(p.d256)) + ' · ' + esc(when(p.at)) + '</li>').join('')
           + '</ul></details>';
       }
+      html += deviceOwnedHtml(data.deviceOwned);
       out.innerHTML = html;
     }
+
+    /**
+     * ONE PHONE, ONE COUNTING ACCOUNT PER ELECTION (services/deviceClaims.js).
+     * Phones whose later accounts' reports are kept but not counted, and the
+     * owner's lever: reassign. The select and button carry only LOCAL indexes
+     * into `devices` — nothing from the server is built into an attribute.
+     */
+    let devices = [];
+    const ID_LABEL = { devicecheck: 'Apple DeviceCheck', keychain: 'iPhone keychain id', android: 'ANDROID_ID', install: 'app install' };
+    function deviceOwnedHtml(dv) {
+      devices = dv && Array.isArray(dv.devices) ? dv.devices : [];
+      if (!dv || typeof dv !== 'object') return '';
+      const c = dv.counts || {};
+      let h = '<h3 style="margin-top:16px">Device owned by another account this election — ' + esc(c.devices || 0) + ' phone(s), '
+        + esc(c.keptReports || 0) + ' report(s) kept, not counted</h3>'
+        + '<p class="hint">The first account to file a counted report from a phone owns its reports for that election (every race polled that day is one election). '
+        + 'Later accounts can sign in and report; their reports from that phone are kept but not counted, and they are told so on their receipt. '
+        + 'Before polling day the owner changes only after they sign out on that phone; from polling day it is frozen. Reassign here if the wrong account holds a phone — it re-counts that phone\'s reports and is logged. '
+        + 'Apple DeviceCheck: ' + (dv.deviceCheck === true ? 'on' : 'off (no key configured)') + '.</p>';
+      h += devices.length
+        ? devices.map((d, i) => {
+          const accts = Array.isArray(d.accounts) ? d.accounts : [];
+          const ids = Array.isArray(d.ids) ? d.ids.map((k) => esc(ID_LABEL[k] || k)).join(', ') : '';
+          return '<div class="card" style="margin:10px 0;padding:10px 12px">'
+            + '<p><b>Phone ' + esc(d.claim) + '</b> · ' + esc(d.election) + ' · ' + esc(d.reason) + '</p>'
+            + '<p class="meta">Recognised by ' + ids + ' · owner ' + (d.owner ? '<code>' + esc(d.owner) + '</code>' : '<b>unknown (DeviceCheck only)</b>')
+            + ' · ' + (d.frozen ? 'frozen (polling day has started)' : 'before polling day') + ' · claimed ' + esc(when(d.claimedAt)) + '</p>'
+            + '<ul class="meta" style="margin:2px 0 6px 18px">' + accts.map((a) => '<li><code>' + esc(a.account) + '</code>' + (a.owner ? ' (owner)' : '')
+              + ' · ' + esc(a.counted) + ' counted, ' + esc(a.kept) + ' kept · ' + esc(when(a.firstAt)) + ' – ' + esc(when(a.lastAt)) + '</li>').join('') + '</ul>'
+            + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<select class="dv-to" data-dx="' + i + '" style="width:auto;margin:0">' + accts.map((a, j) => (a.owner ? '' : '<option value="' + j + '">' + esc(a.account) + '</option>')).join('') + '</select>'
+            + '<input class="dv-note" data-dx="' + i + '" placeholder="Reason (kept in the log)" style="width:auto;flex:1;min-width:160px;margin:0">'
+            + '<button class="secondary dv-go" data-dx="' + i + '" style="width:auto;margin:0">Reassign to this account</button></div>'
+            + '</div>';
+        }).join('')
+        : '<p class="empty">No reports are being kept uncounted.</p>';
+      const log = Array.isArray(dv.log) ? dv.log : [];
+      if (log.length) {
+        h += '<details style="margin-top:10px"><summary style="cursor:pointer">Owner changes — ' + esc(log.length) + '</summary>'
+          + '<ul class="meta" style="margin:6px 0 0 18px">' + log.map((l) => '<li>' + esc(when(l.at)) + ' · phone ' + esc(l.claim) + ' · <b>' + esc(l.action) + '</b> by ' + esc(l.actor)
+            + ' · ' + (l.from ? '<code>' + esc(l.from) + '</code>' : 'unknown') + ' → <code>' + esc(l.to) + '</code>' + (l.note ? ' · ' + esc(l.note) : '') + '</li>').join('')
+          + '</ul></details>';
+      }
+      return h;
+    }
+
+    out.addEventListener('click', async (e) => {
+      const btn = e.target.closest && e.target.closest('.dv-go');
+      if (!btn) return;
+      const i = Number(btn.dataset.dx);
+      const d = devices[i];
+      const sel = out.querySelector('select.dv-to[data-dx="' + i + '"]');
+      const a = d && sel && Array.isArray(d.accounts) ? d.accounts[Number(sel.value)] : null;
+      if (!a) { status.textContent = 'Pick an account first.'; return; }
+      if (!(await hkConfirm('Make ' + a.account + ' the owner of phone ' + d.claim + ' for ' + d.election + '?\n\nIts reports from this phone will count and every other account\'s will be kept but not counted. This is logged.', { ok: 'Reassign', danger: true }))) return;
+      const noteEl = out.querySelector('input.dv-note[data-dx="' + i + '"]');
+      btn.disabled = true;
+      try {
+        const r = await fetch('/api/admin/device-claims/' + encodeURIComponent(d.claim) + '/reassign', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', 'x-admin-secret': secret() },
+          body: JSON.stringify({ to: a.account, note: noteEl ? noteEl.value.trim() : '' }),
+        });
+        const body = await r.json().catch(() => null);
+        status.textContent = r.ok ? 'Reassigned. Results re-counted.' : 'Could not reassign (' + ((body && body.error) || 'HTTP ' + r.status) + ').';
+        if (r.ok) load();
+      } catch (err) {
+        status.textContent = 'Could not reassign.';
+      } finally {
+        btn.disabled = false;
+      }
+    });
 
     async function load() {
       loaded = true;

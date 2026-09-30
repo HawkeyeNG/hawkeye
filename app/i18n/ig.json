@@ -2608,5 +2608,6 @@
   "notifications.check-connection": "Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
   "notifications.pull-down-to-try-again": "Dọọ ala ka ịnwaa ọzọ. ({v0})",
   "notifications.time-ago": "{v0} gara aga",
-  "my-groups.lede-short": "Otu na-ahụ akụkọ ị zigara kemgbe ị sonyere ha."
+  "my-groups.lede-short": "Otu na-ahụ akụkọ ị zigara kemgbe ị sonyere ha.",
+  "observe.device-owned-not-counted": "Akaụntụ ọzọ ejirila ekwentị a mee ihe na ntuli aka a, ya mere e debere akụkọ a maka nyocha mana a gaghị agụ ya."
 }

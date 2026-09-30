@@ -1639,15 +1639,22 @@ export default function ReportResult() {
       // just signed; the outbox flush never saves them again.
       if (r.ok || r.queued) saveReportMedia([sheet.uri, venue.uri]);
       if (r.ok) {
-        setReceipt(r);
+        // KEPT, NOT COUNTED (backend services/deviceClaims.js): the unit's
+        // result then describes OTHER accounts' reports, so it is not shown
+        // under this observer's receipt as if it were theirs.
+        setReceipt(r.counted === false ? { ...r, result: null } : r);
         setQueued(false);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.result.report-filed'),
-          // D1 hash-only: the photos stayed on this phone (lib/evidence.ts). Say so.
-          line: r.photosOnDevice
-            ? `${i18nT('n.app.report.result.it-is-now-queued-for-review')}\n${i18nT('n.app.report.result.photos-kept-as-evidence')}`
-            : i18nT('n.app.report.result.it-is-now-queued-for-review'),
+          // Another account already reported from this phone this election:
+          // say so, calmly. D1 hash-only: the photos stayed on this phone
+          // (lib/evidence.ts) — say that too.
+          line: [
+            i18nT('n.app.report.result.it-is-now-queued-for-review'),
+            ...(r.counted === false ? [i18nT('n.app.report.result.device-owned-not-counted')] : []),
+            ...(r.photosOnDevice ? [i18nT('n.app.report.result.photos-kept-as-evidence')] : []),
+          ].join('\n'),
         });
         setStep('done');
       } else if (r.queued) {

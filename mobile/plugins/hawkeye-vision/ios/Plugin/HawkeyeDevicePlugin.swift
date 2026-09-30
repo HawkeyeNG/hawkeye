@@ -1,6 +1,7 @@
 import Foundation
 import Capacitor
 import Security
+import DeviceCheck
 
 /// DEVICE SIGNALS for the server's "count devices, not accounts" rule
 /// (backend services/clusters.js; app/device.js getDeviceSignals).
@@ -26,12 +27,20 @@ import Security
 /// Needs the keychain-access-groups entitlement, added to App.entitlements by
 /// .github/workflows/ios-lite-release.yml. Without it the keychain refuses the
 /// group and this resolves {} — the web layer then simply sends no id.
+///
+/// `deviceCheck()` resolves { token }: a FRESH Apple DeviceCheck token (base64)
+/// for one phone = one counting account per election (backend
+/// services/deviceClaims.js), or {} where DeviceCheck is unsupported or the
+/// token could not be made. Not an id — every token is new — and the server
+/// only passes it to Apple, which keeps two bits per iPhone for our team (the
+/// native app shares them). DCDevice needs NO entitlement and no capability.
 @objc(HawkeyeDevicePlugin)
 public class HawkeyeDevicePlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "HawkeyeDevicePlugin"
     public let jsName = "HawkeyeDevice"
     public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "signals", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "signals", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "deviceCheck", returnType: CAPPluginReturnPromise)
     ]
 
     private static let group = "G99KD9RW94.ng.com.hawkeye.shared"
@@ -42,6 +51,21 @@ public class HawkeyeDevicePlugin: CAPPlugin, CAPBridgedPlugin {
         DispatchQueue.global(qos: .utility).async {
             if let id = HawkeyeDevicePlugin.sharedId() {
                 call.resolve(["shared": id])
+            } else {
+                call.resolve([:])
+            }
+        }
+    }
+
+    @objc func deviceCheck(_ call: CAPPluginCall) {
+        let device = DCDevice.current
+        guard device.isSupported else {
+            call.resolve([:])
+            return
+        }
+        device.generateToken { data, error in
+            if let data = data, error == nil {
+                call.resolve(["token": data.base64EncodedString()])
             } else {
                 call.resolve([:])
             }

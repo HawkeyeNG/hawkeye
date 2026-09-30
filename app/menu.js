@@ -1810,6 +1810,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         i18nLate(p);
         add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {
           e.preventDefault();
+          // Tell the server first (POST /api/observers/sign-out): until it hears,
+          // this account still holds this phone for the one-phone-one-account
+          // rule (backend services/deviceClaims.js). keepalive: the page is about
+          // to navigate away. Best effort — signing out must work offline.
+          try {
+            const tk = localStorage.getItem('hawkeye_token');
+            if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
+          } catch { /* ignore */ }
           localStorage.removeItem('hawkeye_token');
           try {
             const rq = indexedDB.open('hawkeye', 1);

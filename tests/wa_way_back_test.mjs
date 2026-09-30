@@ -72,13 +72,13 @@ console.log('=== native: /open?to=back is recognised, and nothing else is ===');
 }
 
 // ---------------------------------------------------------- 2. WhatsApp on iOS
-console.log('\n=== native: iOS opens wa.me, Android whatsapp:// ===');
+console.log('\n=== native: whatsapp:// first on iOS and Android (owner, 2026-09-30) ===');
 {
   const S = await loadTs('lib/wa-signin.ts', 'wa-signin.mjs', true);
   const link = 'https://wa.me/2347042248544?text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M';
   const opened = [];
   const ok = (u) => { opened.push(u); return Promise.resolve(true); };
-  check('iOS: the first thing opened is the wa.me Universal Link', [await S.openWhatsApp(link, ok, 'ios'), opened[0]], ['link', link]);
+  check('iOS: whatsapp:// first (wa.me opened a Safari page + banner)', [await S.openWhatsApp(link, ok, 'ios'), opened[0]], ['app', 'whatsapp://send?phone=2347042248544&text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M']);
   opened.length = 0;
   check('Android: whatsapp:// first (the control)', [await S.openWhatsApp(link, ok, 'android'), opened[0]],
     ['app', 'whatsapp://send?phone=2347042248544&text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M']);
@@ -175,10 +175,10 @@ for (const theme of ['light', 'dark']) {
   await ctx.close();
 }
 
-console.log('\n=== web: only Android gets whatsapp:// ===');
+console.log('\n=== web: phones get whatsapp:// (iOS too) ===');
 for (const [label, ua, touch, want] of [
-  ['iPhone', IPHONE, 0, null],
-  ['iPad (reports a Mac, has touch)', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', 5, null],
+  ['iPhone', IPHONE, 0, 'whatsapp://send?phone=2347042248544&text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M'],
+  ['iPad (reports a Mac, has touch)', 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15', 5, 'whatsapp://send?phone=2347042248544&text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M'],
   ['Android (control)', ANDROID, 0, 'whatsapp://send?phone=2347042248544&text=Sign%20me%20in%20to%20Hawkeye.%20Code%3A%20HK-4K7Q2M'],
 ]) {
   const ctx = await ctxFor(ua, { touch });

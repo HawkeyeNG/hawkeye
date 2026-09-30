@@ -1350,21 +1350,12 @@ async function waFallback(channel) {
  * is still in front a beat later, and the wa.me link takes over exactly as
  * before. A desktop keeps wa.me: that is how WhatsApp Web and Desktop take it.
  *
- * iOS KEEPS wa.me TOO (owner, 2026-09-30). There whatsapp:// makes the system
- * ask "Open in WhatsApp?" / "“Hawkeye” wants to open “WhatsApp”" before
- * anything happens, while wa.me is WhatsApp's Universal Link and opens the app
- * with no prompt (Safari's wa.me page only when WhatsApp is missing). So only
- * Android phones get the scheme. iPadOS reports a Mac, hence the touch check.
+ * iOS GETS THE SCHEME TOO (owner, 2026-09-30). iOS asks "Open in WhatsApp?"
+ * first, but wa.me there opened Safari's api.whatsapp.com page with its own
+ * "Open this page in WhatsApp?" banner — a web page AND a prompt. The single
+ * system prompt is the lesser step.
  */
-const waOnIOS = () => {
-  try {
-    if (window.Capacitor && window.Capacitor.getPlatform) return window.Capacitor.getPlatform() === 'ios';
-  } catch { /* fall through to the user agent */ }
-  const ua = navigator.userAgent || '';
-  return /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1);
-};
 function waAppLink(link) {
-  if (waOnIOS()) return null;
   try {
     const u = new URL(link);
     if (!/(^|\.)wa\.me$/i.test(u.hostname)) return null;

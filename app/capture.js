@@ -41,11 +41,25 @@
   let onShot = null;
   let onError = null;
 
-  const DEFAULT_LABELS = {
-    sheet: { title: 'Results sheet (EC8A)', action: 'Capture EC8A' },
-    venue: { title: 'Polling venue', action: 'Capture Polling Venue' },
+  /* FUNCTIONS, NOT CONSTANTS: resolved when the camera opens, so the words are
+     in the language of that moment rather than of whenever this file loaded.
+     Callers pass labels already resolved the same way. */
+  const DEFAULT_LABELS = () => ({
+    sheet: { title: T('observe.results-sheet-ec8a', 'Results sheet (EC8A)'), action: T('observe.capture-ec8a', 'Capture EC8A') },
+    venue: { title: T('observe.polling-venue', 'Polling venue'), action: T('observe.capture-polling-venue', 'Capture Polling Venue') },
+  });
+  const VENUE_GUIDE = () => T('observe.venue-guide', '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.');
+  /**
+   * Paint a camera label, taking its markup key OFF. The title and the Capture
+   * button carry data-i18n for their first words, and menu.js re-runs apply()
+   * on every language change — which would put "Results sheet (EC8A)" back over
+   * a venue title. Every open repaints both, so nothing needs the key after.
+   */
+  const paintLabel = (el, text) => {
+    if (!el) return;
+    el.removeAttribute('data-i18n');
+    el.textContent = text;
   };
-  const VENUE_GUIDE = '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.';
 
   /** Native shell: the OS camera replaces the getUserMedia overlay entirely. */
   function native() {
@@ -128,7 +142,7 @@
     opts = opts || {};
     onShot = opts.onShot || (() => true);
     onError = opts.onError || (() => {});
-    const labels = opts.labels || DEFAULT_LABELS;
+    const labels = opts.labels || DEFAULT_LABELS();
     if (native()) return nativeCapture(t);
 
     target = t;
@@ -140,11 +154,12 @@
     } catch {
       return void hkAlert(T('capture.camera-access-required', 'Camera access is required — Hawkeye only accepts live photos. If you denied it, allow Camera for this site (tap the padlock/ⓘ icon by the address bar → Permissions) and try again.'));
     }
-    $('camera-title').textContent = (labels[t] || {}).title || '';
-    $('btn-capture').textContent = (labels[t] || {}).action || 'Capture';
+    const lab = labels[t] || {};
+    paintLabel($('camera-title'), lab.title || '');
+    paintLabel($('btn-capture'), lab.action || T('common.capture', 'Capture'));
     const guide = $('camera-guide');
     if (guide) {
-      guide.textContent = t === 'venue' ? (opts.venueGuide || VENUE_GUIDE) : '';
+      guide.textContent = t === 'venue' ? (opts.venueGuide || VENUE_GUIDE()) : '';
       guide.hidden = t !== 'venue';
     }
     $('camera-overlay').hidden = false;

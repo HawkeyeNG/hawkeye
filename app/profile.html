@@ -380,7 +380,24 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    // {name} placeholders are filled AFTER the lookup, in one pass, so they land
+    // in the translation as well as in the English.
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
+    /* Text written into an element that carries its own data-i18n: the key
+       moves with it, so menu.js's apply() on a language change repaints the
+       right words instead of the markup's original ones. The ENGLISH goes in
+       and apply() translates it: apply() remembers the first text it sees under
+       a key as that key's English, so writing the translation directly would
+       make it the "English" a switch back to English restores. */
+    const keyed = (el, k, en) => {
+      if (!el) return;
+      el.setAttribute('data-i18n', k);
+      el.textContent = en;
+      if (window.HawkeyeI18n && el.parentNode) window.HawkeyeI18n.apply(el.parentNode);
+    };
     /* The locale followed the page, not the reader: 'en-NG' was hardcoded, so a
        Hausa or Igbo reader still got an English month. It also returns '' for an
        unparseable value rather than rendering the string "Invalid Date" at
@@ -438,6 +455,9 @@
     function renderList(el, rows, fn) {
       if (!rows || !rows.length) return;
       el.classList.remove('empty');
+      // The empty-state key goes with the empty state (see paintMe).
+      el.removeAttribute('data-i18n');
+      el.removeAttribute('data-i18n-html');
       el.innerHTML = rows.map(fn).join('');
     }
 
@@ -553,6 +573,8 @@
       }
     });
 
+    /* /me, kept, so paintMe() can say it again in another language. */
+    let ME = null;
     async function load() {
       if (!token()) { $('signed-out').hidden = false; return; }
       // no-store: coming BACK from choose-unit.html, Chrome answers a history
@@ -563,25 +585,57 @@
       if (status !== 200) { localStorage.removeItem('hawkeye_token'); $('signed-out').hidden = false; return; }
       $('profile').hidden = false;
 
-      $('p-id').textContent = T('profile.observer-number', 'Observer #') + body.observerId;
-      const joined = dt(body.createdAt);
-      $('p-since').textContent = joined ? T('profile.since', 'since') + ' ' + joined : '';
+      ME = body;
       $('p-hash').textContent = body.identityHash;
       hasPassword = body.hasPassword;
       loadReferral();
-      // The VALUE of the row, not a sentence about it. "Password · Change ›".
-      $('pw-state').textContent = hasPassword ? 'Change' : 'Set';
       $('pw-current-wrap').hidden = !hasPassword;
-      $('pw-modal-title').textContent = hasPassword ? 'Change Password' : 'Set Password';
 
       savedUnitCode = (body.unit && body.unit.pu_code) || '';
       // Only with a unit saved. A local check, not invite-unit.js's: that file
       // loads after this script and /me can answer first.
       $('btn-invite-unit').hidden = !/^\d{2}-\d{2}-\d{2}-\d{3}$/.test(savedUnitCode);
+      paintMe();
+    }
+
+    /**
+     * EVERYTHING /me SAYS, IN WORDS — and again on every language change.
+     *
+     * /me can answer before the language bundle has landed, and nothing here
+     * is re-rendered by navigation. Worse, several of these elements carry
+     * data-i18n for their EMPTY state ("None Saved", "No result reports yet."),
+     * and menu.js re-runs apply() on every language change: a filled list kept
+     * its key, so switching language replaced the observer's own reports with
+     * "No result reports yet." The key comes off an element the moment it holds
+     * data; the words around the data are painted here instead.
+     */
+    function paintMe() {
+      const body = ME;
+      if (!body) return;
+      $('p-id').removeAttribute('data-i18n');
+      $('p-id').textContent = T('profile.observer-number', 'Observer #') + body.observerId;
+      const joined = dt(body.createdAt);
+      $('p-since').textContent = joined ? T('profile.since', 'since') + ' ' + joined : '';
+      paintPw();
       if (body.unit) {
+        const u = body.unit;
         $('p-unit').classList.remove('empty');
-        $('p-unit').innerHTML = `<strong>${esc(body.unit.name || body.unit.pu_code)}</strong><div class="sub">${esc(body.unit.pu_code)} · ${esc(body.unit.ward || '')} ward, ${esc(body.unit.lga || '')}, ${esc(body.unit.state || '')}</div>`;
+        $('p-unit').removeAttribute('data-i18n');
+        $('p-unit').innerHTML = `<strong>${esc(u.name || u.pu_code)}</strong><div class="sub">${esc(T('profile.unit-sub', '{v0} · {v1} ward, {v2}, {v3}',
+          { v0: u.pu_code, v1: u.ward || '', v2: u.lga || '', v3: u.state || '' }))}</div>`;
       }
+      // Incident kinds in the reader's language — the same words the incident
+      // form's own dropdown uses.
+      const KIND = {
+        violence: T('incidents.kind-violence', 'Violence'),
+        ballot_snatching: T('incidents.kind-ballot-snatching', 'Ballot snatching'),
+        vote_buying: T('incidents.kind-vote-buying', 'Vote-buying'),
+        intimidation: T('incidents.kind-intimidation', 'Voter intimidation'),
+        bvas_failure: T('incidents.kind-bvas-failure', 'BVAS failure'),
+        late_materials: T('incidents.kind-late-materials', 'Late materials'),
+        obstruction: T('incidents.kind-obstruction', 'Obstruction of observers'),
+        other: T('incidents.kind-other', 'Other irregularity'),
+      };
       // THE RACE'S NAME, NOT ITS CODE. This printed s.contest raw, so the card
       // read "REP_BYE_GOMBE_2026" — an internal identifier, in the one place a
       // reader is checking which races they follow. /api/contests is the same
@@ -591,25 +645,40 @@
       renderList($('p-reports'), body.reports, (r) =>
         `<div class="item"><strong>${esc(r.name || r.pu_code)}</strong> · ${esc(r.contest)}
          <div class="sub">${esc(r.pu_code)} · ${esc(r.lga || '')}, ${esc(r.state || '')} · ${dt(r.created_at)} ·
-         ledger <span title="${esc(r.entry_hash)}">${esc(String(r.entry_hash).slice(0, 12))}…</span></div></div>`);
+         ${esc(T('profile.ledger-label', 'ledger'))} <span title="${esc(r.entry_hash)}">${esc(String(r.entry_hash).slice(0, 12))}…</span></div></div>`);
       renderList($('p-collation'), body.collation, (c) =>
         `<div class="item"><strong>${esc(c.level.toUpperCase())}</strong> · ${esc(c.contest)}
          <div class="sub">${esc([c.ward, c.lga, c.state].filter(Boolean).join(', '))} · ${dt(c.created_at)}</div></div>`);
       renderList($('p-incidents'), body.incidents, (i) =>
-        `<div class="item"><strong>${esc(i.kind)}</strong> <span class="tag">${esc(i.status)}</span>
-         <div class="sub">${esc([i.pu_code, i.state].filter(Boolean).join(' · ') || 'no location')} · ${dt(i.created_at)}</div></div>`);
+        `<div class="item"><strong>${esc(KIND[i.kind] || i.kind)}</strong> <span class="tag">${esc(i.status)}</span>
+         <div class="sub">${esc([i.pu_code, i.state].filter(Boolean).join(' · ') || T('profile.no-location', 'no location'))} · ${dt(i.created_at)}</div></div>`);
       renderList($('p-mappings'), body.mappings, (m) =>
-        `<div class="item"><strong>${esc(m.name || m.pu_code)}</strong>${m.confirmed ? ' <span class="tag ok">confirmed</span>' : ''}
-         <div class="sub">${esc([m.ward, m.lga, m.state].filter(Boolean).join(', '))} · ${m.source === 'fix' ? 'you mapped it' : 'via your report'} · ${dt(m.created_at)}</div></div>`);
+        `<div class="item"><strong>${esc(m.name || m.pu_code)}</strong>${m.confirmed ? ` <span class="tag ok">${esc(T('profile.confirmed-tag', 'confirmed'))}</span>` : ''}
+         <div class="sub">${esc([m.ward, m.lga, m.state].filter(Boolean).join(', '))} · ${esc(m.source === 'fix' ? T('profile.you-mapped-it', 'you mapped it') : T('profile.via-your-report', 'via your report'))} · ${dt(m.created_at)}</div></div>`);
       $('cnt-reports').textContent = (body.reports || []).length;
       $('cnt-collation').textContent = (body.collation || []).length;
       $('cnt-incidents').textContent = (body.incidents || []).length;
       $('cnt-mappings').textContent = (body.mappings || []).length;
     }
+    // The contest-name fetch above calls this when it lands; it used to call
+    // a hook nothing defined, so a code painted first stayed a code.
+    window.__hkRedrawSubs = paintMe;
+    document.addEventListener('hawkeye-lang', paintMe);
+
+    /* The password row's VALUE and the dialog's title, from hasPassword. Keyed,
+       so apply() repaints them on a language change rather than reverting
+       them to the markup's own words. "Password · Change ›". */
+    function paintPw() {
+      keyed($('pw-state'), hasPassword ? 'profile.change' : 'profile.set', hasPassword ? 'Change' : 'Set');
+      keyed($('pw-modal-title'), hasPassword ? 'profile.change-password' : 'profile.set-password', hasPassword ? 'Change Password' : 'Set Password');
+    }
 
     $('btn-copy').onclick = () => {
       navigator.clipboard.writeText($('p-hash').textContent)
-        .then(() => { $('btn-copy').textContent = 'Copied ✓'; setTimeout(() => ($('btn-copy').textContent = 'Copy ID'), 1500); })
+        .then(() => {
+          $('btn-copy').textContent = T('profile.copied', 'Copied') + ' ✓';
+          setTimeout(() => ($('btn-copy').textContent = T('profile.copy-id', 'Copy ID')), 1500);
+        })
         .catch(() => {});
     };
 
@@ -674,7 +743,10 @@
         const st = H.pushStage || 'not started';
         const err = H.pushError;
         const ok = st === 'registered';
-        val.textContent = ok ? 'On' : (err ? 'Not Working' : st);
+        // The key comes off: the row is painted here, every 1.5 s, and apply()
+        // would otherwise put the markup's "Checking…" back on a language change.
+        val.removeAttribute('data-i18n-html');
+        val.textContent = ok ? T('profile.push-on', 'On') : (err ? T('profile.push-not-working', 'Not Working') : st);
         val.style.color = ok ? 'var(--green)' : (err ? '#b3261e' : 'var(--muted)');
         const bits = [`stage: ${st}`];
         if (H.pushPermission) bits.push(`permission: ${H.pushPermission}`);
@@ -691,7 +763,7 @@
       setTimeout(() => clearInterval(t), 60_000);
 
       row.onclick = async () => {
-        val.textContent = 'Retrying…';
+        val.textContent = T('profile.retrying', 'Retrying…');
         try { await H.initPush(); } catch (e) { H.pushError = (e && e.message) || String(e); }
         paint();
       };
@@ -717,19 +789,18 @@
     $('btn-pw').onclick = async () => {
       const pw = $('pw-new').value;
       $('pw-msg').textContent = '';
-      if (pw.length < 8) { $('pw-msg').textContent = 'Use at least 8 characters.'; return; }
-      if (pw !== $('pw-new2').value) { $('pw-msg').textContent = 'Passwords do not match.'; $('pw-new2').focus(); return; }
+      if (pw.length < 8) { $('pw-msg').textContent = T('profile.use-at-least-8-characters', 'Use at least 8 characters.'); return; }
+      if (pw !== $('pw-new2').value) { $('pw-msg').textContent = T('profile.passwords-do-not-match', 'Passwords do not match.'); $('pw-new2').focus(); return; }
       const payload = { password: pw };
       if (hasPassword) payload.currentPassword = $('pw-current').value;
       const { status, body } = await api('/api/observers/set-password', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
       });
-      if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || 'Failed.'; return; }
+      if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || T('profile.failed', 'Failed.'); return; }
       $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
-      $('pw-modal-title').textContent = 'Change Password';
-      $('pw-state').textContent = hasPassword ? 'Change' : 'Set';
+      paintPw();
       pwClose(); // success closes the modal; the card's state line carries the ✓
     };
 
@@ -828,13 +899,13 @@
     load();
   </script>
   <script src="device.js"></script>
-  <script src="share.js?v=3"></script>
+  <script src="share.js?v=4"></script>
   <script src="referral.js?v=2"></script>
   <script src="invite-unit.js?v=2"></script>
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

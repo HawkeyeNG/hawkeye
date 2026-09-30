@@ -327,7 +327,7 @@
 
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
-  <script src="capture.js?v=4"></script>
+  <script src="capture.js?v=5"></script>
   <script src="save-media.js?v=1"></script>
   <script src="video-player.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
@@ -338,7 +338,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
@@ -514,6 +514,15 @@
         }
         if (label) label.textContent = text;
       };
+      // Whole sentences per case — the size and the elapsed time sit in
+      // different places in each language.
+      const upLine = (sent, of, secs) => (of != null
+        ? T('incidents.uploading-of', 'Uploading {v0} of {v1}', { v0: humanMB(sent), v1: humanMB(of) })
+        : secs != null
+          ? (total ? T('incidents.uploading-size-secs', 'Uploading {v0} — {v1}s', { v0: humanMB(total), v1: secs })
+            : T('incidents.uploading-secs', 'Uploading — {v0}s', { v0: secs }))
+          : (total ? T('incidents.uploading-size', 'Uploading {v0}…', { v0: humanMB(total) })
+            : T('incidents.uploading', 'Uploading…')));
       const hide = () => { if (bar) bar.hidden = true; };
 
       const native = !!(window.HAWKEYE && window.HAWKEYE.native);
@@ -521,10 +530,10 @@
 
       if (native) {
         // No byte events available — report size and elapsed, both real.
-        show(null, total ? `Uploading ${humanMB(total)}…` : 'Uploading…');
+        show(null, upLine());
         const tick = setInterval(() => {
           const s = Math.round((Date.now() - started) / 1000);
-          show(null, `${total ? `Uploading ${humanMB(total)}` : 'Uploading'} — ${s}s`);
+          show(null, upLine(null, null, s));
         }, 1000);
         return fetch(url, { method: 'POST', headers, body: fd })
           .finally(() => { clearInterval(tick); hide(); });
@@ -535,11 +544,11 @@
         xhr.open('POST', url);
         for (const [k, v] of Object.entries(headers)) xhr.setRequestHeader(k, v);
         xhr.upload.onprogress = (e) => {
-          if (!e.lengthComputable) { show(null, 'Uploading…'); return; }
+          if (!e.lengthComputable) { show(null, T('incidents.uploading', 'Uploading…')); return; }
           // Clamped: a client that replays the body can report more than it
           // ever meant to send, and a bar past 100% reads as broken.
           const sent = Math.min(e.loaded, e.total);
-          show(Math.round((sent / e.total) * 100), `Uploading ${humanMB(sent)} of ${humanMB(e.total)}`);
+          show(Math.round((sent / e.total) * 100), upLine(sent, e.total));
         };
         xhr.onload = () => {
           hide();
@@ -548,7 +557,7 @@
         };
         xhr.onerror = () => { hide(); reject(new Error('network')); };
         xhr.onabort = () => { hide(); reject(new Error('aborted')); };
-        show(0, total ? `Uploading ${humanMB(total)}…` : 'Uploading…');
+        show(0, upLine());
         xhr.send(fd);
       });
     }
@@ -610,8 +619,8 @@
       if (!n) { el.hidden = true; el.textContent = ''; return; }
       el.hidden = false;
       el.textContent = n >= MAX_VIDEOS
-        ? `${MAX_VIDEOS} of ${MAX_VIDEOS} videos — photos only from here.`
-        : `${n} of ${MAX_VIDEOS} videos — you can add ${MAX_VIDEOS - n} more.`;
+        ? T('incidents.videos-full', '{v0} of {v1} videos — photos only from here.', { v0: MAX_VIDEOS, v1: MAX_VIDEOS })
+        : T('incidents.videos-count', '{v0} of {v1} videos — you can add {v2} more.', { v0: n, v1: MAX_VIDEOS, v2: MAX_VIDEOS - n });
     }
     /**
      * Take what fits, shrink what can be shrunk, and say why anything was left.
@@ -648,7 +657,7 @@
       const videos = () => attachments.filter((f) => /^video\//.test(f.type)).length;
       for (const f of list) {
         if (attachments.length >= MAX_FILES) {
-          $('status').textContent = `You can attach up to ${MAX_FILES} files.`; break;
+          $('status').textContent = T('incidents.attach-up-to', 'You can attach up to {v0} files.', { v0: MAX_FILES }); break;
         }
         const isVideo = /^video\//.test(f.type);
         if (isVideo && videos() >= MAX_VIDEOS) {
@@ -715,7 +724,7 @@
     // Video always goes through the file input: the Capacitor Camera plugin is
     // stills-only, so there is no native seam to route to on either platform.
     $('btn-video').onclick = () => {
-      if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+      if (attachments.length >= MAX_FILES) { $('status').textContent = T('incidents.attach-up-to', 'You can attach up to {v0} files.', { v0: MAX_FILES }); return; }
       $('media-vid').click();
     };
 
@@ -776,7 +785,7 @@
     const nativeCam = () => Boolean(window.HAWKEYE && window.HAWKEYE.native && window.HAWKEYE.capabilities
       && window.HAWKEYE.capabilities.camera && window.HAWKEYE.capturePhoto);
     async function doCapture() {
-      if (attachments.length >= MAX_FILES) { $('status').textContent = `You can attach up to ${MAX_FILES} files.`; return; }
+      if (attachments.length >= MAX_FILES) { $('status').textContent = T('incidents.attach-up-to', 'You can attach up to {v0} files.', { v0: MAX_FILES }); return; }
       /**
        * THE SHARED CAMERA, not a file input.
        *
@@ -794,7 +803,7 @@
        */
       if (window.HAWKEYE_CAPTURE) {
         window.HAWKEYE_CAPTURE.open('incident', {
-          labels: { incident: { title: 'Incident photo', action: 'Capture Photo' } },
+          labels: { incident: { title: T('incidents.incident-photo', 'Incident photo'), action: T('incidents.capture-photo', 'Capture photo') } },
           onShot: (blob) => {
             if (blob) addFiles([new File([blob], `incident-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })], 'camera');
             return true; // close the camera
@@ -809,7 +818,7 @@
         if (blob) addFiles([new File([blob], `photo-${Date.now()}.jpg`, { type: blob.type || 'image/jpeg' })], 'camera');
         // A resolved-but-empty result is NOT a cancel — it means the plugin came
         // back with nothing, which used to look identical to success.
-        else $('status').textContent = 'The camera returned no photo — use “Choose files” below instead.';
+        else $('status').textContent = T('incidents.camera-returned-no-photo', 'The camera returned no photo — use “Upload” below instead.');
       } catch (e) {
         // This catch used to swallow EVERYTHING as "user backed out". A denied
         // permission, a missing plugin and a real crash all rendered as a button
@@ -819,7 +828,7 @@
         // observer still gets their evidence attached.
         const msg = String((e && e.message) || e || '');
         if (/cancel/i.test(msg)) return;
-        $('status').textContent = `Camera unavailable — use “Choose files” below instead. (${msg || 'unknown error'})`;
+        $('status').textContent = T('incidents.camera-unavailable', 'Camera unavailable — use “Upload” below instead. ({v0})', { v0: msg || 'unknown error' });
       }
     }
     $('btn-camera').onclick = doCapture;
@@ -929,8 +938,8 @@
         }
         return;
       }
-      if (!desc && !files.length) { $('status').textContent = 'Add a photo/video or describe what happened.'; return; }
-      $('btn-submit').disabled = true; $('status').textContent = 'Uploading…';
+      if (!desc && !files.length) { $('status').textContent = T('incidents.add-media-or-describe', 'Add a photo/video or describe what happened.'); return; }
+      $('btn-submit').disabled = true; $('status').textContent = T('incidents.uploading', 'Uploading…');
       try {
         const fd = new FormData();
         fd.set('kind', kind); fd.set('description', desc);
@@ -967,7 +976,7 @@
           });
           keepCopies(); // once, at queueing — never again when the outbox sends it
           $('desc').value = ''; attachments.length = 0; renderPreview();
-          $('status').textContent = 'Saved offline — this report will send automatically when you are back online.';
+          $('status').textContent = T('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.');
           $('btn-submit').disabled = false;
           return;
         }
@@ -992,13 +1001,15 @@
           return; // the modal IS the outcome; skip the inline status/scroll below
         } else if (res.status === 401) {
           localStorage.removeItem('hawkeye_token');
-          $('status').innerHTML = 'Session expired — <a href="observe.html?intent=incident">register your device again →</a>';
+          $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=incident' });
           $('form-card').hidden = true; $('need-auth').hidden = false;
         } else {
-          $('status').textContent = ({ invalid_kind: 'Choose an incident type.', empty_report: 'Add a photo/video or a description.' })[body.error] || `❌ Could not submit (${body.error || res.status}) — try again.`;
+          $('status').textContent = body.error === 'invalid_kind' ? KIND_REQUIRED()
+            : body.error === 'empty_report' ? T('incidents.add-media-or-description', 'Add a photo/video or a description.')
+            : T('incidents.could-not-submit-code', '❌ Could not submit ({v0}) — try again.', { v0: body.error || res.status });
         }
       } catch {
-        $('status').textContent = '❌ Upload failed — check your connection and try again.';
+        $('status').textContent = T('incidents.upload-failed', '❌ Upload failed — check your connection and try again.');
       }
       $('status').scrollIntoView({ block: 'nearest' });
       $('btn-submit').disabled = false;

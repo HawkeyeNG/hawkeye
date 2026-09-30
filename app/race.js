@@ -415,7 +415,9 @@
    * differs between them - do not "tidy" them into one.
    */
   const NO_LIST_NOTE = {
-    race: T('n.lib.political.inec-has-not-published-the-candidate-2',
+    // A WEB key: the native one this used to name is not in the web bundles, so
+    // every language fell back to English. Same English, same translations.
+    race: T('race.no-list-race',
       'INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.'),
     'by-election': T('race.no-list-by-election',
       'INEC has not published the candidate list for this by-election yet. Candidates appear here as soon as the official list is out. The seat and map on this page come from the electoral register and are current.'),

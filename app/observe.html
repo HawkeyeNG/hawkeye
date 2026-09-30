@@ -213,8 +213,12 @@
             if (!/[?&]intent=signin(?:&|$)/.test(location.search)) return;
             var t = document.getElementById('register-title');
             var l = document.getElementById('register-lede');
-            if (t) t.textContent = 'Sign In';
-            if (l) l.textContent = 'Welcome back — sign in to your observer account.';
+            /* The KEYS move with the words: this markup is keyed for sign-up,
+               and i18n.js's apply() pass (which runs after this, and again on
+               every language change) would otherwise paint "Verify Your Phone"
+               back over the sign-in title until app.js caught up. */
+            if (t) { t.setAttribute('data-i18n', 'observe.sign-in'); t.textContent = 'Sign In'; }
+            if (l) { l.setAttribute('data-i18n', 'observe.welcome-back-sign-in-to-your-observer'); l.textContent = 'Welcome back — sign in to your observer account.'; }
             document.documentElement.classList.add('intent-signin');
           } catch (e) {}
         })();
@@ -410,7 +414,7 @@
             </div>
             <span data-i18n="common.required" class="slot-status" id="status-sheet">Required</span>
           </div>
-          <img id="preview-sheet" alt="Results sheet preview" hidden />
+          <img id="preview-sheet" alt="Results sheet preview" data-i18n-attr="alt:observe.results-sheet-preview" hidden />
           <button data-i18n="common.take-photo" id="btn-cam-sheet" class="secondary">Take photo</button>
         </div>
 
@@ -422,7 +426,7 @@
             </div>
             <span data-i18n="common.required" class="slot-status" id="status-venue">Required</span>
           </div>
-          <img id="preview-venue" alt="Polling venue preview" hidden />
+          <img id="preview-venue" alt="Polling venue preview" data-i18n-attr="alt:observe.polling-venue-preview" hidden />
           <button data-i18n="common.take-photo" id="btn-cam-venue" class="secondary">Take photo</button>
         </div>
       </details>
@@ -497,7 +501,7 @@
              exists without letting anyone read a number off it. Twin of
              native/src/components/sheet-reference.tsx. -->
         <button type="button" id="counts-sheet" class="sheet-ref" hidden>
-          <img id="counts-sheet-img" alt="Your photo of the result sheet" />
+          <img id="counts-sheet-img" alt="Your photo of the result sheet" data-i18n-attr="alt:observe.your-photo-of-the-result-sheet" />
           <span data-i18n="observe.your-result-sheet-tap-to-enlarge">Your result sheet — tap to enlarge and read the figures off it.</span>
         </button>
         <!-- ~20 parties, three-line names: the list is taller than the screen and
@@ -568,7 +572,7 @@
        inert until the reference button above opens it. -->
   <div id="sheet-zoom" hidden>
     <button data-i18n-attr="aria-label:observe.close-the-sheet" type="button" class="zoom-x" id="sheet-zoom-x" aria-label="Close the sheet">&times;</button>
-    <img id="sheet-zoom-img" alt="Your photo of the result sheet" />
+    <img id="sheet-zoom-img" alt="Your photo of the result sheet" data-i18n-attr="alt:observe.your-photo-of-the-result-sheet" />
     <p data-i18n="observe.pinch-or-tap-the-sheet-to" class="zoom-tip">Pinch or tap the sheet to zoom · drag to move</p>
   </div>
 
@@ -606,7 +610,7 @@
   </footer>
 
   <script src="device.js" defer></script>
-  <script src="scan.js?v=8" defer></script>
+  <script src="scan.js?v=9" defer></script>
   <script src="direct-upload.js?v=3" defer></script>
   <script src="outbox.js" defer></script>
   <script src="save-media.js?v=1" defer></script>
@@ -618,7 +622,7 @@
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
-  <script src="capture.js?v=4"></script>
+  <script src="capture.js?v=5"></script>
   <!-- One wording for every "we could not get your position", shared with
        incidents.html and map-unit.html. app.js carries a verbatim inline
        fallback, so a missing tag degrades quietly rather than loudly --
@@ -631,11 +635,11 @@
        nothing read it back. Also catches ?r=/&unit= arriving here directly. -->
   <script src="referral.js?v=2"></script>
   <script src="passkey.js?v=1"></script>
-  <script src="app.js?v=179" defer></script>
+  <script src="app.js?v=180" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189" defer></script>
+  <script src="menu.js?v=190" defer></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

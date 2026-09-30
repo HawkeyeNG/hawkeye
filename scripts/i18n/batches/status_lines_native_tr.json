@@ -1,0 +1,207 @@
+{
+  "n.app.sign-in.too-many-code-requests": {
+    "ha": "Buƙatun lamba sun yi yawa daga wannan hanyar sadarwa — jira ƴan mintuna.",
+    "ig": "Arịrịọ koodu karịrị akarị site na netwọkụ a — chere nkeji ole na ole.",
+    "yo": "Ìbéèrè kóòdù ti pọ̀ jù láti nẹ́tíwọ́kì yìí — dúró fún ìṣẹ́jú díẹ̀."
+  },
+  "n.app.sign-in.code-not-delivered": {
+    "ha": "Ba a iya isar da wannan lambar ba — gwada wata hanya a ƙasa.",
+    "ig": "Enweghị ike iziga koodu ahụ — nwaa ụzọ ọzọ dị n'okpuru.",
+    "yo": "A kò lè fi kóòdù náà ránṣẹ́ — gbìyànjú ọ̀nà mìíràn nísàlẹ̀."
+  },
+  "n.app.sign-in.code-expired": {
+    "ha": "Lambar ta ƙare — nemi sabuwa.",
+    "ig": "Koodu agwụla — rịọ nke ọhụrụ.",
+    "yo": "Kóòdù ti parí — béèrè fún tuntun."
+  },
+  "n.app.sign-in.too-many-wrong-codes": {
+    "ha": "Lambobin da ba daidai ba sun yi yawa — nemi sabuwa.",
+    "ig": "Koodu ezighi ezi karịrị akarị — rịọ nke ọhụrụ.",
+    "yo": "Kóòdù tí kò tọ̀nà ti pọ̀ jù — béèrè fún tuntun."
+  },
+  "n.app.sign-in.password-too-long": {
+    "ha": "Kalmar sirrin ta yi tsawo sosai (haruffa 200 mafi yawa).",
+    "ig": "Okwuntughe ahụ dị ogologo karịa (mkpụrụedemede 200 kacha).",
+    "yo": "Ọ̀rọ̀ ìpamọ́ náà ti gùn jù (àmì-ìkọ 200 ní púpọ̀ jùlọ)."
+  },
+  "n.app.sign-in.code-window-passed": {
+    "ha": "Hakan ya ɗauki lokaci mai tsawo — nemi sabuwar lamba ka sake gwadawa.",
+    "ig": "Nke ahụ were ogologo oge — rịọ koodu ọhụrụ wee nwaa ọzọ.",
+    "yo": "Ìyẹn ti pẹ́ jù — béèrè fún kóòdù tuntun kí o sì tún gbìyànjú."
+  },
+  "n.app.sign-in.reset-body": {
+    "ha": "An tabbatar da lambarka. Zaɓi sabuwar kalmar sirri — aƙalla haruffa 8.",
+    "ig": "E nyochaala nọmba gị. Họrọ okwuntughe ọhụrụ — opekempe mkpụrụedemede 8.",
+    "yo": "A ti fìdí nọ́mbà rẹ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ tuntun — ó kéré tán àmì-ìkọ 8."
+  },
+  "n.app.sign-in.set-body": {
+    "ha": "An tabbatar da lambarka. Zaɓi kalmar sirri — aƙalla haruffa 8 — kuma ka yi amfani da ita don shiga a kowace na'ura daga yanzu.",
+    "ig": "E nyochaala nọmba gị. Họrọ okwuntughe — opekempe mkpụrụedemede 8 — ma jiri ya banye na ngwaọrụ ọ bụla site ugbu a gawa.",
+    "yo": "A ti fìdí nọ́mbà rẹ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ kan — ó kéré tán àmì-ìkọ 8 — kí o sì máa lò ó láti wọlé lórí ẹ̀rọ èyíkéyìí láti ìsinsìnyí lọ."
+  },
+  "n.app.sign-in.create-body": {
+    "ha": "An tabbatar. Zaɓi kalmar sirri — aƙalla haruffa 8.",
+    "ig": "E nyochaala ya. Họrọ okwuntughe — opekempe mkpụrụedemede 8.",
+    "yo": "A ti fìdí rẹ̀ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ kan — ó kéré tán àmì-ìkọ 8."
+  },
+  "n.app.sign-in.title-your-password": {
+    "ha": "Kalmar Sirrinka",
+    "ig": "Okwuntughe Gị",
+    "yo": "Ọ̀rọ̀ Ìpamọ́ Rẹ"
+  },
+  "n.app.sign-in.title-exists": {
+    "ha": "Kana da Asusu Tuni",
+    "ig": "Ị Nwerela Akaụntụ",
+    "yo": "O Ti Ní Àkàǹtì Tẹ́lẹ̀"
+  },
+  "n.app.sign-in.title-create-account": {
+    "ha": "Buɗe Asusu",
+    "ig": "Mepee Akaụntụ",
+    "yo": "Ṣí Àkàǹtì"
+  },
+  "n.app.sign-in.title-sign-in": {
+    "ha": "Shiga",
+    "ig": "Banye",
+    "yo": "Wọlé"
+  },
+  "n.app.sign-in.have-account-sign-in": {
+    "ha": "Kana da asusu tuni? Shiga",
+    "ig": "Ị nwerela akaụntụ? Banye",
+    "yo": "O ti ní àkàǹtì tẹ́lẹ̀? Wọlé"
+  },
+  "n.app.sign-in.back-to-password-sign-in": {
+    "ha": "Koma shiga da kalmar sirri",
+    "ig": "Laghachi n'ịbanye site n'okwuntughe",
+    "yo": "Padà sí wíwọlé pẹ̀lú ọ̀rọ̀ ìpamọ́"
+  },
+  "n.app.sign-in.resend-code": {
+    "ha": "Sake aika lamba",
+    "ig": "Zigharịa koodu",
+    "yo": "Tún kóòdù ránṣẹ́"
+  },
+  "n.app.sign-in.sending-code-to": {
+    "ha": "Ana aika lamba zuwa {v0}…",
+    "ig": "Na-eziga koodu na {v0}…",
+    "yo": "Ń fi kóòdù ránṣẹ́ sí {v0}…"
+  },
+  "n.app.sign-in.resending-code-to": {
+    "ha": "Ana sake aika lamba zuwa {v0}…",
+    "ig": "Na-ezigharị koodu na {v0}…",
+    "yo": "Ń tún fi kóòdù ránṣẹ́ sí {v0}…"
+  },
+  "n.app.case.already-judged": {
+    "ha": "Ka riga ka yi hukunci a kan wannan shari'ar.",
+    "ig": "Ị kpeela ikpe a.",
+    "yo": "O ti ṣèdájọ́ ẹjọ́ yìí tẹ́lẹ̀."
+  },
+  "n.app.case.cant-tell": {
+    "ha": "Ba zan iya faɗa ba",
+    "ig": "Enweghị m ike ịkọ",
+    "yo": "Mi ò lè sọ"
+  },
+  "n.app.case.yes": {
+    "ha": "Ee",
+    "ig": "Ee",
+    "yo": "Bẹ́ẹ̀ni"
+  },
+  "n.app.case.no": {
+    "ha": "A'a",
+    "ig": "Mba",
+    "yo": "Rárá"
+  },
+  "n.app.case.title": {
+    "ha": "Shari'a #{v0}",
+    "ig": "Ikpe #{v0}",
+    "yo": "Ẹjọ́ #{v0}"
+  },
+  "n.app.practice.practice-just-closed": {
+    "ha": "An rufe atisaye yanzu — sake buɗe wannan shafin.",
+    "ig": "Omume emechiela ugbu a — mepee ihuenyo a ọzọ.",
+    "yo": "Àdánwò ṣẹ̀ṣẹ̀ tì — tún ojú-ìwé yìí ṣí."
+  },
+  "n.app.practice.enter-at-least-one-count": {
+    "ha": "Shigar da aƙalla ƙidaya ɗaya.",
+    "ig": "Tinye opekempe otu ọnụọgụ.",
+    "yo": "Tẹ ó kéré tán ìkà kan sí i."
+  },
+  "n.app.practice.camera-title-sheet": {
+    "ha": "Atisaye — hoto na 1 cikin 2, takardar sakamako",
+    "ig": "Omume — foto 1 n'ime 2, mpempe akwụkwọ nsonaazụ",
+    "yo": "Àdánwò — fọ́tò 1 nínú 2, ìwé àbájáde"
+  },
+  "n.app.practice.camera-title-venue": {
+    "ha": "Atisaye — hoto na 2 cikin 2, wurin",
+    "ig": "Omume — foto 2 n'ime 2, ebe ahụ",
+    "yo": "Àdánwò — fọ́tò 2 nínú 2, ibi náà"
+  },
+  "n.app.practice.sheet-readable-hint": {
+    "ha": "A ranar zaɓe dole kowace lamba ta zama mai karantuwa. Gwada yanzu, ko ka yi amfani da samfuri.",
+    "ig": "N'ụbọchị ntuli aka, ọnụọgụ ọ bụla ga-agụrịrị nke ọma. Nwaa ya ugbu a, ma ọ bụ jiri ihe atụ.",
+    "yo": "Ní ọjọ́ ìdìbò, gbogbo nọ́mbà gbọ́dọ̀ ṣeé kà. Gbìyànjú rẹ̀ báyìí, tàbí lo àpẹẹrẹ."
+  },
+  "n.app.practice.past-runs": {
+    "ha": "Atisayen da suka gabata",
+    "ig": "Omume gara aga",
+    "yo": "Àwọn àdánwò àtẹ̀yìnwá"
+  },
+  "n.app.practice.n-past": {
+    "ha": "{v0} da suka gabata",
+    "ig": "{v0} gara aga",
+    "yo": "{v0} àtẹ̀yìnwá"
+  },
+  "n.app.practice.practice-race": {
+    "ha": "Takarar atisaye",
+    "ig": "Asọmpi omume",
+    "yo": "Ìdíje àdánwò"
+  },
+  "n.app.practice.practice-run": {
+    "ha": "Gwajin atisaye",
+    "ig": "Ọsọ omume",
+    "yo": "Eré àdánwò"
+  },
+  "n.app.report.incident.allow-photo-access": {
+    "ha": "Ba da izinin shiga hotuna don haɗa fayiloli daga na'urarka.",
+    "ig": "Nye ikike ịbanye na foto iji tinye faịlụ site na ngwaọrụ gị.",
+    "yo": "Fún ní àṣẹ láti wọ àwọn fọ́tò kí o lè so fáìlì mọ́ láti orí ẹ̀rọ rẹ."
+  },
+  "n.app.report.incident.compressing": {
+    "ha": "Ana rage girman fayil…",
+    "ig": "Na-ebelata ya…",
+    "yo": "Ń dín in kù…"
+  },
+  "n.app.report.incident.could-not-prepare-photo": {
+    "ha": "An kasa shirya hoto cikin aminci — da fatan ka sake haɗa shi.",
+    "ig": "Enweghị ike ịkwadebe foto n'enweghị nsogbu — biko tinye ya ọzọ.",
+    "yo": "A kò lè pèsè fọ́tò kan láìléwu — jọ̀wọ́ tún so ó mọ́."
+  },
+  "n.app.report.incident.could-not-prepare-photos": {
+    "ha": "An kasa shirya hotuna {v0} cikin aminci — da fatan ka sake haɗa su.",
+    "ig": "Enweghị ike ịkwadebe foto {v0} n'enweghị nsogbu — biko tinye ha ọzọ.",
+    "yo": "A kò lè pèsè fọ́tò {v0} láìléwu — jọ̀wọ́ tún so wọ́n mọ́."
+  },
+  "n.app.report.incident.could-not-compress-video": {
+    "ha": "An kasa rage girman wannan bidiyon — za a ɗora shi a cikakken girmansa.",
+    "ig": "Enweghị ike ibelata vidiyo ahụ — a ga-ebulite ya n'ogo zuru ezu.",
+    "yo": "A kò lè dín fídíò náà kù — a ó gbé e sókè ní ìwọ̀n kíkún rẹ̀."
+  },
+  "n.app.report.incident.connection-dropped-retrying": {
+    "ha": "Haɗin ya katse — ana sake gwadawa…",
+    "ig": "Njikọ kwụsịrị — na-anwa ọzọ…",
+    "yo": "Ìsopọ̀ já — ń tún gbìyànjú…"
+  },
+  "n.app.report.incident.add-photo-video-or-description": {
+    "ha": "Ƙara hoto, bidiyo ko bayani.",
+    "ig": "Tinye foto, vidiyo ma ọ bụ nkọwa.",
+    "yo": "Fi fọ́tò, fídíò tàbí àpèjúwe kún un."
+  },
+  "n.app.report.incident.file-could-not-be-processed": {
+    "ha": "An kasa sarrafa fayil ɗaya — sake ɗaukarsa.",
+    "ig": "Enweghị ike ịhazi otu faịlụ — see ya ọzọ.",
+    "yo": "A kò lè ṣiṣẹ́ lórí fáìlì kan — tún un yà."
+  },
+  "n.app.report.incident.no-coordinates-attached": {
+    "ha": "Ba za a haɗa matsayin wuri da wannan rahoton ba.",
+    "ig": "A gaghị etinye ebe ọ dị na akụkọ a.",
+    "yo": "A kò ní fi ibùdó kankan kún ìròyìn yìí."
+  }
+}

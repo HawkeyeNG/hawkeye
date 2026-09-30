@@ -147,7 +147,12 @@
         attribute on them would be overwritten by the next render. The label has
         to be resolved AT RENDER TIME, and renderTiles() re-run when the language
         changes (bound at the end of this block). */
-    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    // {name} placeholders are filled AFTER the lookup, in one pass, so they land
+    // in the translation as well as in the English.
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
     const TS = { entries: '…', server: '…', serverState: null, serverT: '', onPhoneState: '', onPhoneT: '', anchor: '—' };
     let paintChain = () => {};
     function renderTiles() {
@@ -226,7 +231,7 @@
           <div class="ec-sub"><code>${e.entry_hash.slice(0, 24)}…</code></div>
           <div class="ec-ev">${e.photos_on_device
             ? T('ledger.sheet-kept-on-phone', 'sheet kept on phone')
-            : `<a href="/uploads/${e.image_sha256}.jpg" target="_blank">sheet ↗</a>`}</div>
+            : `<a href="/uploads/${e.image_sha256}.jpg" target="_blank">${T('ledger.sheet-link', 'sheet ↗')}</a>`}</div>
         </div>`).join('') || `<div class="meta">${T('ledger.no-entries-yet', 'No entries yet.')}</div>`;
       };
       paintChain();
@@ -251,19 +256,20 @@
 
     document.getElementById('btn-verify').onclick = async () => {
       const out = document.getElementById('client-result');
-      out.textContent = 'Recomputing hashes locally…';
+      out.textContent = T('ledger.recomputing-hashes-locally', 'Recomputing hashes locally…');
       let prev = GENESIS;
       for (const e of ENTRIES) {
         if (e.prev_hash !== prev || (await sha256hex(prev + e.ledger_payload)) !== e.entry_hash) {
-          out.innerHTML = `<span class="bad">✘ Chain broken at entry ${e.id} — a report was altered or removed.</span>`;
+          out.innerHTML = `<span class="bad">✘ ${T('ledger.chain-broken-at-entry', 'Chain broken at entry {v0} — a report was altered or removed.', { v0: e.id })}</span>`;
           TS.onPhoneState = 'bad'; TS.onPhoneT = 'bad'; renderTiles();
           return;
         }
         prev = e.entry_hash;
       }
+      const head = `<code>${shortHash(prev)}</code>`;
       out.innerHTML = CHAIN_TRUNCATED
-        ? `<span class="ok">✔ Verified the first ${ENTRIES.length} entries in your browser (stopped there to spare your phone; this is not the whole chain). Head so far: <code>${shortHash(prev)}</code></span>`
-        : `<span class="ok">✔ Verified ${ENTRIES.length} entries in your browser. Head matches: <code>${shortHash(prev)}</code></span>`;
+        ? `<span class="ok">✔ ${T('ledger.verified-first-n-entries', 'Verified the first {v0} entries in your browser (stopped there to spare your phone; this is not the whole chain). Head so far: {v1}', { v0: ENTRIES.length, v1: head })}</span>`
+        : `<span class="ok">✔ ${T('ledger.verified-n-entries', 'Verified {v0} entries in your browser. Head matches: {v1}', { v0: ENTRIES.length, v1: head })}</span>`;
       TS.onPhoneState = 'ok'; TS.onPhoneT = 'ok'; renderTiles();
     };
 
@@ -273,43 +279,60 @@
       const sel = document.getElementById('race-select');
       const { anchors } = await fetch('/api/anchors').then((r) => r.json());
       LATEST_RACE_ANCHOR = anchors.find((a) => a.racesRoot);
-      if (!LATEST_RACE_ANCHOR) {
-        info.textContent = 'No Merkle-batched anchor published yet.';
-        sel.disabled = true;
-        return;
-      }
-      info.innerHTML = `Anchor <strong>${LATEST_RACE_ANCHOR.day}</strong> · ${LATEST_RACE_ANCHOR.racesCount} race(s) · root <code>${LATEST_RACE_ANCHOR.racesRoot.slice(0, 20)}…</code> · <a href="${LATEST_RACE_ANCHOR.rekorSearchUrl || LATEST_RACE_ANCHOR.rekorUrl}" target="_blank" rel="noopener">View in Rekor ↗</a> · <a href="${LATEST_RACE_ANCHOR.rekorUrl}" target="_blank" rel="noopener">raw</a>`;
-      const { races } = await fetch(`/api/anchors/${LATEST_RACE_ANCHOR.id}/races`).then((r) => r.json());
-      sel.innerHTML = races.map((r) =>
-        `<option value="${encodeURIComponent(r.race_key)}">${r.race_key} (${r.entries} report${r.entries === 1 ? '' : 's'})</option>`,
-      ).join('') || '<option disabled>No races yet</option>';
+      /* Painted once the fetches land, which can be before the language bundle
+         has — so this repaints on 'hawkeye-lang', keeping the chosen race. */
+      let races = null;
+      const paint = () => {
+        const A = LATEST_RACE_ANCHOR;
+        if (!A) {
+          info.textContent = T('ledger.no-merkle-anchor-yet', 'No Merkle-batched anchor published yet.');
+          sel.disabled = true;
+          return;
+        }
+        info.innerHTML = `${T('ledger.anchor-line', 'Anchor <strong>{v0}</strong> · {v1} race(s) · root <code>{v2}…</code>', { v0: A.day, v1: A.racesCount, v2: A.racesRoot.slice(0, 20) })}`
+          + ` · <a href="${A.rekorSearchUrl || A.rekorUrl}" target="_blank" rel="noopener">${T('ledger.view-in-rekor', 'View in Rekor ↗')}</a>`
+          + ` · <a href="${A.rekorUrl}" target="_blank" rel="noopener">${T('ledger.raw', 'raw')}</a>`;
+        if (!races) return;
+        const was = sel.value;
+        sel.innerHTML = races.map((r) =>
+          `<option value="${encodeURIComponent(r.race_key)}">${r.entries === 1
+            ? T('ledger.race-option-one', '{v0} (1 report)', { v0: r.race_key })
+            : T('ledger.race-option', '{v0} ({v1} reports)', { v0: r.race_key, v1: r.entries })}</option>`,
+        ).join('') || `<option disabled>${T('ledger.no-races-yet', 'No races yet')}</option>`;
+        if (was) sel.value = was;
+      };
+      paint();
+      document.addEventListener('hawkeye-lang', paint);
+      if (!LATEST_RACE_ANCHOR) return;
+      ({ races } = await fetch(`/api/anchors/${LATEST_RACE_ANCHOR.id}/races`).then((r) => r.json()));
+      paint();
     })();
 
     document.getElementById('btn-verify-race').onclick = async () => {
       const out = document.getElementById('race-result');
       if (!LATEST_RACE_ANCHOR) return;
       const key = document.getElementById('race-select').value;
-      if (!key) { out.innerHTML = '<span class="bad">No race selected.</span>'; return; }
-      out.textContent = 'Fetching proof and folding locally…';
+      if (!key) { out.innerHTML = `<span class="bad">${T('ledger.no-race-selected', 'No race selected.')}</span>`; return; }
+      out.textContent = T('ledger.fetching-proof', 'Fetching proof and folding locally…');
       const d = await fetch(`/api/anchors/${LATEST_RACE_ANCHOR.id}/races/${key}`).then((r) => r.json());
       if (d.error) { out.innerHTML = `<span class="bad">✘ ${d.error}</span>`; return; }
       let h = await sha256hex(`race|v1|${d.raceKey}|${d.head}|${d.entries}`);
       if (h !== d.leaf) {
-        out.innerHTML = '<span class="bad">✘ Leaf mismatch — the race head/count does not match the stored leaf.</span>';
+        out.innerHTML = `<span class="bad">✘ ${T('ledger.leaf-mismatch', 'Leaf mismatch — the race head/count does not match the stored leaf.')}</span>`;
         return;
       }
       for (const step of d.proof) {
         h = step.side === 'left' ? await sha256hex(step.hash + h) : await sha256hex(h + step.hash);
       }
       out.innerHTML = h === d.racesRoot
-        ? `<span class="ok">✔ "${d.raceKey}" verified</span> — ${d.entries} report(s), independently folds to the Rekor-anchored root. <a href="${d.rekorSearchUrl || d.rekorUrl}" target="_blank" rel="noopener">Confirm in Rekor ↗</a>`
-        : `<span class="bad">✘ Proof does not fold to the anchored root — this race's record may have been altered.</span>`;
+        ? `${T('ledger.race-verified', '<span class="ok">✔ "{v0}" verified</span> — {v1} report(s), independently folds to the Rekor-anchored root.', { v0: d.raceKey, v1: d.entries })} <a href="${d.rekorSearchUrl || d.rekorUrl}" target="_blank" rel="noopener">${T('ledger.confirm-in-rekor', 'Confirm in Rekor ↗')}</a>`
+        : `<span class="bad">✘ ${T('ledger.proof-does-not-fold', "Proof does not fold to the anchored root — this race's record may have been altered.")}</span>`;
     };
   </script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

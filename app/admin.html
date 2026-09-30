@@ -507,7 +507,7 @@
            from room names. Loads on first open. -->
       <details id="rr-wrap" style="margin-top:10px">
         <summary style="cursor:pointer;font-weight:700">Room requests</summary>
-        <p class="hint">A situation room that carries a party label admits nobody — no invite link, join or copied roster works — until you approve the label here. Every party is checked the same way, and at most one room per party per race and area can be approved. Rejecting keeps the room, without the label; rejecting an approved room withdraws its label.</p>
+        <p class="hint">A situation room that carries a party label admits nobody — no invite link, join or copied roster works — until you approve the label here. Every party is checked the same way, and at most one room per party per race and area can be approved. Rejecting keeps the room, without the label; rejecting an approved room withdraws its label. A party room created by a coordinator you named under Organisation codes → Party pre-approval is approved on creation and shows here as auto-approved (withdraw it like any other) — unless it would duplicate an approved room, in which case it waits here.</p>
         <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="rr-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
           <button id="rr-legacy" class="secondary" style="width:auto;margin:0">Rooms labelled before verification</button>
@@ -2529,7 +2529,9 @@
    * ORGANISATION CODES — GET /api/admin/org-codes, POST …/issuers,
    * POST …/issuers/:id/batches (the ONLY response that carries plain codes; it
    * becomes a CSV download at once) and POST …/batches/:id/revoke. Counts only:
-   * the server never sends a phone hash or an observer id here. Own <script>
+   * the server never sends a phone hash here, and no observer id except the
+   * party coordinators the owner names (POST …/issuers/:id/party,
+   * …/coordinators, …/coordinators/:observerId/remove). Own <script>
    * and helpers, like Captains above; loads the first time the <details> opens
    * and repaints without refetching on a language change.
    */
@@ -2581,11 +2583,74 @@
       return '<li><span>' + esc(line) + '</span>' + action + again + '</li>';
     }
 
+    /*
+     * PARTY PRE-APPROVAL (owner console only, English like Room requests):
+     * mark this issuer as a party and name up to data.coordinatorMax of its
+     * accounts — by account id, or by the ORG code they signed up with. A room
+     * one of them labels for THIS party is approved on creation; a duplicate of
+     * an approved room still comes to Room requests. services/orgCodes.js.
+     */
+    function partyBlock(i) {
+      const id = Number(i.id);
+      const coords = i.coordinators || [];
+      const btn = 'style="width:auto;margin:0"';
+      const list = coords.length
+        ? '<ul class="cap-adm-list">' + coords.map((c) => '<li><span>account #' + esc(c.observerId)
+            + ' · named by ' + (c.addedVia === 'code' ? 'the code they signed up with' : 'account id')
+            + ' · ' + (c.signedUpWithIssuerCode ? 'signed up with this organisation’s code' : '<b>did not</b> sign up with this organisation’s code')
+            + (c.status !== 'active' ? ' · <b>' + esc(c.status) + '</b>' : '')
+            + ' · ' + esc(day(c.addedAt)) + '</span>'
+            + '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-coord-remove="' + id + ':' + Number(c.observerId) + '">Remove</button></li>').join('') + '</ul>'
+        : '';
+      return '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line, #e5e5e5)">'
+        + '<p class="meta"><b>Party pre-approval.</b> '
+        + (i.party
+          ? 'Marked as <b>' + esc(i.party) + '</b>. A situation room labelled ' + esc(i.party) + ' and created by a coordinator named here is approved on creation — unless '
+            + esc(i.party) + ' already has an approved room for that race and area, which still comes to Room requests. Same rules for every party.'
+          : 'Not marked as a party. Mark it with the party’s acronym to name coordinators whose party rooms are approved on creation.')
+        + '</p>'
+        + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<label for="org-adm-party-' + id + '" style="margin:0">Party acronym</label>'
+        + '<input id="org-adm-party-' + id + '" value="' + esc(i.party || '') + '" placeholder="e.g. ADC" maxlength="12" style="width:110px;margin:0" />'
+        + '<button type="button" class="secondary" ' + btn + ' data-party="' + id + '">' + (i.party ? 'Save party' : 'Mark as party') + '</button>'
+        + '</div>'
+        + (i.party
+          ? '<p class="meta" style="margin-top:8px">Coordinators: ' + esc(coords.length) + ' of ' + esc(data.coordinatorMax) + '</p>' + list
+            + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
+            + '<label for="org-adm-coord-' + id + '" style="margin:0">Account id, or the ORG code they signed up with</label>'
+            + '<input id="org-adm-coord-' + id + '" placeholder="e.g. 1234 or ORG-XXXX-XXXX-XXXX" style="width:240px;margin:0" />'
+            + '<button type="button" ' + btn + ' data-coord-add="' + id + '">Add coordinator</button>'
+            + '</div>'
+          : '')
+        + '</div>';
+    }
+
+    const coordFail = (b, status) => {
+      const code = (b && b.error) || ('HTTP ' + status);
+      const m = {
+        unknown_party: 'That is not a party acronym Hawkeye knows.',
+        party_taken: 'Another organisation is already marked as this party' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '.',
+        has_coordinators: 'Remove this organisation’s coordinators before changing or clearing its party.',
+        issuer_not_party: 'Mark the organisation as a party first.',
+        account_required: 'Type an account id or an ORG code.',
+        unknown_account: 'No account with that id.',
+        account_not_active: 'That account is not active' + (b && b.status ? ' (' + b.status + ')' : '') + '.',
+        unknown_code: 'No such organisation code.',
+        code_not_this_issuer: 'That code belongs to a different organisation.',
+        code_made_no_account: 'That code has not created an account (unused, or refused for an existing number).',
+        already_coordinator: 'That account is already a coordinator here.',
+        coordinator_elsewhere: 'That account is already a coordinator for another party.',
+        coordinator_cap: 'This organisation already has the maximum of ' + (b && b.cap) + ' coordinators.',
+        not_a_coordinator: 'That account is not a coordinator here.',
+      };
+      return m[code] || fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
+    };
+
     function issuerCard(i) {
       const usage = fill(T('orgcode.admin.usage', '{created} accounts · {used} codes used · {issued} issued · {committed} of {cap} committed'),
         { created: i.created, used: i.used, issued: i.issued, committed: i.committed, cap: data.issuerCap });
       return '<div class="card" style="margin:10px 0;padding:10px 12px">'
-        + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + '</span></p>'
+        + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + (i.party ? ' · ' + esc(i.party) : '') + '</span></p>'
         + '<p class="meta">' + esc(usage) + (i.refused ? ' · ' + esc(fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: i.refused })) : '') + '</p>'
         + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
         + '<label for="org-adm-size-' + i.id + '" style="margin:0">' + esc(T('orgcode.admin.size-label', 'Codes in the next batch')) + '</label>'
@@ -2593,6 +2658,7 @@
         + '<button type="button" style="width:auto;margin:0" data-issue="' + i.id + '">' + esc(T('orgcode.admin.issue', 'Issue batch')) + '</button>'
         + '</div>'
         + (i.batches.length ? '<ul class="cap-adm-list">' + i.batches.map((b) => batchRow(b, i)).join('') + '</ul>' : '')
+        + partyBlock(i)
         + '</div>';
     }
 
@@ -2679,7 +2745,41 @@
       const issue = e.target.closest('[data-issue]');
       const revoke = e.target.closest('[data-revoke]');
       const csv = e.target.closest('[data-csv]');
+      const partyBtn = e.target.closest('[data-party]');
+      const addBtn = e.target.closest('[data-coord-add]');
+      const rmBtn = e.target.closest('[data-coord-remove]');
       if (csv) { downloadCsv(Number(csv.getAttribute('data-csv'))); return; }
+      if (partyBtn || addBtn || rmBtn) {
+        const b = partyBtn || addBtn || rmBtn;
+        b.disabled = true;
+        try {
+          let r;
+          if (partyBtn) {
+            const id = Number(partyBtn.getAttribute('data-party'));
+            const party = ((document.getElementById('org-adm-party-' + id) || {}).value || '').trim();
+            if (!party && !(await hkConfirm('Clear the party mark on this organisation?', { danger: true }))) { b.disabled = false; return; }
+            r = await post('/api/admin/org-codes/issuers/' + id + '/party', { party });
+            if (r.status === 200) msg = { ok: true, text: r.body.issuer.party ? 'Marked as ' + r.body.issuer.party + '.' : 'Party mark cleared.' };
+          } else if (addBtn) {
+            const id = Number(addBtn.getAttribute('data-coord-add'));
+            const v = ((document.getElementById('org-adm-coord-' + id) || {}).value || '').trim();
+            r = await post('/api/admin/org-codes/issuers/' + id + '/coordinators', /^\d+$/.test(v) ? { observerId: Number(v) } : { code: v });
+            if (r.status === 200) msg = { ok: true, text: 'Account #' + r.body.coordinator.observerId + ' is now a coordinator.' };
+          } else {
+            const [id, who] = String(rmBtn.getAttribute('data-coord-remove')).split(':').map(Number);
+            if (!(await hkConfirm('Remove account #' + who + ' as a coordinator? Rooms already approved stay approved; their next party room goes to Room requests.', { danger: true }))) { b.disabled = false; return; }
+            r = await post('/api/admin/org-codes/issuers/' + id + '/coordinators/' + who + '/remove');
+            if (r.status === 200) msg = { ok: true, text: 'Account #' + who + ' removed.' };
+          }
+          if (r.status === 200) await load();
+          else msg = { ok: false, text: coordFail(r.body, r.status) };
+        } catch (er) {
+          msg = { ok: false, text: fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: er.message || String(er) }) };
+        }
+        b.disabled = false;
+        paint();
+        return;
+      }
       if (issue) {
         const id = Number(issue.getAttribute('data-issue'));
         const size = Number((document.getElementById('org-adm-size-' + id) || {}).value);
@@ -2756,6 +2856,7 @@
         + (c.status !== 'active' ? ' · <b>' + esc(c.status) + '</b>' : '')
         + ' · since ' + esc(when(c.since))
         + (c.issuer ? ' · signed up with a <b>' + esc(c.issuer.kind) + '</b> code from <b>' + esc(c.issuer.name) + '</b>' : '')
+        + (c.coordinatorOf ? ' · <b>named ' + esc(c.coordinatorOf.party) + ' coordinator</b> of ' + esc(c.coordinatorOf.name) : '')
         + (c.requests24h > 1 ? ' · <b>' + esc(c.requests24h) + ' party-room requests in 24h</b>' : '');
     }
 
@@ -2765,9 +2866,12 @@
       if (r.status === 'legacy') flags.push('<b>Existing room</b> — labelled before verification; still admitting until you decide');
       if (r.duplicate_of) flags.push('<b>DUPLICATE</b> — ' + esc(r.party) + ' already has an approved room for this race and area: #' + esc(r.duplicate_of.id) + ' “' + esc(r.duplicate_of.name) + '”. Approving is refused until that label is withdrawn.');
       if (r.also_asking && r.also_asking.length) flags.push('<b>Also asking</b> for the same party, race and area: ' + r.also_asking.map((x) => '#' + esc(x.id) + ' “' + esc(x.name) + '”').join(', '));
+      const auto = r.last && r.last.action === 'auto-approved';
       const state = decided
-        ? (r.status === 'approved' ? '<b>Approved</b>' : '<b>Rejected</b>') + ' ' + esc(when(r.decided_at))
-          + (r.last && r.last.reason ? ' · reason: ' + esc(r.last.reason) : '')
+        ? (r.status === 'approved'
+          ? (auto ? '<b>Auto-approved</b> (pre-approved coordinator of ' + esc((r.last.issuer && r.last.issuer.name) || 'issuer #' + (r.last.issuer && r.last.issuer.id)) + ')' : '<b>Approved</b>')
+          : '<b>Rejected</b>') + ' ' + esc(when(r.decided_at))
+          + (r.last && r.last.reason && !auto ? ' · reason: ' + esc(r.last.reason) : '')
         : 'Asked ' + esc(when(r.created_at));
       const acts = decided
         ? (r.status === 'approved'

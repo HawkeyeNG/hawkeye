@@ -84,7 +84,7 @@
     var Cap = window.Capacitor;
     var S = Cap && Cap.Plugins && Cap.Plugins.Share;
     if (!S || typeof S.share !== 'function') return null;
-    return S.share({ title: TITLE, text: TEXT, url: LINK, dialogTitle: 'Share Hawkeye' });
+    return S.share({ title: TITLE, text: TEXT, url: LINK, dialogTitle: T('profile.share-hawkeye', 'Share Hawkeye') });
   }
 
   /**
@@ -93,6 +93,9 @@
    * dialog in the DOM.
    */
   var sheet = null;
+  /* The sheet's own words, in the reader's language. Built on first use, which
+     is a tap — long after the language bundle has landed. */
+  function T(k, en) { return window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en; }
   function buildSheet() {
     if (sheet) return sheet;
     var msg = TEXT + ' ' + LINK;
@@ -104,8 +107,8 @@
     ];
     sheet = document.createElement('dialog');
     sheet.className = 'share-sheet';
-    sheet.innerHTML = '<h2 tabindex="-1">Share Hawkeye</h2>'
-      + '<p class="hint">Send the download link to someone.</p>'
+    sheet.innerHTML = '<h2 tabindex="-1" data-i18n="profile.share-hawkeye">Share Hawkeye</h2>'
+      + '<p class="hint" data-i18n="share.send-the-download-link">Send the download link to someone.</p>'
       + '<div class="share-targets">'
       + TARGETS.map(function (t) {
         return '<a class="btn-ghost" rel="noopener" target="_blank" href="' + t.url + '">' + t.name + '</a>';
@@ -113,20 +116,30 @@
       + '</div>'
       + '<p class="share-link"><code>' + LINK + '</code></p>'
       + '<div class="share-foot"><button type="button" class="btn-accent" data-copy>Copy link</button>'
-      + '<button type="button" class="btn-ghost" data-close>Close</button></div>';
+      + '<button type="button" class="btn-ghost" data-close data-i18n="common.close">Close</button></div>';
     sheet.querySelector('[data-close]').addEventListener('click', function () { sheet.close(); });
     var copy = sheet.querySelector('[data-copy]');
+    // The Copy button's words change under the tap, so they are painted here
+    // (translated at the moment of writing) rather than keyed for apply().
+    var copyLabel = function () { return T('situation-room.copy-link', 'Copy link'); };
+    copy.textContent = copyLabel();
     copy.addEventListener('click', function () {
-      var done = function () { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy link'; }, 1600); };
+      var done = function () {
+        copy.textContent = T('support.copied', 'Copied');
+        setTimeout(function () { copy.textContent = copyLabel(); }, 1600);
+      };
       // clipboard.writeText needs a secure context and can be refused outright;
       // the link is printed above regardless, so a refusal costs nothing.
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(LINK).then(done, function () { copy.textContent = 'Copy it above'; });
+        navigator.clipboard.writeText(LINK).then(done, function () { copy.textContent = T('share.copy-it-above', 'Copy it above'); });
       } else {
-        copy.textContent = 'Copy it above';
+        copy.textContent = T('share.copy-it-above', 'Copy it above');
       }
     });
     document.body.appendChild(sheet);
+    // The two keyed lines and Close: translated now, and by menu.js's apply()
+    // sweep on any later language change (the sheet stays in the document).
+    if (window.HawkeyeI18n) window.HawkeyeI18n.apply(sheet);
     return sheet;
   }
 

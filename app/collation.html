@@ -228,18 +228,35 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
 
   <script src="device.js"></script>
   <script src="outbox.js" defer></script>
-  <script src="scan.js?v=8"></script>
-  <script src="capture.js?v=4"></script>
+  <script src="scan.js?v=9"></script>
+  <script src="capture.js?v=5"></script>
   <script src="save-media.js?v=1"></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Resolve through the runtime once it has loaded, else the English argument
     // (the incidents.html/integrity.html helper). Every call is on user action.
-    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    // {name} placeholders are filled AFTER the lookup, in one pass, so they land
+    // in the translation as well as in the English.
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
+    /* Text written into an element that carries its own data-i18n: move the
+       key along with the text. menu.js re-runs apply() on every language
+       change, and would otherwise put the markup's original words back. The
+       ENGLISH goes in first and apply() translates it, because apply()
+       remembers the first text it sees under a key as that key's English —
+       writing the translation directly would make it the "English" that a
+       switch back to English restores. */
+    const keyed = (el, k, en) => {
+      el.setAttribute('data-i18n', k);
+      el.textContent = en;
+      if (window.HawkeyeI18n && el.parentNode) window.HawkeyeI18n.apply(el.parentNode);
+    };
     const token = localStorage.getItem('hawkeye_token');
     const FORM = { ward: 'EC8B', lga: 'EC8C', state: 'EC8D' };
 
@@ -276,21 +293,30 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
 
     // ---- pickers ----
     const fill = (sel, items, ph) => { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; };
+    // "Collation form (EC8B)". Painted, not keyed — the form code rides inside
+    // the sentence — so the markup's data-i18n comes off and the page repaints
+    // it itself on a language change (bound below).
+    const paintFormLabel = () => {
+      const el = $('form-label');
+      el.removeAttribute('data-i18n');
+      el.textContent = T('collation.collation-form-code', 'Collation form ({v0})', { v0: FORM[$('sel-level').value] });
+    };
+    document.addEventListener('hawkeye-lang', paintFormLabel);
     function scopeUpdate() {
       const lv = $('sel-level').value;
       $('lga-block').style.display = lv === 'state' ? 'none' : '';
       $('ward-block').style.display = lv === 'ward' ? '' : 'none';
-      $('form-label').textContent = `Collation form (${FORM[lv]})`;
+      paintFormLabel();
       updateSubmit();
     }
     $('sel-level').onchange = scopeUpdate;
     $('sel-state').onchange = async () => {
-      fill($('sel-ward'), [], '— select —');
-      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), '— select LGA —');
+      fill($('sel-ward'), [], T('common.select', '— select —'));
+      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), T('common.select-lga', '— select LGA —'));
       fillContests();
     };
     $('sel-lga').onchange = async () => {
-      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), '— select ward —');
+      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), T('common.select-ward', '— select ward —'));
       updateSubmit();
     };
     $('sel-ward').onchange = updateSubmit;
@@ -311,32 +337,36 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
      * is now the only implementation; this page supplies the tail that is
      * genuinely its own (GPS stamp, preview, step state).
      */
-    const CAM_LABELS = {
-      sheet: { title: 'Collation form', action: 'Capture Form' },
-      venue: { title: 'Collation centre', action: 'Capture Venue' },
-    };
-    const VENUE_GUIDE = '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.';
+    // Built when the camera opens, so they are in the language of that moment
+    // (capture.js paints them on every open).
+    const camLabels = () => ({
+      sheet: {
+        title: T('collation.collation-form-code', 'Collation form ({v0})', { v0: FORM[$('sel-level').value] }),
+        action: T('collation.capture-form', 'Capture Form'),
+      },
+      venue: { title: T('collation.collation-centre', 'Collation centre'), action: T('collation.capture-venue', 'Capture Venue') },
+    });
+    const venueGuide = () => T('collation.venue-guide', '📸 VENUE PHOTO — aim at the collation centre itself: the building, the room or the officials. This is NOT the collation form.');
 
     async function onShot(blob, target) {
       const fix = await getFix();
-      if (!fix) { hkAlert(window.HawkeyeI18n ? window.HawkeyeI18n.t('collation.no-gps-fix-retake', 'No GPS fix — move to open sky and retake.') : 'No GPS fix — move to open sky and retake.'); return false; }
+      if (!fix) { hkAlert(T('collation.no-gps-fix-retake', 'No GPS fix — move to open sky and retake.')); return false; }
       shots[target] = { blob, capturedAt: Date.now(), lat: fix.latitude, lng: fix.longitude, accuracy: fix.accuracy };
       const img = $(`preview-${target}`);
       img.src = URL.createObjectURL(blob); img.hidden = false;
-      $(`status-${target}`).textContent = 'Captured ✔';
+      keyed($(`status-${target}`), 'common.captured', 'Captured ✔');
       $(`status-${target}`).classList.add('done');
-      $(`btn-cam-${target}`).textContent = 'Retake photo';
+      keyed($(`btn-cam-${target}`), 'observe.retake-photo', 'Retake photo');
       updateSubmit();
       return true;
     }
 
     function openCamera(target) {
-      CAM_LABELS.sheet.title = `Collation form (${FORM[$('sel-level').value]})`;
       return window.HAWKEYE_CAPTURE.open(target, {
         onShot,
         onError: (m) => { $('status').textContent = m; },
-        labels: CAM_LABELS,
-        venueGuide: VENUE_GUIDE,
+        labels: camLabels(),
+        venueGuide: venueGuide(),
       });
     }
 
@@ -347,9 +377,11 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     // Counts have no natural confirmer — typing a number is not a decision.
     $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
       const n = [...document.querySelectorAll('#vote-inputs input')].filter((i) => i.value !== '').length;
-      if (!n) { $('status').textContent = 'Enter at least one party total.'; return; }
+      if (!n) { $('status').textContent = T('collation.enter-at-least-one-party-total', 'Enter at least one party total.'); return; }
       $('status').textContent = '';
-      setStepDone(3, true, `✔ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+      setStepDone(3, true, n === 1
+        ? T('collation.party-entered', '✔ {v0} party entered', { v0: n })
+        : T('collation.parties-entered', '✔ {v0} parties entered', { v0: n }));
     });
 
     // The scanner warm-up lives in capture.js and is already called above.
@@ -435,7 +467,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       if (window.HAWKEYE_RACES) {
         window.HAWKEYE_RACES.fill($('sel-contest'), applicable);
       } else {
-        $('sel-contest').innerHTML = '<option value="">— select election —</option>'
+        $('sel-contest').innerHTML = `<option value="">${T('race.select-election', '— select election —')}</option>`
           + applicable.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
         if (prev && applicable.some((c) => c.code === prev)) $('sel-contest').value = prev;
       }
@@ -445,7 +477,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       const closed = contestClosed();
       // Step confirmers: both photos (1), a complete scope (2), an election (3).
       const both = Boolean(shots.sheet && shots.venue);
-      if (both !== stepDone[0]) setStepDone(0, both, '✔ Both captured');
+      if (both !== stepDone[0]) setStepDone(0, both, '✔ ' + T('report.both-captured', 'Both captured'));
       const sc = scopeOk();
       if (sc !== stepDone[1]) {
         const lv = $('sel-level').value;
@@ -489,14 +521,18 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           box.appendChild(el);
         };
         add('strong', bits.join(', '));
-        add('small', form ? form + ' · ' + lv + ' collation' : '');
+        add('small', !form ? ''
+          : lv === 'ward' ? T('collation.facts-ward', '{v0} · ward collation', { v0: form })
+          : lv === 'lga' ? T('collation.facts-lga', '{v0} · LGA collation', { v0: form })
+          : T('collation.facts-state', '{v0} · state collation', { v0: form }));
         add('span', race.trim(), 'sf-race');
         box.hidden = false;
       })();
 
       const c = CONTESTS.find((x) => x.code === $('sel-contest').value);
       if (closed && c?.opensAt) {
-        $('status').textContent = `Collation reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`;
+        $('status').textContent = T('collation.opens-when-polls-open', 'Collation reporting opens when polls open — {v0}.',
+          { v0: new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }) });
       }
     }
 
@@ -510,7 +546,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         return;
       }
       $('btn-submit').disabled = true;
-      $('status').textContent = 'Signing and submitting…';
+      $('status').textContent = T('collation.signing-and-submitting', 'Signing and submitting…');
       try {
         const votes = [...document.querySelectorAll('#vote-inputs input')]
           .map((i) => ({ party: i.dataset.party, count: Number(i.value || 0) }))
@@ -564,18 +600,18 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           });
           keepCopies(); // save-media.js — once, here, never again when the outbox flushes
           shots.sheet = shots.venue = null;
-          $('status').textContent = 'Saved offline — this signed report will send automatically when you are back online.';
+          $('status').textContent = T('collation.saved-offline', 'Saved offline — this signed report will send automatically when you are back online.');
           $('btn-submit').disabled = false;
           return;
         }
         const b = await r.json().catch(() => ({}));
         if (r.status === 201) {
-          $('status').textContent = `✅ ${b.form} report recorded and being checked against polling-unit evidence.`;
+          $('status').textContent = T('collation.report-recorded', '✅ {v0} report recorded and being checked against polling-unit evidence.', { v0: b.form });
           keepCopies();
           shots.sheet = shots.venue = null;
         } else if (r.status === 401) {
           localStorage.removeItem('hawkeye_token');
-          $('status').innerHTML = 'Session expired — <a href="observe.html?intent=observe">register your device again →</a>';
+          $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=observe' });
           $('form').hidden = true; $('need-auth').hidden = false;
           $('btn-submit').disabled = false;
         } else {
@@ -601,7 +637,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           $('btn-submit').disabled = false;
         }
       } catch (e) {
-        $('status').textContent = 'Could not submit — check your connection and retry.';
+        $('status').textContent = T('collation.could-not-submit-connection', 'Could not submit — check your connection and retry.');
         $('btn-submit').disabled = false;
       }
     };
@@ -629,13 +665,13 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           c.states.forEach((s) => hotStates.add(s));
         }
       }
-      $('sel-state').innerHTML = '<option value="">— select state —</option>' + states
+      $('sel-state').innerHTML = `<option value="">${T('common.select-state', '— select state —')}</option>` + states
         // COLOUR, not a marker glyph. The 🟢 emoji was here because a native
         // select will not colour an option — but an emoji renders at its own
         // optical size and dwarfed the text. Colour degrades gracefully: where
         // the platform honours it the state reads green, and where it does not
         // the "— voting soon" suffix still carries the whole meaning.
-        .map((s) => `<option value="${s}"${hotStates.has(s) ? ' style="color:#35d07f"' : ''}>${s}${hotStates.has(s) ? ' — voting soon' : ''}</option>`)
+        .map((s) => `<option value="${s}"${hotStates.has(s) ? ' style="color:#35d07f"' : ''}>${hotStates.has(s) ? T('collation.state-voting-soon', '{v0} — voting soon', { v0: s }) : s}</option>`)
         .join('');
       $('sel-state').disabled = !states.length;
       if (hotStates.size) $('hot-note').hidden = false;

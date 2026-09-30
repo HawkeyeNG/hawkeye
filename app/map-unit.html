@@ -156,7 +156,12 @@
   <script>
     /* The English stays inline as the fallback, so the map still labels itself
        when i18n.js is absent or has not resolved a bundle yet. */
-    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    // {name} placeholders are filled AFTER the lookup, in one pass, so they land
+    // in the translation as well as in the English.
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
     let unit = null;
@@ -182,7 +187,8 @@
      * line is the shape the reader complained about. The construction is
      * native's, verbatim: `${lead}, or browse the register below.`
      */
-    const geoLineWith = (err, tail) => `${geoLine(err)}`.replace(/[.\s]+$/, '') + tail;
+    const geoLineWith = (err) => T('map-unit.geo-or-browse-below', '{v0}, or browse the register below.',
+      { v0: `${geoLine(err)}`.replace(/[.\s]+$/, '') });
     /** Diagnostic to the console, never onto the line — a code in brackets is
      *  exactly the tail that made this message too long to read. */
     const geoLog = (where, err) => {
@@ -193,12 +199,21 @@
     };
     const api = (p, o) => fetch(p, o).then((r) => r.json().then((b) => ({ status: r.status, b })));
 
+    /* Fetched once per save, painted by paintStats() — which also runs on
+       'hawkeye-lang', since the first paint can land before the bundle does. */
+    let STATS = null;
     async function stats() {
-      const s = await fetch('/api/mapping/stats').then((r) => r.json());
+      STATS = await fetch('/api/mapping/stats').then((r) => r.json());
+      paintStats();
+    }
+    function paintStats() {
+      const s = STATS;
+      if (!s) return;
       // Ends in a full stop, with the ⓘ that used to sit on the deleted lede
       // inline after it — the stats line is the sentence that actually wants
       // explaining ("why does this number matter?").
-      $('stats').textContent = `${s.verified.toLocaleString()} of ${s.total.toLocaleString()} units have a verified location · ${s.crowdMapped} crowd-mapped so far.`;
+      $('stats').textContent = T('map-unit.stats-line', '{v0} of {v1} units have a verified location · {v2} crowd-mapped so far.',
+        { v0: s.verified.toLocaleString(), v1: s.total.toLocaleString(), v2: s.crowdMapped });
       const i = document.createElement('button');
       i.className = 'info-i';
       i.dataset.i18nInfoTitle = 'info.why-mapping-units-matters.title';
@@ -207,22 +222,26 @@
       i.dataset.info = 'Most polling units have no confirmed location on record, so results reported from them cannot be location-checked. When a few independent people map the same unit, its location is confirmed and every result filed there on election day can be matched against it.';
       $('stats').appendChild(i);
     }
+    document.addEventListener('hawkeye-lang', paintStats);
     async function fill(sel, items, ph) { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; }
 
     $('sel-state').onchange = async () => {
-      $('units').innerHTML = ''; fill($('sel-ward'), [], '— select —');
-      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), '— select LGA —');
+      $('units').innerHTML = ''; fill($('sel-ward'), [], T('common.select', '— select —'));
+      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), T('common.select-lga', '— select LGA —'));
     };
     $('sel-lga').onchange = async () => {
       $('units').innerHTML = '';
-      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), '— select ward —');
+      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), T('common.select-ward', '— select ward —'));
     };
     $('sel-ward').onchange = async () => {
       const r = await (await fetch(`/api/register/units?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}&ward=${encodeURIComponent($('sel-ward').value)}`)).json();
       $('units').innerHTML = '';
       for (const u of r.units || []) {
         const b = document.createElement('button'); b.className = 'pu-option';
-        b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.coords_source === 'crowd_mapped' ? '◌ crowd-confirmed location' : u.locationTier === 'verified' ? '📍 already located' : 'needs mapping'}</small>`;
+        b.innerHTML = `<strong>${u.name}</strong><br /><small>${u.pu_code} · ${u.coords_source === 'crowd_mapped'
+          ? T('map-unit.crowd-confirmed-location', '◌ crowd-confirmed location')
+          : u.locationTier === 'verified' ? T('map-unit.already-located', '📍 already located')
+          : T('map-unit.needs-mapping-tag', 'needs mapping')}</small>`;
         b.onclick = () => pickUnit(u);
         $('units').appendChild(b);
       }
@@ -245,7 +264,7 @@
     }
 
     $('btn-gps').onclick = () => {
-      $('cap-status').textContent = 'Getting a precise GPS fix…';
+      $('cap-status').textContent = T('map-unit.getting-a-precise-gps-fix', 'Getting a precise GPS fix…');
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng, accuracy } = pos.coords;
         const { status, b } = await api('/api/mappings', {
@@ -255,15 +274,19 @@
         });
         if (status === 201) {
           $('cap-status').textContent = b.mapped
-            ? '✅ This unit is now location-confirmed. Thank you!'
-            : `${b.replaced ? 'Your fix was updated' : 'Recorded'} (${b.fixes}/${b.needed} needed to confirm this unit).`;
+            ? T('map-unit.now-location-confirmed', '✅ This unit is now location-confirmed. Thank you!')
+            : b.replaced
+              ? T('map-unit.fix-updated-progress', 'Your fix was updated ({v0}/{v1} needed to confirm this unit).', { v0: b.fixes, v1: b.needed })
+              : T('map-unit.recorded-progress', 'Recorded ({v0}/{v1} needed to confirm this unit).', { v0: b.fixes, v1: b.needed });
           stats();
         } else if (status === 401) {
           localStorage.removeItem('hawkeye_token');
-          $('cap-status').innerHTML = 'Session expired — <a href="observe.html?intent=map">register your device again →</a>';
+          $('cap-status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=map' });
           $('picker').hidden = true; $('capture').hidden = true; $('need-auth').hidden = false;
         } else {
-          $('cap-status').textContent = ({ gps_accuracy_too_low: 'GPS too weak — move to open sky and retry.', too_far_from_unit: 'You are too far from this unit — only map it while standing there.' })[b.error] || b.error;
+          $('cap-status').textContent = b.error === 'gps_accuracy_too_low' ? T('map-unit.gps-too-weak', 'GPS too weak — move to open sky and retry.')
+            : b.error === 'too_far_from_unit' ? T('map-unit.too-far-from-unit', 'You are too far from this unit — only map it while standing there.')
+            : b.error;
         }
       }, (err) => {
         // No tail: the retry IS this button, and mapping a unit is impossible
@@ -277,12 +300,18 @@
     const STATUS_COLOR = { verified: '#004225', crowd: '#1565c0', approx: '#f9a825' };
     let lmap = null, envelope = null, nearLayer = null;
     let wardLayer = null, wardFeatures = null, wardLoading = null;
+    /** Say something on #near-status, keeping HOW to say it so a language
+     *  change can say it again (see the 'hawkeye-lang' listener by btn-near). */
+    function sayNear(fn) {
+      sayNear.last = fn;
+      $('near-status').textContent = fn();
+    }
 
     function initMap() {
       if (lmap) return lmap;
       if (typeof L === 'undefined') { // library failed to load — degrade, don't crash
         document.getElementById('lmap').innerHTML =
-          '<p class="hint" style="padding:14px">Map failed to load — check your connection and refresh. You can still pick your unit below.</p>';
+          `<p class="hint" style="padding:14px">${T('map-unit.map-failed-to-load', 'Map failed to load — check your connection and refresh. You can still pick your unit below.')}</p>`;
         return null;
       }
       /* Leaflet ships English tooltips on its zoom buttons; they are part of
@@ -346,13 +375,13 @@
      */
     function loadWards() {
       if (wardLoading) return wardLoading;
-      $('near-status').textContent = 'Loading ward boundaries…';
+      sayNear(() => T('map-unit.loading-ward-boundaries', 'Loading ward boundaries…'));
       wardLoading = fetch('/nga_wards.geojson').then((r) => {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return r.json();
       }).catch((e) => {
         wardLoading = null;   // let the next attempt try again
-        $('near-status').textContent = 'Could not load ward boundaries — check your connection and try again.';
+        sayNear(() => T('map-unit.could-not-load-ward-boundaries', 'Could not load ward boundaries — check your connection and try again.'));
         throw e;
       }).then((geo) => {
         wardFeatures = geo.features;
@@ -360,12 +389,12 @@
           style: { color: '#00482b', weight: 0.6, fill: false, opacity: 0.7 },
           onEachFeature: (f, layer) => {
             const p = f.properties;
-            layer.bindPopup(`<strong>${p.w || 'Ward'}</strong><br />${p.l || ''}${p.s ? ', ' + p.s : ''}`);
+            layer.bindPopup(`<strong>${p.w || T('common.ward', 'Ward')}</strong><br />${p.l || ''}${p.s ? ', ' + p.s : ''}`);
             layer.on('mouseover', () => layer.setStyle({ weight: 2, color: '#004225' }));
             layer.on('mouseout', () => wardLayer.resetStyle(layer));
           },
         });
-        $('near-status').textContent = `Ward boundaries loaded (${wardFeatures.length.toLocaleString()} wards).`;
+        sayNear(() => T('map-unit.ward-boundaries-loaded', 'Ward boundaries loaded ({v0} wards).', { v0: wardFeatures.length.toLocaleString() }));
         return wardLayer;
       });
       return wardLoading;
@@ -398,12 +427,12 @@
         const p = f.properties;
         return (p.w || '').toLowerCase().includes(q) || (p.l || '').toLowerCase().includes(q);
       });
-      if (!hit) { $('near-status').textContent = `No ward or LGA matching "${q}".`; return; }
+      if (!hit) { sayNear(() => T('map-unit.no-ward-or-lga-matching', 'No ward or LGA matching "{v0}".', { v0: q })); return; }
       const gj = L.geoJSON(hit);
       lmap.fitBounds(gj.getBounds(), { maxZoom: 13 });
       gj.addTo(lmap).eachLayer((l) => l.bindPopup(`<strong>${hit.properties.w}</strong><br />${hit.properties.l}, ${hit.properties.s}`).openPopup());
       setTimeout(() => lmap.removeLayer(gj), 6000);
-      $('near-status').textContent = `Showing ${hit.properties.w}, ${hit.properties.l}.`;
+      sayNear(() => T('map-unit.showing-ward-lga', 'Showing {v0}, {v1}.', { v0: hit.properties.w, v1: hit.properties.l }));
     }
 
     // GPS FIRST on Map a Unit too. Mapping is the one flow where the observer
@@ -412,13 +441,25 @@
     // handler's own failure paths already end somewhere usable, so firing it
     // unprompted cannot strand anyone.
     let nearAutoRan = false;
+    /* This button and #near-status are painted on ARRIVAL (the lookup fires
+       itself, below), which is usually before the language bundle has landed.
+       So both repaint on 'hawkeye-lang': the button from nearAutoRan, the line
+       from the last thing said on it (sayNear keeps it as a function). The
+       button's markup key comes off once it becomes the retry — apply() would
+       otherwise put "Near me" back. */
+    const paintNearBtn = () => {
+      if (!nearAutoRan) return;
+      $('btn-near').removeAttribute('data-i18n');
+      $('btn-near').textContent = '📍 ' + T('observe.search-near-me-again', 'Search Near Me Again');
+    };
+    document.addEventListener('hawkeye-lang', () => { paintNearBtn(); if (sayNear.last) $('near-status').textContent = sayNear.last(); });
     $('btn-near').onclick = () => {
       // Once a search has run this is the RETRY, not the trigger (see the
       // auto-fire below) — a control still reading "Near me" looks like work
       // the observer has yet to do.
       nearAutoRan = true;
-      $('btn-near').textContent = '📍 ' + T('observe.search-near-me-again', 'Search Near Me Again');
-      $('near-status').textContent = 'Getting your position…';
+      paintNearBtn();
+      sayNear(() => T('map-unit.getting-your-position', 'Getting your position…'));
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
         const r = await fetch(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=5000`).then((x) => x.json());
@@ -428,15 +469,16 @@
         if (nearLayer) nearLayer.remove();
         nearLayer = L.layerGroup().addTo(lmap);
         L.circleMarker([lat, lng], { radius: 7, color: '#0b0c0c', fillColor: '#fff', fillOpacity: 1 })
-          .addTo(nearLayer).bindPopup('You are here');
+          .addTo(nearLayer).bindPopup(T('map-unit.you-are-here', 'You are here'));
         for (const u of r.units || []) {
           const m = L.circleMarker([u.lat, u.lng], {
             radius: 8, color: '#fff', weight: 1.5, fillColor: STATUS_COLOR[u.status], fillOpacity: 0.95,
           }).addTo(nearLayer);
-          const label = u.status === 'verified' ? 'Location confirmed'
-            : u.status === 'crowd' ? 'Crowd-mapped'
-            : `Needs mapping${u.fixes ? ` — ${u.fixes}/3 fixes so far` : ''}`;
-          m.bindPopup(`<strong>${u.name}</strong><br />${u.puCode} · ${Math.round(u.distanceM)} m away<br />${label}`);
+          const label = u.status === 'verified' ? T('map-unit.location-confirmed', 'Location confirmed')
+            : u.status === 'crowd' ? T('map-unit.crowd-mapped', 'Crowd-mapped')
+            : u.fixes ? T('map-unit.needs-mapping-fixes', 'Needs mapping — {v0}/3 fixes so far', { v0: u.fixes })
+            : T('map-unit.needs-mapping', 'Needs mapping');
+          m.bindPopup(`<strong>${u.name}</strong><br />${u.puCode} · ${T('common.m-away', '{v0} m away', { v0: Math.round(u.distanceM) })}<br />${label}`);
           m.on('click', () => {
             if (envelope) { envelope.remove(); envelope = null; }
             if (u.status === 'approx' && u.approxRadiusM) {
@@ -449,33 +491,48 @@
             selectFromMap(u);
           });
         }
-        $('near-status').textContent = (r.units || []).length
-          ? `${r.units.length} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.`
-          : T('map.no-units-within-5km', 'No units found within 5 km — pick your state, LGA and ward below instead.');
+        const n = (r.units || []).length;
+        sayNear(() => (n
+          ? T('map-unit.units-within-5km', '{v0} unit(s) within 5 km. Positions marked orange are approximate — mapping them pins the real spot.', { v0: n })
+          : T('map.no-units-within-5km', 'No units found within 5 km — pick your state, LGA and ward below instead.')));
       }, (err) => {
         // ONE clause of tail, because on this page there genuinely is somewhere
         // else to go: the state › LGA › ward picker sits directly below.
         geoLog('near-me', err);
-        $('near-status').textContent = geoLineWith(err, ', or browse the register below.');
+        sayNear(() => geoLineWith(err));
       }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
     };
 
     initMap();
+    // A map that could not load says so at boot, before the bundle may have
+    // landed; initMap() rewrites that line, so it follows a language change.
+    document.addEventListener('hawkeye-lang', () => { if (typeof L === 'undefined') initMap(); });
     // Fire the lookup on arrival (see the note above btn-near). Deferred a tick
     // so the map is initialised before markers are drawn onto it.
     if (!nearAutoRan) setTimeout(() => $('btn-near').onclick(), 0);
 
     // ---------- my polling unit (alerts for everything at this unit) ----------
+    let MY_UNIT = null;
     async function showMyUnit() {
       if (!token) return;
       const { status, b } = await api('/api/observers/my-unit', {
         headers: { authorization: `Bearer ${token}` },
       });
-      if (status !== 200 || !b.unit) { $('my-unit-card').hidden = true; return; }
-      const u = b.unit;
-      $('my-unit-info').textContent = `⭐ ${u.name || u.pu_code} (${u.pu_code})${u.ward ? ` · ${u.ward} ward, ${u.lga}, ${u.state}` : ''}`;
+      if (status !== 200 || !b.unit) { MY_UNIT = null; $('my-unit-card').hidden = true; return; }
+      MY_UNIT = b.unit;
+      paintMyUnit();
       $('my-unit-card').hidden = false;
     }
+    // Painted from the fetched unit (MY_UNIT, declared above showMyUnit), and
+    // again on a language change: the first paint can land before the bundle does.
+    function paintMyUnit() {
+      const u = MY_UNIT;
+      if (!u) return;
+      $('my-unit-info').textContent = u.ward
+        ? T('map-unit.my-unit-line', '⭐ {v0} ({v1}) · {v2} ward, {v3}, {v4}', { v0: u.name || u.pu_code, v1: u.pu_code, v2: u.ward, v3: u.lga, v4: u.state })
+        : `⭐ ${u.name || u.pu_code} (${u.pu_code})`;
+    }
+    document.addEventListener('hawkeye-lang', paintMyUnit);
 
     $('btn-save-unit').onclick = async () => {
       if (!unit) return;
@@ -516,7 +573,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

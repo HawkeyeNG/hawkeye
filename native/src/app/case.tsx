@@ -174,7 +174,7 @@ export default function CaseScreen() {
       } else {
         setMsg(
           r.error === 'already_judged'
-            ? 'You already judged this case.'
+            ? i18nT('n.app.case.already-judged')
             : i18nT('n.app.case.could-not-record-http', { v0: r.error ?? 'error', v1: res.status }),
         );
       }
@@ -217,15 +217,17 @@ export default function CaseScreen() {
     <View className="flex-row pt-1.5">
       {(['yes', 'no', 'unsure'] as Answer[]).map((v) => {
         const on = answers[name] === v;
+        // The spoken label says the translated word too, not the API token.
+        const word = v === 'unsure' ? i18nT('n.app.case.cant-tell') : v === 'yes' ? i18nT('n.app.case.yes') : i18nT('n.app.case.no');
         return (
           <Pressable
             key={v}
             onPress={() => setAnswers((a) => ({ ...a, [name]: v }))}
             className={`mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-surface'}`}
-            accessibilityLabel={`${label}: ${v}`}
+            accessibilityLabel={`${label}: ${word}`}
           >
             <Text className={`text-xs font-bold ${on ? 'text-hawk-gold' : 'text-muted'}`}>
-              {v === 'unsure' ? "Can't tell" : v === 'yes' ? 'Yes' : 'No'}
+              {word}
             </Text>
           </Pressable>
         );
@@ -248,7 +250,7 @@ export default function CaseScreen() {
   return (
     <View className="flex-1 bg-surface">
       <ScreenHeader
-        title={`Case #${c.id}`}
+        title={i18nT('n.app.case.title', { v0: c.id })}
         translateY={translateY}
         onClose={() => router.back()}
         rightSlot={<StatusChip status={c.status} />}

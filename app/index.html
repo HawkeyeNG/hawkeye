@@ -834,7 +834,13 @@
       // iPhone it was the ONLY route; with the app on the App Store that is no
       // longer true and the old label would send people down the fallback path
       // in preference to the store.
-      if (btn) btn.textContent = 'Or install the web app — no store, no download';
+      // Keyed, English first: menu.js's apply() sweep translates it (now and on
+      // every language change) and keeps this as the English to switch back to.
+      if (btn) {
+        btn.setAttribute('data-i18n', 'index.or-install-the-web-app');
+        btn.textContent = 'Or install the web app — no store, no download';
+        if (window.HawkeyeI18n) window.HawkeyeI18n.apply(btn.parentNode);
+      }
       // The visitor's own platform goes first; the other stays available,
       // because people install on a phone from a link opened on a laptop. Shared
       // by BOTH ways into the dialog: it used to live only in the #install-cta
@@ -848,7 +854,11 @@
         if (isIOS || isAndroid) {
           (isIOS ? ios : android).classList.add('is-yours');
         } else if (hint) {
+          // Keyed, English first (this can run at boot, before the bundle):
+          // apply() translates it now and on every language change.
+          hint.setAttribute('data-i18n-html', 'index.install-desktop-hint');
           hint.innerHTML = 'On this computer, use the <strong>install</strong> icon in your browser’s address bar — or follow the steps below on your phone.';
+          if (window.HawkeyeI18n) window.HawkeyeI18n.apply(hint.parentNode);
           hint.hidden = false;
         }
       }
@@ -868,8 +878,10 @@
       // visitor who hits that warning on an election tool has every reason to
       // conclude it is malware and never come back.
       if (btn && /SamsungBrowser/i.test(ua)) {
+        hint.setAttribute('data-i18n-html', 'index.samsung-open-in-chrome');
         hint.innerHTML = '⚠ <strong>Open this page in Chrome to install.</strong> '
           + 'Samsung Internet shows a false “unsafe app” warning — Chrome installs it cleanly.';
+        if (window.HawkeyeI18n) window.HawkeyeI18n.apply(hint.parentNode);
         hint.hidden = false;
       }
       if (btn) btn.addEventListener('click', async () => {
@@ -905,7 +917,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

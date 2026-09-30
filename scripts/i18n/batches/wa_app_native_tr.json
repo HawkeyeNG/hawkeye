@@ -1,0 +1,12 @@
+{
+  "n.auth.wa-body-2": {
+    "ha": "Taɓa maɓallin — WhatsApp zai buɗe da saƙon a shirye. Danna Aika: wannan saƙon shi ne tabbatarwarka, don haka babu lambar da za ta dawo maka ka rubuta, kuma wannan shafin zai ci gaba da kansa. Kyauta ne. Aika shi daga WhatsApp ɗin da ke kan {phone}.",
+    "ig": "Pịa bọtịnụ ahụ — WhatsApp ga-emepe na ozi ahụ dị njikere. Pịa Ziga: ozi ahụ bụ nkwenye gị, ya mere ọ nweghị koodu ga-alaghachi ka ị pịnye, ihuenyo a ga-agakwa n'ihu n'onwe ya. Ọ bụ n'efu. Ziga ya site na WhatsApp dị na {phone}.",
+    "yo": "Tẹ bọ́tìnnì náà — WhatsApp yóò ṣí pẹ̀lú ìfiránṣẹ́ tí a ti pèsè. Tẹ Firánṣẹ́: ìfiránṣẹ́ yẹn ni ìfìdímúlẹ̀ rẹ, nítorí náà kò sí kóòdù tí yóò padà wá fún ọ láti tẹ̀, ojú-ìwé yìí yóò sì tẹ̀síwájú fúnra rẹ̀. Ọ̀fẹ́ ni. Fi ránṣẹ́ láti WhatsApp tó wà lórí {phone}."
+  },
+  "n.auth.wa-waiting-2": {
+    "ha": "Muna jiran saƙonka — babu abin da za ka rubuta a nan; wannan shafin zai ci gaba da kansa da zarar ya iso.",
+    "ig": "Anyị na-eche ozi gị — ọ dịghị ihe ị ga-pịnye ebe a; ihuenyo a ga-aga n'ihu n'onwe ya ozugbo ọ bịarutere.",
+    "yo": "À ń dúró de ìfiránṣẹ́ rẹ — kò sí nǹkan láti tẹ̀ níbí; ojú-ìwé yìí yóò tẹ̀síwájú fúnra rẹ̀ ní kété tí ó bá dé."
+  }
+}

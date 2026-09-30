@@ -312,7 +312,7 @@ const Slot = ({
     )}
     <View className="flex-row items-center justify-between px-3 py-2">
       <Text className="text-xs font-semibold text-muted">{label}</Text>
-      <Text className="text-xs font-bold text-good-ink">{shot ? 'Retake' : 'Take photo'}</Text>
+      <Text className="text-xs font-bold text-good-ink">{shot ? i18nT('n.app.report.collation.retake') : i18nT('common.take-photo')}</Text>
     </View>
   </Pressable>
 );
@@ -1108,9 +1108,9 @@ export default function Practice() {
       } else {
         setLine(
           body.error === 'practice_closed'
-            ? 'Practice has just closed — reopen this screen.'
+            ? i18nT('n.app.practice.practice-just-closed')
             : body.error === 'no_counts'
-              ? 'Enter at least one count.'
+              ? i18nT('n.app.practice.enter-at-least-one-count')
               : i18nT('n.app.practice.practice-submit-failed-http', { v0: body.error ?? 'error', v1: res.status }),
         );
       }
@@ -1216,14 +1216,14 @@ export default function Practice() {
         requireFix={false}
         title={
           isSheet
-            ? 'Practice — photo 1 of 2, the result sheet'
-            : 'Practice — photo 2 of 2, the venue'
+            ? i18nT('n.app.practice.camera-title-sheet')
+            : i18nT('n.app.practice.camera-title-venue')
         }
         frameGuide={isSheet}
         venueGuide={isSheet ? undefined : i18nT("n.app.practice.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
-            ? 'On election day every figure must be readable. Try it now, or use a sample.'
+            ? i18nT('n.app.practice.sheet-readable-hint')
             : i18nT("n.app.practice.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
@@ -1362,7 +1362,7 @@ export default function Practice() {
         >
           <Feather name="clock" size={15} color={ui.tint.good.ink} />
           <Text className="pl-1.5 text-xs font-bold text-good-ink">
-            {history?.length ? `${history.length} past` : 'Past runs'}
+            {history?.length ? i18nT('n.app.practice.n-past', { v0: history.length }) : i18nT('n.app.practice.past-runs')}
           </Text>
         </Pressable>
       </View>
@@ -1422,7 +1422,7 @@ export default function Practice() {
                 history.map((r) => (
                   <View key={r.id} className="mb-2 rounded-2xl bg-card px-4 py-3">
                     <Text className="text-sm font-semibold text-ink">
-                      {r.pu_name || r.pu_code || 'Practice polling unit'}
+                      {r.pu_name || r.pu_code || i18nT('n.app.practice.practice-polling-unit')}
                     </Text>
                     <Text className="pt-0.5 text-xs text-muted">
                       {r.votes
@@ -1749,7 +1749,7 @@ export default function Practice() {
           >
             <View className="mb-3 rounded-2xl bg-hawk-green px-5 py-4">
               <Text className="text-xs font-semibold uppercase tracking-wider text-hawk-gold">
-                {race?.label ?? cfg.office ?? 'Practice race'}
+                {race?.label ?? cfg.office ?? i18nT('n.app.practice.practice-race')}
               </Text>
               <Text className="pt-1 text-lg font-bold text-white">{selectedName}</Text>
               <Text className="pt-0.5 text-xs text-emerald-100">{selectedSub}</Text>
@@ -1929,7 +1929,7 @@ export default function Practice() {
                 }}
                 data={{
                   puName: i18nT('practice.practice-polling-unit'),
-                  contest: 'Practice run',
+                  contest: i18nT('n.app.practice.practice-run'),
                   votes,
                   entryHash: done.entryHash,
                   practice: true,
@@ -1958,7 +1958,7 @@ export default function Practice() {
             </Text>
             <View className="mt-2 w-full rounded-xl border border-line bg-card px-4 py-3">
               <Text className="text-[11px] font-bold text-good-ink">{i18nT('n.app.practice.preview-chip')}</Text>
-              <Text className="pt-2 text-sm font-bold text-ink">{unit?.name || 'Practice Polling Unit'}</Text>
+              <Text className="pt-2 text-sm font-bold text-ink">{unit?.name || i18nT('n.app.practice.practice-polling-unit')}</Text>
               <Text className="text-xs text-muted">
                 {/* Exactly the real card's shape: "[CONTEST] code · ward, lga, state". */}
                 {`[PRACTICE]${unit?.pu_code ? ` ${unit.pu_code}` : ''}${

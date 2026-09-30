@@ -63,6 +63,71 @@
     GOV: { title: 'Governorship', label: 'state', source: 'contest', plural: 'states', statesAreRaces: true }
   };
 
+  /**
+   * WHOLE SENTENCES, ONE SET PER CONTEST.
+   *
+   * These were built as 'Loading ' + meta.plural + '…' and
+   * 'Could not load the list of ' + meta.plural + …: an English noun glued into
+   * an English sentence, which cannot be served in Hausa, Igbo or Yorùbá — the
+   * noun moves, and it changes with the count. So each contest carries its own
+   * complete sentences. The keys are written out in full (never assembled from
+   * the code) so scripts/i18n/web_keys_resolve.mjs can see every one of them.
+   */
+  var MSG = {
+    SEN: {
+      find: ['race-picker.sen.find', 'Find your senatorial district'],
+      hint: ['race-picker.sen.hint', 'Pick a state, then your senatorial district'],
+      label: ['race-picker.sen.label', 'Senatorial district'],
+      loading: ['race-picker.sen.loading', 'Loading senatorial districts…'],
+      failed: ['race-picker.sen.failed', 'Could not load the list of senatorial districts. Tap again to retry. ({v0})'],
+      pick: ['race-picker.sen.pick', '— select senatorial district —'],
+      one: ['race-picker.sen.count-one', '{v0} senatorial district in {v1}'],
+      many: ['race-picker.sen.count', '{v0} senatorial districts in {v1}'],
+      none: ['race-picker.sen.none', 'No senatorial districts listed for {v0}.'],
+    },
+    REP: {
+      find: ['race-picker.rep.find', 'Find your federal constituency'],
+      hint: ['race-picker.rep.hint', 'Pick a state, then your federal constituency'],
+      label: ['race-picker.rep.label', 'Federal constituency'],
+      loading: ['race-picker.rep.loading', 'Loading federal constituencies…'],
+      failed: ['race-picker.rep.failed', 'Could not load the list of federal constituencies. Tap again to retry. ({v0})'],
+      pick: ['race-picker.rep.pick', '— select federal constituency —'],
+      one: ['race-picker.rep.count-one', '{v0} federal constituency in {v1}'],
+      many: ['race-picker.rep.count', '{v0} federal constituencies in {v1}'],
+      none: ['race-picker.rep.none', 'No federal constituencies listed for {v0}.'],
+    },
+    SHA: {
+      find: ['race-picker.sha.find', 'Find your state constituency'],
+      hint: ['race-picker.sha.hint', 'Pick a state, then your state constituency'],
+      label: ['race-picker.sha.label', 'State constituency'],
+      loading: ['race-picker.sha.loading', 'Loading state constituencies…'],
+      failed: ['race-picker.sha.failed', 'Could not load the list of state constituencies. Tap again to retry. ({v0})'],
+      pick: ['race-picker.sha.pick', '— select state constituency —'],
+      one: ['race-picker.sha.count-one', '{v0} state constituency in {v1}'],
+      many: ['race-picker.sha.count', '{v0} state constituencies in {v1}'],
+      none: ['race-picker.sha.none', 'No state constituencies listed for {v0}.'],
+    },
+    LGA: {
+      find: ['race-picker.lga.find', 'Find your local government area'],
+      hint: ['race-picker.lga.hint', 'Pick a state, then your local government area'],
+      label: ['race-picker.lga.label', 'Local government area'],
+      loading: ['race-picker.lga.loading', 'Loading local government areas…'],
+      failed: ['race-picker.lga.failed', 'Could not load the list of local government areas. Tap again to retry. ({v0})'],
+      pick: ['race-picker.lga.pick', '— select local government area —'],
+      one: ['race-picker.lga.count-one', '{v0} local government area in {v1}'],
+      many: ['race-picker.lga.count', '{v0} local government areas in {v1}'],
+      none: ['race-picker.lga.none', 'No local government areas listed for {v0}.'],
+    },
+    GOV: {
+      find: ['race-picker.gov.find', 'Find your state'],
+    }
+  };
+  /** One of the sentences above, in the language of the moment. */
+  function say(code, which, vars) {
+    var m = MSG[code] && MSG[code][which];
+    return m ? RV(m[0], m[1], vars || {}) : '';
+  }
+
   function isCombined(code) { return Object.prototype.hasOwnProperty.call(COMBINED, code); }
 
   function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
@@ -237,8 +302,12 @@
         var row = seats[k];
         if (!row || String(row.state).toLowerCase() !== String(state).toLowerCase()) return;
         var bits = [];
-        if (row.wards) bits.push(row.wards + (row.wards === 1 ? ' ward' : ' wards'));
-        if (row.pollingUnits) bits.push(row.pollingUnits.toLocaleString() + ' polling units');
+        if (row.wards) {
+          bits.push(row.wards === 1
+            ? RV('race-picker.wards-one', '{v0} ward', { v0: row.wards })
+            : RV('race-picker.wards', '{v0} wards', { v0: row.wards }));
+        }
+        if (row.pollingUnits) bits.push(RV('race-picker.polling-units', '{v0} polling units', { v0: row.pollingUnits.toLocaleString() }));
         out.push({ name: seatName(code, k, row), sub: bits.join(' · ') });
       });
     }
@@ -289,17 +358,6 @@
       return s.split('{' + v + '}').join(vars[v]);
     }, RT(k, en));
   }
-  /* meta.label is the unit word the seat is chosen by. It is interpolated into
-     both sentences above, so translating it here reaches all of them. */
-  function word(label) {
-    return RT({
-      state: 'unit.state.one',
-      LGA: 'unit.lga.one',
-      'senatorial district': 'unit.senatorial.one',
-      'federal constituency': 'unit.federal.one',
-    }[label] || 'x.' + label, label);
-  }
-
   function mount(host, code, opts) {
     if (!host || !isCombined(code)) return false;
     var given = (opts && opts.states) || null;
@@ -324,10 +382,13 @@
     host.innerHTML =
       '<div class="rp-card" data-open="0">'
       + '<button type="button" class="rp-head" aria-expanded="false">'
-      + '<span class="rp-title">' + RV('race-picker.find-your', 'Find your {v0}', { v0: word(meta.label) }) + '</span>'
+      // Whole sentences per contest (see MSG). "Find your {v0}" with a noun
+      // dropped in read "Find your state constituency" in English under every
+      // language: two of the five nouns had no translation at all.
+      + '<span class="rp-title">' + say(code, 'find') + '</span>'
       + '<span class="rp-hint">'
       + (oneStep ? RT('race-picker.pick-a-state-to-open-its-race', 'Pick a state to open its race')
-        : RV('race-picker.pick-a-state-then-your', 'Pick a state, then your {v0}', { v0: word(meta.label) }))
+        : say(code, 'hint'))
       + '</span>'
       + '<span class="rp-chev" aria-hidden="true">›</span>'
       + '</button>'
@@ -339,12 +400,11 @@
       // twin drops the same heading (race-picker.tsx) — there it is decoration,
       // here it is a real <label for>, hence the two different removals.
       + (oneStep
-        ? '<select id="rp-state" aria-label="State"><option value="">' + RT('common.select-state', '— select state —') + '</option></select>'
-        : '<label class="rp-lab" for="rp-state">State</label>'
+        ? '<select id="rp-state" aria-label="' + RT('common.state', 'State') + '"><option value="">' + RT('common.select-state', '— select state —') + '</option></select>'
+        : '<label class="rp-lab" for="rp-state">' + RT('common.state', 'State') + '</label>'
           + '<select id="rp-state"><option value="">' + RT('common.select-state', '— select state —') + '</option></select>')
       + (oneStep ? ''
-        : '<label class="rp-lab" for="rp-seat">'
-          + meta.label.replace(/^\w/, function (c) { return c.toUpperCase(); }) + '</label>'
+        : '<label class="rp-lab" for="rp-seat">' + say(code, 'label') + '</label>'
           + '<select id="rp-seat" disabled><option value="">' + RT('race-picker.select-state-first', '— select state first —') + '</option></select>')
       + '<p class="rp-msg" role="status" aria-live="polite"></p>'
       + '</div></div>';
@@ -366,7 +426,10 @@
       // string nobody thinks of as data is still markup to innerHTML.
       sel.innerHTML = '<option value="">' + String(placeholder || '').replace(/</g, '&lt;') + '</option>'
         + rows.map(function (r) {
-          var label = typeof r === 'string' ? r : r.name + (r.sub ? '  —  ' + r.sub : '');
+          // govRows() tags a state with the literal 'off-cycle' — data, kept
+          // English so its test can read it; the WORD is chosen here.
+          var sub = typeof r === 'string' ? '' : (r.sub === 'off-cycle' ? RT('race-picker.off-cycle', 'off-cycle') : r.sub);
+          var label = typeof r === 'string' ? r : r.name + (sub ? '  —  ' + sub : '');
           var val = typeof r === 'string' ? r : r.name;
           return '<option value="' + val.replace(/"/g, '&quot;') + '">'
             + label.replace(/</g, '&lt;') + '</option>';
@@ -395,7 +458,7 @@
            * the page told a reader no governorships were being held because a
            * fetch had failed. The honest statement covers both causes.
            */
-          msg.textContent = 'The list of states is unavailable. Reload the page to try again.';
+          msg.textContent = RT('race-picker.states-unavailable', 'The list of states is unavailable. Reload the page to try again.');
           return;
         }
         data = given;
@@ -409,21 +472,22 @@
           // count taken from the widened list stated two different sets as one
           // sentence, so the totals could disagree with the select itself.
           var off = rows.filter(function (r) { return typeof r !== 'string'; }).length;
-          return (rows.length - off) + ' states vote for governor in this election'
-            + (off ? ' · ' + off + ' others are off-cycle' : '');
+          return off
+            ? RV('race-picker.gov-count-off', '{v0} states vote for governor in this election · {v1} others are off-cycle', { v0: rows.length - off, v1: off })
+            : RV('race-picker.gov-count', '{v0} states vote for governor in this election', { v0: rows.length - off });
         };
         var first = govRows(given, null);
-        fill(selState, first, '— select state —');
+        fill(selState, first, RT('common.select-state', '— select state —'));
         msg.textContent = count(first);
         load('political_data.json').then(function (pd) {
           var rows = govRows(given, Object.keys((pd && pd.stateStats) || {}));
           if (rows.length <= first.length) return;  // nothing gained; leave it
-          fill(selState, rows, '— select state —');
+          fill(selState, rows, RT('common.select-state', '— select state —'));
           msg.textContent = count(rows);
         }).catch(function () { /* the contest's own states already render */ });
         return;
       }
-      msg.textContent = 'Loading ' + meta.plural + '…';
+      msg.textContent = say(code, 'loading');
       load(meta.source === 'lgas' ? 'district_index.json' : 'seat_lgas.json')
         .then(function (d) {
           var states = statesFor(code, d);
@@ -432,12 +496,12 @@
           // which is what a Response object looked like on the first run.
           if (!states.length) throw new Error('no states in ' + (meta.source === 'lgas' ? 'district_index.json' : 'seat_lgas.json'));
           data = d;
-          fill(selState, states, '— select state —');
+          fill(selState, states, RT('common.select-state', '— select state —'));
           msg.textContent = '';
         })
         .catch(function (e) {
           // Say it, and leave the card usable so a retry is one tap.
-          msg.textContent = 'Could not load the list of ' + meta.plural + '. Tap again to retry. (' + ((e && e.message) || e) + ')';
+          msg.textContent = say(code, 'failed', { v0: (e && e.message) || e });
           data = null;
         });
     }
@@ -453,15 +517,15 @@
       }
       if (!s || !data) {
         selSeat.disabled = true;
-        fill(selSeat, [], '— select state first —');
+        fill(selSeat, [], RT('race-picker.select-state-first', '— select state first —'));
         return;
       }
       var rows = optionsFor(code, data, s);
       selSeat.disabled = rows.length === 0;
-      fill(selSeat, rows, rows.length ? '— select ' + meta.label + ' —' : '— none listed for ' + s + ' —');
+      fill(selSeat, rows, rows.length ? say(code, 'pick') : RV('race-picker.none-listed-for', '— none listed for {v0} —', { v0: s }));
       msg.textContent = rows.length
-        ? rows.length + ' ' + (rows.length === 1 ? meta.label : meta.plural) + ' in ' + s
-        : 'No ' + meta.plural + ' listed for ' + s + '.';
+        ? say(code, rows.length === 1 ? 'one' : 'many', { v0: rows.length, v1: s })
+        : say(code, 'none', { v0: s });
     });
 
     // Absent on a one-step contest, because the markup above no longer writes

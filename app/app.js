@@ -28,6 +28,21 @@ function T(key, english, params) {
   return out;
 }
 
+/**
+ * Text written into an element that carries its own data-i18n (a badge, a
+ * camera button): the KEY moves with it, because menu.js re-runs apply() on
+ * every language change and would otherwise put the markup's first words back.
+ * The ENGLISH is written and apply() translates it — apply() remembers the
+ * first text it sees under a key as that key's English, so writing the
+ * translation directly would make it the "English" a switch back restores.
+ */
+function keyedText(el, key, english) {
+  if (!el) return;
+  el.setAttribute('data-i18n', key);
+  el.textContent = english;
+  if (window.HawkeyeI18n && el.parentNode) window.HawkeyeI18n.apply(el.parentNode);
+}
+
 
 const $ = (id) => document.getElementById(id);
 const API = ''; // same origin
@@ -853,8 +868,10 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
   syncChannelGate();
-  $('btn-auth').textContent = toPw ? 'Sign In' : 'Request OTP';
-  $('pw-link').textContent = toPw ? 'Forgot your password?' : 'Sign in with your password instead';
+  $('btn-auth').textContent = toPw ? T('observe.sign-in', 'Sign In') : T('observe.request-otp', 'Request OTP');
+  $('pw-link').textContent = toPw
+    ? T('observe.forgot-your-password', 'Forgot your password?')
+    : T('observe.sign-in-with-password-instead', 'Sign in with your password instead');
   $('otp-hint').textContent = '';
   paintPasskeySignIn();   // the passkey button belongs to the password step only
 };
@@ -978,27 +995,34 @@ async function resendVia(channel) {
 // The user needs a single fact — where the code went — and the number so they can
 // spot a typo. Telegram is the default, so a Telegram send also offers WhatsApp.
 function renderOtpSent(body) {
-  const to = `<strong>${pendingPhone.replace(/</g, '&lt;')}</strong>`;
+  /* WHOLE SENTENCES, markup inside the value. The number is escaped before it
+     goes in; the Telegram link is the server's, as it always was. A link that
+     is a sentence of its own ("Use Telegram instead", "Prefer WhatsApp? …")
+     is its own key — two sentences side by side, not one glued together. */
+  const to = pendingPhone.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const hint = $('otp-hint');
-  const waSwitch = ' <a class="btn-link" id="switch-wa" href="#">Prefer WhatsApp? Get the code there instead.</a>';
+  const waSwitch = ` <a class="btn-link" id="switch-wa" href="#">${T('observe.prefer-whatsapp-instead', 'Prefer WhatsApp? Get the code there instead.')}</a>`;
   if (body.devOtp) {
     hint.textContent = T('observe.dev-mode-your-code-is', 'DEV MODE — your code is {code}').replace('{code}', body.devOtp);
   } else if (body.viaWhatsapp) {
-    hint.innerHTML = `Code sent on WhatsApp to ${to}.`;
+    hint.innerHTML = T('observe.code-sent-whatsapp', 'Code sent on WhatsApp to <strong>{phone}</strong>.', { phone: to });
   } else if (body.viaSms) {
     // Telegram stays a quiet alternative on its own line, never auto-launched.
-    hint.innerHTML = `Code sent by SMS to ${to}.${body.telegramLink
-      ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">Use Telegram instead</a>` : ''}`;
+    hint.innerHTML = T('observe.code-sent-sms', 'Code sent by SMS to <strong>{phone}</strong>.', { phone: to }) + (body.telegramLink
+      ? ` <a class="btn-link" href="${body.telegramLink}" target="_blank" rel="noopener">${T('observe.use-telegram-instead', 'Use Telegram instead')}</a>` : '');
   } else if (body.telegramLink) {
     // The bot can only message someone who has opened it, so we send them
     // straight there; the two taps inside the bot are the whole instruction.
-    hint.innerHTML = `<a class="btn-link" id="tg-open" href="${body.telegramLink}" target="_blank" rel="noopener">Open Telegram</a> — tap <strong>Start</strong>, then <strong>Share my phone number</strong>.` + waSwitch;
-    $('tg-open').click(); // fresh gesture-linked click dodges popup blockers
+    // "Start" and "Share my phone number" stay as Telegram shows them.
+    hint.innerHTML = T('observe.open-telegram-start-share',
+      '<a class="btn-link" id="tg-open" href="{link}" target="_blank" rel="noopener">Open Telegram</a> — tap <strong>Start</strong>, then <strong>Share my phone number</strong>.',
+      { link: body.telegramLink }) + waSwitch;
+    if ($('tg-open')) $('tg-open').click(); // fresh gesture-linked click dodges popup blockers
   } else if (body.viaTelegram) {
     // Telegram is the default — say so plainly, and offer WhatsApp as the switch.
-    hint.innerHTML = `Code sent on Telegram to ${to}.` + waSwitch;
+    hint.innerHTML = T('observe.code-sent-telegram', 'Code sent on Telegram to <strong>{phone}</strong>.', { phone: to }) + waSwitch;
   } else {
-    hint.innerHTML = `Code sent to ${to}.`;
+    hint.innerHTML = T('observe.code-sent-to', 'Code sent to <strong>{phone}</strong>.', { phone: to });
   }
   const sw = $('switch-wa');
   if (sw) sw.onclick = (e) => { e.preventDefault(); resendVia('whatsapp'); };
@@ -1205,13 +1229,16 @@ async function startWaSend(phone, newPw) {
     deadline: Date.now() + (Number(body.expiresInS) || 600) * 1000,
     delay: Number(body.pollAfterMs) || 2000, timer: 0, busy: false, fails: 0,
   };
-  $('wa-body').textContent = T('auth.wa-body', "Tap the button to open WhatsApp with the message ready, then press Send. It's free. Send it from the WhatsApp on {phone}.", { phone });
+  // SENDING IS THE VERIFICATION. Nothing comes back to type, and this screen
+  // moves on by itself — the old copy did not say so, and people waited for a
+  // code that was never coming.
+  $('wa-body').textContent = T('auth.wa-body-2', "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.", { phone });
   $('wa-code').textContent = body.code;
   wa.number = body.waNumber;
   $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: body.waNumber });
   if ($('wa-again-line')) $('wa-again-line').hidden = true;
   if ($('wa-open')) $('wa-open').hidden = false;
-  waStatus(T('auth.wa-waiting', 'Waiting for your message…'));
+  waStatus(T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.'));
   showWaPane(true);
   waSchedule(wa.delay);
   return true;
@@ -1247,7 +1274,7 @@ async function waPoll() {
   if (r.status === 200 && r.body.mismatch) {
     waStatus(T('auth.wa-mismatch', 'We got the code from a different number. Send it from the WhatsApp on {phone}, or go back and enter the number your WhatsApp uses.', { phone: pendingPhone }));
   } else {
-    waStatus(T('auth.wa-waiting', 'Waiting for your message…'));
+    waStatus(T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.'));
   }
   waSchedule(mine.delay);
 }
@@ -1303,9 +1330,54 @@ async function waFallback(channel) {
     $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.');
   }
 }
+/**
+ * THE APP ITSELF, ON A PHONE.
+ *
+ * wa.me is a web page that then offers to open WhatsApp — on a phone that is a
+ * browser screen and one more tap before the prefilled message is even in
+ * view. whatsapp://send opens the app straight onto the chat. It is built from
+ * the SERVER's wa.me link (its number and ?text), so there is still one source
+ * for both and nothing here hardcodes our number.
+ *
+ * If the app does not open (not installed, or the scheme is refused) this page
+ * is still in front a beat later, and the wa.me link takes over exactly as
+ * before. A desktop keeps wa.me: that is how WhatsApp Web and Desktop take it.
+ */
+function waAppLink(link) {
+  try {
+    const u = new URL(link);
+    if (!/(^|\.)wa\.me$/i.test(u.hostname)) return null;
+    const phone = u.pathname.replace(/\D/g, '');
+    if (!phone) return null;
+    const text = u.searchParams.get('text') || '';
+    return `whatsapp://send?phone=${phone}${text ? `&text=${encodeURIComponent(text)}` : ''}`;
+  } catch { return null; }
+}
+const waOnPhone = () => Boolean(window.Capacitor)
+  || Boolean(navigator.userAgentData && navigator.userAgentData.mobile)
+  || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+// A new tab (Lite: the system opens WhatsApp) so this page keeps waiting. A
+// blocked popup (it can be, a second after the tap) navigates instead.
+const waOpenWeb = (link) => { if (!window.open(link, '_blank', 'noopener') && waOnPhone()) location.href = link; };
 if ($('wa-open')) $('wa-open').onclick = () => {
-  // A new tab (Lite: the system opens WhatsApp) so this page keeps waiting.
-  if (wa && wa.link) window.open(wa.link, '_blank', 'noopener');
+  if (!wa || !wa.link) return;
+  const link = wa.link;
+  const app = waOnPhone() ? waAppLink(link) : null;
+  if (!app) { window.open(link, '_blank', 'noopener'); return; }
+  // Did WhatsApp take over? Any of these means the page went behind it.
+  let left = false;
+  const gone = () => { left = true; };
+  const hid = () => { if (document.hidden) left = true; };
+  window.addEventListener('pagehide', gone);
+  window.addEventListener('blur', gone);
+  document.addEventListener('visibilitychange', hid);
+  location.href = app;
+  setTimeout(() => {
+    window.removeEventListener('pagehide', gone);
+    window.removeEventListener('blur', gone);
+    document.removeEventListener('visibilitychange', hid);
+    if (!left && document.visibilityState === 'visible') waOpenWeb(link);
+  }, 1200);
 };
 if ($('wa-copy')) $('wa-copy').onclick = async (e) => {
   e.preventDefault();
@@ -1749,7 +1821,7 @@ function resetReportState() {
   if (oldHint) oldHint.remove();
   for (const t of ['sheet', 'venue']) {
     $(`preview-${t}`).hidden = true;
-    $(`btn-cam-${t}`).textContent = T('common.take-photo', 'Take photo');
+    keyedText($(`btn-cam-${t}`), 'common.take-photo', 'Take photo');
   }
   // A new report has no sheet yet, so the counts step must not still be offering
   // the PREVIOUS report's — the worst possible thing to type figures from.
@@ -2267,7 +2339,10 @@ function paintSubmitFacts() {
 function updateSubmitState() {
   for (const t of ['sheet', 'venue']) {
     const badge = $(`status-${t}`);
-    badge.textContent = shots[t] ? 'Captured ✔' : 'Required';
+    // The KEY moves with the word: the badge carries data-i18n="common.required"
+    // in the markup, and apply() re-runs on every language change.
+    if (shots[t]) keyedText(badge, 'common.captured', 'Captured ✔');
+    else keyedText(badge, 'common.required', 'Required');
     badge.classList.toggle('done', Boolean(shots[t]));
   }
   // Step 1's confirmer is the second photo landing.
@@ -2295,17 +2370,19 @@ function updateSubmitState() {
  * fixed on this page and stayed broken there. capture.js is now the only copy;
  * this page supplies the tail that is genuinely its own (finalizeShot).
  */
-const TARGET_LABELS = {
-  sheet: { title: 'Results sheet (EC8A)', action: 'Capture EC8A' },
-  venue: { title: 'Polling venue', action: 'Capture Polling Venue' },
-};
+// A function, so the labels are in the language of the moment the camera
+// opens (capture.js paints them on every open).
+const targetLabels = () => ({
+  sheet: { title: T('observe.results-sheet-ec8a', 'Results sheet (EC8A)'), action: T('observe.capture-ec8a', 'Capture EC8A') },
+  venue: { title: T('observe.polling-venue', 'Polling venue'), action: T('observe.capture-polling-venue', 'Capture Polling Venue') },
+});
 const closeCamera = () => window.HAWKEYE_CAPTURE.close();
 const openCamera = (target) => window.HAWKEYE_CAPTURE.open(target, {
   // Truthy closes the camera; falsy keeps it open for a retake, which is what
   // finalizeShot already signals.
   onShot: (blob, t) => finalizeShot(t, blob),
   onError: (m) => { $('submit-status').textContent = m; },
-  labels: TARGET_LABELS,
+  labels: targetLabels(),
 });
 
 $('btn-cam-sheet').onclick = () => openCamera('sheet');
@@ -2440,9 +2517,10 @@ async function resolveUnitFromSheet(text) {
   if (!hit) {
     let codes = [];
     try { codes = P.extractCandidates(text); } catch { /* report as unread */ }
+    const esc1 = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;');
     box.innerHTML = codes.length
-      ? `<p class="hint">Read <strong>${codes[0]}</strong> off the sheet, but no unit with that code was found — pick yours below.</p>`
-      : '<p class="hint">Could not read unit code off sheet. Pick unit below.</p>';
+      ? `<p class="hint">${T('observe.sheet-code-no-unit', 'Read <strong>{code}</strong> off the sheet, but no unit with that code was found — pick yours below.', { code: esc1(codes[0]) })}</p>`
+      : `<p class="hint">${T('observe.sheet-code-unread', 'Could not read unit code off sheet. Pick unit below.')}</p>`;
     return;
   }
   const u = hit.unit;
@@ -2450,12 +2528,17 @@ async function resolveUnitFromSheet(text) {
   const card = document.createElement('div');
   card.className = 'card';
   card.style.cssText = 'border:2px solid var(--green);margin:0 0 10px';
-  card.innerHTML = `<p style="margin:0 0 6px;font-weight:700">Is this your polling unit?</p>
+  // "read from the sheet" is a tag in a · list, not a clause of a sentence, so
+  // the list stays in code; the tag itself is one whole phrase per case.
+  const readTag = hit.source === 'repaired'
+    ? T('observe.read-from-sheet-corrected', 'read from the sheet (one digit corrected)')
+    : T('observe.read-from-sheet', 'read from the sheet');
+  card.innerHTML = `<p style="margin:0 0 6px;font-weight:700">${T('observe.is-this-your-polling-unit', 'Is this your polling unit?')}</p>
     <p style="margin:0 0 2px"><strong>${u.name}</strong></p>
-    <p class="hint" style="margin:0 0 10px">${u.pu_code}${where ? ` · ${where}` : ''} · read from the sheet${hit.source === 'repaired' ? ' (one digit corrected)' : ''}</p>
+    <p class="hint" style="margin:0 0 10px">${u.pu_code}${where ? ` · ${where}` : ''} · ${readTag}</p>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <button class="pu-yes" style="flex:1;min-width:120px">Yes, use this unit</button>
-      <button class="pu-no secondary" style="flex:1;min-width:100px">No, choose another</button>
+      <button class="pu-yes" style="flex:1;min-width:120px">${T('observe.yes-use-this-unit', 'Yes, use this unit')}</button>
+      <button class="pu-no secondary" style="flex:1;min-width:100px">${T('observe.no-choose-another', 'No, choose another')}</button>
     </div>`;
   card.querySelector('.pu-yes').onclick = () => { card.remove(); selectUnit(u); };
   card.querySelector('.pu-no').onclick = () => {
@@ -2630,7 +2713,9 @@ async function finalizeShot(target, blob) {
   // observer has usually left the crowd, and their own photo was two collapsed
   // steps up the page — while the step said to copy the figures off it.
   if (target === 'sheet') showSheetReference(img.src);
-  $(`btn-cam-${target}`).textContent = T('observe.retake-photo', 'Retake photo');
+  // Key with the text: the button's markup key is "Take photo", and apply()
+  // re-runs on every language change.
+  keyedText($(`btn-cam-${target}`), 'observe.retake-photo', 'Retake photo');
   updateSubmitState();
   return true;
 }
@@ -3092,9 +3177,9 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
       // sign-up fields, so hide them again and repaint the panel's own lines.
       if (authMode === 'wa' && wa) {
         showWaPane(true);
-        $('wa-body').textContent = T('auth.wa-body', "Tap the button to open WhatsApp with the message ready, then press Send. It's free. Send it from the WhatsApp on {phone}.", { phone: pendingPhone });
+        $('wa-body').textContent = T('auth.wa-body-2', "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.", { phone: pendingPhone });
         if (wa.number) $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: wa.number });
-        waStatus(wa.deadline ? T('auth.wa-waiting', 'Waiting for your message…') : T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
+        waStatus(wa.deadline ? T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.') : T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
       }
       paintElsewhere();
     }

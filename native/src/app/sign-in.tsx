@@ -36,7 +36,7 @@ import { typedInviteCode } from '@/lib/invite-parse';
 import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
-import { startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
+import { openWhatsApp, startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
 
@@ -200,8 +200,12 @@ export default function SignIn() {
 
   // `via` defaults to the chip; the WhatsApp step's fallbacks name theirs, since
   // a setChannel() in the same tap has not reached this closure yet.
-  const send = (verb: string, via: Channel = channel as Channel) => {
-    setLine(i18nT('n.app.sign-in.code-to', { v0: verb, v1: phone.trim() }));
+  // `verb` picks one of two WHOLE sentences — never an English word glued into
+  // a translated one ("Sending" inside a Hausa line was how this used to read).
+  const send = (verb: 'Sending' | 'Re-sending', via: Channel = channel as Channel) => {
+    setLine(verb === 'Re-sending'
+      ? i18nT('n.app.sign-in.resending-code-to', { v0: phone.trim() })
+      : i18nT('n.app.sign-in.sending-code-to', { v0: phone.trim() }));
     setCooldown(30);
     // Non-null: Send code is disabled until a channel is picked.
     // `signup` lets the server refuse a registered number WITHOUT sending —
@@ -227,11 +231,11 @@ export default function SignIn() {
           setStep('request');
           setLine(
             r.error === 'invalid_phone'
-              ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+              ? i18nT('n.auth.wa-invalid-phone')
               : r.error === 'too_many_requests'
-                ? 'Too many code requests from this network — wait a few minutes.'
+                ? i18nT('n.app.sign-in.too-many-code-requests')
                 : r.error === 'sms_send_failed'
-                  ? 'That code could not be delivered — try another channel below.'
+                  ? i18nT('n.app.sign-in.code-not-delivered')
                   : (r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check')),
           );
         }
@@ -273,7 +277,7 @@ export default function SignIn() {
         const key = r.error ? ORG_ERROR_KEYS[r.error] : undefined;
         setLine(
           key ? authT(key)
-          : r.error === 'invalid_phone' ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+          : r.error === 'invalid_phone' ? i18nT('n.auth.wa-invalid-phone')
           : (r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again')),
         );
         return;
@@ -392,9 +396,9 @@ export default function SignIn() {
       );
       if (!r.ok) {
         setLine(
-          r.error === 'otp_incorrect' ? 'Wrong code — check and retry.'
-          : r.error === 'otp_expired' ? 'Code expired — request a new one.'
-          : r.error === 'too_many_attempts' ? 'Too many wrong codes — request a new one.'
+          r.error === 'otp_incorrect' ? i18nT('n.app.profile.wrong-code-check-and-retry')
+          : r.error === 'otp_expired' ? i18nT('n.app.sign-in.code-expired')
+          : r.error === 'too_many_attempts' ? i18nT('n.app.sign-in.too-many-wrong-codes')
           : (r.hint ?? i18nT('n.app.sign-in.verification-failed-try-again')),
         );
         return;
@@ -561,7 +565,7 @@ export default function SignIn() {
       }
       setLine(
         r.error === 'invalid_phone'
-          ? 'Enter a Nigerian mobile number, e.g. 08031234567.'
+          ? i18nT('n.auth.wa-invalid-phone')
           // wrong_password / too_many_attempts hints are user-ready copy and
           // both already point at the code path — show them verbatim.
           : (r.hint ?? i18nT('n.app.sign-in.sign-in-failed-try-again')),
@@ -618,11 +622,11 @@ export default function SignIn() {
         return;
       }
       setLine(
-        r.error === 'password_too_short' ? 'Use at least 8 characters.'
-        : r.error === 'password_too_long' ? 'That password is too long (200 characters max).'
+        r.error === 'password_too_short' ? i18nT('n.app.sign-in.use-at-least-8-characters')
+        : r.error === 'password_too_long' ? i18nT('n.app.sign-in.password-too-long')
         // The no-current-password window is 15 min from the code — past that the
         // server asks for the old one, which is exactly what they don't have.
-        : r.error === 'current_password_wrong' ? 'That took too long — request a new code and try again.'
+        : r.error === 'current_password_wrong' ? i18nT('n.app.sign-in.code-window-passed')
         : (r.hint ?? i18nT('n.app.sign-in.could-not-save-that-password-try')),
       );
     } catch {
@@ -674,10 +678,10 @@ export default function SignIn() {
 
   const setPwCopy =
     purpose === 'reset'
-      ? { title: i18nT('n.app.sign-in.choose-a-new-password'), body: 'Your number is verified. Pick a new password — at least 8 characters.' }
+      ? { title: i18nT('n.app.sign-in.choose-a-new-password'), body: i18nT('n.app.sign-in.reset-body') }
       : purpose === 'no-password'
-        ? { title: i18nT('n.app.sign-in.set-your-password'), body: 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.' }
-        : { title: i18nT('n.app.sign-in.create-your-password'), body: 'Verified. Choose a password — at least 8 characters.' };
+        ? { title: i18nT('n.app.sign-in.set-your-password'), body: i18nT('n.app.sign-in.set-body') }
+        : { title: i18nT('n.app.sign-in.create-your-password'), body: i18nT('n.app.sign-in.create-body') };
 
   const pwSaveDisabled = busy || newPw.length < 8 || newPw2.length < 8;
 
@@ -687,7 +691,7 @@ export default function SignIn() {
     : waWait === 'expired' ? i18nT('n.auth.wa-expired')
     : waWait === 'offline' ? i18nT('n.auth.wa-offline')
     : waWait === 'mismatch' ? i18nT('n.auth.wa-mismatch', { phone: phone.trim() })
-    : i18nT('n.auth.wa-waiting');
+    : i18nT('n.auth.wa-waiting-2');
   const waCalm = waWait === 'waiting' || waWait === 'verified';
 
   return (
@@ -712,12 +716,12 @@ export default function SignIn() {
           )}
           <Text className="pl-3 text-lg font-bold text-ink">
             {step === 'set-password'
-              ? 'Your Password'
+              ? i18nT('n.app.sign-in.title-your-password')
               : step === 'exists'
-                ? 'You Already Have an Account'
+                ? i18nT('n.app.sign-in.title-exists')
                 : purpose === 'signup' && step !== 'password'
-                  ? 'Create Account'
-                  : 'Sign In'}
+                  ? i18nT('n.app.sign-in.title-create-account')
+                  : i18nT('n.app.sign-in.title-sign-in')}
           </Text>
         </View>
 
@@ -872,7 +876,7 @@ export default function SignIn() {
                 }}
               >
                 <Text className="text-sm font-semibold text-good-ink">
-                  {purpose === 'signup' ? 'Already have an account? Sign in' : 'Back to password sign-in'}
+                  {purpose === 'signup' ? i18nT('n.app.sign-in.have-account-sign-in') : i18nT('n.app.sign-in.back-to-password-sign-in')}
                 </Text>
               </Pressable>
               {/* SIGN-UP ONLY, and the condition is load-bearing rather than
@@ -1001,7 +1005,7 @@ export default function SignIn() {
                   Twin of app/observe.html #wa-send. */}
               <Text className="text-2xl font-bold text-ink">{i18nT('n.auth.wa-title')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">
-                {i18nT('n.auth.wa-body', { phone: phone.trim() })}
+                {i18nT('n.auth.wa-body-2', { phone: phone.trim() })}
               </Text>
               <View className="items-center rounded-2xl bg-card px-4 py-5">
                 <Text
@@ -1029,7 +1033,12 @@ export default function SignIn() {
                 <Pressable
                   disabled={waWait === 'verified'}
                   onPress={() => {
-                    if (wa) Linking.openURL(wa.waLink).catch(() => {});
+                    // The WhatsApp app itself (whatsapp://), wa.me only if that
+                    // fails. In a browser (the web build) wa.me as before: a
+                    // browser swallows an unknown scheme without an error.
+                    if (!wa) return;
+                    if (Platform.OS === 'web') Linking.openURL(wa.waLink).catch(() => {});
+                    else void openWhatsApp(wa.waLink, (u) => Linking.openURL(u));
                   }}
                   accessibilityRole="button"
                   className="mt-5 flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
@@ -1118,7 +1127,7 @@ export default function SignIn() {
                   <Text
                     className={`text-sm font-semibold ${cooldown > 0 ? 'text-faint' : 'text-good-ink'}`}
                   >
-                    {cooldown > 0 ? i18nT('n.app.sign-in.resend-in-s', { v0: cooldown }) : 'Resend code'}
+                    {cooldown > 0 ? i18nT('n.app.sign-in.resend-in-s', { v0: cooldown }) : i18nT('n.app.sign-in.resend-code')}
                   </Text>
                 </Pressable>
                 <Pressable onPress={() => setStep('request')}>

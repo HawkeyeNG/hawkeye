@@ -5,8 +5,21 @@
 (function () {
   /* Same helper as app.js: the English literal stays in the source, so this
      file still reads as English and still renders with no bundle loaded. */
-  function T(key, english) {
-    return window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english;
+  function T(key, english, params) {
+    const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(key, english) : english);
+    return params ? s.replace(/\{(\w+)\}/g, (m, k) => (k in params ? String(params[k]) : m)) : s;
+  }
+  /* Text written into an element that carries its own data-i18n: the key moves
+     with it, because menu.js re-runs apply() on every language change and
+     would otherwise put the markup's original words back. The ENGLISH goes in
+     and apply() translates it: apply() remembers the first text it sees under a
+     key as that key's English, so writing the translation directly would make
+     it the "English" that a switch back to English restores. */
+  function keyed(el, key, english) {
+    if (!el) return;
+    el.setAttribute('data-i18n', key);
+    el.textContent = english;
+    if (window.HawkeyeI18n && el.parentNode) window.HawkeyeI18n.apply(el.parentNode);
   }
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
@@ -23,7 +36,7 @@
   function markSlot(slot) {
     shots[slot] = true;
     const badge = $(`status-${slot}`);
-    badge.textContent = 'Captured ✓';
+    keyed(badge, 'common.captured', 'Captured ✔');
     badge.classList.add('done');
     refreshSubmit();
   }
@@ -50,11 +63,12 @@
       }
       return;
     }
-    $('camera-title').textContent = which === 'sheet' ? 'Results sheet (EC8A)' : 'Polling venue';
+    if (which === 'sheet') keyed($('camera-title'), 'observe.results-sheet-ec8a', 'Results sheet (EC8A)');
+    else keyed($('camera-title'), 'observe.polling-venue', 'Polling venue');
     const guide = $('camera-guide');
     if (guide) {
       guide.textContent = which === 'venue'
-        ? '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.'
+        ? T('observe.venue-guide', '📸 VENUE PHOTO — aim at the polling unit itself: the building, booth, banner or the crowd around it. This is NOT the results sheet.')
         : '';
       guide.hidden = which !== 'venue';
     }
@@ -97,7 +111,7 @@
       .map((i) => ({ party: i.dataset.party, count: Number(i.value || 0) }))
       .filter((v) => Number.isInteger(v.count) && v.count >= 0);
     $('btn-submit').disabled = true;
-    $('submit-status').textContent = 'Recording your practice run…';
+    $('submit-status').textContent = T('practice.recording-your-practice-run', 'Recording your practice run…');
     try {
       const r = await fetch('/api/practice/submit', {
         method: 'POST',
@@ -107,7 +121,8 @@
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) {
         $('submit-status').textContent = d.error === 'practice_closed'
-          ? 'Practice has just closed — refresh the page.' : 'Something went wrong — try again.';
+          ? T('practice.just-closed-refresh', 'Practice has just closed — refresh the page.')
+          : T('assistant.error', 'Something went wrong — try again.');
         $('btn-submit').disabled = false;
         return;
       }
@@ -125,7 +140,7 @@
           const canvas = R.render({
             puName: $('prac-unit-name').textContent,
             puCode: UNIT_CODE,
-            contest: 'Practice run',
+            contest: T('practice.practice-run', 'Practice run'),
             votes: votes,
             entryHash: d.entryHash || '',
             practice: true,
@@ -162,7 +177,7 @@
       $('done').hidden = false;
       window.scrollTo(0, 0);
     } catch {
-      $('submit-status').textContent = 'Network problem — check your connection and try again.';
+      $('submit-status').textContent = T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.');
       $('btn-submit').disabled = false;
     }
   };
@@ -182,7 +197,7 @@
     // Exactly the real card's shape: "[CONTEST] code · ward, lga, state".
     const scope = $('prac-unit-scope').textContent;
     $('pv-meta').textContent = `[PRACTICE]${UNIT_CODE ? ` ${UNIT_CODE}` : ''}${scope ? ` · ${scope}` : ''}`;
-    $('pv-votes').textContent = votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || 'all zero';
+    $('pv-votes').textContent = votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || T('practice.all-zero', 'all zero');
     const strip = $('pv-sheets');
     strip.textContent = '';
     if (src) {
@@ -219,10 +234,21 @@
     $('prac-title').firstChild.textContent = `${cfg.name} `;
     // cfg.note is deliberately dropped: it restated "nothing is published" a
     // third time, after the phase banner and the receipt already say it.
-    $('prac-sub').textContent = `${cfg.office} — a practice contest.`;
     const u = cfg.unit || {};
     UNIT_CODE = u.code || null;
-    $('prac-unit-name').textContent = u.name || 'Practice Polling Unit';
+    /* Painted at boot, which can land before the language bundle has — so it
+       repaints on 'hawkeye-lang'. A unit the server NAMES is a name, not a
+       sentence: its data-i18n comes off, or apply() would swap it back to the
+       markup's "Practice Polling Unit". */
+    const paintCfg = () => {
+      $('prac-sub').textContent = T('practice.office-practice-contest', '{v0} — a practice contest.', { v0: cfg.office });
+      if (u.name) {
+        $('prac-unit-name').removeAttribute('data-i18n');
+        $('prac-unit-name').textContent = u.name;
+      } else keyed($('prac-unit-name'), 'practice.practice-polling-unit', 'Practice Polling Unit');
+    };
+    paintCfg();
+    document.addEventListener('hawkeye-lang', paintCfg);
     $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
     $('vote-inputs').innerHTML = PARTIES.map((p) => `
       <div class="vote-row">

@@ -11,6 +11,12 @@
  * as before — scanning never blocks a submission.
  */
 window.DocScanner = (() => {
+  /* The hint under the viewport, in the reader's language. Resolved at every
+     write (the steady-state line is rewritten on each detection tick), so it
+     is never frozen at the language of whenever this file loaded. */
+  const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+  const NO_AUTO = () => T('scan.auto-detect-unavailable', 'Auto-detect unavailable — frame the sheet and capture manually');
+  const POINT = () => T('scan.point-at-whole-sheet', 'Point the camera at the whole EC8A sheet');
   const PROC_W = 400; // detection runs on a downscaled copy (bigger = steadier corners)
   const STABLE_NEEDED = 5; // ~0.8 s of steady corners -> auto-capture
 
@@ -44,7 +50,7 @@ window.DocScanner = (() => {
     try {
       worker = new Worker('/scan-worker.js?v=3');
     } catch { workerDead = true; return null; }
-    worker.onerror = () => { workerDead = true; if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually'; };
+    worker.onerror = () => { workerDead = true; if (hint) hint.textContent = NO_AUTO(); };
     worker.onmessage = (e) => {
       const m = e.data || {};
       // OpenCV finished loading inside the worker. Until this flips, capture()
@@ -52,7 +58,7 @@ window.DocScanner = (() => {
       if (m.type === 'ready') cvReady = true;
       if (m.type === 'error') {
         workerDead = true;
-        if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually';
+        if (hint) hint.textContent = NO_AUTO();
       }
       // 'quad' + 'warped' are consumed by the loop / capture() via their own handlers.
     };
@@ -123,8 +129,9 @@ window.DocScanner = (() => {
       }
       draw();
       if (hint) {
-        hint.textContent = !quad ? 'Point the camera at the whole EC8A sheet'
-          : stable >= STABLE_NEEDED ? 'Sheet detected — capturing…' : 'Sheet found — hold steady';
+        hint.textContent = !quad ? POINT()
+          : stable >= STABLE_NEEDED ? T('scan.sheet-detected-capturing', 'Sheet detected — capturing…')
+          : T('scan.sheet-found-hold-steady', 'Sheet found — hold steady');
       }
       if (quad && stable >= STABLE_NEEDED && !fired && onAuto) { fired = true; onAuto(); }
     };
@@ -249,10 +256,10 @@ window.DocScanner = (() => {
     // is still downloading, not only once detection begins.
     if (rafId) cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(render);
-    if (hint) { hint.hidden = false; hint.textContent = 'Loading document detection…'; }
+    if (hint) { hint.hidden = false; hint.textContent = T('scan.loading-document-detection', 'Loading document detection…'); }
     makeWorker();
     if (workerDead || !worker) {
-      if (hint) hint.textContent = 'Auto-detect unavailable — frame the sheet and capture manually';
+      if (hint) hint.textContent = NO_AUTO();
       return;
     }
     worker.postMessage({ type: 'preload' }); // no-op if the warm() preload already ran
@@ -260,8 +267,8 @@ window.DocScanner = (() => {
     // button works either way — an un-ready scanner takes a plain frame.
     if (hint) {
       hint.textContent = cvReady
-        ? 'Point the camera at the whole EC8A sheet'
-        : 'Loading auto-detect… you can already capture manually';
+        ? POINT()
+        : T('scan.loading-auto-detect', 'Loading auto-detect… you can already capture manually');
     }
     tick();
   }

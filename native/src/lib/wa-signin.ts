@@ -31,6 +31,52 @@ export type WaPoller = {
   stop: (cancelOnServer: boolean) => void;
 };
 
+/**
+ * THE WHATSAPP APP, NOT THE BROWSER. The server's waLink is
+ * https://wa.me/<our number>?text=<the message>, and on a phone that link goes
+ * through a browser tab and WhatsApp's "Continue to chat" page first — two
+ * extra taps between the observer and Send. whatsapp://send opens the app's
+ * chat with the message typed. Built FROM the waLink, so the number and the
+ * message keep one source (backend services/waInbound.js); null when the link
+ * is not a wa.me link this can read.
+ */
+export function waAppUrl(waLink: string): string | null {
+  const m = /^https?:\/\/wa\.me\/(\d+)\/?(?:\?(.*))?$/i.exec(String(waLink || '').trim());
+  if (!m) return null;
+  const text = /(?:^|&)text=([^&]*)/.exec(m[2] || '');
+  // The text stays exactly as the server encoded it (encodeURIComponent).
+  return `whatsapp://send?phone=${m[1]}${text ? `&text=${text[1]}` : ''}`;
+}
+
+/**
+ * Open the chat: the app first, the wa.me link if that fails (WhatsApp not
+ * installed, or an OS that refuses the scheme). Linking.openURL is called
+ * directly inside try/catch — NOT gated on canOpenURL, which on iOS needs
+ * `whatsapp` in LSApplicationQueriesSchemes (a native change) and on Android
+ * a <queries> entry, and without them answers "no" even when WhatsApp is there.
+ * openURL itself needs neither: it rejects only when nothing handles the URL.
+ */
+export async function openWhatsApp(
+  waLink: string,
+  open: (url: string) => Promise<unknown>,
+): Promise<'app' | 'link' | 'failed'> {
+  const app = waAppUrl(waLink);
+  if (app) {
+    try {
+      await open(app);
+      return 'app';
+    } catch {
+      /* not installed — the link below */
+    }
+  }
+  try {
+    await open(waLink);
+    return 'link';
+  } catch {
+    return 'failed';
+  }
+}
+
 const MAX_DELAY_MS = 10_000;
 
 export function startWaPoller(opts: {

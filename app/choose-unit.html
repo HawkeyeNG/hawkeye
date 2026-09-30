@@ -303,9 +303,9 @@
       // Synchronous, before menu.js and i18n.js read the markup.
       if (ONBOARD) {
         $('cu-where').setAttribute('data-i18n', 'choose-unit.create-your-account');
-        $('cu-where').textContent = 'Create Your Account';
+        $('cu-where').textContent = T('choose-unit.create-your-account', 'Create Your Account');
         $('cu-eyebrow').setAttribute('data-i18n', 'choose-unit.last-step');
-        $('cu-eyebrow').textContent = 'Last step';
+        $('cu-eyebrow').textContent = T('choose-unit.last-step', 'Last step');
         $('cu-banner').hidden = false;
         $('cu-skip').hidden = false;
       } else {
@@ -808,7 +808,7 @@
   <script src="pu-search.js?v=9"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

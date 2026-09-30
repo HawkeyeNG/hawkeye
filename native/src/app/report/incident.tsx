@@ -272,7 +272,7 @@ const nothingFoundLine = (s: Searched): string => {
   // Point at SEARCH, not browse: browsing is network-backed (/lgas, /wards,
   // /units), so on a lookup failure it is the one other path that cannot work
   // either. Search answers from the register bundled into the app.
-  return 'Could not check nearby units. Search by name below.';
+  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
 };
 
 /** The tier's colour, sized for a line of text — so a row and the pin it refers
@@ -715,7 +715,7 @@ export default function ReportIncident() {
     // explicit provenance rather than inferring it from a missing flag.
     if (unit?.via === 'gps' && nearby.some((n) => n.puCode === unit.pu_code)) setUnit(null);
     setGpsSettings(false);
-    setNearLine('Getting your location…');
+    setNearLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // Quick fix, not the submit-grade one: this only shortlists candidates,
       // and an incident report must never wait on a satellite lock.
@@ -750,7 +750,7 @@ export default function ReportIncident() {
         // Console, not UI: "HTTP 503" is not something the reader can act on,
         // and their next move is the search box directly below either way.
         if (status) console.warn('[hawkeye] near-me lookup failed', status);
-        setNearLine('Could not check nearby units. Search by name below.');
+        setNearLine(i18nT('n.app.report.result.could-not-check-nearby-units-search'));
         return;
       }
 
@@ -885,7 +885,7 @@ export default function ReportIncident() {
       );
     } catch (e) {
       setNearLine(
-        humanError(e, 'Could not check nearby units. Search by name below.'),
+        humanError(e, i18nT('n.app.report.result.could-not-check-nearby-units-search')),
       );
     } finally {
       setNearBusy(false);
@@ -930,7 +930,7 @@ export default function ReportIncident() {
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) {
-      setLine('Allow photo access to attach files from your device.');
+      setLine(i18nT('n.app.report.incident.allow-photo-access'));
       return;
     }
     const res = await ImagePicker.launchImageLibraryAsync({
@@ -957,7 +957,7 @@ export default function ReportIncident() {
      * the size that will actually be sent, and a slow re-encode happens while
      * they are still writing the description instead of stalling the submit.
      */
-    setLine(res.assets.some((a) => a.type === 'video') ? 'Compressing…' : '');
+    setLine(res.assets.some((a) => a.type === 'video') ? i18nT('n.app.report.incident.compressing') : '');
     let uncompressed = 0;
     let notPrivate = 0;
     const picked: Media[] = (await Promise.all(res.assets.map(async (a) => {
@@ -972,9 +972,13 @@ export default function ReportIncident() {
     // Not silent. An uncompressed clip is bigger AND, on this codebase, stays
     // in the phone's own codec — which the server cannot convert while ffmpeg
     // is missing, so a reviewer may not be able to play it at all.
+    // Whole sentences per count — "a photo" / "N photos" is not a slot another
+    // language can fill in the same place.
     setLine(notPrivate
-      ? `Could not prepare ${notPrivate === 1 ? 'a photo' : `${notPrivate} photos`} safely — please attach again.`
-      : uncompressed ? 'Could not compress that video — it will upload at full size.' : '');
+      ? (notPrivate === 1
+        ? i18nT('n.app.report.incident.could-not-prepare-photo')
+        : i18nT('n.app.report.incident.could-not-prepare-photos', { v0: notPrivate }))
+      : uncompressed ? i18nT('n.app.report.incident.could-not-compress-video') : '');
     if (picked.length) addMedia(picked, 'library');
   };
 
@@ -982,7 +986,7 @@ export default function ReportIncident() {
     tap();
     if (!kind || !unitDecided) return;
     setBusy(true);
-    setLine('Submitting…');
+    setLine(i18nT('observe.submitting'));
     try {
       const id = await getIdentity();
       const token = await SecureStore.getItemAsync('hawkeye.auth.token');
@@ -1086,7 +1090,7 @@ export default function ReportIncident() {
         // Either the network dropped or XHR would not take the part shape.
         // Both mean: fall back to the transport that has always worked.
         setUp(null);
-        setLine('Connection dropped — retrying…');
+        setLine(i18nT('n.app.report.incident.connection-dropped-retrying'));
         try {
           res = await post();
         } catch {
@@ -1142,9 +1146,9 @@ export default function ReportIncident() {
         // Always name the failure: a code the user can read back beats a shrug.
         const code = body.error ?? `HTTP ${res.status}`;
         setLine(
-          body.error === 'empty_report' ? 'Add a photo, video or a description.'
-          : body.error === 'invalid_media' ? (body.hint ?? 'One file could not be processed — retake it.')
-          : `${body.hint ?? 'Submission failed — try again.'} (${code})`,
+          body.error === 'empty_report' ? i18nT('n.app.report.incident.add-photo-video-or-description')
+          : body.error === 'invalid_media' ? (body.hint ?? i18nT('n.app.report.incident.file-could-not-be-processed'))
+          : `${body.hint ?? i18nT('n.lib.submit.submission-failed-try-again')} (${code})`,
         );
       }
     } catch (e) {
@@ -1743,7 +1747,7 @@ export default function ReportIncident() {
                 <Text className="text-xs text-muted">
                   {useGps
                     ? i18nT("n.app.report.incident.helps-reviewers-place-the-incident-coordinates-are")
-                    : 'No coordinates will be attached to this report.'}
+                    : i18nT('n.app.report.incident.no-coordinates-attached')}
                 </Text>
               </View>
             </Pressable>

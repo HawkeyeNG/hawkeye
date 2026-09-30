@@ -1832,8 +1832,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       if (signedIn && !link) {
         const a = document.createElement('a');
         a.href = 'profile.html';
-        a.textContent = 'My Profile';
+        i18nSet(a, 'profile.my-profile', 'My Profile');
         fnav.appendChild(a);
+        i18nLate(fnav);
       } else if (!signedIn && link) { link.remove(); }
     }
     // Header slot follows the same state (bell when signed in, Sign in when not).

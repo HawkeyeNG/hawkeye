@@ -178,11 +178,19 @@
     const ONE_LINE = 40;
     // The rendered list is HTML, so the modal needs the objects it came from.
     let lastItems = [];
+    /* Resolve through the runtime once it has loaded, else the English
+       argument; {name} placeholders are filled after the lookup, in one pass.
+       i18n.js loads AFTER this block, so the list is painted by render(),
+       which runs again on 'hawkeye-lang' (bound below). */
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
     const ago = (t) => {
       const s = (Date.now() - t) / 1000;
-      if (s < 60) return 'just now';
-      if (s < 3600) return Math.floor(s / 60) + 'm ago';
-      if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+      if (s < 60) return T('time.just-now', 'just now');
+      if (s < 3600) return T('notifications.minutes-ago', '{v0}m ago', { v0: Math.floor(s / 60) });
+      if (s < 86400) return T('notifications.hours-ago', '{v0}h ago', { v0: Math.floor(s / 3600) });
       return new Date(t).toLocaleDateString([], { day: 'numeric', month: 'short' });
     };
 
@@ -194,28 +202,32 @@
       card.hidden = false;
       $('push-enable').onclick = async () => {
         $('push-enable').disabled = true;
-        $('push-status').textContent = 'Enabling…';
+        $('push-status').textContent = T('notifications.enabling', 'Enabling…');
         const r = await window.hawkeyeEnableWebPush();
         if (r.ok) {
-          $('push-status').textContent = '✅ On — alerts will arrive here.';
+          $('push-status').textContent = T('notifications.on-alerts-arrive-here', '✅ On — alerts will arrive here.');
           setTimeout(() => { card.hidden = true; }, 2500);
         } else {
           const MSG = {
-            unsupported: 'Not supported in this browser.',
-            signin_required: 'Sign in first.',
-            server_push_off: 'Push is not enabled yet — try again later.',
-            denied: 'Notifications are blocked — enable them in your browser settings.',
-            register_failed: 'Could not save — try again.',
+            unsupported: T('notifications.push-unsupported', 'Not supported in this browser.'),
+            signin_required: T('ready.sign-in-first', 'Sign in first.'),
+            server_push_off: T('notifications.push-not-enabled-yet', 'Push is not enabled yet — try again later.'),
+            denied: T('notifications.push-blocked', 'Notifications are blocked — enable them in your browser settings.'),
+            register_failed: T('map-unit.could-not-save-try-again', 'Could not save — try again.'),
           };
-          $('push-status').textContent = MSG[r.reason] || 'Could not enable.';
+          $('push-status').textContent = MSG[r.reason] || T('notifications.could-not-enable', 'Could not enable.');
           $('push-enable').disabled = false;
         }
       };
     })();
 
+    /* What the list is showing — painted by render(), which a language change
+       re-runs without fetching again. */
+    let VIEW = null;
     async function load() {
       if (!token) {
-        $('list').innerHTML = '<p class="empty">Sign in to see your notifications. <a href="observe.html?intent=observe">Become an observer →</a></p>';
+        VIEW = { kind: 'signed-out' };
+        render();
         return;
       }
       /* Always a fresh read here — this page is the feed — but through
@@ -232,13 +244,39 @@
         // Stale/revoked session (e.g. after an identity reset): don't pretend
         // "no notifications" — clear it and point at sign-in.
         localStorage.removeItem('hawkeye_token');
-        $('list').innerHTML = '<p class="empty">Your session has expired. <a href="observe.html?intent=observe">Sign in again →</a></p>';
+        VIEW = { kind: 'dead' };
+        render();
         return;
       }
       lastItems = d.items || [];
-      if (!d.items.length) { $('list').innerHTML = '<p class="empty">No notifications yet. You’ll see reports at your saved units and status updates here.</p>'; return; }
-      $('mark-all').hidden = d.unread === 0;
-      $('list').innerHTML = d.items.map((n) => {
+      VIEW = { kind: 'list', items: lastItems };
+      if (lastItems.length) $('mark-all').hidden = d.unread === 0;
+      render();
+      if (!lastItems.length) return;
+      /**
+       * ARRIVING IS NOT READING. This page used to mark EVERYTHING read on
+       * load, which meant a glance at the list silently cleared alerts the
+       * reader had not opened — and with several unread, or one long enough to
+       * need its modal, the information was gone from every badge before it had
+       * been seen. Only opening an alert marks that alert read; "Mark all read"
+       * is still there for anyone who wants the blunt instrument.
+       */
+      setUnreadEverywhere(d.unread);
+    }
+
+    function render() {
+      if (!VIEW) return;
+      if (VIEW.kind === 'signed-out') {
+        $('list').innerHTML = `<p class="empty">${esc(T('notifications.sign-in-to-see', 'Sign in to see your notifications.'))} <a href="observe.html?intent=observe">${esc(T('common.become-an-observer', 'Become an observer →'))}</a></p>`;
+        return;
+      }
+      if (VIEW.kind === 'dead') {
+        $('list').innerHTML = `<p class="empty">${esc(T('notifications.session-expired', 'Your session has expired.'))} <a href="observe.html?intent=observe">${esc(T('notifications.sign-in-again', 'Sign in again →'))}</a></p>`;
+        return;
+      }
+      const items = VIEW.items;
+      if (!items.length) { $('list').innerHTML = `<p class="empty">${esc(T('notifications.none-yet', 'No notifications yet. You’ll see reports at your saved units and status updates here.'))}</p>`; return; }
+      $('list').innerHTML = items.map((n) => {
         /**
          * ONE LINE IN THE ROW, the rest behind "More".
          *
@@ -250,7 +288,7 @@
         const longBody = (n.body || '').length > ONE_LINE;
         const inner = `<span class="dot" aria-hidden="true"></span><span class="ic">${ICON[n.kind] || ICON.info}</span>
           <div><h3>${esc(n.title)}</h3>${n.body ? `<p>${esc(n.body)}</p>` : ''}
-          <time>${ago(n.created_at)}</time>${longBody ? '<span class="more">More</span>' : ''}</div>`;
+          <time>${ago(n.created_at)}</time>${longBody ? `<span class="more">${esc(T('nav.more', 'More'))}</span>` : ''}</div>`;
         /**
          * A LONG ALERT OPENS IN PLACE instead of navigating.
          *
@@ -270,19 +308,12 @@
         // like data loss on a tool whose whole claim is that records persist —
         // and this feed is the one part of Hawkeye that is deliberately NOT
         // permanent, so the distinction is worth one line.
+        // The English is the FALLBACK argument: an empty one rendered nothing
+        // at all in English, where the dictionary is empty by design.
         + '<p class="empty" style="padding:18px 8px 4px;font-size:0.8rem">'
-        + (window.HawkeyeI18n ? window.HawkeyeI18n.t('notifications.alerts-are-kept-for-90-days', '')
-        : 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.') + '</p>';
-      /**
-       * ARRIVING IS NOT READING. This page used to mark EVERYTHING read on
-       * load, which meant a glance at the list silently cleared alerts the
-       * reader had not opened — and with several unread, or one long enough to
-       * need its modal, the information was gone from every badge before it had
-       * been seen. Only opening an alert marks that alert read; "Mark all read"
-       * is still there for anyone who wants the blunt instrument.
-       */
-      setUnreadEverywhere(d.unread);
+        + esc(T('notifications.alerts-are-kept-for-90-days', 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.')) + '</p>';
     }
+    document.addEventListener('hawkeye-lang', render);
     // Keep the four unread surfaces (bell, tab, PWA badge, iOS icon) in step.
     // menu.js owns them; absent only if menu.js failed to load.
     function setUnreadEverywhere(n) {
@@ -381,7 +412,7 @@
   </script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

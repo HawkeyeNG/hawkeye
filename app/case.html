@@ -89,6 +89,29 @@
     const qid = encodeURIComponent(new URLSearchParams(location.search).get('id'));
     const token = localStorage.getItem('hawkeye_token');
     const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    /* TRANSLATED AT PAINT, NEVER AT LOAD. i18n.js loads after this block, so a
+       string resolved when the fetch lands can still be English. Everything
+       below is painted by functions that run again on 'hawkeye-lang' (bound at
+       the bottom), and {name} placeholders are filled AFTER the lookup so they
+       land in the translation as well as in the English — in ONE pass, so a
+       juror's note that happens to contain "{v1}" is never itself substituted. */
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
+    };
+    // The server's words for a case's status and a verdict. Functions, so each
+    // paint reads the language of the moment.
+    const statusWord = (s) => ({
+      open: T('case.status-open', 'open'),
+      upheld: T('case.status-upheld', 'upheld'),
+      cleared: T('case.status-cleared', 'cleared'),
+      unresolved: T('case.status-unresolved', 'unresolved'),
+    })[s] || s;
+    const verdictWord = (v) => ({
+      fraudulent: T('case.verdict-fraudulent', 'fraudulent'),
+      legit: T('case.verdict-legit', 'legit'),
+      inconclusive: T('case.verdict-inconclusive', 'inconclusive'),
+    })[v] || v;
 
     /**
      * A URL on its way into href or src needs more than esc().
@@ -111,101 +134,170 @@
       if (/^[a-z][a-z0-9+.-]*:/i.test(s) && !/^https?:/i.test(s)) return '';
       return esc(s);
     };
-    let CASE = null;
+    let CASE = null;   // the case as fetched, or { missing: true }
+    let TALLY = null;  // the case's tally, replaced by the one a verdict returns
+    let MINE = null;   // /mine's answer, once it has come back
+    let MSG = null;    // the line under Cast my verdict, as { k, en, p } — repainted, not frozen
+    let DONE = false;  // a verdict was recorded on this visit: the form stays disabled
 
-    function tally(t) {
+    function paintTally() {
+      const t = TALLY;
+      if (!t) return;
       const tot = Math.max(1, t.total);
       $('tallybar').innerHTML =
         `<i style="width:${(t.fraudulent / tot) * 100}%;background:var(--danger)"></i>`
         + `<i style="width:${(t.legit / tot) * 100}%;background:var(--green)"></i>`
         + `<i style="width:${(t.inconclusive / tot) * 100}%;background:#b45309"></i>`;
-      $('tallytext').textContent = `${t.total} verdict(s): ${t.fraudulent} fraudulent · ${t.legit} legit · ${t.inconclusive} inconclusive.`;
+      $('tallytext').textContent = T('case.tally', '{v0} verdict(s): {v1} fraudulent · {v2} legit · {v3} inconclusive.',
+        { v0: t.total, v1: t.fraudulent, v2: t.legit, v3: t.inconclusive });
     }
+    function tally(t) { TALLY = t; paintTally(); }
 
     async function load() {
       const c = await fetch(`/api/docket/${qid}`).then((r) => r.json());
-      if (c.error) {
-        $('title').textContent = 'Case Not Found';
-        $('meta').textContent = 'This case doesn’t exist, or the link is out of date.';
+      if (c.error) { CASE = { missing: true }; paint(); return; }
+      CASE = c;
+      TALLY = c.tally;
+      paint();
+      judgeUi(c);
+    }
+
+    function paint() {
+      const c = CASE;
+      if (!c) return;
+      const title = $('title');
+      // The markup key comes off: this page paints the title itself (and again
+      // on every language change), while menu.js re-runs apply() AFTER this
+      // page's listener and would otherwise put the bare "Case" back.
+      title.removeAttribute('data-i18n');
+      if (c.missing) {
+        title.textContent = T('case.case-not-found', 'Case Not Found');
+        $('meta').textContent = T('case.case-not-found-body', 'This case doesn’t exist, or the link is out of date.');
         // Hide the empty Evidence / Verdict skeleton cards on the not-found path.
         for (const el of document.querySelectorAll('.card')) el.hidden = true;
         return;
       }
-      CASE = c;
-      $('title').innerHTML = `Case #${c.id} — ${esc(c.unit.name)} <span class="chipst ${c.status}">${c.status.toUpperCase()}</span>`;
-      $('meta').textContent = `${c.contest} · ${c.unit.ward} ward, ${c.unit.lga}, ${c.unit.state}`
-        + (c.unit.registeredVoters ? ` · ${c.unit.registeredVoters.toLocaleString()} registered voters` : '')
-        + ` · ${c.status === 'open' ? 'closes ' + new Date(c.closesAt).toLocaleString() : 'resolved'}`;
+      title.innerHTML = `${esc(T('case.title', 'Case #{v0}', { v0: c.id }))} — ${esc(c.unit.name)} <span class="chipst ${esc(c.status)}">${esc(String(statusWord(c.status)).toUpperCase())}</span>`;
+      const bits = [c.contest, T('case.meta-place', '{v0} ward, {v1}, {v2}', { v0: c.unit.ward, v1: c.unit.lga, v2: c.unit.state })];
+      if (c.unit.registeredVoters) bits.push(T('case.registered-voters', '{v0} registered voters', { v0: c.unit.registeredVoters.toLocaleString() }));
+      bits.push(c.status === 'open'
+        ? T('case.closes', 'closes {v0}', { v0: new Date(c.closesAt).toLocaleString() })
+        : T('case.resolved', 'resolved'));
+      $('meta').textContent = bits.join(' · ');
       $('flags').innerHTML = c.flags.map((f) =>
         `<div class="flag"><b>${esc(f.type)}</b> — ${esc(f.detail.summary || '')}<br>
          <span class="note">${esc(f.detail.reason || '')}</span></div>`).join('');
       $('evidence').innerHTML = c.submissions.map((s) => `
-        <h3>Report #${s.id} · ${new Date(s.capturedAt).toLocaleString()} · location ${s.locationVerified ? 'verified ✅' : 'unverified'}</h3>
+        <h3>${esc(s.locationVerified
+          ? T('case.report-heading-verified', 'Report #{v0} · {v1} · location verified ✅', { v0: s.id, v1: new Date(s.capturedAt).toLocaleString() })
+          : T('case.report-heading-unverified', 'Report #{v0} · {v1} · location unverified', { v0: s.id, v1: new Date(s.capturedAt).toLocaleString() }))}</h3>
         <div class="ev">
           ${s.photoOnDevice || !s.sheetUrl
             // D1 hash-only report: the hash is on the ledger, the photo stayed on the observer's phone.
-            ? `<div><div class="cap">${esc(window.HawkeyeI18n ? window.HawkeyeI18n.t('case.photo-kept-on-observer-phone', "Photo kept on the observer's phone. The report is on the ledger.") : "Photo kept on the observer's phone. The report is on the ledger.")}</div></div>`
-            : `<div><a href="${safeUrl(s.sheetUrl)}" target="_blank" rel="noopener"><img loading="lazy" src="${safeUrl(s.sheetUrl)}" alt="result sheet photo"></a><div class="cap">Result sheet (tap to open full size)</div></div>`}
+            ? `<div><div class="cap">${esc(T('case.photo-kept-on-observer-phone', "Photo kept on the observer's phone. The report is on the ledger."))}</div></div>`
+            : `<div><a href="${safeUrl(s.sheetUrl)}" target="_blank" rel="noopener"><img loading="lazy" src="${safeUrl(s.sheetUrl)}" alt="${esc(T('dashboard.result-sheet-photo', 'Result sheet photo'))}"></a><div class="cap">${esc(T('case.result-sheet-tap', 'Result sheet (tap to open full size)'))}</div></div>`}
         </div>
-        <table><thead><tr><th>Party</th><th>Reported Count</th></tr></thead><tbody>
-          ${s.votes.filter((v) => v.count > 0).map((v) => `<tr><td>${esc(v.party)}</td><td>${v.count.toLocaleString()}</td></tr>`).join('') || '<tr><td colspan="2">all zeros</td></tr>'}
+        <table><thead><tr><th>${esc(T('results.party', 'Party'))}</th><th>${esc(T('case.reported-count', 'Reported Count'))}</th></tr></thead><tbody>
+          ${s.votes.filter((v) => v.count > 0).map((v) => `<tr><td>${esc(v.party)}</td><td>${v.count.toLocaleString()}</td></tr>`).join('') || `<tr><td colspan="2">${esc(T('case.all-zeros', 'all zeros'))}</td></tr>`}
         </tbody></table>
-        ${s.vision?.counts ? `<p class="note">AI read-back from the sheet: ${s.vision.counts.map((x) => `${esc(x.party)} ${x.count}`).join(', ')} <em>(advisory)</em></p>` : ''}
-        ${s.ocr ? `<p class="note">OCR: ${s.ocr.matched}/${s.ocr.total} typed counts found on the sheet.</p>` : ''}
-        <p class="mono">ledger entry ${s.entryHash} — re-verify the whole chain on <a href="ledger.html">the ledger page</a>.</p>`).join('<hr>');
-      tally(c.tally);
+        ${s.vision?.counts ? `<p class="note">${T('case.ai-read-back', 'AI read-back from the sheet: {v0} <em>(advisory)</em>', { v0: s.vision.counts.map((x) => `${esc(x.party)} ${x.count}`).join(', ') })}</p>` : ''}
+        ${s.ocr ? `<p class="note">${esc(T('case.ocr-found', 'OCR: {v0}/{v1} typed counts found on the sheet.', { v0: s.ocr.matched, v1: s.ocr.total }))}</p>` : ''}
+        <p class="mono">${T('case.ledger-entry-line', 'ledger entry {v0} — re-verify the whole chain on <a href="ledger.html">the ledger page</a>.', { v0: esc(s.entryHash) })}</p>`).join('<hr>');
+      paintTally();
       const noted = (c.verdicts || []).filter((v) => v.comment);
       $('notes').innerHTML = noted.length
-        ? '<h3>What Jurors Noted</h3>' + noted.map((v) =>
-          `<p class="note">“${esc(v.comment)}” — observer #${v.observer}, judged <b>${esc(v.verdict)}</b>, ${new Date(v.at).toLocaleString()}</p>`).join('')
+        ? `<h3>${esc(T('case.what-jurors-noted', 'What Jurors Noted'))}</h3>` + noted.map((v) =>
+          `<p class="note">${T('case.juror-note', '“{v0}” — observer #{v1}, judged <b>{v2}</b>, {v3}',
+            { v0: esc(v.comment), v1: esc(v.observer), v2: esc(verdictWord(v.verdict)), v3: esc(new Date(v.at).toLocaleString()) })}</p>`).join('')
         : '';
-      judgeUi(c);
+      paintJudge();
     }
 
     async function judgeUi(c) {
-      if (c.status !== 'open') { $('judge').innerHTML = '<p class="note">This case is closed. The record above is permanent.</p>'; return; }
+      if (c.status === 'open' && token) {
+        MINE = await fetch(`/api/docket/${qid}/mine`, { headers: { authorization: `Bearer ${token}` } }).then((r) => r.json()).catch(() => ({}));
+      }
+      paintJudge();
+    }
+
+    /* The line under the button. A value may be a function, so a verdict word
+       is resolved in the language of the paint, not of the moment it came back. */
+    const msgText = () => (MSG
+      ? T(MSG.k, MSG.en, Object.fromEntries(Object.entries(MSG.p || {}).map(([a, b]) => [a, typeof b === 'function' ? b() : b])))
+      : '');
+
+    function paintJudge() {
+      const c = CASE;
+      if (!c || c.missing) return;
+      const box = $('judge');
+      if (c.status !== 'open') { box.innerHTML = `<p class="note">${esc(T('case.closed', 'This case is closed. The record above is permanent.'))}</p>`; return; }
       if (!token) {
-        $('judge').innerHTML = '<p>Only verified observers can judge — one verdict per person, on the public record. <a href="observe.html">Become an observer →</a></p>';
+        box.innerHTML = `<p>${esc(T('case.only-verified-can-judge', 'Only verified observers can judge — one verdict per person, on the public record.'))} <a href="observe.html">${esc(T('common.become-an-observer', 'Become an observer →'))}</a></p>`;
         return;
       }
-      const mine = await fetch(`/api/docket/${qid}/mine`, { headers: { authorization: `Bearer ${token}` } }).then((r) => r.json()).catch(() => ({}));
-      if (mine.verdict) { $('judge').innerHTML = `<p class="note">You judged this case: <b>${esc(mine.verdict)}</b>. One verdict per person.</p>`; return; }
+      if (!MINE) return; // /mine has not answered yet; judgeUi paints again when it does
+      if (MINE.verdict) {
+        box.innerHTML = `<p class="note">${T('case.you-judged', 'You judged this case: <b>{v0}</b>. One verdict per person.', { v0: esc(verdictWord(MINE.verdict)) })}</p>`;
+        return;
+      }
+      // A language change repaints the form: keep what the juror has answered.
+      const kept = {};
+      for (const el of box.querySelectorAll('input[type="radio"]:checked')) kept[el.name] = el.value;
+      const note = $('comment') ? $('comment').value : '';
       const q = (name, text) => `<div class="q"><p>${text}</p>
-        <label><input type="radio" name="${name}" value="yes"> Yes</label>
-        <label><input type="radio" name="${name}" value="no"> No</label>
-        <label><input type="radio" name="${name}" value="unsure"> Can't Tell</label></div>`;
+        <label><input type="radio" name="${name}" value="yes"> ${esc(T('case.yes', 'Yes'))}</label>
+        <label><input type="radio" name="${name}" value="no"> ${esc(T('case.no', 'No'))}</label>
+        <label><input type="radio" name="${name}" value="unsure"> ${esc(T('case.cant-tell', "Can't Tell"))}</label></div>`;
       // One question PER flag — each can be wrong (or right) in its own way.
       const flagQs = c.flags.map((f, i) =>
-        q(`flag_${f.id}`, `3${c.flags.length > 1 ? String.fromCharCode(97 + i) : ''}. This result was flagged: <em>“${esc(f.detail.summary || f.type)}”</em>. Looking at the evidence yourself, is that specific reason correct?`)).join('');
-      $('judge').innerHTML =
-        q('sheet', '1. Is the photographed sheet an official INEC EC8A result form?')
-        + q('counts', '2. Do the figures written on the sheet match the reported counts above?')
+        q(`flag_${f.id}`, T('case.q-flag', '{v0}. This result was flagged: <em>“{v1}”</em>. Looking at the evidence yourself, is that specific reason correct?',
+          { v0: `3${c.flags.length > 1 ? String.fromCharCode(97 + i) : ''}`, v1: esc(f.detail.summary || f.type) }))).join('');
+      box.innerHTML =
+        q('sheet', esc(T('case.q-sheet', '1. Is the photographed sheet an official INEC EC8A result form?')))
+        + q('counts', esc(T('case.q-counts', '2. Do the figures written on the sheet match the reported counts above?')))
         + flagQs
-        + '<div class="q"><p>Optional note — what did you see? (public, max 280 chars)</p>'
-        + '<textarea id="comment" maxlength="280" rows="2" placeholder="e.g. the INEC stamp is missing; figures column reads 108 not 180"></textarea></div>'
-        + '<button id="cast">Cast my verdict</button><p class="note" id="msg"></p>'
-        + '<p class="note">Your answers compute the verdict by a published rule — you never pick a side directly. Notes are public but never counted.</p>';
+        + `<div class="q"><p>${esc(T('case.optional-note', 'Optional note — what did you see? (public, max 280 chars)'))}</p>`
+        + `<textarea id="comment" maxlength="280" rows="2" placeholder="${esc(T('case.note-placeholder', 'e.g. the INEC stamp is missing; figures column reads 108 not 180'))}"></textarea></div>`
+        + `<button id="cast">${esc(T('case.cast-my-verdict', 'Cast my verdict'))}</button><p class="note" id="msg"></p>`
+        + `<p class="note">${esc(T('case.answers-compute', 'Your answers compute the verdict by a published rule — you never pick a side directly. Notes are public but never counted.'))}</p>`;
+      for (const [n, v] of Object.entries(kept)) {
+        const el = box.querySelector(`input[name="${n}"][value="${v}"]`);
+        if (el) el.checked = true;
+      }
+      $('comment').value = note;
+      $('msg').textContent = msgText();
+      if (DONE) box.querySelectorAll('input,button').forEach((el) => { el.disabled = true; });
+      const say = (k, en, p) => { MSG = { k, en, p }; $('msg').textContent = msgText(); };
       $('cast').onclick = async () => {
         const val = (n) => document.querySelector(`input[name="${n}"]:checked`)?.value;
         const flags = {};
         for (const f of c.flags) { flags[f.id] = val(`flag_${f.id}`); }
         const body = { sheet: val('sheet'), counts: val('counts'), flags, comment: $('comment').value.trim() };
-        if (!body.sheet || !body.counts || Object.values(flags).some((v) => !v)) { $('msg').textContent = 'Answer every question.'; return; }
+        if (!body.sheet || !body.counts || Object.values(flags).some((v) => !v)) { say('case.answer-every-question', 'Answer every question.'); return; }
         $('cast').disabled = true;
         const r = await fetch(`/api/docket/${qid}/verdict`, {
           method: 'POST',
           headers: { 'content-type': 'application/json', authorization: `Bearer ${token}`, 'x-device-id': await getDeviceId() },
           body: JSON.stringify(body),
         }).then((x) => x.json()).catch(() => ({ error: 'network' }));
-        if (r.ok) { $('msg').textContent = `Recorded — computed verdict: ${r.verdict}.`; tally(r.tally); $('judge').querySelectorAll('input,button').forEach((el) => { el.disabled = true; }); }
-        else { $('msg').textContent = r.error === 'already_judged' ? 'You already judged this case.' : `Could not record (${r.error || 'error'}).`; $('cast').disabled = false; }
+        if (r.ok) {
+          DONE = true;
+          say('case.recorded-verdict', 'Recorded — computed verdict: {v0}.', { v0: () => verdictWord(r.verdict) });
+          tally(r.tally);
+          $('judge').querySelectorAll('input,button').forEach((el) => { el.disabled = true; });
+        } else {
+          if (r.error === 'already_judged') say('case.already-judged', 'You already judged this case.');
+          else say('case.could-not-record', 'Could not record ({v0}).', { v0: r.error || 'error' });
+          $('cast').disabled = false;
+        }
       };
     }
+    document.addEventListener('hawkeye-lang', paint);
     load();
   </script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

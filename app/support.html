@@ -145,13 +145,21 @@
       { slug: 'sui', label: 'Sui', address: '0x0b46490cffac31ac4f08683cc1c9ab3b56c9d0e279ab18d5d26f77cdeb138fb3' },
       { slug: 'hyperevm', label: 'HyperEVM', address: EVM },
     ];
-    const NET_NOTE = {
-      ethereum: 'Tagged for Ethereum (chain 1).', base: 'Tagged for Base (chain 8453).',
-      polygon: 'Tagged for Polygon (chain 137).', monad: 'Tagged for Monad (chain 143).',
-      robinhood: 'Tagged for Robinhood Chain (chain 4663).', hyperevm: 'Tagged for HyperEVM (chain 999).',
-      solana: 'Solana Pay request.', bitcoin: 'BIP-21 Bitcoin request.',
-      sui: 'Plain Sui address — Sui has no URI scheme, so no network tag.',
+    // The QR modal's words, resolved when it opens. One sentence for every EVM
+    // chain, with the network's name and id as values.
+    const T = (k, en, p) => {
+      const s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+      return p ? s.replace(/\{(\w+)\}/g, (m, a) => (a in p ? String(p[a]) : m)) : s;
     };
+    const tagged = (name, id) => T('support.tagged-for-chain', 'Tagged for {v0} (chain {v1}).', { v0: name, v1: id });
+    const NET_NOTE = () => ({
+      ethereum: tagged('Ethereum', 1), base: tagged('Base', 8453),
+      polygon: tagged('Polygon', 137), monad: tagged('Monad', 143),
+      robinhood: tagged('Robinhood Chain', 4663), hyperevm: tagged('HyperEVM', 999),
+      solana: T('support.solana-pay-request', 'Solana Pay request.'),
+      bitcoin: T('support.bip21-bitcoin-request', 'BIP-21 Bitcoin request.'),
+      sui: T('support.plain-sui-address', 'Plain Sui address — Sui has no URI scheme, so no network tag.'),
+    });
     const qrPath = (slug) => `qr/qr-${slug}.svg`;
     document.getElementById('wallets').innerHTML = WALLETS.map((w) => `
       <div class="card">
@@ -174,18 +182,18 @@
       try {
         await navigator.clipboard.writeText(btn.dataset.addr);
         const lbl = btn.querySelector('.lbl'); const orig = lbl.textContent;
-        lbl.textContent = window.HawkeyeI18n ? window.HawkeyeI18n.t('support.copied', 'Copied') : 'Copied';
+        lbl.textContent = T('support.copied', 'Copied');
         setTimeout(() => { lbl.textContent = orig; }, 1800);
       } catch { /* clipboard blocked (insecure context) — the address is selectable */ }
     }
     function openQr(slug, label, addr) {
       document.getElementById('qr-modal-title').innerHTML = (ICONS[slug] || '') + '<span>' + esc(label) + '</span>';
       const img = document.getElementById('qr-modal-img');
-      img.src = qrPath(slug); img.alt = label + ' wallet address QR code';
-      document.getElementById('qr-modal-net').textContent = NET_NOTE[slug] || '';
+      img.src = qrPath(slug); img.alt = T('support.wallet-qr-alt', '{v0} wallet address QR code', { v0: label });
+      document.getElementById('qr-modal-net').textContent = NET_NOTE()[slug] || '';
       document.getElementById('qr-modal-addr').textContent = addr;
       const cp = document.getElementById('qr-modal-copy');
-      cp.dataset.addr = addr; cp.querySelector('.lbl').textContent = 'Copy address';
+      cp.dataset.addr = addr; cp.querySelector('.lbl').textContent = T('support.copy-address', 'Copy address');
       modal.hidden = false;
     }
     const closeQr = () => { modal.hidden = true; };
@@ -203,7 +211,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=189"></script>
+  <script src="menu.js?v=190"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

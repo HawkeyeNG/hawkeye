@@ -1,0 +1,77 @@
+{
+  "situation-room.choose-a-party": { "ha": "Zaɓi jam'iyya…", "ig": "Họrọ pati…", "yo": "Yan ẹgbẹ́…" },
+  "situation-room.choose-your-party": {
+    "ha": "Zaɓi jam'iyyar da wannan kamfen yake wakilta.",
+    "ig": "Họrọ pati mkpọsa a na-anọchite anya ya.",
+    "yo": "Yan ẹgbẹ́ tí ìpolongo yìí ń ṣojú fún."
+  },
+  "situation-room.organisation": { "ha": "Ƙungiya", "ig": "Nzukọ", "yo": "Àjọ" },
+  "situation-room.choose-your-organisation": { "ha": "Zaɓi ƙungiyarka…", "ig": "Họrọ nzukọ gị…", "yo": "Yan àjọ rẹ…" },
+  "situation-room.org-other": {
+    "ha": "Wata — rubuta sunan ƙungiyarka",
+    "ig": "Ọzọ — dee aha nzukọ gị",
+    "yo": "Òmíràn — kọ orúkọ àjọ rẹ"
+  },
+  "situation-room.org-other-placeholder": {
+    "ha": "Cikakken sunan ƙungiyarka",
+    "ig": "Aha nzukọ gị zuru ezu",
+    "yo": "Orúkọ àjọ rẹ ní kíkún"
+  },
+  "situation-room.org-check-note": {
+    "ha": "Hawkeye yana tabbatar da cewa wannan ɗakin yana wakiltar ƙungiyar da ka zaɓa kafin hanyoyin gayyatarsa su yi aiki — kowace ƙungiya haka nan.",
+    "ig": "Hawkeye na-enyocha na ọnụ ụlọ a na-anọchite anya nzukọ ị họrọ tupu njikọ òkù ya arụọ ọrụ — nzukọ ọ bụla n’otu ụzọ ahụ.",
+    "yo": "Hawkeye ń ṣàyẹ̀wò pé yàrá yìí ń ṣojú fún àjọ tí o yàn kí àwọn ìjápọ̀ ìpè rẹ̀ tó ṣiṣẹ́ — bákan náà fún gbogbo àjọ."
+  },
+  "situation-room.org-listing-note": {
+    "ha": "An jera ƙungiyoyi ne kawai don ka samu taka. Kasancewa cikin jerin ba haɗin gwiwa ba ne da Hawkeye, kuma ba goyon baya ne daga gare shi ba.",
+    "ig": "E depụtara nzukọ naanị ka i wee chọta nke gị. Ịnọ na ndepụta abụghị mmekọ ya na Hawkeye, ọ bụghịkwa nkwado sitere na ya.",
+    "yo": "A to àwọn àjọ sílẹ̀ kí o lè rí tìrẹ nìkan. Wíwà nínú àkọsílẹ̀ kì í ṣe àjọṣepọ̀ pẹ̀lú Hawkeye, kì í sì í ṣe ìfọwọ́sí láti ọ̀dọ̀ rẹ̀."
+  },
+  "situation-room.org-required": {
+    "ha": "Zaɓi ƙungiyarka, ko ka rubuta sunanta a ƙarƙashin Wata.",
+    "ig": "Họrọ nzukọ gị, ma ọ bụ dee aha ya n’okpuru Ọzọ.",
+    "yo": "Yan àjọ rẹ, tàbí kọ orúkọ rẹ̀ lábẹ́ Òmíràn."
+  },
+  "situation-room.name-names-org": {
+    "ha": "Wannan sunan ya ambaci ƙungiya ({v0}). Ɗakin da aka tabbatar wa wannan ƙungiyar ne kaɗai zai iya amfani da shi — zaɓe ta lokacin da kake shirya ɗakin, ko ka zaɓi wani suna.",
+    "ig": "Aha ahụ kpọrọ nzukọ ({v0}). Naanị ọnụ ụlọ e nyere nkwenye maka nzukọ ahụ nwere ike iji ya — họrọ ya mgbe ị na-ahazi ọnụ ụlọ ahụ, ma ọ bụ họrọ aha ọzọ.",
+    "yo": "Orúkọ yẹn dárúkọ àjọ kan ({v0}). Yàrá tí a ti fìdí rẹ̀ múlẹ̀ fún àjọ yẹn nìkan ló lè lò ó — yàn án nígbà tí o bá ń ṣètò yàrá, tàbí yan orúkọ mìíràn."
+  },
+  "situation-room.election-over": {
+    "ha": "Wannan zaɓen ya wuce, don haka ba za a iya shirya sabon ɗaki domin sa ba.",
+    "ig": "Ntuli aka ahụ agwụla, ya mere a pụghị ịhazi ọnụ ụlọ ọhụrụ maka ya.",
+    "yo": "Ìdìbò yẹn ti parí, nítorí náà a kò lè ṣètò yàrá tuntun fún un."
+  },
+  "situation-room.too-many-room-requests": {
+    "ha": "Ka nemi Hawkeye ya duba ɗakuna da yawa a yau. Sake gwadawa gobe.",
+    "ig": "Ị rịọla Hawkeye ka o nyochaa ọtụtụ ọnụ ụlọ taa. Nwaa ọzọ echi.",
+    "yo": "O ti ní kí Hawkeye ṣàyẹ̀wò ọ̀pọ̀ yàrá lónìí. Tún gbìyànjú lọ́la."
+  },
+  "situation-room.state-constituency": { "ha": "Mazabar jiha", "ig": "Mpaghara ntuli aka steeti", "yo": "Agbègbè ìdìbò ìpínlẹ̀" },
+  "situation-room.all-constituencies-in": { "ha": "Dukkan mazabu a {v0}", "ig": "Mpaghara ntuli aka niile dị na {v0}", "yo": "Gbogbo agbègbè ìdìbò ní {v0}" },
+  "situation-room.note-all-constituencies": {
+    "ha": "Kowace mazabar jiha a {v0}, a ƙidaya su tare — domin ɗakin majalisar jiha na jam'iyya a faɗin jihar.",
+    "ig": "Mpaghara ntuli aka steeti ọ bụla dị na {v0}, a gụkọtara ọnụ — maka ọnụ ụlọ omebe iwu steeti nke pati n’ofe steeti ahụ niile.",
+    "yo": "Gbogbo agbègbè ìdìbò ìpínlẹ̀ ní {v0}, tí a kà pọ̀ — fún yàrá ilé aṣòfin ìpínlẹ̀ ti ẹgbẹ́ kan jákèjádò ìpínlẹ̀."
+  },
+  "situation-room.note-seat-shares-lga": {
+    "ha": "Rajista ba ta faɗi a wacce daga cikin kujerun wannan karamar hukuma rumfar zaɓe take ba, don haka wannan ɗakin yana ƙidaya dukkan karamar hukumar.",
+    "ig": "Ndekọ aha anaghị ekwu oche nke ọchịchị ime obodo a ebe ntuli aka na-atụ vootu maka ya, ya mere ọnụ ụlọ a na-agụ ọchịchị ime obodo ahụ dum.",
+    "yo": "Àkọsílẹ̀ kò sọ èwo nínú àwọn ìjókòó ìjọba ìbílẹ̀ yìí ni ilé ìdìbò kan ń dìbò fún, nítorí náà yàrá yìí ń ka gbogbo ìjọba ìbílẹ̀ náà."
+  },
+  "situation-room.note-by-election-seat": {
+    "ha": "Wannan zaɓen cike gurbi na kujera ɗaya ne: {v0}.",
+    "ig": "Ntuli aka nnọchi a bụ maka otu oche: {v0}.",
+    "yo": "Ìdìbò àfidípò yìí jẹ́ fún ìjókòó kan: {v0}."
+  },
+  "situation-room.org-pending-banner": {
+    "ha": "Hawkeye yana tabbatar da cewa wannan ɗakin yana wakiltar {v0} — ana duba kowace ƙungiya haka nan. Kafin nan hanyoyin gayyata ba sa aiki kuma babu sabon mutum da zai iya shiga. Za ka iya shirya ɗakin a halin yanzu.",
+    "ig": "Hawkeye na-enyocha na ọnụ ụlọ a na-anọchite anya {v0} — a na-enyocha nzukọ ọ bụla n’otu ụzọ ahụ. Ruo mgbe ahụ, njikọ òkù anaghị arụ ọrụ, ọ dịghịkwa onye ọhụrụ nwere ike ịbanye. Ị nwere ike ịhazi ọnụ ụlọ ahụ ka ọ dị ugbu a.",
+    "yo": "Hawkeye ń fìdí rẹ̀ múlẹ̀ pé yàrá yìí ń ṣojú fún {v0} — bákan náà ni a ń ṣàyẹ̀wò gbogbo àjọ. Títí di ìgbà náà, àwọn ìjápọ̀ ìpè kò ní ṣiṣẹ́, kò sì sí ẹni tuntun tí ó lè darapọ̀. O lè ṣètò yàrá náà ní báyìí ná."
+  },
+  "situation-room.org-block-banner": {
+    "ha": "Hawkeye bai iya tabbatar da cewa wannan ɗakin yana wakiltar ƙungiyar da ya zaɓa ba, don haka babu sabon mutum da zai iya shiga.",
+    "ig": "Hawkeye enweghị ike ịkwenye na ọnụ ụlọ a na-anọchite anya nzukọ ọ họrọ, ya mere ọ dịghị onye ọhụrụ nwere ike ịbanye.",
+    "yo": "Hawkeye kò lè fìdí rẹ̀ múlẹ̀ pé yàrá yìí ń ṣojú fún àjọ tí ó yàn, nítorí náà kò sí ẹni tuntun tí ó lè darapọ̀."
+  }
+}

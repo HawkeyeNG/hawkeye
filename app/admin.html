@@ -507,10 +507,10 @@
            from room names. Loads on first open. -->
       <details id="rr-wrap" style="margin-top:10px">
         <summary style="cursor:pointer;font-weight:700">Room requests</summary>
-        <p class="hint">A situation room that carries a party label admits nobody — no invite link, join or copied roster works — until you approve the label here. Every party is checked the same way, and at most one room per party per race and area can be approved. Rejecting keeps the room, without the label; rejecting an approved room withdraws its label. A party room created by a coordinator you named under Organisation codes → Party pre-approval is approved on creation and shows here as auto-approved (withdraw it like any other) — unless it would duplicate an approved room, in which case it waits here.</p>
+        <p class="hint">Every new situation room claims somebody: a campaign names its party, a civil-society room its organisation (picked from the list in app/cso/manifest.json, or typed under Other and shown here as UNLISTED — being listed is not verification). The room admits nobody — no invite link, join or copied roster works — until you approve the claim here. Every party and organisation is checked the same way, and at most one room per party or organisation per race and area can be approved. Rejecting a party keeps the room, without the label; rejecting an organisation keeps the room but it admits nobody new. Rejecting an approved room withdraws its claim. A party room created by a coordinator you named under Organisation codes → Party pre-approval is approved on creation and shows here as auto-approved (withdraw it like any other) — unless it would duplicate an approved room, in which case it waits here. Rooms made before this (no claim at all) are counted and settled with the button below.</p>
         <div class="row" style="margin-top:8px;gap:8px;align-items:center;flex-wrap:wrap">
           <button id="rr-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
-          <button id="rr-legacy" class="secondary" style="width:auto;margin:0">Rooms labelled before verification</button>
+          <button id="rr-legacy" class="secondary" style="width:auto;margin:0">Rooms from before verification</button>
         </div>
         <p id="rr-status" class="status" role="status"></p>
         <div id="rr-out"></div>
@@ -3011,12 +3011,19 @@
         + (c.requests24h > 1 ? ' · <b>' + esc(c.requests24h) + ' party-room requests in 24h</b>' : '');
     }
 
+    /* What the room claims: a party, or an organisation (listed or typed). */
+    const claimOf = (r) => (r.claim === 'org' ? (r.org || '?') : (r.party || '?'));
+    const claimHtml = (r) => (r.claim === 'org'
+      ? 'Organisation: <b>' + esc(r.org) + '</b> ' + (r.org_listed ? '<span class="meta">(listed)</span>' : '<b>(UNLISTED — typed by the creator)</b>')
+        + ' · <span class="meta">' + (r.kind === 'cso' ? 'civil society' : 'campaign') + '</span>'
+      : '<b>' + esc(r.party) + '</b>');
+
     function card(r, decided) {
-      const race = esc(r.contest) + ' · ' + (r.scope ? esc(r.scope) : 'nationwide');
+      const race = esc(r.contest) + ' · ' + (r.scope ? esc(r.scope_label || r.scope) : 'nationwide');
       const flags = [];
-      if (r.status === 'legacy') flags.push('<b>Existing room</b> — labelled before verification; still admitting until you decide');
-      if (r.duplicate_of) flags.push('<b>DUPLICATE</b> — ' + esc(r.party) + ' already has an approved room for this race and area: #' + esc(r.duplicate_of.id) + ' “' + esc(r.duplicate_of.name) + '”. Approving is refused until that label is withdrawn.');
-      if (r.also_asking && r.also_asking.length) flags.push('<b>Also asking</b> for the same party, race and area: ' + r.also_asking.map((x) => '#' + esc(x.id) + ' “' + esc(x.name) + '”').join(', '));
+      if (r.status === 'legacy') flags.push('<b>Existing room</b> — made before verification; still admitting until you decide');
+      if (r.duplicate_of) flags.push('<b>DUPLICATE</b> — ' + esc(claimOf(r)) + ' already has an approved room for this race and area: #' + esc(r.duplicate_of.id) + ' “' + esc(r.duplicate_of.name) + '”. Approving is refused until that claim is withdrawn.');
+      if (r.also_asking && r.also_asking.length) flags.push('<b>Also asking</b> for the same ' + (r.claim === 'org' ? 'organisation' : 'party') + ', race and area: ' + r.also_asking.map((x) => '#' + esc(x.id) + ' “' + esc(x.name) + '”').join(', '));
       const auto = r.last && r.last.action === 'auto-approved';
       const state = decided
         ? (r.status === 'approved'
@@ -3031,7 +3038,7 @@
         : '<button type="button" ' + btn + ' data-rr-approve="' + Number(r.id) + '"' + (r.duplicate_of ? ' disabled title="Another room already holds this label for this race and area"' : '') + '>Approve</button>'
           + '<button type="button" class="secondary" ' + btn + ' data-rr-reject="' + Number(r.id) + '">Reject</button>';
       return '<div class="card" style="margin:10px 0;padding:10px 12px">'
-        + '<p><b>' + esc(r.party) + '</b> · ' + race + ' · <span class="meta">#' + esc(r.id) + '</span></p>'
+        + '<p>' + claimHtml(r) + ' · ' + race + ' · <span class="meta">#' + esc(r.id) + '</span></p>'
         + '<p>“' + esc(r.name) + '” <span class="meta">/room/' + esc(r.slug || '') + ' · ' + esc(r.members) + ' on roster</span></p>'
         + '<p class="meta">' + state + ' · by ' + who(r.creator) + '</p>'
         + flags.map((f) => '<p class="meta">' + f + '</p>').join('')
@@ -3092,15 +3099,17 @@
       const id = Number((a || j).getAttribute(a ? 'data-rr-approve' : 'data-rr-reject'));
       const row = data && [...data.pending, ...data.decided].find((x) => x.id === id);
       if (!row) return;
-      const label = row.party + ' · ' + row.contest + ' · ' + (row.scope || 'nationwide');
+      const label = claimOf(row) + ' · ' + row.contest + ' · ' + (row.scope_label || row.scope || 'nationwide');
       let r;
       if (a) {
         if (!(await hkConfirm('Approve “' + row.name + '” as the ' + label + ' room? Its invite links start working and its creator is told.'))) return;
         a.disabled = true;
         r = await post('/api/admin/room-requests/' + id + '/approve').catch(() => null);
       } else {
-        const reason = await hkPrompt((row.status === 'approved' ? 'Withdraw the ' : 'Reject the ') + label + ' label on “' + row.name
-          + '”? The room stays, without the label. Optional reason — the creator sees it as typed:', { danger: true, placeholder: 'Reason (optional)' });
+        const reason = await hkPrompt((row.status === 'approved' ? 'Withdraw the ' : 'Reject the ') + label + ' claim on “' + row.name
+          + (row.claim === 'org'
+            ? '”? The room stays, but admits nobody new. Optional reason — the creator sees it as typed:'
+            : '”? The room stays, without the label. Optional reason — the creator sees it as typed:'), { danger: true, placeholder: 'Reason (optional)' });
         if (reason === null) return;
         j.disabled = true;
         r = await post('/api/admin/room-requests/' + id + '/reject', { reason }).catch(() => null);
@@ -3117,10 +3126,12 @@
       const r = await post('/api/admin/room-requests/backfill', {}).catch(() => null);
       if (!r || r.status !== 200) { say(r ? failText(r.body, r.status) : 'Could not reach the server.', false); return; }
       const b = r.body;
-      const lines = b.legacy + ' room(s) carry a party label from before verification (' + b.legacyWithMembers + ' with members; ' + b.legacyMembers + ' people on those rosters). '
-        + b.grandfatherable + ' are alone in their party, race and area; ' + b.contested.length + ' share one with another room. '
+      const lines = b.legacy + ' room(s) carry a claim from before verification (' + b.legacyWithMembers + ' with members; ' + b.legacyMembers + ' people on those rosters). '
+        + b.grandfatherable + ' are alone in their claim, race and area; ' + b.contested.length + ' share one with another room. '
+        + (b.unclaimed || 0) + ' room(s) claim nobody (' + (b.unclaimedCso || 0) + ' civil society, ' + (b.unclaimedCampaign || 0) + ' campaign with no party; '
+        + (b.unclaimedMembers || 0) + ' people on their rosters) — each would claim its own NAME as its organisation (' + (b.unclaimedListed || 0) + ' match a listed one). '
         + b.unlabelledNamingParty.length + ' room(s) with no verified label have a name that names a party. '
-        + 'Type PENDING to stop all of them admitting until you approve each one, GRANDFATHER to approve every room that is alone in its race and area (the rest stay in this queue), or leave empty to do nothing.';
+        + 'Type PENDING to stop all of them admitting until you approve each one, GRANDFATHER to approve every room that is alone in its claim, race and area (the rest wait in this queue, still admitting), or leave empty to do nothing.';
       const pick = await hkPrompt(lines, { placeholder: 'PENDING / GRANDFATHER', code: true });
       const mode = pick && pick.trim().toUpperCase() === 'PENDING' ? 'pending' : pick && pick.trim().toUpperCase() === 'GRANDFATHER' ? 'grandfather' : null;
       if (!mode) { say('Nothing changed.', true); return; }

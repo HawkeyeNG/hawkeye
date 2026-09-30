@@ -1,0 +1,21 @@
+{
+  "situation-room.choose-a-party": "Choose a party…",
+  "situation-room.choose-your-party": "Choose the party this campaign stands for.",
+  "situation-room.organisation": "Organisation",
+  "situation-room.choose-your-organisation": "Choose your organisation…",
+  "situation-room.org-other": "Other — type your organisation’s name",
+  "situation-room.org-other-placeholder": "Your organisation’s full name",
+  "situation-room.org-check-note": "Hawkeye checks that this room speaks for the organisation you choose before its invite links work — every organisation the same way.",
+  "situation-room.org-listing-note": "Organisations are listed only so you can find yours. Being listed is not a partnership with Hawkeye or an endorsement by it.",
+  "situation-room.org-required": "Choose your organisation, or type its name under Other.",
+  "situation-room.name-names-org": "That name names an organisation ({v0}). Only a room verified for that organisation may use it — choose it when you set the room up, or pick another name.",
+  "situation-room.election-over": "That election is over, so a new room cannot be set up for it.",
+  "situation-room.too-many-room-requests": "You have asked Hawkeye to check several rooms today. Try again tomorrow.",
+  "situation-room.state-constituency": "State constituency",
+  "situation-room.all-constituencies-in": "All constituencies in {v0}",
+  "situation-room.note-all-constituencies": "Every state constituency in {v0}, counted together — for a party’s state-wide assembly room.",
+  "situation-room.note-seat-shares-lga": "The register does not say which of this local government’s seats a polling unit votes in, so this room counts the whole local government.",
+  "situation-room.note-by-election-seat": "This by-election is for one seat: {v0}.",
+  "situation-room.org-pending-banner": "Hawkeye is checking that this room speaks for {v0} — every organisation is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
+  "situation-room.org-block-banner": "Hawkeye could not verify that this room speaks for the organisation it chose, so nobody new can join."
+}

@@ -44,6 +44,8 @@ type Member = {
   kind: string;
   contest: string;
   scope: string | null;
+  // "Seat (State)" for a state constituency, stored "State|Seat" (server: routes/groups.js scopeLabel).
+  scope_label?: string | null;
   slug: string | null;
   manages: string | null;
   assigned_pu: string | null;
@@ -59,6 +61,8 @@ type Managed = {
   kind: string;
   contest: string;
   scope: string | null;
+  // "Seat (State)" for a state constituency, stored "State|Seat" (server: routes/groups.js scopeLabel).
+  scope_label?: string | null;
   slug: string | null;
   role: string;
 };
@@ -66,8 +70,8 @@ type Groups = { member: Member[]; managing: Managed[] };
 
 const kindLabel = (kind: string) =>
   kind === 'cso' ? i18nT('my-groups.kind-cso') : i18nT('my-groups.kind-campaign');
-const subLine = (g: { kind: string; contest: string; scope: string | null }) =>
-  [kindLabel(g.kind), g.contest, g.scope].filter(Boolean).join(' · ');
+const subLine = (g: { kind: string; contest: string; scope: string | null; scope_label?: string | null }) =>
+  [kindLabel(g.kind), g.contest, g.scope_label || g.scope].filter(Boolean).join(' · ');
 const roleLine = (role: string | null) =>
   role === 'owner' ? i18nT('n.app.my-groups.you-own')
     : role === 'coordinator' ? i18nT('n.app.my-groups.you-coordinate')

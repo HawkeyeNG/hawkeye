@@ -124,7 +124,8 @@ async function main() {
 /* One whole sentence per branch — kind x scope — never a translated noun
    spliced into an English-ordered sentence. */
 function invitedLine(g) {
-  const v = { contest: esc(g.contest), scope: esc(g.scope || '') };
+  // scope_label: a state constituency is stored "State|Seat" and reads "Seat (State)".
+  const v = { contest: esc(g.contest), scope: esc(g.scope_label || g.scope || '') };
   if (g.kind === 'cso') {
     return g.scope
       ? T('join.invited-cso-scope', 'You have been invited to observe with this observer group for the {contest} race in {scope}.', v)

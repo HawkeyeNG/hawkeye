@@ -36,7 +36,7 @@ import { SafeScreen } from '@/components/safe-screen';
  * uses those, sits inside SafeScreen like every other route, and says whose app
  * it is — an invite is often the very first Hawkeye screen a person ever sees.
  */
-type Invite = { group_id: number; name: string; kind: string; contest: string; scope: string };
+type Invite = { group_id: number; name: string; kind: string; contest: string; scope: string; scope_label?: string };
 
 /** One of the four disclosures, with its own icon so the list is scannable. */
 function Point({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: string }) {
@@ -202,7 +202,7 @@ export default function JoinGroup() {
         <Text className="pt-2 text-center text-sm leading-5 text-muted">{t('n.app.join.invited')}</Text>
         {invite?.contest ? (
           <Text className="pt-1 text-center text-sm text-muted">
-            {[invite.contest, invite.scope].filter(Boolean).join(' · ')}
+            {[invite.contest, invite.scope_label || invite.scope].filter(Boolean).join(' · ')}
           </Text>
         ) : null}
 

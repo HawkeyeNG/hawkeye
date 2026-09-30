@@ -135,6 +135,12 @@
   align-items: center; justify-content: center; }
 .sr-party-mark:has(img) { background: #fff; padding: 3px; }
 .sr-party-mark img { max-width: 100%; max-height: 100%; display: block; }
+/* An organisation with no logo on file is drawn as its initials — an
+   identification aid in the picker, nothing more (app/cso/manifest.json). */
+.sr-org-badge { width: 100%; height: 100%; border-radius: 8px; display: flex; align-items: center;
+  justify-content: center; background: var(--surface, #fff); border: 1px solid var(--border, #d8dcd9);
+  color: var(--text, #102a1e); font-weight: 800; font-size: 0.62rem; letter-spacing: 0.02em; }
+#mk-org-other { margin-top: 8px; }
 .sr-fine { color: var(--muted); font-size: 0.74rem; margin: 5px 0 0; line-height: 1.45; }
 /* Stacked, not a flex row. The row fought .sr-form's `select { width: 100% }`:
    the first select claimed the full width and the second was squeezed to a bare
@@ -811,18 +817,31 @@ const iOutrank = (obsId) => {
    by Hawkeye before the room admits anyone (routes/groups.js admissionBlock);
    the manager must be told that, not left with invite links that fail. */
 function heldText(g, code) {
-  return (code || (g && g.admission_block)) === 'room_name_names_party'
-    ? T('situation-room.name-block-banner', 'This room’s name names a party it is not verified for, so nobody new can join. Rename the room to open it.')
-    : T('situation-room.pending-banner', 'Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
-      { v0: (g && (g.party_claim || g.party)) || '' });
+  const why = code || (g && g.admission_block);
+  if (why === 'room_name_names_party') {
+    return T('situation-room.name-block-banner', 'This room’s name names a party it is not verified for, so nobody new can join. Rename the room to open it.');
+  }
+  if (why === 'room_org_not_verified') {
+    return T('situation-room.org-block-banner', 'Hawkeye could not verify that this room speaks for the organisation it chose, so nobody new can join.');
+  }
+  /* A civil-society room waits on its ORGANISATION, a campaign on its party. */
+  if (g && g.org_claim) {
+    return T('situation-room.org-pending-banner', 'Hawkeye is checking that this room speaks for {v0} — every organisation is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
+      { v0: g.org_claim });
+  }
+  return T('situation-room.pending-banner', 'Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
+    { v0: (g && (g.party_claim || g.party)) || '' });
 }
-/* The two refusals the name rule produces, at create and at rename. */
+/* The refusals the name rule and the request limit produce, at create and at rename. */
 function nameError(body) {
   if (body && body.error === 'name_names_party') {
     return T('situation-room.name-names-party', 'That name names a party ({v0}). Only a room verified for that party may use it — choose the party when you set the room up, or pick another name.', { v0: body.party || '' });
   }
+  if (body && body.error === 'name_names_org') {
+    return T('situation-room.name-names-org', 'That name names an organisation ({v0}). Only a room verified for that organisation may use it — choose it when you set the room up, or pick another name.', { v0: body.org || '' });
+  }
   if (body && body.error === 'too_many_party_rooms') {
-    return T('situation-room.too-many-party-rooms', 'You have asked for several party rooms today. Try again tomorrow.');
+    return T('situation-room.too-many-room-requests', 'You have asked Hawkeye to check several rooms today. Try again tomorrow.');
   }
   return null;
 }
@@ -835,7 +854,7 @@ function render() {
   if (S.tab === 'coverage' && S.group && !iSeeDeployment()) S.tab = 'overview';
   /* The code checker is drawn only for the reader the server said may use it. */
   if (S.tab === 'codes' && S.group && !S.group.org_code_check) S.tab = 'overview';
-  const scope = g.scope || T('situation-room.nationwide', 'Nationwide');
+  const scope = g.scope_label || g.scope || T('situation-room.nationwide', 'Nationwide');
   $('sr').innerHTML = `
     <div class="sr-bar">
       ${g.party && LOGOS[g.party] ? `<span class="sr-emblem"><img src="${esc(LOGOS[g.party])}" alt="${esc(g.party)}" /></span>` : ''}
@@ -848,6 +867,10 @@ function render() {
              party_claim and says so, with no emblem (services/roomLabels.js). */
           g.party || (g.party_claim
             ? T('situation-room.party-pending', '{v0} (pending verification)', { v0: g.party_claim }) : ''),
+          /* A civil-society room's organisation, the same way: named when
+             verified, "(pending verification)" until then. */
+          g.org || (g.org_claim
+            ? T('situation-room.party-pending', '{v0} (pending verification)', { v0: g.org_claim }) : ''),
           g.contest || '',
           scope,
           g.members === 1
@@ -952,10 +975,16 @@ function renderWelcome() {
         <div><label for="mk-kind">${T('situation-room.type', 'Type')}</label>
           <select id="mk-kind"><option value="campaign">${T('my-groups.kind-campaign', 'Campaign')}</option><option value="cso">${T('situation-room.civil-society-observer-group', 'Civil society / observer group')}</option></select></div>
         <div id="mk-party-row"><label for="mk-party">${T('results.party', 'Party')}</label>
-          <div class="sr-party-pick"><select id="mk-party"><option value="">${T('situation-room.not-saying', 'Not saying')}</option></select>
+          <div class="sr-party-pick"><select id="mk-party"><option value="">${T('situation-room.choose-a-party', 'Choose a party…')}</option></select>
             <span class="sr-party-mark" id="mk-party-mark"></span></div>
-          <p class="sr-fine">${T('situation-room.only-used-to-put-your-emblem-on', 'Only used to put your emblem on your own console.')}</p>
           <p class="sr-fine">${T('situation-room.party-check-note', 'Hawkeye checks a party room before its invite links work — every party the same way.')}</p></div>
+        <div id="mk-org-row" hidden><label for="mk-org">${T('situation-room.organisation', 'Organisation')}</label>
+          <div class="sr-party-pick"><select id="mk-org"><option value="">${T('situation-room.choose-your-organisation', 'Choose your organisation…')}</option></select>
+            <span class="sr-party-mark" id="mk-org-mark"></span></div>
+          <input id="mk-org-other" maxlength="120" hidden placeholder="${esc(T('situation-room.org-other-placeholder', 'Your organisation’s full name'))}"
+            aria-label="${esc(T('situation-room.org-other-placeholder', 'Your organisation’s full name'))}" />
+          <p class="sr-fine">${T('situation-room.org-check-note', 'Hawkeye checks that this room speaks for the organisation you choose before its invite links work — every organisation the same way.')}</p>
+          <p class="sr-fine">${T('situation-room.org-listing-note', 'Organisations are listed only so you can find yours. Being listed is not a partnership with Hawkeye or an endorsement by it.')}</p></div>
         <div><label for="mk-contest">${T('situation-room.which-election', 'Which election')}</label><select id="mk-contest"></select></div>
         <div id="mk-state-row" hidden><label for="mk-state">${T('common.state', 'State')}</label><select id="mk-state"></select></div>
         <div id="mk-race-row" hidden><label for="mk-race" id="mk-race-label">${T('situation-room.seat', 'Seat')}</label><select id="mk-race"></select></div>
@@ -1000,7 +1029,8 @@ async function setupForm() {
   const gone = () => !form || !form.isConnected;
   const { body } = await api('/api/contests');
   if (gone()) return;
-  const list = Array.isArray(body) ? body : [];
+  // Past elections are not offered (contestOver); the server refuses them too.
+  const list = (Array.isArray(body) ? body : []).filter((c) => !contestOver(c));
   $('mk-contest').innerHTML = list.map((c) =>
     `<option value="${esc(c.code)}">${esc(contestName(c.name || c.label || c.code))}</option>`).join('')
     || `<option value="PRES">${T('situation-room.presidential', 'Presidential')}</option>`;
@@ -1009,29 +1039,74 @@ async function setupForm() {
   const logos = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
   if (gone()) return;
-  $('mk-party').innerHTML = `<option value="">${T('situation-room.not-saying', 'Not saying')}</option>`
+  /* A CAMPAIGN NAMES ITS PARTY — required (every Nigerian candidate stands for
+     one), so "Not saying" is gone: it was how a campaign room skipped Room
+     requests altogether. The party is what Hawkeye checks. */
+  $('mk-party').innerHTML = `<option value="">${T('situation-room.choose-a-party', 'Choose a party…')}</option>`
     + Object.keys(logos).sort().map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
   const paintMark = () => {
     const p = $('mk-party').value;
     $('mk-party-mark').innerHTML = p && logos[p] ? `<img src="${esc(logos[p])}" alt="" />` : '';
   };
   $('mk-party').addEventListener('change', paintMark);
+
+  /* A CIVIL-SOCIETY ROOM NAMES ITS ORGANISATION, from the list or typed under
+     Other. The list (app/cso/manifest.json) is there only to identify an
+     organisation: a listed one is checked exactly like a typed one. */
+  const csoList = await (window.fetchData ? window.fetchData('cso/manifest.json') : fetch('cso/manifest.json'))
+    .then((r) => r.json()).catch(() => ({}));
+  if (gone()) return;
+  const ORGS = Array.isArray(csoList.orgs) ? csoList.orgs : [];
+  $('mk-org').innerHTML = `<option value="">${T('situation-room.choose-your-organisation', 'Choose your organisation…')}</option>`
+    + ORGS.map((o) => `<option value="${esc(o.id)}">${esc(o.name)}</option>`).join('')
+    + `<option value="__other">${T('situation-room.org-other', 'Other — type your organisation’s name')}</option>`;
+  const paintOrg = () => {
+    const v = $('mk-org').value;
+    const o = ORGS.find((x) => x.id === v);
+    $('mk-org-mark').innerHTML = !o ? ''
+      : o.logo ? `<img src="${esc(o.logo)}" alt="" />`
+        : `<span class="sr-org-badge" aria-hidden="true">${esc(o.badge || '')}</span>`;
+    $('mk-org-other').hidden = v !== '__other';
+  };
+  $('mk-org').addEventListener('change', paintOrg);
   $('mk-kind').addEventListener('change', () => {
-    $('mk-party-row').hidden = $('mk-kind').value !== 'campaign';
-    if ($('mk-party-row').hidden) { $('mk-party').value = ''; paintMark(); }
+    const cso = $('mk-kind').value === 'cso';
+    $('mk-party-row').hidden = cso;
+    $('mk-org-row').hidden = !cso;
+    if (cso) { $('mk-party').value = ''; paintMark(); } else { $('mk-org').value = ''; $('mk-org-other').value = ''; paintOrg(); }
   });
 
   const LABEL = {
     senatorial: T('situation-room.senatorial-district', 'Senatorial district'),
     federal_constituency: T('situation-room.federal-constituency', 'Federal constituency'),
+    state_constituency: T('situation-room.state-constituency', 'State constituency'),
   };
+  /* Two steps (state, then its seats) for Senate, Reps and — since a state
+     assembly race is a state constituency — the State House of Assembly. */
+  const TWO_STEP = ['senatorial', 'federal_constituency', 'state_constituency'];
   let shape = { kind: 'national' };
+
+  /* What the chosen race covers, in one line under the pickers. */
+  const raceNote = () => {
+    const seat = $('mk-race').value;
+    if (shape.seat) return T('situation-room.note-by-election-seat', 'This by-election is for one seat: {v0}.', { v0: shape.seat });
+    if (shape.kind === 'national') return T('situation-room.note-national', 'One nationwide race — every polling unit in the country.');
+    if (!TWO_STEP.includes(shape.kind)) return T('situation-room.note-state-is-the-race', 'The state is the race.');
+    if (shape.stateWide && seat === shape.stateWide) {
+      return T('situation-room.note-all-constituencies', 'Every state constituency in {v0}, counted together — for a party’s state-wide assembly room.', { v0: shape.stateWide });
+    }
+    if (seat && (shape.shared || []).includes(seat)) {
+      return T('situation-room.note-seat-shares-lga', 'The register does not say which of this local government’s seats a polling unit votes in, so this room counts the whole local government.');
+    }
+    return T('situation-room.note-seat-is-the-race', 'A {v0} is the race here, not the whole state.',
+      { v0: (LABEL[shape.kind] || T('situation-room.seat', 'Seat')).toLowerCase() });
+  };
 
   async function loadRaces(state) {
     const q = '?contest=' + encodeURIComponent($('mk-contest').value) + (state ? '&state=' + encodeURIComponent(state) : '');
-    shape = (await api('/api/group-races' + q)).body;
+    shape = (await api('/api/group-races' + q)).body || { kind: 'national' };
     if (gone()) return;
-    const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
+    const twoStep = TWO_STEP.includes(shape.kind);
 
     $('mk-state-row').hidden = shape.kind === 'national';
     $('mk-race-row').hidden = !twoStep || !state;
@@ -1042,41 +1117,68 @@ async function setupForm() {
         + (shape.states || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
     }
     if (twoStep && state) {
+      // Stored keys ("Lagos|Ikeja I") shown by their labels; the whole state first, when offered.
+      const labels = shape.labels || {};
       $('mk-race').innerHTML = `<option value="">${T('situation-room.choose-a-seat', 'Choose a seat…')}</option>`
-        + (shape.races || []).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+        + (shape.stateWide ? `<option value="${esc(shape.stateWide)}">${esc(T('situation-room.all-constituencies-in', 'All constituencies in {v0}', { v0: shape.stateWide }))}</option>` : '')
+        + (shape.races || []).map((s) => `<option value="${esc(s)}">${esc(labels[s] || s)}</option>`).join('');
     }
-    $('mk-race-note').textContent = shape.kind === 'national'
-      ? T('situation-room.note-national', 'One nationwide race — every polling unit in the country.')
-      : twoStep
-        ? T('situation-room.note-seat-is-the-race', 'A {v0} is the race here, not the whole state.',
-          { v0: (LABEL[shape.kind] || T('situation-room.seat', 'Seat')).toLowerCase() })
-        : T('situation-room.note-state-is-the-race', 'The state is the race.');
+    $('mk-race-note').textContent = raceNote();
   }
 
   $('mk-contest').addEventListener('change', () => { $('mk-state').value = ''; loadRaces(''); });
   $('mk-state').addEventListener('change', () => {
-    if (shape.kind === 'senatorial' || shape.kind === 'federal_constituency') loadRaces($('mk-state').value);
+    if (TWO_STEP.includes(shape.kind)) loadRaces($('mk-state').value);
   });
+  $('mk-race').addEventListener('change', () => { $('mk-race-note').textContent = raceNote(); });
   await loadRaces('');
   if (gone()) return;
 
   $('mk').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
+    const twoStep = TWO_STEP.includes(shape.kind);
     const scope = shape.kind === 'national' ? '' : twoStep ? $('mk-race').value : $('mk-state').value;
+    const cso = $('mk-kind').value === 'cso';
+    if (!cso && !$('mk-party').value) return void hkAlert(T('situation-room.choose-your-party', 'Choose the party this campaign stands for.'));
+    if (cso && (!$('mk-org').value || ($('mk-org').value === '__other' && !$('mk-org-other').value.trim()))) {
+      return void hkAlert(T('situation-room.org-required', 'Choose your organisation, or type its name under Other.'));
+    }
     if (shape.kind !== 'national' && !scope) return void hkAlert(T('situation-room.pick-the-race-this-room-is-watching', 'Pick the race this room is watching.'));
     const { status, body } = await api('/api/groups', {
       method: 'POST',
       body: JSON.stringify({
         name: $('mk-name').value.trim(), kind: $('mk-kind').value,
-        party: $('mk-party').value, contest: $('mk-contest').value, scope,
+        party: cso ? '' : $('mk-party').value,
+        org: cso ? $('mk-org').value : '',
+        org_name: cso && $('mk-org').value === '__other' ? $('mk-org-other').value.trim() : '',
+        contest: $('mk-contest').value, scope,
       }),
     });
-    if (status !== 201) return void hkAlert(nameError(body) || (body.error === 'unknown_scope'
-      ? T('situation-room.race-not-in-register', 'That race is not in the register.')
-      : T('situation-room.could-not-create-the-room', 'Could not create the room.')));
+    if (status !== 201) return void hkAlert(createError(body));
     await boot(body.id);
   });
+}
+
+/* PAST ELECTIONS ARE NOT OFFERED — from midnight WAT two days after polling
+   day, the same moment backend/src/services/scope.js electionOver() starts
+   refusing a new room. The server's `over` flag, or the date itself for an
+   /api/contests answer from before the flag existed. */
+function contestOver(c) {
+  if (!c) return false;
+  if (c.over === true) return true;
+  const d = typeof c.date === 'string' ? Date.parse(c.date + 'T00:00:00+01:00') : NaN;
+  return Number.isFinite(d) && Date.now() >= d + 2 * 86400000;
+}
+
+/* Every refusal the setup form can meet, as a sentence. */
+function createError(body) {
+  const e = body && body.error;
+  return nameError(body)
+    || (e === 'election_over' ? T('situation-room.election-over', 'That election is over, so a new room cannot be set up for it.')
+      : e === 'party_required' ? T('situation-room.choose-your-party', 'Choose the party this campaign stands for.')
+        : e === 'org_required' || e === 'unknown_org' ? T('situation-room.org-required', 'Choose your organisation, or type its name under Other.')
+          : e === 'unknown_scope' ? T('situation-room.race-not-in-register', 'That race is not in the register.')
+            : T('situation-room.could-not-create-the-room', 'Could not create the room.'));
 }
 
 /** Printed on screen, not just in the source. See the header comment. */
@@ -1713,13 +1815,13 @@ function activityRow(r) {
  * names it.
  */
 function raceArea() {
-  return (S.group && S.group.scope) || T('common.nigeria', 'Nigeria');
+  return (S.group && (S.group.scope_label || S.group.scope)) || T('common.nigeria', 'Nigeria');
 }
 
 function homeArea() {
   const me = (S.group && S.group.me) || {};
   if (me.scope_kind && me.scope_value) return { name: me.scope_value, kind: me.scope_kind, mine: true };
-  return { name: S.group.scope || T('common.nigeria', 'Nigeria'), kind: S.group.scope_kind || '', mine: false };
+  return { name: S.group.scope_label || S.group.scope || T('common.nigeria', 'Nigeria'), kind: S.group.scope_kind || '', mine: false };
 }
 
 async function drawMap(nodes) {
@@ -1738,7 +1840,7 @@ async function drawMap(nodes) {
   if (lvl === 'ward' || lvl === 'unit') return drawWardMap(host, nodes, lvl);
   // At LGA level every row sits in one state, so the layer is keyed by it.
   const scope = lvl === 'lga'
-    ? (S.path.state || (homeArea().kind === 'state' ? homeArea().name : '') || S.group.scope || '')
+    ? (S.path.state || (homeArea().kind === 'state' ? homeArea().name : '') || S.group.scope_state || S.group.scope || '')
     : '';
   const file = scope ? 'lga_geo.json' : 'states_geo.json';
   // fetchData, not fetch: Lite does not bundle the geo layers and native.js's
@@ -2633,7 +2735,7 @@ async function runAction(b) {
 
 /* One place the server's refusals are turned into sentences, because three
    screens raise the same three of them. */
-const roleError = (e) => (e === 'room_pending_verification' || e === 'room_name_names_party')
+const roleError = (e) => (e === 'room_pending_verification' || e === 'room_name_names_party' || e === 'room_org_not_verified')
   ? heldText(S.group, e)
   : e === 'owner_only'
   ? T('situation-room.only-the-owner-can-manage', 'Only the owner can change who manages this room.')

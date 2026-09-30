@@ -4,6 +4,7 @@ import { useCallback, useState } from 'react';
 import { ActivityIndicator, Animated, Pressable, RefreshControl, Share, Text, TextInput, View } from 'react-native';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { InfoDot } from '@/components/info-dot';
 import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
@@ -375,10 +376,20 @@ export default function MyGroups() {
           </View>
         ) : (
           <>
-            <Text className="pb-4 text-sm leading-5 text-muted">{i18nT('my-groups.lede')}</Text>
+            {/* ONE LINE, AND THE REST BEHIND THE ⓘ. The screen opened with two
+                sentences on what a group can see and closed with a paragraph on
+                where you may report from; neither instructs, so both live in
+                one dot. Their keys are reused unchanged — every language keeps
+                its reviewed wording. Same on the web (app/my-groups.html). */}
+            <View className="flex-row items-center pb-4">
+              <Text className="flex-1 text-sm leading-5 text-muted">{i18nT('my-groups.lede-short')}</Text>
+              <InfoDot
+                title={i18nT('my-groups.your-groups')}
+                text={`${i18nT('my-groups.lede')}\n\n${i18nT('my-groups.note')}`}
+              />
+            </View>
             {member.map(memberCard)}
             {onlyManaged.map(managedCard)}
-            <Text className="pt-2 text-xs leading-5 text-muted">{i18nT('my-groups.note')}</Text>
           </>
         )}
 

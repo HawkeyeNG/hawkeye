@@ -2608,5 +2608,6 @@
   "notifications.could-not-mark-read": "Ba a iya yi wa sanarwarka alamar an karanta ba",
   "notifications.check-connection": "Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
   "notifications.pull-down-to-try-again": "Ja ƙasa don sake gwadawa. ({v0})",
-  "notifications.time-ago": "{v0} da suka wuce"
+  "notifications.time-ago": "{v0} da suka wuce",
+  "my-groups.lede-short": "Ƙungiyoyi suna ganin rahotannin da ka aika tun lokacin da ka shiga cikinsu."
 }

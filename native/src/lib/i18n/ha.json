@@ -252,6 +252,7 @@
   "my-groups.leave-confirm": "Fita daga {name}? Ba za su ƙara ganin waɗanne rahotanni ne naka ba. Za ka buƙaci sabuwar gayyata kafin ka sake shiga.",
   "my-groups.leave-failed": "Ba a iya fitar da kai yanzu ba.",
   "my-groups.lede": "Waɗannan ƙungiyoyi za su iya ganin rahotannin da ka aika tun lokacin da ka shiga cikinsu. Ba za su iya ganin abin da jama'a ba za su iya gani ba, kuma ba za su iya canza yadda ake duba ko ƙidaya rahotanninka ba.",
+  "my-groups.lede-short": "Ƙungiyoyi suna ganin rahotannin da ka aika tun lokacin da ka shiga cikinsu.",
   "my-groups.load-failed": "Ba a iya loda ƙungiyoyinka ba. Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
   "my-groups.no-thanks": "A'a, na gode",
   "my-groups.no-unit": "Ba su ba ka rukunin zaɓe ba.",

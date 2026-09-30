@@ -109,6 +109,9 @@ const CASES = [
   ['ledger.html', { close: true, theme: false }],
   ['integrity.html', { close: true, theme: false }],
   ['faq.html', { close: true, theme: false }],
+  // Never loads menu.js, so it wires the same close by hand — and had none
+  // until 2026-09-30, which left a Lite reader with no way off the page.
+  ['my-groups.html', { close: true, theme: false }],
 ];
 
 let bad = 0;

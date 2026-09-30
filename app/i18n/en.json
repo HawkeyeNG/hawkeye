@@ -2581,5 +2581,6 @@
   "notifications.could-not-mark-read": "Could not mark your alerts read",
   "notifications.check-connection": "Check your connection and try again.",
   "notifications.pull-down-to-try-again": "Pull down to try again. ({v0})",
-  "notifications.time-ago": "{v0} ago"
+  "notifications.time-ago": "{v0} ago",
+  "my-groups.lede-short": "Groups see reports you filed since you joined them."
 }

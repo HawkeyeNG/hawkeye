@@ -252,6 +252,7 @@
   "my-groups.leave-confirm": "Hapụ {name}? Ha agaghịzi ahụ akụkọ ndị bụ nke gị. Ị ga-achọ òkù ọhụrụ iji sonyeghachi.",
   "my-groups.leave-failed": "Enweghị ike ịhapụ ugbu a.",
   "my-groups.lede": "Otu ndị a nwere ike ịhụ akụkọ ị zigara kemgbe ị sonyere ha. Ha enweghị ike ịhụ ihe ọha na eze na-apụghị ịhụ, ha enweghịkwa ike ịgbanwe otú e si enyocha ma ọ bụ agụta akụkọ gị.",
+  "my-groups.lede-short": "Otu na-ahụ akụkọ ị zigara kemgbe ị sonyere ha.",
   "my-groups.load-failed": "Enweghị ike ibugo otu gị. Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
   "my-groups.no-thanks": "Mba, daalụ",
   "my-groups.no-unit": "Ha enyebeghị gị ngalaba ntuli aka.",

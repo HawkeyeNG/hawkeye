@@ -2607,5 +2607,6 @@
   "notifications.could-not-mark-read": "A kò lè fi àmì kà sí àwọn ìkìlọ̀ rẹ",
   "notifications.check-connection": "Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú.",
   "notifications.pull-down-to-try-again": "Fà á sísàlẹ̀ láti tún gbìyànjú. ({v0})",
-  "notifications.time-ago": "{v0} sẹ́yìn"
+  "notifications.time-ago": "{v0} sẹ́yìn",
+  "my-groups.lede-short": "Àwọn ẹgbẹ́ ń rí àwọn ìròyìn tí o ti fi ránṣẹ́ láti ìgbà tí o darapọ̀ mọ́ wọn."
 }

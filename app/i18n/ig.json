@@ -2607,5 +2607,6 @@
   "notifications.could-not-mark-read": "Enweghị ike ịkaa ọkwa gị dị ka agụọla",
   "notifications.check-connection": "Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
   "notifications.pull-down-to-try-again": "Dọọ ala ka ịnwaa ọzọ. ({v0})",
-  "notifications.time-ago": "{v0} gara aga"
+  "notifications.time-ago": "{v0} gara aga",
+  "my-groups.lede-short": "Otu na-ahụ akụkọ ị zigara kemgbe ị sonyere ha."
 }

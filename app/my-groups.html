@@ -36,7 +36,10 @@
 .mg .btn.warn:hover { border-color: #c4463a; color: #c4463a; }
 .mg .declined { color: var(--muted); font-size: 0.8rem; margin-top: 9px; }
 .mg .none { text-align: center; padding: 40px 16px; color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
-.mg .note { color: var(--muted); font-size: 0.78rem; line-height: 1.55; margin-top: 22px; }
+/* `.mg button` above resets display and margin for the page's own buttons, and
+   at (0,1,1) it outranks styles.css's `.info-i` — whose box, centring and gap
+   from the text are what make the dot a circle. Put those three back. */
+.mg .info-i { display: inline-flex; width: 20px; margin: 0 0 0 6px; }
 </style>
 </head>
 <body>
@@ -108,10 +111,23 @@ function render() {
   }
   $('mg').innerHTML = `
     <h1>${T('my-groups.your-groups', 'My Groups')}</h1>
-    <p class="lede">${T('my-groups.lede', 'These groups can see the reports you have filed since you joined them. They cannot see anything the public cannot, and they cannot change how your reports are checked or counted.')}</p>
-    ${GROUPS.map(card).join('')}
-    <p class="note">${T('my-groups.note', 'Being in a group never limits where you can report from. If you are sent somewhere else on the day, report from where you actually are — that report still counts, and your group will see where it came from.')}</p>`;
+    <p class="lede">${T('my-groups.lede-short', 'Groups see reports you filed since you joined them.')}<button type="button" class="info-i" id="mg-about" aria-label="${esc(T('common.more-information', 'More information'))}"></button></p>
+    ${GROUPS.map(card).join('')}`;
+  $('mg-about').addEventListener('click', about);
   document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => act(b)));
+}
+
+/* ONE LINE, AND THE REST BEHIND THE ⓘ. The page used to open with two sentences
+   on what a group can see and close with a third paragraph on where you may
+   report from; neither is an instruction, so both now live in this one modal
+   (the info-dot rule — see infoDots() in app/menu.js). Their keys are reused
+   unchanged, so every language keeps its reviewed wording. hkAlert (dialog.js)
+   rather than menu.js's info modal because this page never loads menu.js; its
+   message keeps the blank line as a paragraph break (white-space: pre-line). */
+function about() {
+  hkAlert(T('my-groups.lede', 'These groups can see the reports you have filed since you joined them. They cannot see anything the public cannot, and they cannot change how your reports are checked or counted.')
+    + '\n\n' + T('my-groups.note', 'Being in a group never limits where you can report from. If you are sent somewhere else on the day, report from where you actually are — that report still counts, and your group will see where it came from.'),
+  { title: T('my-groups.your-groups', 'My Groups'), ok: T('common.close', 'Close') });
 }
 
 function card(g) {
@@ -197,6 +213,33 @@ async function act(b) {
   if (status !== 200) return void hkAlert(T('my-groups.leave-failed', 'Could not leave just now.'));
   load();
 }
+
+/* THE WAY BACK, IN THE APP. menu.js gives every non-tab page in the app shell a
+   close (x) that goes back — an iPhone gives a web view no back gesture — but
+   this page never loads menu.js, so in Hawkeye Lite it had no way out at all.
+   This is that same control wired by hand, the way situation-room.html wires
+   the language button: same classes (so .theme-btn's box and header colours),
+   same glyph, same key, same rule — app shell only, the website is unchanged —
+   and the same fallback, because a deep link or a cold start has nothing for
+   history.back() to go back TO. Native's twin is ScreenHeader's onClose. */
+(function closeButton() {
+  const shell = !!(window.HAWKEYE && window.HAWKEYE.native)
+    || window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  const row = document.querySelector('.gov-header .brand-row');
+  if (!shell || !row || row.querySelector('.close-btn')) return;
+  const cb = document.createElement('button');
+  cb.type = 'button';
+  cb.className = 'theme-btn close-btn';
+  cb.setAttribute('data-i18n-attr', 'aria-label:nav.close-and-go-back');
+  cb.setAttribute('aria-label', T('nav.close-and-go-back', 'Close and go back'));
+  cb.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+  cb.addEventListener('click', () => {
+    if (window.history.length > 1) window.history.back();
+    else location.href = 'index.html';
+  });
+  row.appendChild(cb);
+})();
 
 load().catch(() => {
   repaint = () => { $('mg').innerHTML = `<p class="none">${T('my-groups.load-failed', 'Could not load your groups. Check your connection and try again.')}</p>`; };

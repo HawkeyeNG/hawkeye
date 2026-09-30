@@ -61,8 +61,8 @@
         "TMG",
         "Transition Monitoring Group"
       ],
-      "site": null,
-      "logo": null
+      "site": "http://tmgng.org",
+      "logo": "cso/tmg.png"
     },
     {
       "id": "kdi",

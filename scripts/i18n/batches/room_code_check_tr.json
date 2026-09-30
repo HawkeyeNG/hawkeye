@@ -1,0 +1,41 @@
+{
+  "situation-room.codes-tab": { "ha": "Lambobi", "ig": "Koodu", "yo": "Àwọn kóòdù" },
+  "situation-room.codes-title": { "ha": "Duba lambobin ƙungiyarka", "ig": "Lelee koodu nzukọ gị", "yo": "Ṣàyẹ̀wò àwọn kóòdù àjọ rẹ" },
+  "situation-room.codes-intro": {
+    "ha": "Rubuta ko liƙa lambobi, ko ka ɗora fayil ɗin CSV da aka ba ka, don ganin waɗanda ba a yi amfani da su ba tukuna. Lambobin kaɗai ake aikawa zuwa Hawkeye — sauran fayil ɗinka yana nan a wannan kwamfuta, kuma ba a adana komai.",
+    "ig": "Dee ma ọ bụ mapaa koodu, ma ọ bụ bulite faịlụ CSV e nyere gị, ka ịhụ ndị a ka na-ejibeghị mee ihe. Naanị koodu ka a na-ezigara Hawkeye — ihe ndị ọzọ dị na faịlụ gị na-anọ na kọmputa a, a naghị echekwa ihe ọ bụla.",
+    "yo": "Tẹ tàbí lẹ àwọn kóòdù, tàbí gbé fáìlì CSV tí wọ́n fún ọ sókè, láti rí àwọn tí a kò tíì lò. Àwọn kóòdù nìkan ni a ń fi ránṣẹ́ sí Hawkeye — ìyókù fáìlì rẹ wà lórí kọ̀ǹpútà yìí, a kò sì tọ́jú ohunkóhun pamọ́."
+  },
+  "situation-room.codes-privacy": {
+    "ha": "Lambar da aka yi amfani da ita tana nuna ranar da aka yi amfani da ita, ba wanda ya yi amfani da ita ba. Lambar da ba ta jam'iyyarka ba ce, ko wadda babu ita, tana nuna “Ba ta cikin naku” — Hawkeye ba ya faɗin wanne.",
+    "ig": "Koodu e jirila mee ihe na-egosi ụbọchị e jiri ya mee ihe, ọ naghị egosi onye jiri ya. Koodu na-abụghị nke pati gị, ma ọ bụ nke na-adịghị adị, na-egosi “Ọ bụghị nke unu” — Hawkeye anaghị ekwu nke ọ bụ.",
+    "yo": "Kóòdù tí a ti lò ń fi ọjọ́ tí a lò ó hàn, kì í ṣe ẹni tí ó lò ó. Kóòdù tí kì í ṣe ti ẹgbẹ́ òṣèlú rẹ, tàbí tí kò sí, ń hàn gẹ́gẹ́ bí “Kì í ṣe tiyín” — Hawkeye kò sọ èwo nínú méjèèjì."
+  },
+  "situation-room.codes-placeholder": { "ha": "ORG-XXXX-XXXX-XXXX — lamba ɗaya, ko da yawa", "ig": "ORG-XXXX-XXXX-XXXX — otu koodu, ma ọ bụ ọtụtụ", "yo": "ORG-XXXX-XXXX-XXXX — kóòdù kan, tàbí púpọ̀" },
+  "situation-room.codes-check": { "ha": "Duba", "ig": "Lelee", "yo": "Ṣàyẹ̀wò" },
+  "situation-room.codes-upload": { "ha": "Ɗora CSV", "ig": "Bulite CSV", "yo": "Gbé CSV sókè" },
+  "situation-room.codes-download-results": { "ha": "Sauke sakamako (CSV)", "ig": "Budata nsonaazụ (CSV)", "yo": "Gba àbájáde sílẹ̀ (CSV)" },
+  "situation-room.codes-download-unused": { "ha": "Sauke lambobin da ba a yi amfani da su ba kaɗai", "ig": "Budata naanị koodu ndị a na-ejibeghị mee ihe", "yo": "Gba àwọn kóòdù tí a kò tíì lò nìkan sílẹ̀" },
+  "situation-room.codes-checking": { "ha": "Ana duba {v0} cikin {v1}…", "ig": "Na-elele {v0} n'ime {v1}…", "yo": "À ń ṣàyẹ̀wò {v0} nínú {v1}…" },
+  "situation-room.codes-none-found": { "ha": "Ba a sami lambobi ba. Lamba tana kama da ORG-XXXX-XXXX-XXXX.", "ig": "Achọtaghị koodu ọ bụla. Koodu dị ka ORG-XXXX-XXXX-XXXX.", "yo": "A kò rí kóòdù kankan. Kóòdù kan rí báyìí: ORG-XXXX-XXXX-XXXX." },
+  "situation-room.codes-run-too-big": { "ha": "Wannan ya fi lambobi {v0}. Raba fayil ɗin ka duba shi kashi-kashi.", "ig": "Nke ahụ karịrị koodu {v0}. Kewaa faịlụ ahụ ma lelee ya n'akụkụ n'akụkụ.", "yo": "Ìyẹn ju kóòdù {v0} lọ. Pín fáìlì náà kí o sì ṣàyẹ̀wò rẹ̀ ní apá kọ̀ọ̀kan." },
+  "situation-room.codes-file-too-big": { "ha": "Wannan fayil ya yi girma sosai. Yi amfani da CSV ƙasa da MB 10.", "ig": "Faịlụ ahụ buru oke ibu. Jiri CSV na-erughị 10 MB.", "yo": "Fáìlì yẹn ti tóbi jù. Lo CSV tí kò tó 10 MB." },
+  "situation-room.codes-not-allowed": { "ha": "Mamallakin wannan ɗaki kaɗai, ko mai kula da aka naɗa wa jam'iyyarka, ne zai iya duba lambobi.", "ig": "Naanị onye nwe ọnụ ụlọ a, ma ọ bụ onye nhazi a họpụtara maka pati gị, nwere ike ilele koodu.", "yo": "Ẹni tó ni yàrá yìí nìkan, tàbí olùṣàkóso tí a yàn fún ẹgbẹ́ òṣèlú rẹ, ni ó lè ṣàyẹ̀wò kóòdù." },
+  "situation-room.codes-rate-limited": { "ha": "Bincike ya yi yawa a cikin awa ɗaya da ta wuce. Sake gwadawa bayan minti {v0}.", "ig": "Nlele adịla ọtụtụ n'ime otu awa gara aga. Nwaa ọzọ mgbe nkeji {v0} gachara.", "yo": "Àyẹ̀wò ti pọ̀ jù láàárín wákàtí kan sẹ́yìn. Tún gbìyànjú lẹ́yìn ìṣẹ́jú {v0}." },
+  "situation-room.codes-failed": { "ha": "An kasa duba lambobin. Duba haɗin intanet ɗinka ka sake gwadawa.", "ig": "Enweghị ike ilele koodu ndị ahụ. Lelee njikọ gị ma nwaa ọzọ.", "yo": "A kò lè ṣàyẹ̀wò àwọn kóòdù náà. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú." },
+  "situation-room.codes-partial": { "ha": "An yi wa sauran alamar “Ba a duba ba”.", "ig": "E dere “E leleghị” n'akụkụ ndị fọdụrụ.", "yo": "A ti sàmì sí àwọn ìyókù gẹ́gẹ́ bí “A kò ṣàyẹ̀wò”." },
+  "situation-room.codes-results-for": { "ha": "Sakamako na {v0}", "ig": "Nsonaazụ maka {v0}", "yo": "Àbájáde fún {v0}" },
+  "situation-room.codes-results-pasted": { "ha": "Sakamako na lambobin da ka shigar", "ig": "Nsonaazụ maka koodu ndị i tinyere", "yo": "Àbájáde fún àwọn kóòdù tí o tẹ̀ sí i" },
+  "situation-room.codes-shown": { "ha": "Ana nuna layuka {v0} na farko cikin {v1}. Fayil ɗin da za a sauke yana da su duka.", "ig": "Na-egosi ahịrị {v0} mbụ n'ime {v1}. Faịlụ a na-ebudata nwere ha niile.", "yo": "À ń fi ìlà {v0} àkọ́kọ́ hàn nínú {v1}. Fáìlì tí o gbà sílẹ̀ ní gbogbo wọn." },
+  "situation-room.codes-col-row": { "ha": "Layi", "ig": "Ahịrị", "yo": "Ìlà" },
+  "situation-room.codes-col-code": { "ha": "Lamba", "ig": "Koodu", "yo": "Kóòdù" },
+  "situation-room.codes-col-status": { "ha": "Matsayi", "ig": "Ọnọdụ", "yo": "Ipò" },
+  "situation-room.code-unused": { "ha": "Ba a yi amfani ba", "ig": "E jibeghị ya", "yo": "A kò tíì lò ó" },
+  "situation-room.code-used": { "ha": "An yi amfani", "ig": "E jirila ya", "yo": "A ti lò ó" },
+  "situation-room.code-used-on": { "ha": "An yi amfani {v0}", "ig": "E jiri ya {v0}", "yo": "A lò ó ní {v0}" },
+  "situation-room.code-revoked": { "ha": "An janye", "ig": "A wepụla ya", "yo": "A ti fagi i" },
+  "situation-room.code-not-yours": { "ha": "Ba ta cikin naku", "ig": "Ọ bụghị nke unu", "yo": "Kì í ṣe tiyín" },
+  "situation-room.code-malformed": { "ha": "Ba lamba mai inganci ba ce", "ig": "Ọ bụghị koodu ziri ezi", "yo": "Kì í ṣe kóòdù tó tọ́" },
+  "situation-room.code-none": { "ha": "Babu lamba a wannan layi", "ig": "Enweghị koodu n'ahịrị a", "yo": "Kò sí kóòdù ní ìlà yìí" },
+  "situation-room.code-unchecked": { "ha": "Ba a duba ba", "ig": "E leleghị", "yo": "A kò ṣàyẹ̀wò" }
+}

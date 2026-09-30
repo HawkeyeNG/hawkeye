@@ -398,6 +398,12 @@
 .sr-h2 { font-family: var(--display); font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.07em;
   color: var(--muted); margin: 4px 0 9px; font-weight: 600; }
 .sr-card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px 13px; margin-bottom: 20px; }
+/* The code checker's input and table (renderCodes). */
+.sr-codes-in { display: block; width: 100%; box-sizing: border-box; min-height: 84px; resize: vertical;
+  background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px;
+  padding: 8px 10px; font: 0.85rem/1.4 var(--sr-mono, monospace); }
+.sr-tbl.codes { min-width: 0; }
+.sr-tbl.codes td.sr-code-cell { font-family: var(--sr-mono, monospace); text-align: left; }
 /* One panel height for both columns, so the map and the gap list read as a pair
    rather than two cards that happen to sit side by side. The lists scroll INSIDE
    it: truncating to the worst six hid the rest of the election, and "most
@@ -827,6 +833,8 @@ function render() {
   /* The Coverage tab is the deployment overlay; a plain member does not get it,
      including by ?tab=coverage or a drill from the overview. */
   if (S.tab === 'coverage' && S.group && !iSeeDeployment()) S.tab = 'overview';
+  /* The code checker is drawn only for the reader the server said may use it. */
+  if (S.tab === 'codes' && S.group && !S.group.org_code_check) S.tab = 'overview';
   const scope = g.scope || T('situation-room.nationwide', 'Nationwide');
   $('sr').innerHTML = `
     <div class="sr-bar">
@@ -856,6 +864,7 @@ function render() {
       ${iSeeDeployment() ? `<button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage" title="2">${T('situation-room.coverage', 'Coverage')}</button>` : ''}
       <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="${iSeeDeployment() ? 3 : 2}">${T('situation-room.team', 'Team')}</button>
       <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="${iSeeDeployment() ? 4 : 3}">${T('situation-room.incidents', 'Incidents')}</button>
+      ${g.org_code_check ? `<button role="tab" aria-selected="${S.tab === 'codes'}" data-tab="codes" title="${iSeeDeployment() ? 5 : 4}">${T('situation-room.codes-tab', 'Codes')}</button>` : ''}
     </div>
     ${iManage() && g.admission_block ? `<div class="sr-note" role="status" id="sr-held">${esc(heldText(g))}</div>` : ''}
     <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
@@ -983,7 +992,14 @@ function bindSetupCancel() {
 
 async function setupForm() {
   bindSetupCancel();
+  /* THE FORM CAN BE GONE BY THE TIME ANY await BELOW RETURNS: a repaint that
+     runs before the room list arrives (a language load, say) draws this setup
+     screen, and the list then replaces it mid-fetch. Every await is followed by
+     `if (gone()) return` — writing into the replaced form threw. */
+  const form = $('mk');
+  const gone = () => !form || !form.isConnected;
   const { body } = await api('/api/contests');
+  if (gone()) return;
   const list = Array.isArray(body) ? body : [];
   $('mk-contest').innerHTML = list.map((c) =>
     `<option value="${esc(c.code)}">${esc(contestName(c.name || c.label || c.code))}</option>`).join('')
@@ -992,6 +1008,7 @@ async function setupForm() {
   // Party emblems, from the manifest the ballot boards already use.
   const logos = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
+  if (gone()) return;
   $('mk-party').innerHTML = `<option value="">${T('situation-room.not-saying', 'Not saying')}</option>`
     + Object.keys(logos).sort().map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
   const paintMark = () => {
@@ -1013,6 +1030,7 @@ async function setupForm() {
   async function loadRaces(state) {
     const q = '?contest=' + encodeURIComponent($('mk-contest').value) + (state ? '&state=' + encodeURIComponent(state) : '');
     shape = (await api('/api/group-races' + q)).body;
+    if (gone()) return;
     const twoStep = shape.kind === 'senatorial' || shape.kind === 'federal_constituency';
 
     $('mk-state-row').hidden = shape.kind === 'national';
@@ -1040,6 +1058,7 @@ async function setupForm() {
     if (shape.kind === 'senatorial' || shape.kind === 'federal_constituency') loadRaces($('mk-state').value);
   });
   await loadRaces('');
+  if (gone()) return;
 
   $('mk').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1116,6 +1135,8 @@ async function loadTab(force) {
     if (force || !S.incidents) S.incidents = (await api('/api/groups/' + S.gid + '/incidents')).body;
     return renderIncidents();
   }
+  // Nothing to fetch: the checker holds its own results until the next check.
+  if (S.tab === 'codes') return renderCodes();
   if (S.tab === 'coverage') {
     if (force || !S.coverage) {
       const q = new URLSearchParams();
@@ -2853,6 +2874,273 @@ async function afterInvite(invited, unknown) {
   await loadGroup();
 }
 
+/* --- organisation codes ------------------------------------------------ */
+
+/**
+ * THE PARTY'S CODE CHECKER — which of the organisation codes the party was
+ * handed are still unused. Drawn only when the server says this reader may use
+ * it (group.org_code_check: an approved party room's owner, or a coordinator
+ * the owner named for that party); the server checks again on every call.
+ *
+ * THE FILE IS PARSED HERE. Only the codes go to the server — squashed to
+ * ORG + 12 characters, so 5,000 fit one call. Whatever else the party keeps in
+ * that file (names, phone numbers) never leaves this computer, and the results
+ * and both downloads are built from memory: nothing is stored anywhere.
+ *
+ * What a code can come back as is the server's rule, not ours: a code that is
+ * another party's and a code that does not exist are ONE answer, "not one of
+ * yours", and a used code carries its day and nothing about who used it.
+ */
+const CODE_CHUNK = 5000;          // the server's per-call maximum
+const CODE_RUN_MAX = 50000;       // one run: ten calls of the hourly thirty
+const CODE_TABLE_MAX = 500;       // rows drawn; the download has every one
+const CODE_FILE_MAX = 10 * 1024 * 1024;
+const CODE_BODY = /^[2-9A-HJKMNP-TV-Z]{12}$/;
+
+/**
+ * Every ORG code in a piece of text — forgiving of case, spaces and hyphens, and
+ * of whatever else shares the cell. A look-alike with a letter the alphabet
+ * never uses (O, 0, I, 1, L, U) is kept as NOT VALID rather than dropped, so a
+ * mistyped code shows up in the results instead of silently vanishing. No
+ * look-behind: Safari before 16.4 cannot parse one, and a SyntaxError here
+ * would take the whole room down with it.
+ */
+function orgCodesIn(text) {
+  const out = [];
+  const re = /(^|[^A-Za-z0-9])ORG[\s-]*([A-Za-z0-9]{4})[\s-]*([A-Za-z0-9]{4})[\s-]*([A-Za-z0-9]{4})(?![A-Za-z0-9])/gi;
+  const s = String(text == null ? '' : text);
+  let m;
+  while ((m = re.exec(s))) {
+    const body = (m[2] + m[3] + m[4]).toUpperCase();
+    out.push(CODE_BODY.test(body)
+      ? { code: 'ORG-' + body.slice(0, 4) + '-' + body.slice(4, 8) + '-' + body.slice(8) }
+      : { code: m[0].slice(m[1].length).trim(), bad: true });
+  }
+  return out;
+}
+
+/**
+ * A CSV as spreadsheets actually write it: quoted cells with commas and line
+ * breaks inside, doubled quotes, CRLF, a byte-order mark, and ';' or tab as the
+ * separator where the locale uses a decimal comma. The separator is whichever
+ * of the three splits the first line most.
+ */
+function parseCsv(text) {
+  const src = String(text || '').replace(/^﻿/, '');
+  const firstLine = src.split(/\r?\n/, 1)[0] || '';
+  let delim = ',';
+  let most = 0;
+  for (const d of [',', ';', '\t']) {
+    const k = firstLine.split(d).length;
+    if (k > most) { most = k; delim = d; }
+  }
+  const rows = [];
+  let row = [];
+  let cell = '';
+  let quoted = false;
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i];
+    if (quoted) {
+      if (c === '"') { if (src[i + 1] === '"') { cell += '"'; i++; } else quoted = false; } else cell += c;
+    } else if (c === '"' && cell === '') quoted = true;
+    else if (c === delim) { row.push(cell); cell = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && src[i + 1] === '\n') i++;
+      row.push(cell); rows.push(row); row = []; cell = '';
+    } else cell += c;
+  }
+  if (cell !== '' || row.length) { row.push(cell); rows.push(row); }
+  return { delim, rows: rows.filter((r) => r.some((x) => x.trim() !== '')) };
+}
+
+/** This room's checker state — a new room starts clean. */
+function codeState() {
+  if (!S.codes || S.codes.gid !== S.gid) {
+    S.codes = { gid: S.gid, text: '', header: null, rows: [], delim: ',', name: '', results: {}, busy: false, progress: '', msg: '' };
+  }
+  return S.codes;
+}
+
+const CODE_PILL = { unused: 'ok', used: 'idle', revoked: 'off', not_yours: 'wait', malformed: 'off', none: 'idle', unchecked: 'idle' };
+function codeWord(x, forFile) {
+  switch (x.s) {
+    case 'unused': return T('situation-room.code-unused', 'Unused');
+    case 'used': {
+      const day = forFile || !x.usedOn ? (x.usedOn || '')
+        : new Date(x.usedOn + 'T12:00:00Z').toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+      return T('situation-room.code-used-on', 'Used {v0}', { v0: day });
+    }
+    case 'revoked': return T('situation-room.code-revoked', 'Withdrawn');
+    case 'not_yours': return T('situation-room.code-not-yours', 'Not one of yours');
+    case 'malformed': return T('situation-room.code-malformed', 'Not a valid code');
+    case 'none': return T('situation-room.code-none', 'No code in this row');
+    default: return T('situation-room.code-unchecked', 'Not checked');
+  }
+}
+/** One row's codes and what came back for each. */
+function rowStatus(C, r) {
+  if (!r.codes.length) return [{ s: 'none' }];
+  return r.codes.map((c) => {
+    if (c.bad) return { s: 'malformed', code: c.code };
+    const x = C.results[c.code];
+    return x ? { s: x.status, usedOn: x.usedOn || '', code: c.code } : { s: 'unchecked', code: c.code };
+  });
+}
+
+function codeCheckError(r) {
+  const e = (r.body && r.body.error) || '';
+  if (r.status === 403) return T('situation-room.codes-not-allowed', 'Only this room’s owner, or a coordinator named for your party, can check codes.');
+  if (r.status === 429) return T('situation-room.codes-rate-limited', 'Too many checks in the last hour. Try again in {v0} minutes.', { v0: n(r.body.retryAfterMin || 60) });
+  if (e === 'too_many_codes') return T('situation-room.codes-run-too-big', 'That is more than {v0} codes. Split the file and check it in parts.', { v0: n(r.body.max || CODE_CHUNK) });
+  return T('situation-room.codes-failed', 'Could not check the codes. Check your connection and try again.');
+}
+
+/** Send every distinct valid code, 5,000 at a time, and repaint as they come back. */
+async function runCodeCheck(header, rows, delim, name) {
+  const C = codeState();
+  Object.assign(C, { header, rows, delim, name, results: {}, msg: '', progress: '' });
+  const unique = [...new Set(rows.flatMap((r) => r.codes.filter((c) => !c.bad).map((c) => c.code)))];
+  if (!rows.some((r) => r.codes.length)) {
+    Object.assign(C, { rows: [], header: null, msg: T('situation-room.codes-none-found', 'No codes found. A code looks like ORG-XXXX-XXXX-XXXX.') });
+    return renderCodes();
+  }
+  if (unique.length > CODE_RUN_MAX) {
+    Object.assign(C, { rows: [], header: null, msg: T('situation-room.codes-run-too-big', 'That is more than {v0} codes. Split the file and check it in parts.', { v0: n(CODE_RUN_MAX) }) });
+    return renderCodes();
+  }
+  C.busy = true;
+  for (let i = 0; i < unique.length; i += CODE_CHUNK) {
+    C.progress = T('situation-room.codes-checking', 'Checking {v0} of {v1}…', { v0: n(Math.min(i + CODE_CHUNK, unique.length)), v1: n(unique.length) });
+    renderCodes();
+    let r;
+    try {
+      r = await api('/api/groups/' + S.gid + '/org-codes/check', {
+        method: 'POST', body: JSON.stringify({ codes: unique.slice(i, i + CODE_CHUNK).map((c) => c.replace(/-/g, '')) }),
+      });
+    } catch (e) { r = { status: 0, body: {} }; }
+    // Moved to another room (or started again) while this was in flight: drop it.
+    if (S.codes !== C) return;
+    if (r.status !== 200) {
+      C.msg = codeCheckError(r) + (i ? ' ' + T('situation-room.codes-partial', 'The rest are marked “Not checked”.') : '');
+      break;
+    }
+    for (const x of r.body.results || []) C.results[x.code] = x;
+  }
+  C.busy = false;
+  C.progress = '';
+  renderCodes();
+}
+
+/**
+ * Both downloads, built here: the party's own rows with a Status column added,
+ * or only the rows whose codes are all unused — the file they can keep handing
+ * codes out of. Written in the file's own separator with a byte-order mark, so
+ * Excel reopens it the way it came and shows Hausa, Igbo and Yoruba correctly.
+ */
+function downloadCodes(unusedOnly) {
+  const C = codeState();
+  const d = C.delim || ',';
+  const cell = (v) => {
+    const s = String(v == null ? '' : v);
+    return /["\r\n]/.test(s) || s.includes(d) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [];
+  if (C.header) lines.push(unusedOnly ? C.header : [...C.header, T('situation-room.codes-col-status', 'Status')]);
+  for (const r of C.rows) {
+    const st = rowStatus(C, r);
+    if (!unusedOnly) lines.push([...r.cells, st.map((x) => codeWord(x, true)).join('; ')]);
+    else if (r.codes.length && st.every((x) => x.s === 'unused')) lines.push(r.cells);
+  }
+  const blob = new Blob(['﻿' + lines.map((l) => l.map(cell).join(d)).join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = (unusedOnly ? 'hawkeye-unused-codes-' : 'hawkeye-code-check-') + ((S.group && S.group.slug) || 'room') + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 0);
+}
+
+async function codesFromFile(e) {
+  const file = e.target.files && e.target.files[0];
+  e.target.value = '';
+  if (!file) return;
+  const C = codeState();
+  if (file.size > CODE_FILE_MAX) { C.msg = T('situation-room.codes-file-too-big', 'That file is too large. Use a CSV of under 10 MB.'); return renderCodes(); }
+  const { delim, rows } = parseCsv(await file.text());
+  const all = rows.map((cells) => ({ cells, codes: orgCodesIn(cells.join(' ')) }));
+  // A first row with no code in it is the file's header — kept, and extended.
+  const header = all.length > 1 && !all[0].codes.length ? all.shift().cells : null;
+  await runCodeCheck(header, all, delim, file.name);
+}
+
+function codesFromText() {
+  const C = codeState();
+  C.text = $('cc-text') ? $('cc-text').value : C.text;
+  const rows = orgCodesIn(C.text).map((c) => ({ cells: [c.code], codes: [c] }));
+  return runCodeCheck(['code'], rows, ',', '');
+}
+
+function renderCodes() {
+  const body = $('sr-body');
+  if (!body || S.tab !== 'codes') return;
+  const C = codeState();
+  const hasRows = C.rows.length > 0;
+  const statuses = C.rows.map((r) => rowStatus(C, r));
+  // Counted per distinct code, the way the party thinks about its list.
+  const seen = new Map();
+  statuses.flat().forEach((x) => { if (x.code) seen.set(x.s + '|' + x.code, x.s); });
+  const count = (s) => [...seen.values()].filter((v) => v === s).length;
+  const unusedRows = C.rows.filter((r, i) => r.codes.length && statuses[i].every((x) => x.s === 'unused')).length;
+  const done = hasRows && !C.busy;
+  const pills = (st) => st.map((x) => `<span class="pill ${CODE_PILL[x.s] || 'idle'}"><i>&#9679;</i>${esc(codeWord(x))}</span>`).join(' ');
+  const head = (cls, v, label) => `<div class="sr-head ${cls}"><b class="num">${n(v)}</b><span>${label}</span></div>`;
+  const ph = esc(T('situation-room.codes-placeholder', 'ORG-XXXX-XXXX-XXXX — one code, or many'));
+  body.innerHTML = `
+    <div class="sr-card">
+      <div class="sr-h2" style="margin:0 0 4px">${T('situation-room.codes-title', 'Check your organisation codes')}</div>
+      <p class="sr-fine" style="margin:0 0 6px">${T('situation-room.codes-intro', 'Type or paste codes, or upload the CSV file you were given, to see which are still unused. Only the codes are sent to Hawkeye — the rest of your file stays on this computer, and nothing is stored.')}</p>
+      <p class="sr-fine" style="margin:0 0 10px">${T('situation-room.codes-privacy', 'A used code shows the day it was used, never who used it. A code that is not your party’s, or does not exist, shows as “Not one of yours” — Hawkeye does not say which.')}</p>
+      <textarea id="cc-text" class="sr-codes-in" rows="4" spellcheck="false" autocomplete="off"
+        aria-label="${ph}" placeholder="${ph}"${C.busy ? ' disabled' : ''}>${esc(C.text)}</textarea>
+      <div class="sr-tools" style="padding:10px 0 0">
+        <button class="sr-btn primary" id="cc-check"${C.busy ? ' disabled' : ''}>${T('situation-room.codes-check', 'Check')}</button>
+        <button class="sr-btn" id="cc-upload"${C.busy ? ' disabled' : ''}>${T('situation-room.codes-upload', 'Upload CSV')}</button>
+        <input type="file" id="cc-file" accept=".csv,.txt,text/csv,text/plain" hidden />
+        <div class="spacer"></div>
+        ${done ? `<button class="sr-btn" id="cc-dl-all">${T('situation-room.codes-download-results', 'Download results (CSV)')}</button>
+        <button class="sr-btn" id="cc-dl-unused"${unusedRows ? '' : ' disabled'}>${T('situation-room.codes-download-unused', 'Download unused codes only')}</button>` : ''}
+      </div>
+      ${C.progress ? `<p class="sr-fine" role="status" id="cc-status">${esc(C.progress)}</p>` : ''}
+      ${C.msg ? `<p class="sr-fine" role="alert" id="cc-msg" style="color:var(--off)">${esc(C.msg)}</p>` : ''}
+    </div>
+    ${hasRows ? `
+    <div class="sr-heads">
+      ${head('ok', count('unused'), T('situation-room.code-unused', 'Unused'))}
+      ${head('', count('used'), T('situation-room.code-used', 'Used'))}
+      ${head('off', count('revoked'), T('situation-room.code-revoked', 'Withdrawn'))}
+      ${head('wait', count('not_yours'), T('situation-room.code-not-yours', 'Not one of yours'))}
+      ${count('malformed') ? head('off', count('malformed'), T('situation-room.code-malformed', 'Not a valid code')) : ''}
+    </div>
+    <p class="sr-fine" style="margin:0 0 8px">${C.name
+    ? T('situation-room.codes-results-for', 'Results for {v0}', { v0: esc(C.name) })
+    : T('situation-room.codes-results-pasted', 'Results for the codes you entered')}${C.rows.length > CODE_TABLE_MAX
+    ? ' · ' + T('situation-room.codes-shown', 'Showing the first {v0} of {v1} rows. The download has them all.', { v0: n(CODE_TABLE_MAX), v1: n(C.rows.length) }) : ''}</p>
+    <div class="sr-wrap"><table class="sr-tbl text codes" id="cc-table">
+      <thead><tr><th>${T('situation-room.codes-col-row', 'Row')}</th><th>${T('situation-room.codes-col-code', 'Code')}</th><th>${T('situation-room.codes-col-status', 'Status')}</th></tr></thead>
+      <tbody>${C.rows.slice(0, CODE_TABLE_MAX).map((r, i) => `<tr><td>${n(i + 1)}</td>
+        <td class="sr-code-cell">${r.codes.length ? r.codes.map((c) => esc(c.code)).join('<br>') : '<span class="z">&mdash;</span>'}</td>
+        <td>${pills(statuses[i])}</td></tr>`).join('')}</tbody>
+    </table></div>` : ''}`;
+  if ($('cc-text')) $('cc-text').addEventListener('input', (e) => { codeState().text = e.target.value; });
+  if ($('cc-check')) $('cc-check').addEventListener('click', codesFromText);
+  if ($('cc-upload')) $('cc-upload').addEventListener('click', () => $('cc-file').click());
+  if ($('cc-file')) $('cc-file').addEventListener('change', codesFromFile);
+  if ($('cc-dl-all')) $('cc-dl-all').addEventListener('click', () => downloadCodes(false));
+  if ($('cc-dl-unused')) $('cc-dl-unused').addEventListener('click', () => downloadCodes(true));
+}
+
 /**
  * PRESENCE, IN ITS OWN COLUMN.
  *
@@ -3398,7 +3686,7 @@ syncTitle();
 
 function tabFromUrl() {
   const t = new URLSearchParams(location.search).get('tab');
-  if (['overview', 'coverage', 'team', 'incidents'].includes(t)) S.tab = t;
+  if (['overview', 'coverage', 'team', 'incidents', 'codes'].includes(t)) S.tab = t;
 }
 
 async function boot(preferId) {

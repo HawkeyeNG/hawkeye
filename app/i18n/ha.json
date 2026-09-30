@@ -2600,5 +2600,13 @@
   "open.back-body": "Koma shafin Hawkeye inda ka fara — zai ci gaba da kansa.",
   "open.back-title": "Koma Hawkeye",
   "open.back-website": "Ci gaba a gidan yanar gizo",
-  "ready.open-settings": "Buɗe Saiti"
+  "ready.open-settings": "Buɗe Saiti",
+  "notifications.clear-alerts": "Share sanarwa",
+  "notifications.clear-confirm-title": "A share duk sanarwa?",
+  "notifications.clear-confirm-body": "Ba za a iya maido da wannan ba.",
+  "notifications.could-not-clear": "Ba a iya share sanarwarka ba",
+  "notifications.could-not-mark-read": "Ba a iya yi wa sanarwarka alamar an karanta ba",
+  "notifications.check-connection": "Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+  "notifications.pull-down-to-try-again": "Ja ƙasa don sake gwadawa. ({v0})",
+  "notifications.time-ago": "{v0} da suka wuce"
 }

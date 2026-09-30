@@ -2599,5 +2599,13 @@
   "open.back-body": "Laghachi na ihuenyo Hawkeye ebe ị malitere — ọ ga-aga n'ihu n'onwe ya.",
   "open.back-title": "Laghachi na Hawkeye",
   "open.back-website": "Gaa n'ihu na webụsaịtị",
-  "ready.open-settings": "Mepee Ntọala"
+  "ready.open-settings": "Mepee Ntọala",
+  "notifications.clear-alerts": "Hichapụ ọkwa",
+  "notifications.clear-confirm-title": "Hichapụ ọkwa niile?",
+  "notifications.clear-confirm-body": "Enweghị ike ịtụgharị nke a azụ.",
+  "notifications.could-not-clear": "Enweghị ike ihichapụ ọkwa gị",
+  "notifications.could-not-mark-read": "Enweghị ike ịkaa ọkwa gị dị ka agụọla",
+  "notifications.check-connection": "Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+  "notifications.pull-down-to-try-again": "Dọọ ala ka ịnwaa ọzọ. ({v0})",
+  "notifications.time-ago": "{v0} gara aga"
 }

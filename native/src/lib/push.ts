@@ -158,6 +158,20 @@ export async function markRead(target: number | 'all'): Promise<void> {
   setUnread(r.unread);
 }
 
+/**
+ * Delete the reader's alerts (the feed only — reports, incidents and the ledger
+ * are not alerts). `upTo`: the newest id on screen, so one that lands while the
+ * confirm sheet is open is kept rather than deleted unseen. Throws so the
+ * caller can say so; the server scopes it to this observer and rate-limits it.
+ */
+export async function clearAlerts(upTo?: number): Promise<void> {
+  const r = await authedPost<{ ok: boolean; unread: number }>(
+    '/api/notifications/clear',
+    upTo != null ? { upTo } : {},
+  );
+  setUnread(r.unread);
+}
+
 // ---- where a notification points --------------------------------------------
 
 /**

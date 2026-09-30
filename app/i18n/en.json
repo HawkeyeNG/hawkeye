@@ -2573,5 +2573,13 @@
   "open.back-body": "Go back to the Hawkeye screen where you started — it carries on by itself.",
   "open.back-title": "Back to Hawkeye",
   "open.back-website": "Continue on the website",
-  "ready.open-settings": "Open Settings"
+  "ready.open-settings": "Open Settings",
+  "notifications.clear-alerts": "Clear alerts",
+  "notifications.clear-confirm-title": "Clear all alerts?",
+  "notifications.clear-confirm-body": "This can't be undone.",
+  "notifications.could-not-clear": "Could not clear your alerts",
+  "notifications.could-not-mark-read": "Could not mark your alerts read",
+  "notifications.check-connection": "Check your connection and try again.",
+  "notifications.pull-down-to-try-again": "Pull down to try again. ({v0})",
+  "notifications.time-ago": "{v0} ago"
 }

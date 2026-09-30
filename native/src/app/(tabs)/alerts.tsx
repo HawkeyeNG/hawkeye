@@ -1,18 +1,20 @@
 import Feather from '@expo/vector-icons/Feather';
 import { FlashList } from '@shopify/flash-list';
 import { router, useNavigation } from 'expo-router';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { authedGet, useAuth } from '@/lib/auth';
-import { markRead, openNotificationTarget, refreshUnread, setUnread, useUnread } from '@/lib/push';
+import { clearAlerts, markRead, openNotificationTarget, refreshUnread, setUnread, useUnread } from '@/lib/push';
 import { humanError } from '@/lib/errors';
-import { t as i18nT } from '@/lib/i18n';
+import { t as i18nT, useI18n } from '@/lib/i18n';
 
 type Notification = {
   id: number;
@@ -46,6 +48,52 @@ function ago(ts: number) {
   return `${Math.round(h / 24)}d`;
 }
 
+/**
+ * MARK ALL READ as a double tick — the inbox convention for "read". Feather has
+ * no double check, and a second icon font for one glyph is ~1 MB of bundle, so
+ * it is drawn with react-native-svg (already a dependency) in Feather's own
+ * stroke style, the same two strokes as the web header's icon.
+ */
+function DoubleCheck({ size = 20, color }: { size?: number; color: string }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+      strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M1.5 12.5l4.5 4.5L15.5 7.5" />
+      <Path d="M10 16l1 1 9.5-9.5" />
+    </Svg>
+  );
+}
+
+/**
+ * One header action. There is no hover on a phone, so a long press names it
+ * (the web header's title tooltip); screen readers get the same words.
+ */
+function HeaderAction({
+  label, disabled, onPress, onHint, children,
+}: {
+  label: string;
+  disabled?: boolean;
+  onPress: () => void;
+  onHint: (label: string) => void;
+  children: ReactNode;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      onLongPress={() => onHint(label)}
+      disabled={disabled}
+      hitSlop={8}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled: !!disabled }}
+      className="h-9 w-9 items-center justify-center rounded-xl active:opacity-60"
+      style={{ opacity: disabled ? 0.35 : 1 }}
+    >
+      {children}
+    </Pressable>
+  );
+}
+
 /** Alerts — the observer's /api/notifications feed once signed in. */
 export default function Alerts() {
   const ui = useUi();
@@ -58,6 +106,25 @@ export default function Alerts() {
   const [err, setErr] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [marking, setMarking] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [confirmClear, setConfirmClear] = useState(false);
+  // The long-press name of a header action; cleared after a moment.
+  const [hint, setHint] = useState<string | null>(null);
+  const hintTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showHint = useCallback((label: string) => {
+    setHint(label);
+    if (hintTimer.current) clearTimeout(hintTimer.current);
+    hintTimer.current = setTimeout(() => setHint(null), 1600);
+  }, []);
+  useEffect(() => () => { if (hintTimer.current) clearTimeout(hintTimer.current); }, []);
+  /**
+   * THE LANGUAGE THE SCREEN IS SHOWING, sent with the feed request. An alert's
+   * words were fixed when it was sent, in whatever language its reader had
+   * then, so after a switch the feed was a mix; the server now renders each
+   * alert again in the language asked for. In load()'s deps, so a switch
+   * re-reads the feed even where the screen is not remounted.
+   */
+  const { lang } = useI18n();
   // The alert whose full text is on screen; null when the modal is closed.
   const [detail, setDetail] = useState<Notification | null>(null);
   /**
@@ -85,7 +152,9 @@ export default function Alerts() {
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return null;
     try {
-      const r = await authedGet<{ items: Notification[]; unread: number }>('/api/notifications');
+      const r = await authedGet<{ items: Notification[]; unread: number }>(
+        `/api/notifications?lang=${encodeURIComponent(lang)}`,
+      );
       setItems(r.items);
       setUnread(r.unread);
       setErr(null);
@@ -95,7 +164,7 @@ export default function Alerts() {
       setErr(msg);
       return msg;
     }
-  }, [auth.status]);
+  }, [auth.status, lang]);
 
   useEffect(() => {
     load();
@@ -168,35 +237,86 @@ export default function Alerts() {
     }
   };
 
+  /**
+   * CLEAR, after the confirm sheet. The feed only — reports, incidents and the
+   * ledger are not alerts. `upTo` is the newest alert on screen, so one that
+   * lands while the sheet is open is kept rather than deleted unseen.
+   */
+  const clearAll = async () => {
+    const upTo = Math.max(0, ...(items ?? []).map((x) => x.id));
+    setClearing(true);
+    try {
+      await clearAlerts(upTo);
+      setConfirmClear(false);
+      await load();
+    } catch (e) {
+      setConfirmClear(false);
+      // After the sheet's slide-out: iOS will not present one modal while
+      // another is still being dismissed (see `pending` above).
+      const why = humanError(e);
+      setTimeout(() => notice.show(i18nT('notifications.could-not-clear'), why), 400);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  const hasItems = !!items?.length;
+  const busy = marking || clearing;
+
   return (
     <View className="flex-1 bg-surface">
-      {/* REFRESH, top right. A push can land while this screen is open, and
-          tapping a notification now lands here before the feed has been
-          re-read — so the alert that sent you is briefly not on the page it
-          sent you to. Pull-to-refresh already exists but is not discoverable
-          in that moment, and it is unreachable while the list is empty. */}
+      {/* THE SCREEN'S ACTIONS, top right: refresh, mark all read, clear — the
+          same three the web and Lite Alerts header carry.
+          Refresh: a push can land while this screen is open, and tapping a
+          notification lands here before the feed has been re-read — so the
+          alert that sent you is briefly not on the page it sent you to.
+          Pull-to-refresh exists but is not discoverable in that moment, and is
+          unreachable while the list is empty.
+          Mark all read is disabled with nothing unread, clear with nothing to
+          clear — disabled, not removed, so the header does not shift. */}
       <ScreenHeader
         title={i18nT('nav.alerts')}
         translateY={translateY}
         right="none"
         rightSlot={
           auth.status === 'signedIn' ? (
-            <Pressable
-              onPress={onRefresh}
-              disabled={refreshing}
-              hitSlop={12}
-              accessibilityRole="button"
-              accessibilityLabel={i18nT('notifications.refresh-alerts')}
-            >
-              {refreshing ? (
-                <ActivityIndicator size="small" color={ui.tint.good.ink} />
-              ) : (
-                <Feather name="refresh-cw" size={19} color={ui.muted} />
-              )}
-            </Pressable>
+            <View className="flex-row items-center" style={{ gap: 4 }}>
+              <HeaderAction label={i18nT('notifications.refresh-alerts')} disabled={refreshing} onPress={onRefresh} onHint={showHint}>
+                {refreshing ? (
+                  <ActivityIndicator size="small" color={ui.tint.good.ink} />
+                ) : (
+                  <Feather name="rotate-cw" size={19} color={ui.muted} />
+                )}
+              </HeaderAction>
+              <HeaderAction
+                label={i18nT('notifications.mark-all-read')}
+                disabled={unread === 0 || !hasItems || busy}
+                onPress={markAll}
+                onHint={showHint}
+              >
+                {marking ? <ActivityIndicator size="small" color={ui.tint.good.ink} /> : <DoubleCheck size={21} color={ui.muted} />}
+              </HeaderAction>
+              <HeaderAction
+                label={i18nT('notifications.clear-alerts')}
+                disabled={!hasItems || busy}
+                onPress={() => setConfirmClear(true)}
+                onHint={showHint}
+              >
+                <Feather name="trash-2" size={19} color={ui.muted} />
+              </HeaderAction>
+            </View>
           ) : null
         }
       />
+      {hint ? (
+        <View
+          pointerEvents="none"
+          className="absolute right-4 z-20 rounded-lg bg-ink px-2.5 py-1.5"
+          style={{ top: headerH + 6 }}
+        >
+          <Text className="text-xs font-semibold text-surface">{hint}</Text>
+        </View>
+      ) : null}
 
       {auth.status !== 'signedIn' ? (
         <View
@@ -247,7 +367,7 @@ export default function Alerts() {
                     {i18nT('n.app.tabs.alerts.could-not-load-your-alerts')}
                   </Text>
                   <Text className="pt-1 text-center text-sm text-muted">
-                    Pull down to try again. ({err})
+                    {i18nT('notifications.pull-down-to-try-again', { v0: err })}
                   </Text>
                 </View>
               ) : (
@@ -312,33 +432,8 @@ export default function Alerts() {
               </Pressable>
             )}
           />
-
-          {/* Sibling of the list, not a row in it: the feed runs to sixty items,
-              and marking them read is exactly what someone wants after scrolling
-              to the bottom of a backlog they've already read elsewhere. Nothing
-              to mark on an empty or unloaded feed, so it isn't there at all. */}
-          {items?.length ? (
-            <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
-              <Pressable
-                disabled={unread === 0 || marking}
-                onPress={markAll}
-                className={`flex-row items-center justify-center rounded-2xl py-3.5 ${
-                  unread === 0 || marking ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
-                }`}
-              >
-                {marking ? (
-                  <ActivityIndicator color={BRAND.gold} />
-                ) : (
-                  <>
-                    <Feather name="check-circle" size={16} color={BRAND.gold} />
-                    <Text className="pl-2 text-base font-bold text-hawk-gold">
-                      {unread > 0 ? i18nT('n.app.tabs.alerts.mark-all-read', { v0: unread }) : i18nT('n.app.tabs.alerts.all-read')}
-                    </Text>
-                  </>
-                )}
-              </Pressable>
-            </View>
-          ) : null}
+          {/* "Mark all read" used to be a pinned bar under the list; it is the
+              double tick in the header now, beside refresh and clear. */}
         </>
       )}
 
@@ -380,7 +475,7 @@ export default function Alerts() {
               <ScrollView className="mt-2 max-h-80">
                 <Text className="text-[15px] leading-6 text-ink">{detail.body}</Text>
               </ScrollView>
-              <Text className="pt-3 text-xs text-faint">{ago(detail.created_at)} ago</Text>
+              <Text className="pt-3 text-xs text-faint">{i18nT('notifications.time-ago', { v0: ago(detail.created_at) })}</Text>
               {/* The url is offered, not swallowed: a long alert that also
                   points somewhere must stay as reachable as a short one. */}
               {detail.url ? (
@@ -406,6 +501,17 @@ export default function Alerts() {
           ) : null}
         </Pressable>
       </Modal>
+      <ConfirmSheet
+        visible={confirmClear}
+        icon="trash-2"
+        danger
+        busy={clearing}
+        title={i18nT('notifications.clear-confirm-title')}
+        body={i18nT('notifications.clear-confirm-body')}
+        confirmLabel={i18nT('notifications.clear-alerts')}
+        onConfirm={clearAll}
+        onCancel={() => setConfirmClear(false)}
+      />
       <NoticeSheet {...notice.props} />
     </View>
   );

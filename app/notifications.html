@@ -23,18 +23,58 @@
        Wrapping still works; only the author's own breaks are kept. */
     .n p { margin: 0; font-size: 0.87rem; color: var(--muted); white-space: pre-line; }
     .n time { font-size: 0.74rem; color: var(--muted); }
-    .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin: 6px 0 10px; }
-    .top button { margin: 0; width: auto; }
-    .top-actions { display: flex; align-items: center; gap: 8px; }
-    /* Refresh is an icon, not a worded button: it sits beside "Mark all read"
-       and two text buttons of similar length read as a pair of equals, when one
-       is a routine re-check and the other changes state for every alert. */
-    #refresh { width: 38px; height: 38px; padding: 0; display: inline-grid; place-items: center;
-               font-size: 1.05rem; line-height: 1; border-radius: 10px; }
-    #refresh[aria-busy="true"] { opacity: 0.55; }
-    #refresh .spin { display: inline-block; animation: spin 0.8s linear infinite; }
+    /**
+     * THE PAGE'S ACTIONS LIVE IN THE HEADER — refresh, mark all read, clear —
+     * the way native's Alerts screen carries them in its ScreenHeader. They used
+     * to sit in the body above the list, where the header already names the
+     * page (menu.js hides the matching H1), so Lite showed a lone refresh button
+     * floating over the feed.
+     *
+     * Page-local on purpose: styles.css is pinned by ?v= on every page, and this
+     * is the only page with header actions of its own. The box copies the
+     * header's other 36px controls (theme, bell) from the same --header-* tokens,
+     * so it reads correctly on both the green and the light header.
+     *
+     * ONE FLEX PUSH. The header group is [actions][lang][theme][menu] and only
+     * its leftmost member may carry the auto margin, so the language button
+     * (a .theme-btn) gives its own up while the actions are showing.
+     */
+    .hdr-actions { display: flex; align-items: center; gap: 8px; margin: 0 10px 0 auto; flex: none; }
+    .hdr-actions[hidden] { display: none; }
+    .hdr-actions:not([hidden]) ~ button.theme-btn { margin-left: 0; }
+    /* Lite: nothing follows (the tab bar replaces the ☰), so no trailing gap. */
+    body.has-tabbar .hdr-actions { margin-right: 0; }
+    .gov-header button.hdr-act {
+      width: 36px; height: 36px; padding: 0; margin: 0; flex: none;
+      display: inline-flex; align-items: center; justify-content: center;
+      background: none; border: 1.5px solid var(--header-ctl-border); border-radius: 9px;
+      color: var(--header-ink); box-shadow: none; cursor: pointer; line-height: 1;
+    }
+    .gov-header button.hdr-act:hover:not(:disabled) { background: var(--header-ctl-hover); border-color: var(--header-ink); filter: none; }
+    .gov-header button.hdr-act:disabled { opacity: 0.38; cursor: default; }
+    .gov-header button.hdr-act svg { width: 20px; height: 20px; display: block; }
+    /* The refresh reports what it is doing: a re-fetch that returns nothing new
+       is otherwise indistinguishable from a button that did not work. */
+    #refresh[aria-busy="true"] svg { animation: spin 0.8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { #refresh .spin { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { #refresh[aria-busy="true"] svg { animation: none; } }
+    /* A WEBSITE PHONE HAS NO ROOM FOR THE PAGE NAME TOO. Its header already
+       carries language, theme and ☰; three more 36px buttons left the name
+       "No…" in 42px and squeezed the theme toggle to 22px. So there the header
+       keeps the crest and the page names itself with its own H1 again (menu.js
+       hid it as a duplicate of the header). Lite has no ☰/lang/theme on a tab
+       page, so it keeps the header name. */
+    @media (max-width: 520px) {
+      body:not(.has-tabbar) .brand-row:has(> .hdr-actions:not([hidden])) .brand-text { display: none; }
+      body:not(.has-tabbar):has(.hdr-actions:not([hidden])) main > h1[hidden] { display: block; }
+    }
+    /* Desktop: menu.js's quick-nav takes the auto margin there, so the actions
+       sit after it, beside the other controls, instead of splitting the row. */
+    @media (min-width: 900px) {
+      .brand-row > .hdr-actions { order: 2; margin-left: 0; }
+      .brand-row > .hdr-actions ~ * { order: 3; }
+      .brand-row > .hdr-actions ~ .desktop-primary { order: 1; }
+    }
     /* UNREAD GETS A RED DOT, not only the green left border. The border reads
        as decoration next to the card's own edge; a dot is the convention every
        inbox uses for "not opened" and survives being glanced at. Red because
@@ -94,6 +134,25 @@
     <div class="wrap brand-row">
       <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
         <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <!-- Refresh: a push can land while this page is open, and tapping one
+           arrives here before the feed has been re-read — there is no
+           pull-to-refresh on the web, so this is the way to ask again.
+           Shown only to a signed-in reader; mark-all and clear are disabled
+           while there is nothing unread / nothing to clear. -->
+      <div class="hdr-actions" id="hdr-actions" hidden>
+        <button type="button" class="hdr-act" id="refresh" title="Refresh alerts" aria-label="Refresh alerts"
+          data-i18n-attr="aria-label:notifications.refresh-alerts,title:notifications.refresh-alerts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 3v6h-6"/><path d="M21 13a9 9 0 1 1-2.64-7.36L21 8"/></svg>
+        </button>
+        <button type="button" class="hdr-act" id="hdr-mark-all" title="Mark all read" aria-label="Mark all read" disabled
+          data-i18n-attr="aria-label:notifications.mark-all-read,title:notifications.mark-all-read">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 12.5l4.5 4.5L15.5 7.5"/><path d="M10 16l1 1 9.5-9.5"/></svg>
+        </button>
+        <button type="button" class="hdr-act" id="clear-all" title="Clear alerts" aria-label="Clear alerts" disabled
+          data-i18n-attr="aria-label:notifications.clear-alerts,title:notifications.clear-alerts">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+      </div>
       <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false"
         onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">&#9776;</button>
       <nav id="menu-panel" class="menu-panel" hidden>
@@ -118,20 +177,9 @@
   </header>
 
   <main class="wrap">
-    <div class="top">
-      <h1 data-i18n="profile.notifications" style="margin:0">Notifications</h1>
-      <div class="top-actions">
-        <button data-i18n="notifications.mark-all-read" class="secondary" id="mark-all" hidden>Mark all read</button>
-        <!-- A push can land while this page is already open, and tapping a
-             notification arrives here before the feed has been re-read — so the
-             alert you were sent is briefly missing from the page it sent you to.
-             Pull-to-refresh does not exist on the web, so this is the only way
-             to ask again. -->
-        <button data-i18n-attr="aria-label:notifications.refresh-alerts,title:situation-room.refresh" class="secondary" id="refresh" title="Refresh" aria-label="Refresh alerts">
-          <span id="refresh-icon">&#8635;</span>
-        </button>
-      </div>
-    </div>
+    <!-- The header names the page (menu.js hides this H1 when they match); it
+         stays for the document outline. The actions are in the header. -->
+    <h1 data-i18n="profile.notifications" style="margin:6px 0 10px">Notifications</h1>
     <div id="push-card" class="card" hidden style="margin-bottom:14px">
       <strong data-i18n="notifications.get-alerts-on-this-device">Get alerts on this device</strong>
       <p data-i18n="notifications.turn-on-browser-notifications-for-new" class="hint" style="margin:4px 0 10px">Turn on browser notifications for new reports, incidents and cases at the
@@ -158,6 +206,7 @@
   </div>
 
   <script src="webpush.js?v=1"></script>
+  <script src="dialog.js?v=1"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const token = localStorage.getItem('hawkeye_token');
@@ -224,20 +273,37 @@
     /* What the list is showing — painted by render(), which a language change
        re-runs without fetching again. */
     let VIEW = null;
+    /**
+     * THE LANGUAGE THE PAGE IS SHOWING, sent with the feed request.
+     *
+     * An alert's words were fixed when it was sent, in whatever language its
+     * reader had then — so after a switch the feed was a mix ("A campaign has
+     * asked for you" in English between Hausa alerts). The server now renders
+     * each alert again in the language asked for (?lang=). Read from storage
+     * as well as the runtime because this runs before i18n.js has loaded.
+     */
+    const curLang = () => {
+      if (window.HawkeyeI18n && window.HawkeyeI18n.current) return window.HawkeyeI18n.current;
+      try { return localStorage.getItem('hawkeye_lang') || 'en'; } catch { return 'en'; }
+    };
+    let fetchedLang = null;
     async function load() {
       if (!token) {
         VIEW = { kind: 'signed-out' };
+        paintActions();
         render();
         return;
       }
-      /* Always a fresh read here — this page is the feed — but through
-         native.js's authGet so the answer also serves the bell, tab dot and
-         Home for the next 120 s (D6). */
+      /* Always a fresh read here — this page is the feed. Through native.js's
+         authGet (D6), keyed by the language, so a switch never shows the
+         other language's copy. */
+      const lang = curLang();
+      const path = '/api/notifications?lang=' + encodeURIComponent(lang);
       const H = window.HAWKEYE;
       const d = await (H && H.authGet
-        ? H.authGet('/api/notifications', { force: true })
+        ? H.authGet(path, { force: true })
           .then((x) => (x.status === 401 ? { dead: true } : x.status === 200 && x.body ? x.body : { items: [] }))
-        : fetch('/api/notifications', { headers: { authorization: 'Bearer ' + token } })
+        : fetch(path, { headers: { authorization: 'Bearer ' + token } })
           .then((r) => (r.status === 401 ? { dead: true } : r.ok ? r.json() : { items: [] })))
         .catch(() => ({ items: [] }));
       if (d.dead) {
@@ -245,12 +311,14 @@
         // "no notifications" — clear it and point at sign-in.
         localStorage.removeItem('hawkeye_token');
         VIEW = { kind: 'dead' };
+        paintActions();
         render();
         return;
       }
+      fetchedLang = lang;
       lastItems = d.items || [];
       VIEW = { kind: 'list', items: lastItems };
-      if (lastItems.length) $('mark-all').hidden = d.unread === 0;
+      paintActions();
       render();
       if (!lastItems.length) return;
       /**
@@ -313,7 +381,42 @@
         + '<p class="empty" style="padding:18px 8px 4px;font-size:0.8rem">'
         + esc(T('notifications.alerts-are-kept-for-90-days', 'Alerts are kept for 90 days. Reports, incidents and the ledger are permanent.')) + '</p>';
     }
-    document.addEventListener('hawkeye-lang', render);
+    /* A language change repaints the chrome at once, and re-asks for the feed
+       when it was fetched in another language (i18n.js fires this after EVERY
+       dictionary load, so the first one — same language — costs nothing). */
+    document.addEventListener('hawkeye-lang', () => {
+      render();
+      if (VIEW && VIEW.kind === 'list' && fetchedLang && fetchedLang !== curLang()) load().catch(() => {});
+    });
+
+    /**
+     * The header actions: shown only to a signed-in reader with a live
+     * session. Mark all read is disabled with nothing unread, Clear with
+     * nothing to clear — disabled rather than hidden, so the header does not
+     * shift as alerts come and go.
+     */
+    let busy = false;
+    function paintActions() {
+      const live = !!(VIEW && VIEW.kind === 'list');
+      $('hdr-actions').hidden = !live;
+      const items = live ? VIEW.items : [];
+      $('hdr-mark-all').disabled = busy || !items.some((x) => !x.read);
+      $('clear-all').disabled = busy || !items.length;
+    }
+    // The reason goes UNDER a short title: "Could not clear your alerts" /
+    // "Check your connection and try again."
+    function failed(titleKey, titleEn) {
+      const msg = T('notifications.check-connection', 'Check your connection and try again.');
+      if (window.hkAlert) window.hkAlert(msg, { title: T(titleKey, titleEn) });
+    }
+    async function post(path, body) {
+      const r = await fetch(path, {
+        method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+        body: JSON.stringify(body),
+      });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }
     // Keep the four unread surfaces (bell, tab, PWA badge, iOS icon) in step.
     // menu.js owns them; absent only if menu.js failed to load.
     function setUnreadEverywhere(n) {
@@ -327,7 +430,7 @@
       n.read = 1;
       const left = lastItems.filter((x) => !x.read).length;
       setUnreadEverywhere(left);
-      $('mark-all').hidden = left === 0;
+      paintActions();
       fetch('/api/notifications/read', {
         method: 'POST', keepalive: true,
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
@@ -336,11 +439,54 @@
       const row = $('list').querySelector(`[data-id="${n.id}"]`);
       if (row) { row.classList.remove('unread'); row.classList.add('read'); }
     }
-    $('mark-all').onclick = () => {
-      fetch('/api/notifications/read', {
-        method: 'POST', headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
-        body: JSON.stringify({ all: true }),
-      }).then(() => { setUnreadEverywhere(0); load(); }).catch(() => {});
+    // MARK ALL READ (✓✓). A failure now says so — it used to be swallowed, and
+    // an unchanged list is indistinguishable from a button that did nothing.
+    $('hdr-mark-all').onclick = async () => {
+      if (busy) return;
+      busy = true;
+      paintActions();
+      try {
+        const r = await post('/api/notifications/read', { all: true });
+        lastItems.forEach((x) => { x.read = 1; });
+        setUnreadEverywhere(r.unread || 0);
+        render();
+      } catch {
+        failed('notifications.could-not-mark-read', 'Could not mark your alerts read');
+      } finally {
+        busy = false;
+        paintActions();
+      }
+    };
+
+    /**
+     * CLEAR ALERTS (bin). Deletes the reader's alerts — the feed, not the
+     * record: reports, incidents and the ledger are untouched — after a
+     * destructive confirm (dialog.js opens it with focus on Cancel).
+     *
+     * `upTo` is the newest alert on screen: one that lands while the confirm is
+     * open is kept, not deleted unseen.
+     */
+    $('clear-all').onclick = async () => {
+      if (busy || !lastItems.length) return;
+      const ok = window.hkConfirm && await window.hkConfirm(
+        T('notifications.clear-confirm-body', "This can't be undone."),
+        { title: T('notifications.clear-confirm-title', 'Clear all alerts?'), ok: T('notifications.clear-alerts', 'Clear alerts'), danger: true },
+      );
+      if (!ok) return;
+      busy = true;
+      paintActions();
+      try {
+        const upTo = Math.max(...lastItems.map((x) => Number(x.id) || 0));
+        const r = await post('/api/notifications/clear', { upTo });
+        setUnreadEverywhere(r.unread || 0);
+        busy = false;
+        await load();
+      } catch {
+        failed('notifications.could-not-clear', 'Could not clear your alerts');
+      } finally {
+        busy = false;
+        paintActions();
+      }
     };
 
     /**
@@ -358,11 +504,9 @@
       if (b.getAttribute('aria-busy') === 'true') return;
       b.setAttribute('aria-busy', 'true');
       b.disabled = true;
-      $('refresh-icon').className = 'spin';
       try { await load(); } finally {
         b.removeAttribute('aria-busy');
         b.disabled = false;
-        $('refresh-icon').className = '';
       }
     };
 

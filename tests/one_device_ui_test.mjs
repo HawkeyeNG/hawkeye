@@ -367,15 +367,36 @@ try {
 
   console.log('\n=== D4: the admin console (Reach → Organisation codes) ===');
   {
-    const model = { batchMax: 1000, issuerCap: 5000, issuers: [] };
+    const model = {
+      batchMax: 10000, fallbackCap: 5000, coordinatorMax: 10, nationalUnits: 176846,
+      contests: [
+        { code: 'PRES', name: 'Presidential', seat: null, states: null },
+        { code: 'GOV', name: 'Governorship', seat: null, states: ['Kano', 'Lagos'] },
+        { code: 'SEN', name: 'Senate', seat: 'senatorial', states: null },
+      ],
+      issuers: [],
+    };
+    // A hostile seat name: the pickers must print it, never run it.
+    const EVIL = 'Lagos West"><img src=x onerror="window.__xss=1">\'';
     const summary = (b) => ({ ...b, used: 0, created: 0, refused: 0, unused: b.revokedAt ? 0 : b.size });
     api = {
       '/api/admin/auth': () => [200, { ok: true }],
       '/api/admin/org-codes': () => [200, model],
+      '/api/admin/org-codes/areas': () => [200, {
+        states: ['FCT', 'Kano', 'Lagos'],
+        lgas: { Kano: ['Dala'], Lagos: ['Ikeja', 'Surulere'] },
+        senatorial: { Lagos: ['Lagos Central', EVIL] },
+        federal_constituency: {},
+      }],
       '/api/admin/org-codes/issuers': (req, body) => {
-        const i = { id: model.issuers.length + 1, name: body.name, kind: body.kind, createdAt: Date.now(), issued: 0, used: 0, created: 0, refused: 0, committed: 0, batches: [] };
+        const i = { id: model.issuers.length + 1, name: body.name, kind: body.kind, createdAt: Date.now(), issued: 0, used: 0, created: 0, refused: 0, committed: 0, cap: 5000, capSource: 'fallback', scope: null, batches: [] };
         model.issuers.push(i);
         return [200, { ok: true, issuer: i }];
+      },
+      '/api/admin/org-codes/issuers/1/scope': (req, body) => {
+        const i = model.issuers[0];
+        Object.assign(i, { scope: { contest: body.contest, state: body.state || null, seat: body.seat || null, lga: body.lga || null, units: 667 }, cap: 667, capSource: 'scope' });
+        return [200, { ok: true, issuer: { id: 1, name: i.name, kind: i.kind, party: null, scope: i.scope, cap: 667, capSource: 'scope', committed: i.committed } }];
       },
       '/api/admin/org-codes/issuers/1/batches': (req, body) => {
         const i = model.issuers[0];
@@ -398,7 +419,7 @@ try {
     await p.evaluate(() => { document.getElementById('org-wrap').open = true; document.getElementById('org-wrap').dispatchEvent(new Event('toggle')); });
     await p.waitForFunction(() => /No organisations yet/.test(document.getElementById('org-adm-out').textContent), null, { timeout: 8000 }).catch(() => {});
     check('opens on an empty list, with the identical terms stated',
-      await p.evaluate(() => [document.getElementById('org-adm-out').textContent.trim(), /at most 1000 codes per batch and 5000 in total/.test(document.getElementById('org-adm-intro').textContent)]),
+      await p.evaluate(() => [document.getElementById('org-adm-out').textContent.trim(), /at most 10,000 codes per batch, and in total one code per polling unit in the race and area set for it \(all 176,846 units for the presidential race\)\. With no race set, the cap is 5,000\./.test(document.getElementById('org-adm-intro').textContent)]),
       ['No organisations yet.', true]);
     await p.fill('#org-adm-name', 'Party One');
     await p.selectOption('#org-adm-kind', 'party');
@@ -406,6 +427,32 @@ try {
     await p.waitForSelector('[data-issue="1"]', { timeout: 8000 }).catch(() => {});
     const made = calls.find((c) => c.url === '/api/admin/org-codes/issuers');
     check('create organisation posts name + kind', made && made.body, { name: 'Party One', kind: 'party' });
+
+    /* RACE AND AREA: the scope that sets the cap. */
+    const scopeText = () => p.evaluate(() => (document.getElementById('org-adm-sc-1') || {}).textContent || '');
+    const optionsOf = (sel) => p.evaluate((s) => [...document.querySelectorAll(s + ' option')].map((o) => o.textContent), sel);
+    check('no scope: the fallback is stated, with how to raise it',
+      [await scopeText(), await p.evaluate(() => document.getElementById('org-adm-out').textContent)],
+      ([s, all]) => /No race set — the fallback cap of 5,000 codes applies\. Set the race and area to raise it/.test(s) && /0 of 5000 committed/.test(all));
+    await p.selectOption('#org-adm-sc-contest-1', 'GOV');
+    check('a governorship offers only the states it is held in', await optionsOf('#org-adm-sc-state-1'), ['All in this race', 'Kano', 'Lagos']);
+    check('CONTROL: no LGA until a state is picked', await p.evaluate(() => document.getElementById('org-adm-sc-lga-1').disabled), true);
+    await p.selectOption('#org-adm-sc-state-1', 'Lagos');
+    check('picking Lagos lists its LGAs', await optionsOf('#org-adm-sc-lga-1'), ['Any LGA', 'Ikeja', 'Surulere']);
+    await p.selectOption('#org-adm-sc-contest-1', 'SEN');
+    check('switching to the Senate keeps Lagos and lists its districts, the hostile name as text',
+      [await p.evaluate(() => document.getElementById('org-adm-sc-state-1').value), await optionsOf('#org-adm-sc-seat-1'), await p.evaluate(() => window.__xss || null)],
+      ['Lagos', ['Any in this state', 'Lagos Central', EVIL], null]);
+    await p.selectOption('#org-adm-sc-contest-1', 'GOV');
+    await p.selectOption('#org-adm-sc-state-1', 'Lagos');
+    await p.selectOption('#org-adm-sc-lga-1', 'Ikeja');
+    await p.click('[data-scope-save="1"]');
+    await p.waitForFunction(() => /cap 667 codes/.test((document.getElementById('org-adm-sc-1') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+    const saved = calls.find((c) => c.url === '/api/admin/org-codes/issuers/1/scope');
+    check('saving posts the race and area', saved && saved.body, { contest: 'GOV', state: 'Lagos', seat: '', lga: 'Ikeja' });
+    check('…and the card states the new cap from the server',
+      [await scopeText(), await p.evaluate(() => document.getElementById('org-adm-out').textContent)],
+      ([s, all]) => /Governorship · Lagos · Ikeja LGA — cap 667 codes, one per polling unit there\./.test(s) && /0 of 667 committed/.test(all));
     await p.fill('#org-adm-size-1', '3');
     const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }).catch(() => null), p.click('[data-issue="1"]')]);
     const csv = dl ? fs.readFileSync(await dl.path(), 'utf8') : '';

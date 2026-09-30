@@ -2574,13 +2574,20 @@
     let seq = 0;
     let msg = null;                 // { ok, text } — the last action's outcome
     const fresh = {};               // batch id → { codes, issuer } for this page visit only
+    let areas = null;               // GET …/areas — the race-and-area pickers' lists
+    let areasErr = null;
 
     function paintStatic() {
       const cur = kindSel.value || 'party';
       kindSel.innerHTML = ['party', 'partner'].map((k) => '<option value="' + k + '">' + esc(kindLabel(k)) + '</option>').join('');
       kindSel.value = cur;
-      intro.textContent = fill(T('orgcode.admin.intro', 'Single-use codes that replace the one-time code at sign-up. Every organisation gets the same terms: at most {batch} codes per batch and {cap} in total. Which organisation a code came from is never shown publicly and never weighs a result.'),
-        { batch: data ? data.batchMax : '…', cap: data ? data.issuerCap : '…' });
+      /* English only, like the rest of the owner-only additions here: the old
+         translated intro stated a fixed total cap, which no longer exists. */
+      const n = (v) => (v == null ? '…' : Number(v).toLocaleString('en-GB'));
+      intro.textContent = 'Single-use codes that replace the one-time code at sign-up. Every organisation gets the same terms: at most '
+        + n(data && data.batchMax) + ' codes per batch, and in total one code per polling unit in the race and area set for it (all '
+        + n(data && data.nationalUnits) + ' units for the presidential race). With no race set, the cap is '
+        + n(data && data.fallbackCap) + '. Which organisation a code came from is never shown publicly and never weighs a result.';
       status.textContent = msg ? msg.text : '';
       status.className = 'status' + (msg ? (msg.ok ? ' ok' : ' bad') : '');
     }
@@ -2661,9 +2668,78 @@
       return m[code] || fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
     };
 
+    /*
+     * RACE AND AREA (owner console only, English): the issuer's scope. Its cap
+     * is the number of polling units there, counted by the server off the
+     * register — the owner picks WHERE, never how many. Pickers are filled from
+     * GET …/areas; every value is escaped and read back from the <select>.
+     */
+    const drafts = {};              // issuer id → { contest, state, seat, lga } being edited
+    const SEAT_NOUN = { senatorial: 'Senatorial district', federal_constituency: 'Federal constituency' };
+    const contestOf = (code) => ((data && data.contests) || []).find((c) => c.code === code) || null;
+    const num = (v) => Number(v).toLocaleString('en-GB');
+    function scopeLabel(s) {
+      if (!s || !s.contest) return '';
+      const c = contestOf(s.contest);
+      return [c ? c.name : s.contest, s.seat, s.state || 'nationwide', s.lga ? s.lga + ' LGA' : ''].filter(Boolean).join(' · ');
+    }
+    function draftFor(i) {
+      if (!drafts[i.id]) {
+        const s = i.scope || {};
+        drafts[i.id] = { contest: s.contest || '', state: s.state || '', seat: s.seat || '', lga: s.lga || '' };
+      }
+      return drafts[i.id];
+    }
+    const opt = (v, label, cur) => '<option value="' + esc(v) + '"' + (v === cur ? ' selected' : '') + '>' + esc(label) + '</option>';
+    function scopeInner(i) {
+      const id = Number(i.id);
+      const d = draftFor(i);
+      const c = contestOf(d.contest);
+      const sel = (field, label, options, disabled) => '<label for="org-adm-sc-' + field + '-' + id + '" style="margin:0">' + esc(label) + '</label>'
+        + '<select id="org-adm-sc-' + field + '-' + id + '" data-sc="' + id + '" data-sc-field="' + field + '" style="width:auto;max-width:220px;margin:0"' + (disabled ? ' disabled' : '') + '>' + options + '</select>';
+      let head;
+      if (i.capSource === 'scope') head = '<b>Race and area:</b> ' + esc(scopeLabel(i.scope)) + ' — cap ' + esc(num(i.cap)) + ' codes, one per polling unit there.';
+      else if (i.scope && i.scope.contest) head = '<b>Race and area:</b> ' + esc(scopeLabel(i.scope)) + ' matches no polling units now, so the fallback cap of ' + esc(num(data.fallbackCap)) + ' applies. Set it again.';
+      else head = '<b>No race set</b> — the fallback cap of ' + esc(num(data.fallbackCap)) + ' codes applies. Set the race and area to raise it to the number of polling units there.';
+      let row = sel('contest', 'Race', opt('', '— none —', d.contest)
+        + ((data && data.contests) || []).map((x) => opt(x.code, x.code + ' — ' + x.name, d.contest)).join(''));
+      if (c && !areas) {
+        row += '<span class="meta">' + esc(areasErr ? 'Could not load the areas (' + areasErr + ').' : 'Loading areas…') + '</span>';
+      } else if (c) {
+        const states = c.states || areas.states;
+        row += sel('state', 'State', opt('', c.code === 'PRES' ? 'Nationwide' : 'All in this race', d.state)
+          + states.map((s) => opt(s, s, d.state)).join(''));
+        if (c.seat) {
+          const seats = d.state ? ((areas[c.seat] || {})[d.state] || []) : [];
+          row += sel('seat', SEAT_NOUN[c.seat] || 'Seat', opt('', d.state ? 'Any in this state' : 'Pick a state first', d.seat)
+            + seats.map((s) => opt(s, s, d.seat)).join(''), !d.state);
+        }
+        const lgas = d.state ? ((areas.lgas || {})[d.state] || []) : [];
+        row += sel('lga', 'LGA', opt('', d.state ? 'Any LGA' : 'Pick a state first', d.lga)
+          + lgas.map((s) => opt(s, s, d.lga)).join(''), !d.state);
+      }
+      row += '<button type="button" class="secondary" style="width:auto;margin:0" data-scope-save="' + id + '">Save race and area</button>';
+      return '<p class="meta">' + head + '</p><div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">' + row + '</div>';
+    }
+    const scopeBlock = (i) => '<div id="org-adm-sc-' + Number(i.id) + '" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line, #e5e5e5)">'
+      + scopeInner(i) + '</div>';
+    const scopeFail = (b, status) => {
+      const code = (b && b.error) || ('HTTP ' + status);
+      const m = {
+        unknown_issuer: 'No such organisation.',
+        unknown_contest: 'That race is not on the ballot.',
+        seat_not_for_contest: 'That race has no districts or constituencies to pick.',
+        unknown_seat: 'No polling units carry that district or constituency.',
+        seat_not_in_state: 'That seat is in ' + ((b && b.state) || 'another state') + ', not the state picked.',
+        lga_needs_state: 'Pick the state before the LGA.',
+        empty_scope: 'That race has no polling units in this area.',
+      };
+      return m[code] || fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
+    };
+
     function issuerCard(i) {
       const usage = fill(T('orgcode.admin.usage', '{created} accounts · {used} codes used · {issued} issued · {committed} of {cap} committed'),
-        { created: i.created, used: i.used, issued: i.issued, committed: i.committed, cap: data.issuerCap });
+        { created: i.created, used: i.used, issued: i.issued, committed: i.committed, cap: i.cap });
       return '<div class="card" style="margin:10px 0;padding:10px 12px">'
         + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + (i.party ? ' · ' + esc(i.party) : '') + '</span></p>'
         + '<p class="meta">' + esc(usage) + (i.refused ? ' · ' + esc(fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: i.refused })) : '') + '</p>'
@@ -2673,6 +2749,7 @@
         + '<button type="button" style="width:auto;margin:0" data-issue="' + i.id + '">' + esc(T('orgcode.admin.issue', 'Issue batch')) + '</button>'
         + '</div>'
         + (i.batches.length ? '<ul class="cap-adm-list">' + i.batches.map((b) => batchRow(b, i)).join('') + '</ul>' : '')
+        + scopeBlock(i)
         + partyBlock(i)
         + '</div>';
     }
@@ -2708,6 +2785,16 @@
         err = e.message || String(e);
       }
       paint();
+      // The pickers' lists: fetched once per page visit (the register does not
+      // change under a running server). A failure leaves the rest usable.
+      if (!err && !areas) {
+        try {
+          const r = await fetch('/api/admin/org-codes/areas', { headers: { 'x-admin-secret': secret() } });
+          const body = await r.json().catch(() => null);
+          if (r.ok && body && Array.isArray(body.states)) { areas = body; areasErr = null; } else areasErr = (body && body.error) || ('HTTP ' + r.status);
+        } catch (e) { areasErr = e.message || String(e); }
+        if (mine === seq) paint();
+      }
     }
 
     async function post(path, body) {
@@ -2722,6 +2809,7 @@
       const code = (b && b.error) || ('HTTP ' + status);
       if (code === 'issuer_exists') return T('orgcode.admin.exists', 'An organisation with this name already exists.');
       if (code === 'name_required') return T('orgcode.admin.name-required', "Type the organisation's name first.");
+      if (code === 'cap_exceeded' && b.capSource === 'fallback') return 'That would take this organisation past the fallback cap of ' + b.cap + ' codes (' + b.committed + ' committed). Set its race and area to raise the cap to the number of polling units there.';
       if (code === 'cap_exceeded') return fill(T('orgcode.admin.cap-exceeded', 'That would take this organisation past its cap of {cap} codes ({committed} committed).'), { cap: b.cap, committed: b.committed });
       if (code === 'invalid_size') return fill(T('orgcode.admin.invalid-size', 'A batch is 1 to {max} codes.'), { max: b.batchMax });
       return fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
@@ -2760,10 +2848,35 @@
       const issue = e.target.closest('[data-issue]');
       const revoke = e.target.closest('[data-revoke]');
       const csv = e.target.closest('[data-csv]');
+      const scopeBtn = e.target.closest('[data-scope-save]');
       const partyBtn = e.target.closest('[data-party]');
       const addBtn = e.target.closest('[data-coord-add]');
       const rmBtn = e.target.closest('[data-coord-remove]');
       if (csv) { downloadCsv(Number(csv.getAttribute('data-csv'))); return; }
+      if (scopeBtn) {
+        const id = Number(scopeBtn.getAttribute('data-scope-save'));
+        const i = data && data.issuers.find((x) => x.id === id);
+        if (!i) return;
+        const d = draftFor(i);
+        if (!d.contest && !(await hkConfirm('Clear the race and area? The fallback cap of ' + num(data.fallbackCap) + ' codes applies again.', { danger: true }))) return;
+        scopeBtn.disabled = true;
+        try {
+          const r = await post('/api/admin/org-codes/issuers/' + id + '/scope', { contest: d.contest, state: d.state, seat: d.seat, lga: d.lga });
+          if (r.status === 200 && r.body && r.body.issuer) {
+            delete drafts[id];
+            const v = r.body.issuer;
+            msg = { ok: true, text: v.capSource === 'scope'
+              ? 'Saved: ' + scopeLabel(v.scope) + '. Cap: ' + num(v.cap) + ' codes (' + num(v.committed) + ' committed).'
+              : 'Race and area cleared: the fallback cap of ' + num(v.cap) + ' codes applies.' };
+            await load();
+          } else msg = { ok: false, text: scopeFail(r.body, r.status) };
+        } catch (er) {
+          msg = { ok: false, text: fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: er.message || String(er) }) };
+        }
+        scopeBtn.disabled = false;
+        paint();
+        return;
+      }
       if (partyBtn || addBtn || rmBtn) {
         const b = partyBtn || addBtn || rmBtn;
         b.disabled = true;
@@ -2830,6 +2943,29 @@
         }
         paint();
       }
+    });
+    /* A picker changed: update that issuer's draft, drop the choices the change
+       made meaningless, and repaint ONLY its race-and-area block — a full paint
+       would wipe what was typed into the other inputs on the page. */
+    out.addEventListener('change', (e) => {
+      const el = e.target.closest('[data-sc-field]');
+      if (!el) return;
+      const id = Number(el.getAttribute('data-sc'));
+      const i = data && data.issuers.find((x) => x.id === id);
+      if (!i) return;
+      const d = draftFor(i);
+      const f = el.getAttribute('data-sc-field');
+      if (!['contest', 'state', 'seat', 'lga'].includes(f)) return;
+      d[f] = el.value;
+      if (f === 'contest') {
+        const c = contestOf(d.contest);
+        if (!c || (c.states && !c.states.includes(d.state))) d.state = '';
+        d.seat = '';
+        if (!d.state) d.lga = '';
+      }
+      if (f === 'state') { d.seat = ''; d.lga = ''; }
+      const box = document.getElementById('org-adm-sc-' + id);
+      if (box) box.innerHTML = scopeInner(i);
     });
     refresh.addEventListener('click', load);
     panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });

@@ -38,7 +38,7 @@
         "Civil Society Situation Room"
       ],
       "site": "https://situationroomng.org",
-      "logo": null
+      "logo": "cso/situation-room.png"
     },
     {
       "id": "plac",
@@ -109,7 +109,7 @@
         "Centre for Transparency Advocacy"
       ],
       "site": "https://cta.org.ng",
-      "logo": null
+      "logo": "cso/cta.png"
     },
     {
       "id": "taf",
@@ -132,7 +132,7 @@
         "ElectHER"
       ],
       "site": "https://elect-her.org",
-      "logo": null
+      "logo": "cso/electher.png"
     },
     {
       "id": "electoral-hub",

@@ -1196,7 +1196,14 @@ function showWaPane(on) {
   }
   paintPasskeySignIn();
 }
-function waStatus(text) { if ($('wa-status')) $('wa-status').textContent = text; }
+/** The live line under the button; `spin` shows the small spinner (waiting, verified). */
+function waStatus(text, spin = false) {
+  const line = $('wa-status-text') || $('wa-status');
+  if (line) line.textContent = text;
+  if ($('wa-spin')) $('wa-spin').hidden = !spin;
+}
+const WA_WAITING = () => T('auth.wa-waiting', 'Waiting for your message…');
+const WA_BODY = () => T('auth.wa-body-3', 'Press Send in WhatsApp — this screen continues by itself.');
 function waStop(cancelOnServer) {
   if (!wa) return;
   clearTimeout(wa.timer);
@@ -1230,15 +1237,15 @@ async function startWaSend(phone, newPw) {
     delay: Number(body.pollAfterMs) || 2000, timer: 0, busy: false, fails: 0,
   };
   // SENDING IS THE VERIFICATION. Nothing comes back to type, and this screen
-  // moves on by itself — the old copy did not say so, and people waited for a
-  // code that was never coming.
-  $('wa-body').textContent = T('auth.wa-body-2', "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.", { phone });
+  // moves on by itself — one short line says so (owner, 2026-09-30: the long
+  // paragraph that used to explain it went unread).
+  $('wa-body').textContent = WA_BODY();
   $('wa-code').textContent = body.code;
   wa.number = body.waNumber;
   $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: body.waNumber });
   if ($('wa-again-line')) $('wa-again-line').hidden = true;
   if ($('wa-open')) $('wa-open').hidden = false;
-  waStatus(T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.'));
+  waStatus(WA_WAITING(), true);
   showWaPane(true);
   waSchedule(wa.delay);
   return true;
@@ -1274,7 +1281,7 @@ async function waPoll() {
   if (r.status === 200 && r.body.mismatch) {
     waStatus(T('auth.wa-mismatch', 'We got the code from a different number. Send it from the WhatsApp on {phone}, or go back and enter the number your WhatsApp uses.', { phone: pendingPhone }));
   } else {
-    waStatus(T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.'));
+    waStatus(WA_WAITING(), true);
   }
   waSchedule(mine.delay);
 }
@@ -1290,7 +1297,7 @@ function waExpired() {
 async function waFinish(body) {
   const newPw = wa && wa.newPw;
   waStop(false);
-  waStatus(T('auth.wa-verified', 'Verified — signing you in…'));
+  waStatus(T('auth.wa-verified', 'Verified — signing you in…'), true);
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
   try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
@@ -1342,8 +1349,22 @@ async function waFallback(channel) {
  * If the app does not open (not installed, or the scheme is refused) this page
  * is still in front a beat later, and the wa.me link takes over exactly as
  * before. A desktop keeps wa.me: that is how WhatsApp Web and Desktop take it.
+ *
+ * iOS KEEPS wa.me TOO (owner, 2026-09-30). There whatsapp:// makes the system
+ * ask "Open in WhatsApp?" / "“Hawkeye” wants to open “WhatsApp”" before
+ * anything happens, while wa.me is WhatsApp's Universal Link and opens the app
+ * with no prompt (Safari's wa.me page only when WhatsApp is missing). So only
+ * Android phones get the scheme. iPadOS reports a Mac, hence the touch check.
  */
+const waOnIOS = () => {
+  try {
+    if (window.Capacitor && window.Capacitor.getPlatform) return window.Capacitor.getPlatform() === 'ios';
+  } catch { /* fall through to the user agent */ }
+  const ua = navigator.userAgent || '';
+  return /iPhone|iPad|iPod/i.test(ua) || (/Macintosh/i.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+};
 function waAppLink(link) {
+  if (waOnIOS()) return null;
   try {
     const u = new URL(link);
     if (!/(^|\.)wa\.me$/i.test(u.hostname)) return null;
@@ -3177,9 +3198,10 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
       // sign-up fields, so hide them again and repaint the panel's own lines.
       if (authMode === 'wa' && wa) {
         showWaPane(true);
-        $('wa-body').textContent = T('auth.wa-body-2', "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.", { phone: pendingPhone });
+        $('wa-body').textContent = WA_BODY();
         if (wa.number) $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: wa.number });
-        waStatus(wa.deadline ? T('auth.wa-waiting-2', 'Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.') : T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
+        if (wa.deadline) waStatus(WA_WAITING(), true);
+        else waStatus(T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
       }
       paintElsewhere();
     }

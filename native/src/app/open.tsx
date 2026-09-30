@@ -67,6 +67,18 @@ export default function Open() {
       }
       return;
     }
+    /*
+     * "BACK TO HAWKEYE" (/open?to=back, the WhatsApp / Telegram sign-in reply).
+     * While the app is running +native-intent.tsx swallows it and nothing
+     * navigates; reaching this screen means a cold start or an in-app link.
+     * Back to whatever is underneath, else home (the root layout sends a
+     * signed-out reader on to welcome).
+     */
+    if (String(to || '') === 'back') {
+      if (router.canGoBack()) router.back();
+      else router.replace('/(tabs)');
+      return;
+    }
     const path = TARGETS[String(to || '')] ?? '/(tabs)';
     const params: Record<string, string> = {};
     for (const [k, v] of Object.entries(rest)) {

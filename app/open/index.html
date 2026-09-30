@@ -28,9 +28,55 @@
   <main class="wrap" style="padding:48px 0;text-align:center">
     <p class="lede" id="msg">Opening Hawkeye…</p>
     <p class="hint"><a id="manual" href="../index.html">Continue on the website</a></p>
+    <!-- "BACK TO HAWKEYE" (/open?to=back): the WhatsApp and Telegram sign-in
+         replies end with this link (backend services/wayBack.js). With the app
+         installed it never loads — the app comes to the front and stays on
+         the sign-in screen, which finishes by itself. Here it is a browser, so
+         the sign-in is in the tab (or app) the reader started from: say so,
+         and offer both ways back. Text keyed into app/i18n (open.back-*),
+         painted below from the reader's saved language. -->
+    <section id="back" hidden style="padding:0 16px">
+      <h1 data-k="open.back-title" style="margin:0 0 8px">Back to Hawkeye</h1>
+      <p class="lede" data-k="open.back-body">Go back to the Hawkeye screen where you started — it carries on by itself.</p>
+      <p id="back-app-line" hidden><a class="btn-primary" id="back-app" href="hawkeye://open?to=back" data-k="open.back-app">Open the Hawkeye app</a></p>
+      <p class="hint"><a class="link" id="back-web" href="../index.html" data-k="open.back-website">Continue on the website</a></p>
+    </section>
   </main>
   <script>
     (function () {
+      var qs0 = new URLSearchParams(location.search);
+      if (qs0.get('to') === 'back') {
+        var inLite = false;
+        try { inLite = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform()); } catch (e) { inLite = false; }
+        // Reached from inside Hawkeye (Lite's WebView, or a tab with history):
+        // back is exactly where the reader wants to be.
+        if (inLite || (history.length > 1 && document.referrer && document.referrer.indexOf(location.origin) === 0)) {
+          if (history.length > 1) history.back(); else location.replace('../index.html');
+          return;
+        }
+        document.getElementById('msg').hidden = true;
+        document.getElementById('manual').parentNode.hidden = true;
+        document.getElementById('back').hidden = false;
+        // The app's own scheme, on a phone only: a desktop has no app to open.
+        var ua = navigator.userAgent || '';
+        if (/Android|iPhone|iPad|iPod/i.test(ua)) document.getElementById('back-app-line').hidden = false;
+        var lang = 'en';
+        try { lang = localStorage.getItem('hawkeye_lang') || 'en'; } catch (e) { lang = 'en'; }
+        if (/^(ha|ig|yo)$/.test(lang)) {
+          document.documentElement.lang = lang;
+          fetch('../i18n/' + lang + '.json', { cache: 'no-cache' })
+            .then(function (r) { return r.ok ? r.json() : {}; })
+            .then(function (d) {
+              var els = document.querySelectorAll('[data-k]');
+              for (var i = 0; i < els.length; i++) {
+                var v = d[els[i].getAttribute('data-k')];
+                if (typeof v === 'string' && v) els[i].textContent = v;
+              }
+            })
+            .catch(function () { /* English stays */ });
+        }
+        return;
+      }
       // Served from /open/, so every destination is one level up.
       var TARGETS = {
         report: '../observe.html', collation: '../collation.html', incident: '../incidents.html',

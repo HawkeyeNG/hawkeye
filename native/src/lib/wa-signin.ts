@@ -55,12 +55,20 @@ export function waAppUrl(waLink: string): string | null {
  * `whatsapp` in LSApplicationQueriesSchemes (a native change) and on Android
  * a <queries> entry, and without them answers "no" even when WhatsApp is there.
  * openURL itself needs neither: it rejects only when nothing handles the URL.
+ *
+ * iOS TAKES THE wa.me LINK DIRECTLY (owner, 2026-09-30). Opening whatsapp://
+ * from an app makes iOS ask "“Hawkeye” wants to open “WhatsApp”" first — a
+ * system confirm between the observer and Send. wa.me is WhatsApp's Universal
+ * Link: iOS hands it straight to the WhatsApp app with no prompt, and to
+ * Safari's wa.me page only when WhatsApp is not installed. Android keeps
+ * whatsapp://, which opens the chat directly there.
  */
 export async function openWhatsApp(
   waLink: string,
   open: (url: string) => Promise<unknown>,
+  platform: string = 'android',
 ): Promise<'app' | 'link' | 'failed'> {
-  const app = waAppUrl(waLink);
+  const app = platform === 'ios' ? null : waAppUrl(waLink);
   if (app) {
     try {
       await open(app);

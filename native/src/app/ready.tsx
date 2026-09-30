@@ -6,8 +6,10 @@ import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, AppState, Linking, Platform, Pressable, Text, View } from 'react-native';
 
+import { NoticeSheet, useNotice } from '@/components/notice-sheet';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
+import { BRAND } from '@/lib/api';
 import { authedGet, useAuth } from '@/lib/auth';
 import { t as i18nT, useT } from '@/lib/i18n';
 import { onMyUnitSaved, type SavedUnit } from '@/lib/my-unit';
@@ -17,14 +19,27 @@ import { useUi } from '@/lib/theme';
 
 /**
  * READY FOR ELECTION DAY — one row per thing that has to be in place before
- * polling day, each with its state and ONE action. Native twin of
- * app/ready.html; reached from More → Take part, the Practice Day screen, and
- * the reminder before polling day (lib/web-routes.ts maps ready.html here).
+ * polling day. Native twin of app/ready.html; reached from More → Take part,
+ * the Practice Day screen, and the reminder before polling day
+ * (lib/web-routes.ts maps ready.html here).
  *
- * NO POP-UP OF OUR OWN BEFORE A PERMISSION PROMPT (owner rule). "Allow" asks
- * the phone directly and the system prompt is the only dialog anyone sees. A
- * permission the phone will no longer ask about gets "Open Settings" instead —
- * asking again would do nothing, which reads as a dead button.
+ * THE ROW IS THE BUTTON (owner, 2026-09-30). Each row does the one thing its
+ * state calls for, so there is no separate action button to find:
+ *
+ *   Signed in      signed out → sign-in; signed in → informational, not a button.
+ *   Polling unit   the /choose-unit full-screen modal over this page (the same
+ *                  route Profile opens); its save lands back here through
+ *                  onMyUnitSaved and the row ticks.
+ *   Permissions    never asked (or the phone can still ask) → the SYSTEM prompt,
+ *                  directly; refused for good → Hawkeye's page in the phone's
+ *                  Settings (Linking.openSettings); already allowed → our own
+ *                  notice sheet saying so, and nothing else. iOS lists a
+ *                  permission in Settings only once the app has asked for it,
+ *                  which is why a never-asked permission goes to the prompt and
+ *                  never to Settings.
+ *
+ * NO POP-UP OF OUR OWN BEFORE A PERMISSION PROMPT (owner rule). The only sheet
+ * of ours here is the "already allowed" notice, which no prompt follows.
  *
  * Re-checked every time the screen regains focus and every time the app comes
  * back to the foreground, which is exactly the return trip from Settings.
@@ -37,18 +52,19 @@ type Row = {
   title: string;
   state: State;
   note?: string;
-  action?: { label: string; run: () => unknown };
+  /** What tapping the row does. Absent = informational, not a button. `hint`
+   *  is the verb shown at the row's end and read as its accessibility hint. */
+  tap?: { hint?: string; run: () => unknown };
 };
 type Me = { unit?: SavedUnit | null };
 
-const openSettings = () => {
-  void Linking.openSettings();
-};
+const openSettings = () => Linking.openSettings();
 
 export default function ReadyScreen() {
   useT();
   const ui = useUi();
   const auth = useAuth();
+  const notice = useNotice();
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const [cam, requestCam, getCam] = useCameraPermissions();
 
@@ -120,50 +136,62 @@ export default function ReadyScreen() {
     }
   };
 
-  const allow = i18nT('ready.allow');
-  const settings = { label: i18nT('n.components.capture-camera.open-settings'), run: openSettings };
+  const allowHint = i18nT('ready.allow');
+  const settingsHint = i18nT('n.components.capture-camera.open-settings');
+  const toSettings = { hint: settingsHint, run: openSettings };
+  // Already allowed: say so in our own sheet. Title is the row, body one sentence.
+  const allowed = (titleKey: string, bodyKey: string) => ({
+    run: () => notice.show(i18nT(titleKey), i18nT(bodyKey), 'good'),
+  });
   const blockedNote = i18nT('n.app.ready.blocked');
   const rows: Row[] = [];
 
   // Signed in. A signed-out reader is normally on the welcome screen already
   // (the root layout), but the row still says so rather than assuming.
   const signedIn = auth.status === 'signedIn';
+  const toSignIn = { hint: i18nT('index.sign-in'), run: () => router.push('/sign-in' as never) };
   rows.push({
     id: 'signin',
     title: i18nT('ready.signed-in'),
     state: signedIn ? 'ready' : 'todo',
-    action: signedIn ? undefined : { label: i18nT('index.sign-in'), run: () => router.push('/sign-in' as never) },
+    tap: signedIn ? undefined : toSignIn,
   });
 
-  // Polling unit — the chooser page, the same one Profile opens.
-  const choose = { label: i18nT('ready.choose-unit'), run: () => router.push('/choose-unit' as never) };
+  // Polling unit — the chooser route, a fullScreenModal (app/_layout.tsx) over
+  // this page, the same one Profile opens. `current` marks the saved row there.
+  const choose = {
+    hint: i18nT('ready.choose-unit'),
+    run: () =>
+      router.push({ pathname: '/choose-unit', params: unit ? { current: unit.pu_code } : {} } as never),
+  };
   rows.push(
     !signedIn
-      ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'todo', note: i18nT('ready.sign-in-first') }
+      ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'todo', note: i18nT('ready.sign-in-first'), tap: toSignIn }
       : unit
-        ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'ready', note: unit.name || unit.pu_code }
+        ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'ready', note: unit.name || unit.pu_code, tap: choose }
         : unit === null
-          ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'todo', action: choose }
+          ? { id: 'unit', title: i18nT('ready.unit-chosen'), state: 'todo', tap: choose }
           : {
               id: 'unit',
               title: i18nT('ready.unit-chosen'),
               state: 'unknown',
               note: unitFailed ? i18nT('ready.could-not-check') : undefined,
-              action: unitFailed ? choose : undefined,
+              tap: choose,
             },
   );
 
-  // Camera.
+  // Camera. canAskAgain is the phone's own word on whether its prompt can
+  // still appear (always, until the first answer; Android allows a second).
   rows.push(
     cam?.granted
-      ? { id: 'camera', title: i18nT('ready.camera'), state: 'ready' }
+      ? { id: 'camera', title: i18nT('ready.camera'), state: 'ready', tap: allowed('ready.camera', 'ready.camera-allowed') }
       : cam && !cam.canAskAgain
-        ? { id: 'camera', title: i18nT('ready.camera'), state: 'blocked', note: blockedNote, action: settings }
+        ? { id: 'camera', title: i18nT('ready.camera'), state: 'blocked', note: blockedNote, tap: toSettings }
         : {
             id: 'camera',
             title: i18nT('ready.camera'),
             state: cam ? 'todo' : 'unknown',
-            action: { label: allow, run: requestCam },
+            tap: { hint: allowHint, run: requestCam },
           },
   );
 
@@ -171,14 +199,14 @@ export default function ReadyScreen() {
   // Filing needs a precise fix, so "approximate only" is not ready.
   const approximate =
     !!loc?.granted && (loc.ios?.accuracy === 'reduced' || loc.android?.accuracy === 'coarse');
-  const askLoc = () => Location.requestForegroundPermissionsAsync();
+  const askLoc = { hint: allowHint, run: () => Location.requestForegroundPermissionsAsync() };
   rows.push(
     !loc
-      ? { id: 'location', title: i18nT('ready.location'), state: 'unknown', action: { label: allow, run: askLoc } }
+      ? { id: 'location', title: i18nT('ready.location'), state: 'unknown', tap: askLoc }
       : !loc.granted
         ? loc.canAskAgain
-          ? { id: 'location', title: i18nT('ready.location'), state: 'todo', action: { label: allow, run: askLoc } }
-          : { id: 'location', title: i18nT('ready.location'), state: 'blocked', note: blockedNote, action: settings }
+          ? { id: 'location', title: i18nT('ready.location'), state: 'todo', tap: askLoc }
+          : { id: 'location', title: i18nT('ready.location'), state: 'blocked', note: blockedNote, tap: toSettings }
         : !locOn
           ? {
               id: 'location',
@@ -187,10 +215,10 @@ export default function ReadyScreen() {
               note: i18nT('n.app.ready.location-off'),
               // Android shows its own "turn on location" dialog; iOS has no
               // way in but Settings.
-              action:
+              tap:
                 Platform.OS === 'android'
-                  ? { label: i18nT('n.app.ready.turn-on'), run: () => Location.enableNetworkProviderAsync() }
-                  : settings,
+                  ? { hint: i18nT('n.app.ready.turn-on'), run: () => Location.enableNetworkProviderAsync() }
+                  : toSettings,
             }
           : approximate
             ? {
@@ -200,9 +228,14 @@ export default function ReadyScreen() {
                 note: i18nT('ready.approximate'),
                 // Android asks again with its own "use precise location" prompt;
                 // iOS changes precision only in Settings.
-                action: Platform.OS === 'android' && loc.canAskAgain ? { label: allow, run: askLoc } : settings,
+                tap: Platform.OS === 'android' && loc.canAskAgain ? askLoc : toSettings,
               }
-            : { id: 'location', title: i18nT('ready.location'), state: 'ready' },
+            : {
+                id: 'location',
+                title: i18nT('ready.location'),
+                state: 'ready',
+                tap: allowed('ready.location', 'ready.location-allowed'),
+              },
   );
 
   // Notifications. registerForPush() makes the Android channel first (Android
@@ -213,14 +246,19 @@ export default function ReadyScreen() {
     notif?.ios?.status === Notifications.IosAuthorizationStatus.EPHEMERAL;
   rows.push(
     notifOk
-      ? { id: 'notify', title: i18nT('ready.notifications'), state: 'ready' }
+      ? {
+          id: 'notify',
+          title: i18nT('ready.notifications'),
+          state: 'ready',
+          tap: allowed('ready.notifications', 'ready.notifications-allowed'),
+        }
       : notif && !notif.canAskAgain
-        ? { id: 'notify', title: i18nT('ready.notifications'), state: 'blocked', note: blockedNote, action: settings }
+        ? { id: 'notify', title: i18nT('ready.notifications'), state: 'blocked', note: blockedNote, tap: toSettings }
         : {
             id: 'notify',
             title: i18nT('ready.notifications'),
             state: notif ? 'todo' : 'unknown',
-            action: { label: allow, run: registerForPush },
+            tap: { hint: allowHint, run: registerForPush },
           },
   );
 
@@ -229,22 +267,36 @@ export default function ReadyScreen() {
   if (photos !== 'none') {
     rows.push(
       photos === 'ready'
-        ? { id: 'photos', title: i18nT('n.app.ready.photos'), state: 'ready' }
+        ? {
+            id: 'photos',
+            title: i18nT('n.app.ready.photos'),
+            state: 'ready',
+            tap: allowed('n.app.ready.photos', 'n.app.ready.photos-allowed'),
+          }
         : photos === 'blocked'
-          ? { id: 'photos', title: i18nT('n.app.ready.photos'), state: 'blocked', note: blockedNote, action: settings }
-          : { id: 'photos', title: i18nT('n.app.ready.photos'), state: 'todo', action: { label: allow, run: askPhotoLibrary } },
+          ? { id: 'photos', title: i18nT('n.app.ready.photos'), state: 'blocked', note: blockedNote, tap: toSettings }
+          : {
+              id: 'photos',
+              title: i18nT('n.app.ready.photos'),
+              state: 'todo',
+              tap: { hint: allowHint, run: askPhotoLibrary },
+            },
     );
   }
 
-  const allReady = rows.every((r) => r.state === 'ready');
+  const readyCount = rows.filter((r) => r.state === 'ready').length;
+  const allReady = readyCount === rows.length;
+  const tally = i18nT('ready.n-of-m-ready', { v0: readyCount, v1: rows.length });
   const stateText: Record<State, string> = {
     ready: i18nT('ready.state-ready'),
     todo: i18nT('common.not-yet'),
     blocked: i18nT('ready.state-blocked'),
     unknown: '',
   };
+  // Ticks in Hawkeye gold with brand ink on them: a fixed pair that reads the
+  // same in both themes (gold on the light card alone would not).
   const MARK: Record<State, { icon: keyof typeof Feather.glyphMap; bg: string; color: string }> = {
-    ready: { icon: 'check', bg: 'bg-good', color: ui.tint.good.ink },
+    ready: { icon: 'check', bg: 'bg-hawk-gold', color: BRAND.ink },
     todo: { icon: 'alert-circle', bg: 'bg-warn', color: ui.tint.warn.ink },
     blocked: { icon: 'x', bg: 'bg-bad', color: ui.tint.bad.ink },
     unknown: { icon: 'help-circle', bg: 'bg-surface', color: ui.faint },
@@ -258,25 +310,33 @@ export default function ReadyScreen() {
         scrollEventThrottle={scrollEventThrottle}
         contentContainerStyle={{ paddingTop: headerH + 12, paddingHorizontal: 16, paddingBottom: 40 }}
       >
-        <Text className="pb-4 text-sm leading-5 text-muted">{i18nT('ready.lede')}</Text>
-
-        {allReady ? (
-          <View className="mb-3 flex-row items-center rounded-2xl bg-good px-4 py-3" accessibilityRole="summary">
-            <Feather name="check-circle" size={18} color={ui.tint.good.ink} />
-            <Text className="flex-1 pl-2 text-sm font-bold text-ink">{i18nT('ready.all-set')}</Text>
+        {/* Summary — the gold-edged card the home screen's Practice Day card
+            and My Groups use, so it reads as Hawkeye's in either theme. */}
+        <View
+          className="mb-4 flex-row items-center rounded-2xl border-l-4 border-hawk-gold bg-card px-4 py-4"
+          accessible
+          accessibilityRole="summary"
+          accessibilityLabel={`${allReady ? i18nT('ready.all-set') : i18nT('ready.lede')} ${tally}`}
+        >
+          <View
+            className={`h-10 w-10 items-center justify-center rounded-full ${allReady ? 'bg-hawk-gold' : 'bg-surface'}`}
+          >
+            <Feather name={allReady ? 'check' : 'list'} size={20} color={allReady ? BRAND.ink : ui.muted} />
           </View>
-        ) : null}
+          <View className="flex-1 pl-3">
+            <Text className="text-base font-bold text-ink">
+              {allReady ? i18nT('ready.all-set') : i18nT('ready.lede')}
+            </Text>
+            <Text className="pt-0.5 text-sm leading-5 text-muted">{tally}</Text>
+          </View>
+        </View>
 
         {rows.map((r) => {
           const m = MARK[r.state];
           const note = r.note || stateText[r.state];
-          return (
-            <View
-              key={r.id}
-              className="mb-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5"
-              accessible={!r.action}
-              accessibilityLabel={[r.title, stateText[r.state], r.note].filter(Boolean).join(', ')}
-            >
+          const label = [r.title, stateText[r.state], r.note].filter(Boolean).join(', ');
+          const body = (
+            <>
               <View className={`h-9 w-9 items-center justify-center rounded-full ${m.bg}`}>
                 <Feather name={m.icon} size={18} color={m.color} />
               </View>
@@ -284,21 +344,43 @@ export default function ReadyScreen() {
                 <Text className="text-base font-bold text-ink">{r.title}</Text>
                 {note ? <Text className="pt-0.5 text-sm leading-5 text-muted">{note}</Text> : null}
               </View>
-              {r.action ? (
-                <Pressable
-                  disabled={busy !== null}
-                  onPress={() => void run(r.id, r.action!.run)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`${r.action.label}: ${r.title}`}
-                  className={`rounded-full px-4 py-2 active:opacity-80 ${busy === r.id ? 'bg-disabled' : 'bg-hawk-green'}`}
-                >
-                  <Text className="text-sm font-bold text-hawk-gold">{r.action.label}</Text>
-                </Pressable>
-              ) : null}
-            </View>
+            </>
+          );
+          if (!r.tap) {
+            return (
+              <View
+                key={r.id}
+                className="mb-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5"
+                accessible
+                accessibilityLabel={label}
+              >
+                {body}
+              </View>
+            );
+          }
+          const tap = r.tap;
+          // The verb shows only while there is something to do; a ready row
+          // keeps its chevron and says "already allowed" when tapped.
+          const verb = r.state !== 'ready' ? tap.hint : undefined;
+          return (
+            <Pressable
+              key={r.id}
+              disabled={busy !== null}
+              onPress={() => void run(r.id, tap.run)}
+              accessibilityRole="button"
+              accessibilityLabel={label}
+              accessibilityHint={tap.hint}
+              accessibilityState={{ disabled: busy !== null, busy: busy === r.id }}
+              className={`mb-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-70 ${busy === r.id ? 'opacity-60' : ''}`}
+            >
+              {body}
+              {verb ? <Text className="pr-1 text-sm font-bold text-ink">{verb}</Text> : null}
+              <Feather name="chevron-right" size={20} color={ui.faint} />
+            </Pressable>
           );
         })}
       </Animated.ScrollView>
+      <NoticeSheet {...notice.props} />
     </View>
   );
 }

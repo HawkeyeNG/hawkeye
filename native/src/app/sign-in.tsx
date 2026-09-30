@@ -691,7 +691,7 @@ export default function SignIn() {
     : waWait === 'expired' ? i18nT('n.auth.wa-expired')
     : waWait === 'offline' ? i18nT('n.auth.wa-offline')
     : waWait === 'mismatch' ? i18nT('n.auth.wa-mismatch', { phone: phone.trim() })
-    : i18nT('n.auth.wa-waiting-2');
+    : i18nT('n.auth.wa-waiting');
   const waCalm = waWait === 'waiting' || waWait === 'verified';
 
   return (
@@ -1002,11 +1002,12 @@ export default function SignIn() {
                   from the WhatsApp on the number they typed; lib/wa-signin.ts
                   collects the session. The code is a selectable Text, never a
                   TextInput — see the letterSpacing note on the OTP box below.
-                  Twin of app/observe.html #wa-send. */}
+                  Twin of app/observe.html #wa-send.
+                  SHORT ON PURPOSE (owner, 2026-09-30): title, one line, the
+                  code, the button, the waiting line; everything else is a small
+                  fallback link underneath. */}
               <Text className="text-2xl font-bold text-ink">{i18nT('n.auth.wa-title')}</Text>
-              <Text className="pb-4 pt-1 text-sm text-muted">
-                {i18nT('n.auth.wa-body-2', { phone: phone.trim() })}
-              </Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">{i18nT('n.auth.wa-body-3')}</Text>
               <View className="items-center rounded-2xl bg-card px-4 py-5">
                 <Text
                   selectable
@@ -1033,12 +1034,14 @@ export default function SignIn() {
                 <Pressable
                   disabled={waWait === 'verified'}
                   onPress={() => {
-                    // The WhatsApp app itself (whatsapp://), wa.me only if that
-                    // fails. In a browser (the web build) wa.me as before: a
-                    // browser swallows an unknown scheme without an error.
+                    // Android: the WhatsApp app itself (whatsapp://), wa.me only
+                    // if that fails. iOS: wa.me, WhatsApp's Universal Link, with
+                    // no "open WhatsApp?" confirm (lib/wa-signin.ts). In a
+                    // browser (the web build) wa.me as before: a browser
+                    // swallows an unknown scheme without an error.
                     if (!wa) return;
                     if (Platform.OS === 'web') Linking.openURL(wa.waLink).catch(() => {});
-                    else void openWhatsApp(wa.waLink, (u) => Linking.openURL(u));
+                    else void openWhatsApp(wa.waLink, (u) => Linking.openURL(u), Platform.OS);
                   }}
                   accessibilityRole="button"
                   className="mt-5 flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
@@ -1047,21 +1050,21 @@ export default function SignIn() {
                   <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('n.auth.wa-open')}</Text>
                 </Pressable>
               )}
-              {wa?.waNumber ? (
-                <Text selectable className="pt-3 text-center text-sm text-muted">
-                  {i18nT('n.auth.wa-number', { number: wa.waNumber })}
-                </Text>
-              ) : null}
               <View className="flex-row items-center justify-center gap-2 pt-4" accessibilityLiveRegion="polite">
                 {waCalm ? <ActivityIndicator size="small" color={ui.muted} /> : null}
                 <Text className={`shrink text-center text-sm ${waCalm ? 'text-muted' : 'text-warn-ink'}`}>
                   {waLine}
                 </Text>
               </View>
-              <Text className="pt-3 text-center text-xs text-muted">{i18nT('n.auth.wa-safety')}</Text>
+              <Text className="pt-2 text-center text-xs text-muted">{i18nT('n.auth.wa-safety')}</Text>
               {waWait !== 'verified' ? (
                 <>
-                  <Pressable className="mt-4 items-center" disabled={busy} onPress={() => paidCode('whatsapp')}>
+                  {wa?.waNumber ? (
+                    <Text selectable className="mt-5 text-center text-sm text-muted">
+                      {i18nT('n.auth.wa-number', { number: wa.waNumber })}
+                    </Text>
+                  ) : null}
+                  <Pressable className="mt-3 items-center" disabled={busy} onPress={() => paidCode('whatsapp')}>
                     <Text className="text-center text-sm font-semibold text-good-ink">
                       {i18nT('n.auth.wa-fallback-whatsapp')}
                     </Text>

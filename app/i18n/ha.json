@@ -2589,5 +2589,15 @@
   "race-picker.none-listed-for": "— babu wanda aka jera don {v0} —",
   "auth.wa-body-2": "Danna maɓallin — WhatsApp zai buɗe da saƙon a shirye. Danna Aika: wannan saƙon shi ne tabbatarwarka, don haka babu lambar da za ta dawo maka ka rubuta, kuma wannan shafin zai ci gaba da kansa. Kyauta ne. Aika shi daga WhatsApp ɗin da ke kan {phone}.",
   "auth.wa-waiting-2": "Muna jiran saƙonka — babu abin da za ka rubuta a nan; wannan shafin zai ci gaba da kansa da zarar ya iso.",
-  "race.no-list-race": "INEC ba ta wallafa jerin 'yan takara na wannan gasar ba tukuna. 'Yan takara za su bayyana a nan da zarar an fitar da jerin na hukuma. Taswira da bayanan kujera da ke wannan shafin sun fito ne daga rijistar zaɓe kuma na yanzu ne."
+  "race.no-list-race": "INEC ba ta wallafa jerin 'yan takara na wannan gasar ba tukuna. 'Yan takara za su bayyana a nan da zarar an fitar da jerin na hukuma. Taswira da bayanan kujera da ke wannan shafin sun fito ne daga rijistar zaɓe kuma na yanzu ne.",
+  "ready.camera-allowed": "An riga an ba Kamara izini.",
+  "ready.location-allowed": "An riga an ba Wuri izini.",
+  "ready.n-of-m-ready": "{v0} cikin {v1} a shirye",
+  "ready.notifications-allowed": "An riga an ba Sanarwa izini.",
+  "auth.wa-body-3": "Danna Aika a WhatsApp — wannan shafin zai ci gaba da kansa.",
+  "auth.wa-title": "Aiko mana wannan lambar ta WhatsApp",
+  "open.back-app": "Buɗe manhajar Hawkeye",
+  "open.back-body": "Koma shafin Hawkeye inda ka fara — zai ci gaba da kansa.",
+  "open.back-title": "Koma Hawkeye",
+  "open.back-website": "Ci gaba a gidan yanar gizo"
 }

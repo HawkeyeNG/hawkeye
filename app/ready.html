@@ -12,6 +12,7 @@
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=122"></script>
+  <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <style>
@@ -19,31 +20,47 @@
        for one page. Tokens only: every colour flips with the theme. */
     main.rd-main { padding-top: 16px; }
     .rd-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+    /* THE ROW IS THE BUTTON: a <button> or <a> when tapping does something, a
+       plain <div> when it is only information. The resets undo styles.css's
+       global green `button`. */
     .rd-row {
-      display: flex; align-items: center; gap: 12px; padding: 14px 14px;
+      display: flex; align-items: center; gap: 12px; width: 100%; margin: 0; padding: 14px 14px;
       background: var(--card); border: 1px solid var(--line); border-radius: 14px;
+      color: var(--ink); font: inherit; font-weight: 400; text-align: left; text-decoration: none;
+      box-shadow: none; box-sizing: border-box;
     }
+    button.rd-row, a.rd-row { cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.12s, transform 0.12s; }
+    button.rd-row:hover, a.rd-row:hover { filter: none; border-color: var(--muted); color: var(--ink); text-decoration: none; }
+    button.rd-row:active, a.rd-row:active { background: var(--tint); transform: scale(0.99); box-shadow: none; }
+    button.rd-row:focus-visible, a.rd-row:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    button.rd-row:disabled { background: var(--card); opacity: 0.6; cursor: default; transform: none; }
     .rd-mark {
       flex: none; width: 34px; height: 34px; border-radius: 999px; display: grid; place-items: center;
       font-weight: 800; font-size: 1rem; background: var(--tint); color: var(--muted);
     }
-    .rd-row[data-state="ready"] .rd-mark { background: var(--tint-ok); color: var(--link); }
+    /* Ticks in Hawkeye gold with #14201a on them — the fixed pair that reads
+       the same in both themes (choose-unit.html's chips use it too). */
+    .rd-row[data-state="ready"] .rd-mark { background: var(--gold); color: #14201a; }
     .rd-row[data-state="todo"] .rd-mark { background: var(--tint-warn); color: var(--ink); }
     .rd-row[data-state="blocked"] .rd-mark { background: var(--tint-danger); color: var(--danger); }
     .rd-text { flex: 1; min-width: 0; }
     .rd-text strong { display: block; font-size: 1rem; }
     .rd-note { display: block; color: var(--muted); font-size: 0.86rem; margin-top: 2px; overflow-wrap: anywhere; }
     .rd-row[data-state="blocked"] .rd-note { color: var(--ink); }
-    .rd-act {
-      flex: none; width: auto; margin: 0; padding: 9px 16px; font-size: 0.92rem; border-radius: 999px;
-      box-shadow: none; background: var(--green-dark); color: #fff; font-weight: 700; text-decoration: none;
-      display: inline-block; border: 2px solid transparent; cursor: pointer; font-family: inherit;
+    .rd-verb { flex: none; font-size: 0.9rem; font-weight: 700; color: var(--ink); }
+    .rd-chev { flex: none; font-size: 1.4rem; line-height: 1; color: var(--muted); }
+    /* The summary: the gold-edged card, as the practice-day and group cards
+       wear it in the app. */
+    .rd-sum[hidden] { display: none; }
+    .rd-sum {
+      display: flex; align-items: center; gap: 12px; margin: 0 0 14px; padding: 14px 16px;
+      background: var(--card); border: 1px solid var(--line); border-left: 4px solid var(--gold);
+      border-radius: 14px; color: var(--ink);
     }
-    .rd-act:disabled { background: #9db8a7; cursor: default; }
-    .rd-done {
-      margin: 0 0 12px; padding: 12px 14px; border-radius: 12px; background: var(--tint-ok);
-      color: var(--ink); font-weight: 700;
-    }
+    .rd-sum .rd-mark { width: 40px; height: 40px; font-size: 1.1rem; }
+    .rd-sum[data-done] .rd-mark { background: var(--gold); color: #14201a; }
+    .rd-sum strong { display: block; font-size: 1rem; }
+    .rd-sum span.rd-note { font-size: 0.88rem; }
   </style>
   <!-- No authgate.js: signed out is one of the rows this page reports, so it has
        to open for everyone, in the browser and in the app shell. -->
@@ -74,10 +91,12 @@
 
   <main class="wrap rd-main" id="main">
     <h1 data-i18n="ready.title">Ready for election day</h1>
-    <p class="lede" data-i18n="ready.lede">Check these before polling day.</p>
     <!-- Painted by the script below and repainted on every language change, so
          nothing in here carries data-i18n. -->
-    <p class="rd-done" id="rd-done" role="status" hidden></p>
+    <section class="rd-sum" id="rd-sum" role="status" hidden>
+      <span class="rd-mark" id="rd-sum-mark" aria-hidden="true"></span>
+      <span class="rd-text"><strong id="rd-sum-h"></strong><span class="rd-note" id="rd-sum-n"></span></span>
+    </section>
     <ul class="rd-list" id="rd-list"></ul>
   </main>
 
@@ -91,19 +110,27 @@
   /**
    * READY FOR ELECTION DAY — the web and Hawkeye Lite twin of native's
    * app/ready.tsx. One row per thing that has to be in place before polling
-   * day, each with its state and ONE action.
+   * day.
    *
-   * NO POP-UP OF OUR OWN BEFORE A PERMISSION PROMPT (owner rule). The Allow
-   * button asks the browser / phone directly, and its own prompt is the only
-   * dialog the reader sees.
+   * THE ROW IS THE BUTTON (owner, 2026-09-30), doing the one thing its state
+   * calls for:
+   *   Signed in      signed out → sign-in; signed in → information, no button.
+   *   Polling unit   choose-unit.html, which comes straight back here after a
+   *                  save (its leave() knows ready.html) and the row re-checks.
+   *   Permissions    not yet asked → the browser's / phone's own prompt;
+   *                  refused → where the switch is, in our dialog (a page
+   *                  cannot open the browser's settings, and Lite cannot open
+   *                  the app's until a store build carries a plugin for it);
+   *                  already allowed → our dialog saying so.
+   *
+   * NO POP-UP OF OUR OWN BEFORE A PERMISSION PROMPT (owner rule). A tap that
+   * asks goes straight to the system prompt; our dialog (dialog.js) appears
+   * only where no prompt can follow.
    *
    * NO FALSE TICK. A browser that cannot report a permission (no Permissions
-   * API, or one that rejects the name) leaves that row un-ticked with its Allow
-   * button — a tick appears only once the state is known to be granted, or the
-   * reader has just granted it on this page.
-   *
-   * Blocked has no button on the web: a page cannot open the browser's or the
-   * phone's settings, so the row says where the switch is instead.
+   * API, or one that rejects the name) leaves that row un-ticked and asking —
+   * a tick appears only once the state is known to be granted, or the reader
+   * has just granted it on this page.
    *
    * Re-checked whenever the page comes back: pageshow (back from the unit
    * chooser or a settings screen), visibilitychange, and native.js's
@@ -153,10 +180,19 @@
       : ['ready.blocked-browser', 'Blocked — allow it in your browser’s settings for this site.'];
     const ALLOW = ['ready.allow', 'Allow'];
     const NO_CAMERA = ['ready.no-camera', 'No camera found on this device.'];
+    /* A tap on a refused row repeats where the switch is; a tap on an allowed
+       one says so. Both in our dialog, titled with the row. */
+    const REFUSED = { say: BLOCKED };
+    const ALLOWED = {
+      camera: { say: ['ready.camera-allowed', 'Camera is already allowed.'] },
+      location: { say: ['ready.location-allowed', 'Location is already allowed.'] },
+      notify: { say: ['ready.notifications-allowed', 'Notifications are already allowed.'] },
+    };
 
     // --- the rows -------------------------------------------------------------
     // Each check resolves to { state, note, act } — state 'ready' | 'todo' |
-    // 'blocked' | 'unknown', act null or { label, href } / { label, run }.
+    // 'blocked' | 'unknown', act null (information only) or one of
+    // { label, href } / { label, run } / { say } — label optional.
     let me = null;         // /api/observers/me, when signed in
     let meFailed = false;
 
@@ -172,20 +208,18 @@
       } catch (e) { meFailed = true; return true; }
     }
 
+    const SIGN_IN = { label: ['index.sign-in', 'Sign in'], href: 'observe.html?intent=signin&next=' + encodeURIComponent('ready.html') };
     async function rowSignin() {
       const ok = await signedIn();
-      return ok ? { state: 'ready' } : {
-        state: 'todo',
-        act: { label: ['index.sign-in', 'Sign in'], href: 'observe.html?intent=signin&next=' + encodeURIComponent('ready.html') },
-      };
+      return ok ? { state: 'ready' } : { state: 'todo', act: SIGN_IN };
     }
 
     function rowUnit(isIn) {
-      if (!isIn) return { state: 'todo', note: ['ready.sign-in-first', 'Sign in first.'] };
+      if (!isIn) return { state: 'todo', note: ['ready.sign-in-first', 'Sign in first.'], act: SIGN_IN };
       const choose = { label: ['ready.choose-unit', 'Choose unit'], href: 'choose-unit.html' };
       if (meFailed || !me) return { state: 'unknown', note: ['ready.could-not-check', 'Could not check just now.'], act: choose };
       const u = me.unit;
-      if (u && u.pu_code) return { state: 'ready', note: u.name || u.pu_code };
+      if (u && u.pu_code) return { state: 'ready', note: u.name || u.pu_code, act: choose };
       return { state: 'todo', act: choose };
     }
 
@@ -194,15 +228,15 @@
       if (C && C.checkPermissions) {
         let s = null;
         try { s = (await C.checkPermissions()).camera; } catch (e) { s = null; }
-        if (s === 'granted' || s === 'limited') return { state: 'ready' };
-        if (s === 'denied') return { state: 'blocked', note: BLOCKED };
+        if (s === 'granted' || s === 'limited') return { state: 'ready', act: ALLOWED.camera };
+        if (s === 'denied') return { state: 'blocked', note: BLOCKED, act: REFUSED };
         return { state: s ? 'todo' : 'unknown', act: { label: ALLOW, run: askCameraLite } };
       }
       if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return { state: 'blocked', note: NO_CAMERA };
       if (blockedHere.camera === 'none') return { state: 'blocked', note: NO_CAMERA };
       const s = await query('camera');
-      if (s === 'granted' || grantedHere.camera) return { state: 'ready' };
-      if (s === 'denied' || blockedHere.camera) return { state: 'blocked', note: BLOCKED };
+      if (s === 'granted' || grantedHere.camera) return { state: 'ready', act: ALLOWED.camera };
+      if (s === 'denied' || blockedHere.camera) return { state: 'blocked', note: BLOCKED, act: REFUSED };
       return { state: s ? 'todo' : 'unknown', act: { label: ALLOW, run: askCamera } };
     }
     async function askCameraLite() {
@@ -225,16 +259,16 @@
       if (G && G.checkPermissions) {
         let p = null;
         try { p = await G.checkPermissions(); } catch (e) { p = null; }
-        if (p && p.location === 'granted') return { state: 'ready' };
+        if (p && p.location === 'granted') return { state: 'ready', act: ALLOWED.location };
         // Android can allow approximate only; filing needs a precise fix.
         if (p && p.coarseLocation === 'granted') return { state: 'todo', note: ['ready.approximate', 'Only approximate location is allowed. Turn on Precise location.'], act: { label: ALLOW, run: askLocationLite } };
-        if (p && p.location === 'denied') return { state: 'blocked', note: BLOCKED };
+        if (p && p.location === 'denied') return { state: 'blocked', note: BLOCKED, act: REFUSED };
         return { state: p ? 'todo' : 'unknown', act: { label: ALLOW, run: askLocationLite } };
       }
       if (!navigator.geolocation) return { state: 'blocked', note: ['ready.no-location', 'This browser cannot share your location.'] };
       const s = await query('geolocation');
-      if (s === 'granted' || grantedHere.location) return { state: 'ready' };
-      if (s === 'denied' || blockedHere.location) return { state: 'blocked', note: BLOCKED };
+      if (s === 'granted' || grantedHere.location) return { state: 'ready', act: ALLOWED.location };
+      if (s === 'denied' || blockedHere.location) return { state: 'blocked', note: BLOCKED, act: REFUSED };
       return { state: s ? 'todo' : 'unknown', act: { label: ALLOW, run: askLocation } };
     }
     async function askLocationLite() {
@@ -256,15 +290,15 @@
         if (!Push || !Push.checkPermissions) return null;       // this build has no push: no row
         let s = null;
         try { s = (await Push.checkPermissions()).receive; } catch (e) { s = null; }
-        if (s === 'granted') return { state: 'ready' };
-        if (s === 'denied') return { state: 'blocked', note: BLOCKED };
+        if (s === 'granted') return { state: 'ready', act: ALLOWED.notify };
+        if (s === 'denied') return { state: 'blocked', note: BLOCKED, act: REFUSED };
         return { state: s ? 'todo' : 'unknown', act: { label: ALLOW, run: askNotifyLite } };
       }
       // No Notification API (iPhone Safari outside an installed app): nothing to ask.
       if (!('Notification' in window)) return null;
       const s = Notification.permission;
-      if (s === 'granted') return { state: 'ready' };
-      if (s === 'denied') return { state: 'blocked', note: BLOCKED };
+      if (s === 'granted') return { state: 'ready', act: ALLOWED.notify };
+      if (s === 'denied') return { state: 'blocked', note: BLOCKED, act: REFUSED };
       return { state: 'todo', act: { label: ALLOW, run: askNotify } };
     }
     async function askNotifyLite() {
@@ -303,28 +337,49 @@
       const shown = rows.filter(([, r]) => r);
       $('rd-list').innerHTML = shown.map(([id, r], i) => {
         const note = L(r.note || STATE[r.state]);
-        const act = !r.act ? ''
-          : r.act.href
-            ? `<a class="rd-act" href="${esc(r.act.href)}">${esc(L(r.act.label))}</a>`
-            : `<button type="button" class="rd-act" data-i="${i}"${busy === id ? ' disabled' : ''}>${esc(L(r.act.label))}</button>`;
-        return `<li class="rd-row" data-row="${id}" data-state="${r.state}">`
-          + `<span class="rd-mark" aria-hidden="true">${MARK[r.state]}</span>`
+        const inner = `<span class="rd-mark" aria-hidden="true">${MARK[r.state]}</span>`
           + `<span class="rd-text"><strong>${esc(T(TITLES[id][0], TITLES[id][1]))}</strong>`
           + (note ? `<span class="rd-note">${esc(note)}</span>` : '')
-          + `</span>${act}</li>`;
+          + '</span>';
+        const attrs = `data-row="${id}" data-state="${r.state}"`;
+        if (!r.act) return `<li><div class="rd-row" ${attrs}>${inner}</div></li>`;
+        // The verb shows only while there is something to do; an allowed row
+        // keeps its chevron and says so when tapped.
+        const verb = r.act.label && r.state !== 'ready' ? `<span class="rd-verb">${esc(L(r.act.label))}</span>` : '';
+        const tail = `${verb}<span class="rd-chev" aria-hidden="true">›</span>`;
+        return r.act.href
+          ? `<li><a class="rd-row" ${attrs} href="${esc(r.act.href)}">${inner}${tail}</a></li>`
+          : `<li><button type="button" class="rd-row" ${attrs} data-i="${i}"${busy ? ' disabled' : ''}${busy === id ? ' aria-busy="true"' : ''}>${inner}${tail}</button></li>`;
       }).join('');
-      const done = shown.length > 0 && shown.every(([, r]) => r.state === 'ready');
-      $('rd-done').hidden = !done;
-      $('rd-done').textContent = done ? T('ready.all-set', 'You are ready for election day.') : '';
+      paintSummary(shown);
       $('rd-list').querySelectorAll('[data-i]').forEach((b) => {
         b.addEventListener('click', async () => {
           const [id, r] = shown[Number(b.dataset.i)];
-          if (!r || !r.act || !r.act.run || busy) return;
+          if (!r || !r.act || busy) return;
+          if (r.act.say) {
+            if (window.hkAlert) await window.hkAlert(L(r.act.say), { title: T(TITLES[id][0], TITLES[id][1]) });
+            return;
+          }
+          if (!r.act.run) return;
           busy = id;
           b.disabled = true;
           try { await r.act.run(); } finally { busy = null; await check(); }
         });
       });
+    }
+
+    /* The gold-edged summary: all set, or what to do and how far along. The
+       list glyph is native's Feather "list". */
+    const LIST_ICON = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>';
+    function paintSummary(shown) {
+      const n = shown.filter(([, r]) => r.state === 'ready').length;
+      const done = shown.length > 0 && n === shown.length;
+      const box = $('rd-sum');
+      box.hidden = shown.length === 0;
+      box.toggleAttribute('data-done', done);
+      $('rd-sum-mark').innerHTML = done ? '✓' : LIST_ICON;
+      $('rd-sum-h').textContent = done ? T('ready.all-set', 'You are ready for election day.') : T('ready.lede', 'Check these before polling day.');
+      $('rd-sum-n').textContent = T('ready.n-of-m-ready', '{v0} of {v1} ready').replace('{v0}', n).replace('{v1}', shown.length);
     }
 
     let seq = 0;

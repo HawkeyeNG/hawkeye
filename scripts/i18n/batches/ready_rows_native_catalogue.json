@@ -1,0 +1,7 @@
+{
+  "ready.camera-allowed": "Camera is already allowed.",
+  "ready.location-allowed": "Location is already allowed.",
+  "ready.n-of-m-ready": "{v0} of {v1} ready",
+  "ready.notifications-allowed": "Notifications are already allowed.",
+  "n.app.ready.photos-allowed": "Photo library is already allowed."
+}

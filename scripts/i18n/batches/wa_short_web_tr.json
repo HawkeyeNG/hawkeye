@@ -1,0 +1,32 @@
+{
+  "auth.wa-body-3": {
+    "ha": "Danna Aika a WhatsApp — wannan shafin zai ci gaba da kansa.",
+    "ig": "Pịa Ziga na WhatsApp — ihuenyo a ga-aga n'ihu n'onwe ya.",
+    "yo": "Tẹ Firánṣẹ́ nínú WhatsApp — ojú-ìwé yìí yóò tẹ̀síwájú fúnra rẹ̀."
+  },
+  "auth.wa-title": {
+    "ha": "Aiko mana wannan lambar ta WhatsApp",
+    "ig": "Zitere anyị koodu a na WhatsApp",
+    "yo": "Fi kóòdù yìí ránṣẹ́ sí wa lórí WhatsApp"
+  },
+  "open.back-app": {
+    "ha": "Buɗe manhajar Hawkeye",
+    "ig": "Mepee ngwa Hawkeye",
+    "yo": "Ṣí ohun èlò Hawkeye"
+  },
+  "open.back-body": {
+    "ha": "Koma shafin Hawkeye inda ka fara — zai ci gaba da kansa.",
+    "ig": "Laghachi na ihuenyo Hawkeye ebe ị malitere — ọ ga-aga n'ihu n'onwe ya.",
+    "yo": "Padà sí ojú-ìwé Hawkeye tí o ti bẹ̀rẹ̀ — yóò tẹ̀síwájú fúnra rẹ̀."
+  },
+  "open.back-title": {
+    "ha": "Koma Hawkeye",
+    "ig": "Laghachi na Hawkeye",
+    "yo": "Padà sí Hawkeye"
+  },
+  "open.back-website": {
+    "ha": "Ci gaba a gidan yanar gizo",
+    "ig": "Gaa n'ihu na webụsaịtị",
+    "yo": "Tẹ̀síwájú lórí wẹ́bùsáìtì"
+  }
+}

@@ -27,6 +27,20 @@ so the existing `?pu=&contest=&votes=` handoff from `/report` keeps working.
 | `activity` | `/profile`           | `profile.html`    |
 | `ask`      | `/assistant`         | `index.html`      |
 | `ready`    | `/ready`             | `ready.html`      |
+| `back`     | *(no navigation)*    | "Back to Hawkeye" panel |
+
+`back` is the last line of the WhatsApp sign-in replies and the Telegram
+linking replies (backend `services/wayBack.js`): "Back to Hawkeye:
+https://hawkeye.com.ng/open?to=back". Its only job is to bring the app to the
+FRONT, so the sign-in screen that is waiting for that message finishes by
+itself. It must not navigate — a route change would unmount that screen and
+lose the pending sign-in. Native: `+native-intent.tsx` returns `null` for it
+while the app is running (Expo Router then does nothing); a cold start reaches
+`open.tsx`, which goes back if it can, else home. Lite: `native.js` ignores it.
+Browser: `open/index.html` shows a panel ("go back to the screen where you
+started", Open the Hawkeye app via `hawkeye://open?to=back` on phones, Continue
+on the website) instead of redirecting. An https link is the only kind WhatsApp
+and Telegram make tappable, which is why this is not `hawkeye://`.
 
 `ready` is the election-day readiness check. A plain link to `ready.html`
 (a notification url, a pasted link) also opens the native screen: it is in

@@ -1,5 +1,5 @@
 import { captureInviteLink } from '@/lib/pending-invite';
-import { webPageRoute } from '@/lib/web-routes';
+import { isWayBackLink, webPageRoute } from '@/lib/web-routes';
 
 /**
  * Every link that opens the app passes through here first — cold start and
@@ -18,7 +18,22 @@ import { webPageRoute } from '@/lib/web-routes';
  * not-found page. It is the form the website's sign-in round-trip uses, so it
  * is in circulation.
  */
-export function redirectSystemPath({ path }: { path: string; initial: boolean }): string {
+export function redirectSystemPath({ path, initial }: { path: string; initial: boolean }): string | null {
+  /*
+   * "BACK TO HAWKEYE" (/open?to=back — the WhatsApp and Telegram sign-in
+   * replies end with it). Opening the link has already brought the app to the
+   * front, which is all it is for: null tells Expo Router not to navigate, so
+   * the sign-in screen underneath keeps its poller and finishes by itself (its
+   * AppState listener asks at once). A COLD start has no such screen left, so
+   * the link goes on to /open, which goes back or home (app/open.tsx).
+   */
+  if (!initial) {
+    try {
+      if (isWayBackLink(path)) return null;
+    } catch {
+      /* not readable: route it as before */
+    }
+  }
   try {
     captureInviteLink(path);
   } catch {

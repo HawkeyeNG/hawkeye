@@ -2562,5 +2562,15 @@
   "race-picker.none-listed-for": "— none listed for {v0} —",
   "auth.wa-body-2": "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.",
   "auth.wa-waiting-2": "Waiting for your message — nothing to type here; this screen carries on by itself once it arrives.",
-  "race.no-list-race": "INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current."
+  "race.no-list-race": "INEC has not published the candidate list for this race yet. Candidates appear here as soon as the official list is out. The map and seat facts on this page come from the electoral register and are current.",
+  "ready.camera-allowed": "Camera is already allowed.",
+  "ready.location-allowed": "Location is already allowed.",
+  "ready.n-of-m-ready": "{v0} of {v1} ready",
+  "ready.notifications-allowed": "Notifications are already allowed.",
+  "auth.wa-body-3": "Press Send in WhatsApp — this screen continues by itself.",
+  "auth.wa-title": "Send us this code on WhatsApp",
+  "open.back-app": "Open the Hawkeye app",
+  "open.back-body": "Go back to the Hawkeye screen where you started — it carries on by itself.",
+  "open.back-title": "Back to Hawkeye",
+  "open.back-website": "Continue on the website"
 }

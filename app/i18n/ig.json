@@ -2588,5 +2588,15 @@
   "race-picker.none-listed-for": "— ọ dịghị nke edepụtara maka {v0} —",
   "auth.wa-body-2": "Pịa bọtịnụ ahụ — WhatsApp ga-emepe na ozi ahụ dị njikere. Pịa Ziga: ozi ahụ bụ nkwenye gị, ya mere ọ nweghị koodu ga-alaghachi ka ị pịnye, ihuenyo a ga-agakwa n'ihu n'onwe ya. Ọ bụ n'efu. Ziga ya site na WhatsApp dị na {phone}.",
   "auth.wa-waiting-2": "Anyị na-eche ozi gị — ọ dịghị ihe ị ga-pịnye ebe a; ihuenyo a ga-aga n'ihu n'onwe ya ozugbo ọ bịarutere.",
-  "race.no-list-race": "INEC ebipụtabeghị ndepụta ndị ndoro-ndoro maka asọmpi a. Ndị ndoro-ndoro ga-apụta ebe a ozugbo ndepụta gọọmentị wepụtara. Maapụ na ihe banyere oche dị na peeji a sitere na ndekọ ntuli aka, ha dịkwa ka ọ dị ugbu a."
+  "race.no-list-race": "INEC ebipụtabeghị ndepụta ndị ndoro-ndoro maka asọmpi a. Ndị ndoro-ndoro ga-apụta ebe a ozugbo ndepụta gọọmentị wepụtara. Maapụ na ihe banyere oche dị na peeji a sitere na ndekọ ntuli aka, ha dịkwa ka ọ dị ugbu a.",
+  "ready.camera-allowed": "Ekwerelarị Igwefoto.",
+  "ready.location-allowed": "Ekwerelarị Ebe.",
+  "ready.n-of-m-ready": "{v0} n'ime {v1} dị njikere",
+  "ready.notifications-allowed": "Ekwerelarị Ọkwa.",
+  "auth.wa-body-3": "Pịa Ziga na WhatsApp — ihuenyo a ga-aga n'ihu n'onwe ya.",
+  "auth.wa-title": "Zitere anyị koodu a na WhatsApp",
+  "open.back-app": "Mepee ngwa Hawkeye",
+  "open.back-body": "Laghachi na ihuenyo Hawkeye ebe ị malitere — ọ ga-aga n'ihu n'onwe ya.",
+  "open.back-title": "Laghachi na Hawkeye",
+  "open.back-website": "Gaa n'ihu na webụsaịtị"
 }

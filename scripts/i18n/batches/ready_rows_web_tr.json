@@ -1,0 +1,22 @@
+{
+  "ready.camera-allowed": {
+    "ha": "An riga an ba Kamara izini.",
+    "ig": "Ekwerelarị Igwefoto.",
+    "yo": "A ti gba Kámẹ́rà láàyè tẹ́lẹ̀."
+  },
+  "ready.location-allowed": {
+    "ha": "An riga an ba Wuri izini.",
+    "ig": "Ekwerelarị Ebe.",
+    "yo": "A ti gba Ibùdó láàyè tẹ́lẹ̀."
+  },
+  "ready.n-of-m-ready": {
+    "ha": "{v0} cikin {v1} a shirye",
+    "ig": "{v0} n'ime {v1} dị njikere",
+    "yo": "{v0} nínú {v1} ti ṣetán"
+  },
+  "ready.notifications-allowed": {
+    "ha": "An riga an ba Sanarwa izini.",
+    "ig": "Ekwerelarị Ọkwa.",
+    "yo": "A ti gba Ìkìlọ̀ láàyè tẹ́lẹ̀."
+  }
+}

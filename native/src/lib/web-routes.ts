@@ -97,3 +97,24 @@ export function inviteToken(text: string): string | null {
   const m = route ? /^\/join\/(.+)$/.exec(route) : null;
   return m ? m[1] : null;
 }
+
+/**
+ * "BACK TO HAWKEYE" — https://hawkeye.com.ng/open?to=back (or hawkeye://open?to=back).
+ *
+ * The WhatsApp sign-in reply and the Telegram linking reply end with this link
+ * (backend services/wayBack.js). Its whole job is to bring the app back to the
+ * FRONT: the observer is on the sign-in screen, whose poller is waiting for
+ * exactly the message they just sent. So it must not navigate at all — a route
+ * change would unmount that screen and lose the pending sign-in.
+ * app/+native-intent.tsx answers it with no navigation while the app is
+ * running; a cold start (the screen is gone anyway) lands on /open, which
+ * treats `back` as "back if possible, else home".
+ */
+export function isWayBackLink(url: string): boolean {
+  const own = ownPath(url);
+  if (own == null) return false;
+  const [pathPart, query = ''] = own.split('#')[0].split('?');
+  const file = pathPart.replace(/\/+$/, '').toLowerCase();
+  if (file !== 'open' && file !== 'open/index.html' && file !== 'open.html') return false;
+  return /(?:^|&)to=back(?:&|$)/.test(query);
+}

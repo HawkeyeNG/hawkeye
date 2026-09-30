@@ -226,6 +226,11 @@
       let u;
       try { u = new URL(url); } catch (_) { return; }
       if (!/(^|\.)hawkeye\.com\.ng$/.test(u.hostname)) return;
+      // "BACK TO HAWKEYE" (/open?to=back, the WhatsApp / Telegram sign-in
+      // reply): the link has already brought Lite to the front, which is all
+      // it is for. Navigating would throw away the sign-in page that is
+      // waiting for that very message, so nothing moves (native: +native-intent.tsx).
+      if (/^\/open(\/|\/index\.html)?$/.test(u.pathname) && u.searchParams.get('to') === 'back') return;
       const j = u.pathname.match(/^\/join\/([^/?#]+)/);
       const dest = j ? `/join.html?t=${encodeURIComponent(decodeURIComponent(j[1]))}`
         : /^\/open(\/|\/index\.html)?$/.test(u.pathname) ? `/open/index.html${u.search}` : null;

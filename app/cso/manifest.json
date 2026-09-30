@@ -6,18 +6,156 @@
     "logos": "logo is null for every entry: fetching the files from the official sites waits for the owner's go-ahead. The picker draws the badge instead. When a logo is added, store a small optimised copy as cso/<id>.png (150x150, like logos/ for parties) and record the exact source URL in cso/sources.json."
   },
   "orgs": [
-    { "id": "yiaga", "name": "Yiaga Africa", "badge": "YA", "short": "Yiaga", "match": ["Yiaga"], "site": "https://yiaga.org", "logo": null },
-    { "id": "cdd", "name": "Centre for Democracy and Development (CDD West Africa)", "badge": "CDD", "short": "CDD", "match": ["CDD", "Centre for Democracy and Development"], "site": "https://www.cddwestafrica.org", "logo": null },
-    { "id": "situation-room", "name": "Nigeria Civil Society Situation Room", "badge": "SR", "short": "Nigeria Civil Society Situation Room", "match": ["Civil Society Situation Room"], "site": "https://situationroomng.org", "logo": null },
-    { "id": "plac", "name": "Policy and Legal Advocacy Centre (PLAC)", "badge": "PLAC", "short": "PLAC", "match": ["PLAC", "Policy and Legal Advocacy Centre"], "site": "https://placng.org", "logo": null },
-    { "id": "tmg", "name": "Transition Monitoring Group (TMG)", "badge": "TMG", "short": "TMG", "match": ["TMG", "Transition Monitoring Group"], "site": null, "logo": null },
-    { "id": "kdi", "name": "Kimpact Development Initiative (KDI)", "badge": "KDI", "short": "KDI", "match": ["KDI", "Kimpact"], "site": "https://kimpact.org.ng", "logo": null },
-    { "id": "cleen", "name": "CLEEN Foundation", "badge": "CLEEN", "short": "CLEEN", "match": ["CLEEN"], "site": "https://cleen.org", "logo": null },
-    { "id": "eie", "name": "EiE Nigeria (Enough is Enough)", "badge": "EiE", "short": "EiE Nigeria", "match": ["EiE", "Enough is Enough Nigeria"], "site": "https://eie.ng", "logo": null },
-    { "id": "cta", "name": "Centre for Transparency Advocacy (CTA)", "badge": "CTA", "short": "CTA", "match": ["CTA", "Centre for Transparency Advocacy"], "site": "https://cta.org.ng", "logo": null },
-    { "id": "taf", "name": "TAF Africa (The Albino Foundation)", "badge": "TAF", "short": "TAF Africa", "match": ["TAF Africa", "Albino Foundation"], "site": "https://tafafrica.co", "logo": null },
-    { "id": "electher", "name": "ElectHER", "badge": "EH", "short": "ElectHER", "match": ["ElectHER"], "site": "https://elect-her.org", "logo": null },
-    { "id": "electoral-hub", "name": "The Electoral Hub", "badge": "HUB", "short": "Electoral Hub", "match": ["Electoral Hub"], "site": "https://electoralhub.org", "logo": null },
-    { "id": "cjid", "name": "Centre for Journalism Innovation and Development (CJID)", "badge": "CJID", "short": "CJID", "match": ["CJID", "Centre for Journalism Innovation and Development"], "site": "https://thecjid.org", "logo": null }
+    {
+      "id": "yiaga",
+      "name": "Yiaga Africa",
+      "badge": "YA",
+      "short": "Yiaga",
+      "match": [
+        "Yiaga"
+      ],
+      "site": "https://yiaga.org",
+      "logo": "cso/yiaga.png"
+    },
+    {
+      "id": "cdd",
+      "name": "Centre for Democracy and Development (CDD West Africa)",
+      "badge": "CDD",
+      "short": "CDD",
+      "match": [
+        "CDD",
+        "Centre for Democracy and Development"
+      ],
+      "site": "https://www.cddwestafrica.org",
+      "logo": "cso/cdd.png"
+    },
+    {
+      "id": "situation-room",
+      "name": "Nigeria Civil Society Situation Room",
+      "badge": "SR",
+      "short": "Nigeria Civil Society Situation Room",
+      "match": [
+        "Civil Society Situation Room"
+      ],
+      "site": "https://situationroomng.org",
+      "logo": null
+    },
+    {
+      "id": "plac",
+      "name": "Policy and Legal Advocacy Centre (PLAC)",
+      "badge": "PLAC",
+      "short": "PLAC",
+      "match": [
+        "PLAC",
+        "Policy and Legal Advocacy Centre"
+      ],
+      "site": "https://placng.org",
+      "logo": "cso/plac.png"
+    },
+    {
+      "id": "tmg",
+      "name": "Transition Monitoring Group (TMG)",
+      "badge": "TMG",
+      "short": "TMG",
+      "match": [
+        "TMG",
+        "Transition Monitoring Group"
+      ],
+      "site": null,
+      "logo": null
+    },
+    {
+      "id": "kdi",
+      "name": "Kimpact Development Initiative (KDI)",
+      "badge": "KDI",
+      "short": "KDI",
+      "match": [
+        "KDI",
+        "Kimpact"
+      ],
+      "site": "https://kimpact.org.ng",
+      "logo": null
+    },
+    {
+      "id": "cleen",
+      "name": "CLEEN Foundation",
+      "badge": "CLEEN",
+      "short": "CLEEN",
+      "match": [
+        "CLEEN"
+      ],
+      "site": "https://cleen.org",
+      "logo": "cso/cleen.png"
+    },
+    {
+      "id": "eie",
+      "name": "EiE Nigeria (Enough is Enough)",
+      "badge": "EiE",
+      "short": "EiE Nigeria",
+      "match": [
+        "EiE",
+        "Enough is Enough Nigeria"
+      ],
+      "site": "https://eie.ng",
+      "logo": "cso/eie.png"
+    },
+    {
+      "id": "cta",
+      "name": "Centre for Transparency Advocacy (CTA)",
+      "badge": "CTA",
+      "short": "CTA",
+      "match": [
+        "CTA",
+        "Centre for Transparency Advocacy"
+      ],
+      "site": "https://cta.org.ng",
+      "logo": null
+    },
+    {
+      "id": "taf",
+      "name": "TAF Africa (The Albino Foundation)",
+      "badge": "TAF",
+      "short": "TAF Africa",
+      "match": [
+        "TAF Africa",
+        "Albino Foundation"
+      ],
+      "site": "https://tafafrica.co",
+      "logo": null
+    },
+    {
+      "id": "electher",
+      "name": "ElectHER",
+      "badge": "EH",
+      "short": "ElectHER",
+      "match": [
+        "ElectHER"
+      ],
+      "site": "https://elect-her.org",
+      "logo": null
+    },
+    {
+      "id": "electoral-hub",
+      "name": "The Electoral Hub",
+      "badge": "HUB",
+      "short": "Electoral Hub",
+      "match": [
+        "Electoral Hub"
+      ],
+      "site": "https://electoralhub.org",
+      "logo": "cso/electoral-hub.png"
+    },
+    {
+      "id": "cjid",
+      "name": "Centre for Journalism Innovation and Development (CJID)",
+      "badge": "CJID",
+      "short": "CJID",
+      "match": [
+        "CJID",
+        "Centre for Journalism Innovation and Development"
+      ],
+      "site": "https://thecjid.org",
+      "logo": "cso/cjid.png"
+    }
   ]
 }

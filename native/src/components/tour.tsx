@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { AppState, InteractionManager, Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BAR_CONTENT_HEIGHT, CTA_LIFT } from '@/app/(tabs)/_layout';
@@ -43,23 +43,62 @@ export function Tour({
   const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
   const [i, setI] = useState(0);
+  /** The native window is really up (Modal onShow) — not just asked for. */
+  const [shown, setShown] = useState(false);
+  /** Bumped to re-ask after a presentation iOS silently dropped. */
+  const [attempt, setAttempt] = useState(0);
 
+  /**
+   * OPEN ONLY ONCE THE SCREEN HAS SETTLED. Home mounts while the sign-in
+   * screen — or the system passkey / WhatsApp sheet — is still animating away,
+   * and iOS refuses to present a second window during another presentation.
+   * The refusal is silent: `visible` is true, no card appears, and the ring
+   * below lit a tab with nothing explaining it (1.0.12, TestFlight, after a
+   * passkey sign-in). So wait for the app to be foreground and interactions
+   * done, then a beat more.
+   */
   useEffect(() => {
     if (!auto) return undefined;
     let live = true;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let task: { cancel: () => void } | undefined;
+    const go = () => {
+      task = InteractionManager.runAfterInteractions(() => {
+        timer = setTimeout(() => { if (live && AppState.currentState === 'active') setOpen(true); }, 900);
+      });
+    };
     // Fire-and-forget, and never rethrows: shouldShowTour swallows its own
     // errors and answers "seen" when it cannot tell.
-    void shouldShowTour().then((show) => {
-      if (live && show) setOpen(true);
-    });
+    void shouldShowTour().then((show) => { if (live && show) go(); });
     return () => {
       live = false;
+      task?.cancel();
+      if (timer) clearTimeout(timer);
     };
-  }, [auto]);
+  }, [auto, attempt]);
 
   const showing = auto ? open : !!visible;
   const step = TOUR_STEPS[i];
   const last = i === TOUR_STEPS.length - 1;
+
+  useEffect(() => { if (!showing) setShown(false); }, [showing]);
+
+  /**
+   * WATCHDOG. Asked for, never shown within 3 s = iOS dropped it. Close it and
+   * ask once more (auto mode only); a second drop gives up for this run WITHOUT
+   * marking it seen, so the next launch tries again.
+   */
+  useEffect(() => {
+    if (!showing || shown) return undefined;
+    const t = setTimeout(() => {
+      setTourSpotlight(null);
+      if (auto) {
+        setOpen(false);
+        if (attempt < 1) setAttempt(attempt + 1);
+      }
+    }, 3000);
+    return () => clearTimeout(t);
+  }, [showing, shown, auto, attempt]);
 
   /**
    * LIGHT THE TAB THIS STEP IS ABOUT.
@@ -75,9 +114,10 @@ export function Tour({
    * backdrop tap alike.
    */
   useEffect(() => {
-    setTourSpotlight(showing ? (step?.route ?? null) : null);
+    // Only once the card is really on screen — a ring with no card is the bug.
+    setTourSpotlight(showing && shown ? (step?.route ?? null) : null);
     return () => setTourSpotlight(null);
-  }, [showing, step]);
+  }, [showing, shown, step]);
 
   const finish = () => {
     setTourSpotlight(null);
@@ -92,6 +132,7 @@ export function Tour({
   return (
     <ModalCard
       visible={showing}
+      onShow={() => setShown(true)}
       // Tapping the backdrop is a deliberate exit too, and counts as skipping —
       // an app that reopened the tour on the next launch because the reader
       // dismissed it the quickest way would be arguing with them.

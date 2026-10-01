@@ -33,9 +33,12 @@ export function ModalCard({
   footer,
   closeLabel = i18nT('n.common.close'),
   bottomGap = 0,
+  onShow,
 }: {
   visible: boolean;
   onClose: () => void;
+  /** Fires once the native window is actually on screen (RN Modal onShow). */
+  onShow?: () => void;
   /** Renders a close cross beside the title. Give it when the backdrop does not dismiss. */
   onCloseIcon?: () => void;
   /**
@@ -66,7 +69,7 @@ export function ModalCard({
 }) {
   const ui = useUi();
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={onShow}>
       {/* Backdrop closes; the inner Pressable swallows the tap so the card stays. */}
       <Pressable
         onPress={dismissOnBackdrop ? onClose : undefined}

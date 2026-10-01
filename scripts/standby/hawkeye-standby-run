@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# ExecStart of hawkeye-standby.service (runs as the `hawkeye` user).
+#
+# Two env sources, never mixed:
+#   - production's env, once standby_env_sync.sh has put it at
+#     /etc/hawkeye/secrets.env: config.js reads it as backend/.env (symlink) with
+#     Node's own parser, exactly as production does. Authenticated reads are then
+#     safe to serve (the session key is the real one): STANDBY_AUTH_READS=1.
+#   - otherwise the throwaway /etc/hawkeye/local.env (generated on this host):
+#     enough to boot with production behaviour; authenticated requests get 503.
+# Either way the systemd environment (standby.env, then promoted.env) wins over
+# both, so STANDBY=1 cannot be undone by a value in production's .env.
+set -euo pipefail
+if [ -r /etc/hawkeye/secrets.env ] && grep -q '^JWT_SECRET=..' /etc/hawkeye/secrets.env; then
+  export STANDBY_AUTH_READS=1
+else
+  set -a
+  # shellcheck disable=SC1091
+  . /etc/hawkeye/local.env
+  set +a
+  export STANDBY_AUTH_READS=0
+fi
+cd /srv/hawkeye/backend
+exec /usr/local/bin/node src/server.js

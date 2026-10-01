@@ -1,0 +1,59 @@
+# Hawkeye warm standby — Caddy in front of the Node backend (scripts/standby/).
+#
+# Behind Cloudflare in ANY SSL mode:
+#   Flexible        -> Cloudflare connects on :80 (plain); no redirect here, or it would loop
+#   Full            -> :443 with the self-signed origin cert
+#   Full (strict)   -> :443 needs a Cloudflare Origin CA cert at the same path
+#                      (`sudo hawkeye-standby-mode install-origin-cert`)
+# No ACME: the domain does not point here, and Cloudflare is the public TLS end.
+# Any Host is accepted, so every proxied hostname of the zone works after a flip.
+#
+# Everything goes to Node, which serves app/ exactly as production does (same
+# routes, same CSP and security headers). If Node is down, Caddy serves app/
+# itself so the site and the installed PWA shell still load, and /api answers
+# 503 + Retry-After — what the apps already treat as "hold and retry".
+{
+	admin localhost:2019
+	auto_https off
+	default_sni hawkeye.com.ng
+	servers {
+		protocols h1 h2
+	}
+}
+
+(hawkeye) {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8430 {
+		lb_try_duration 3s
+		lb_try_interval 500ms
+	}
+	handle_errors 502 503 504 {
+		@api path /api/*
+		handle @api {
+			header Retry-After 30
+			header Cache-Control "private, no-store"
+			header Content-Type application/json
+			respond `{"error":"read_only","retryAfterS":30,"standby":true}` 503
+		}
+		handle {
+			header Strict-Transport-Security "max-age=31536000; includeSubDomains"
+			header X-Content-Type-Options nosniff
+			header Referrer-Policy strict-origin-when-cross-origin
+			header Cache-Control "no-cache"
+			root * /srv/hawkeye/app
+			try_files {path} {path}/index.html {path}.html /index.html
+			file_server {
+				status 200
+			}
+		}
+	}
+}
+
+http:// {
+	import hawkeye
+}
+
+https:// {
+	tls /etc/hawkeye/tls/origin.crt /etc/hawkeye/tls/origin.key
+	import hawkeye
+}

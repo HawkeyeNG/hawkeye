@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# hawkeye-standby-mode — the standby's state switches (root). README.md beside
+# this file has the runbook; scripts/standby_failover.sh drives most of it.
+#
+#   status                       what this box is right now
+#   health                       homepage + /api/health through Caddy (:80 and :443), Host: hawkeye.com.ng
+#   serving on|off               mark that Cloudflare points here (read-only promotion):
+#                                the hourly pull then stops swapping the DB under live users
+#   promote-full --i-have-fenced-the-primary [--accept-new-anchor-key]
+#                                become the PRIMARY: STANDBY=0, writes on, background jobs
+#                                on, outbound open, DB pull off. Only after GO54 can no longer
+#                                write (fenced) — otherwise this is split-brain.
+#   demote --db-copied-back      back to standby after fail-back (the primary has this box's DB)
+#   export-db DIR                consistent online copy of the live DB (fail-back), gz + sha256
+#   install-origin-cert          stdin: the Cloudflare Origin CA cert issued for
+#                                /etc/hawkeye/tls/origin.csr; checked against the key, Caddy reloaded
+#   ops-allow IP | ops-clear     temporary 80/443 access for one address (clear it when done)
+#   env-in secrets|pull|anchor|p8 NAME   stdin -> env/key file (standby_env_sync.sh only; prints names, never values)
+#   env-path VAR                 a *_FILE/*_PATH/*_DIR value from production's env
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "run as root (sudo)"; exit 2; }
+log() { echo "standby-mode: $*"; }
+die() { echo "standby-mode: $*" >&2; exit 1; }
+W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+
+origin_cfg() {
+  : > "$W/o.cfg"; chmod 600 "$W/o.cfg"
+  local s
+  s="$( { grep -E '^ORIGIN_AUTH_SECRET=' /etc/hawkeye/secrets.env 2>/dev/null || true; } | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//' -e 's/[[:space:]]*$//')"
+  if [ -n "$s" ]; then s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; printf 'header = "X-Origin-Auth: %s"\n' "$s" > "$W/o.cfg"; fi
+}
+h443() { local p="$1"; shift; curl -sk --max-time 10 -K "$W/o.cfg" -H 'cf-connecting-ip: 127.0.0.1' --resolve hawkeye.com.ng:443:127.0.0.1 "$@" "https://hawkeye.com.ng$p"; }
+egress_closed() {
+  for T in iptables ip6tables; do
+    $T -F HAWKEYE-EGRESS; $T -A HAWKEYE-EGRESS -o lo -j RETURN; $T -A HAWKEYE-EGRESS -j REJECT
+  done
+  netfilter-persistent save >/dev/null 2>&1
+}
+egress_open() {
+  for T in iptables ip6tables; do $T -F HAWKEYE-EGRESS; $T -A HAWKEYE-EGRESS -j RETURN; done
+  netfilter-persistent save >/dev/null 2>&1
+}
+wait_health() {  # $1 = jq expression that must hold
+  origin_cfg
+  for _ in $(seq 1 60); do
+    if h443 /api/health | jq -e "$1" >/dev/null 2>&1; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+
+cmd="${1:-status}"; shift || true
+case "$cmd" in
+  status)
+    echo "service:    $(systemctl is-active hawkeye-standby) / caddy $(systemctl is-active hawkeye-caddy)"
+    if [ -f /etc/hawkeye/promoted.env ]; then echo "mode:       PROMOTED PRIMARY (promoted.env: STANDBY=0)"
+    else echo "mode:       standby (read-only)"; fi
+    echo "serving:    $( [ -f /etc/hawkeye/SERVING ] && echo "yes, since $(cat /etc/hawkeye/SERVING)" || echo no)"
+    echo "prod env:   $( [ -s /etc/hawkeye/secrets.env ] && echo "present ($(grep -cE '^[A-Za-z_][A-Za-z0-9_]*=' /etc/hawkeye/secrets.env) keys)" || echo "absent (throwaway local.env in use)")"
+    echo "egress:     $(grep -q -- '-j REJECT' <<<"$(iptables -S HAWKEYE-EGRESS)" && echo 'loopback only' || echo OPEN)"
+    echo "pull timer: $(systemctl is-enabled hawkeye-standby-pull.timer 2>/dev/null) / next $(systemctl show hawkeye-standby-pull.timer -p NextElapseUSecRealtime --value 2>/dev/null)"
+    echo "tls cert:   $(openssl x509 -in /etc/hawkeye/tls/origin.crt -noout -issuer 2>/dev/null | sed 's/^issuer=//')"
+    /usr/local/sbin/hawkeye-standby-pull --status | sed 's/^/  /'
+    ;;
+  health)
+    origin_cfg
+    echo "== :443 /api/health"; { h443 /api/health || true; } | jq -c '{ok, env, role, host, gitSha, readOnly, standby, ledgerHead, envFile}' 2>/dev/null || echo "(no JSON answer)"
+    echo "== :443 / -> $(h443 / -o /dev/null -w '%{http_code} %{size_download}B' || true)"
+    echo "== :80  / -> $(curl -s --max-time 10 -K "$W/o.cfg" -H 'Host: hawkeye.com.ng' -o /dev/null -w '%{http_code} %{size_download}B' http://127.0.0.1/ || true)"
+    ;;
+  serving)
+    case "${1:-}" in
+      on) date -u +%FT%TZ > /etc/hawkeye/SERVING; log "marked SERVING: the hourly pull keeps but no longer installs snapshots (use hawkeye-standby-pull --install-now)";;
+      off) rm -f /etc/hawkeye/SERVING; log "SERVING cleared: hourly installs resume";;
+      *) die "serving on|off";;
+    esac
+    ;;
+  promote-full)
+    fenced=0; newkey=0
+    for a in "$@"; do case "$a" in --i-have-fenced-the-primary) fenced=1;; --accept-new-anchor-key) newkey=1;; esac; done
+    [ "$fenced" = 1 ] || die "REFUSED: promote-full only after the old primary is FENCED (cannot write any more). See README.md 'Full promotion'. Pass --i-have-fenced-the-primary."
+    grep -q '^JWT_SECRET=..' /etc/hawkeye/secrets.env 2>/dev/null || die "REFUSED: production's env is not here (/etc/hawkeye/secrets.env). Run scripts/standby_env_sync.sh first, or every session would be invalid."
+    if [ ! -s /var/lib/hawkeye/storage/anchor_key.json ] && [ "$newkey" = 0 ]; then
+      die "REFUSED: no anchor_key.json — the daily anchor would mint a NEW signing key. Bring it with standby_env_sync.sh --with-key-files, or pass --accept-new-anchor-key."
+    fi
+    [ -f /var/lib/hawkeye/storage/hawkeye.db ] || die "REFUSED: no database installed"
+    systemctl disable --now hawkeye-standby-pull.timer >/dev/null 2>&1 || true
+    printf '# Written by hawkeye-standby-mode promote-full at %s\nSTANDBY=0\n' "$(date -u +%FT%TZ)" > /etc/hawkeye/promoted.env
+    chmod 0640 /etc/hawkeye/promoted.env; chgrp hawkeye /etc/hawkeye/promoted.env
+    date -u +%FT%TZ > /etc/hawkeye/SERVING
+    egress_open
+    systemctl restart hawkeye-standby
+    wait_health '.ok == true and .standby == false and .readOnly == false' || die "promoted, but /api/health does not show a writable primary yet — check journalctl -u hawkeye-standby"
+    log "PROMOTED: this box is now the primary (writes on, background jobs on, outbound open, DB pull OFF)"
+    ;;
+  demote)
+    [ "${1:-}" = --db-copied-back ] || [ ! -f /etc/hawkeye/promoted.env ] \
+      || die "REFUSED: this box is the primary. Copy its DB back first (export-db, README 'Fail-back'), then: demote --db-copied-back"
+    rm -f /etc/hawkeye/promoted.env /etc/hawkeye/SERVING
+    egress_closed
+    systemctl enable --now hawkeye-standby-pull.timer >/dev/null 2>&1
+    systemctl restart hawkeye-standby
+    wait_health '.ok == true and (.standby | type) == "object" and .readOnly == true' || die "demoted, but /api/health does not show standby yet"
+    log "standby again: read-only, no background jobs, outbound refused, hourly pull on"
+    ;;
+  export-db)
+    out="${1:?export-db DIR}"; install -d -m 0700 "$out"
+    f="$out/hawkeye-standby-$(date -u +%Y%m%dT%H%M%SZ).db"
+    sqlite3 /var/lib/hawkeye/storage/hawkeye.db ".backup '$f'"
+    [ "$(sqlite3 "$f" 'PRAGMA integrity_check;')" = ok ] || die "integrity_check failed on the copy"
+    rm -f "$f-wal" "$f-shm"; gzip -9 "$f"; sha256sum "$f.gz" | tee "$f.gz.sha256"
+    log "exported $f.gz (head: $(gunzip -c "$f.gz" > "$W/x.db" && sqlite3 "$W/x.db" "SELECT id || ':' || substr(entry_hash,1,12) FROM submissions ORDER BY id DESC LIMIT 1;"))"
+    ;;
+  install-origin-cert)
+    cat > "$W/c.pem"
+    openssl x509 -in "$W/c.pem" -noout >/dev/null 2>&1 || die "stdin is not a PEM certificate"
+    [ "$(openssl x509 -in "$W/c.pem" -noout -pubkey | sha256sum)" = "$(openssl pkey -in /etc/hawkeye/tls/origin.key -pubout | sha256sum)" ] \
+      || die "the certificate does not match /etc/hawkeye/tls/origin.key (issue it from /etc/hawkeye/tls/origin.csr)"
+    grep -qi 'cloudflare' <<<"$(openssl x509 -in "$W/c.pem" -noout -issuer)" || log "WARNING: issuer is not Cloudflare: $(openssl x509 -in "$W/c.pem" -noout -issuer)"
+    cp /etc/hawkeye/tls/origin.crt "/etc/hawkeye/tls/origin.crt.selfsigned.$(date -u +%Y%m%d%H%M%S)"
+    install -m 0644 -o root -g caddy "$W/c.pem" /etc/hawkeye/tls/origin.crt
+    systemctl reload hawkeye-caddy
+    log "installed: $(openssl x509 -in /etc/hawkeye/tls/origin.crt -noout -subject -issuer -enddate | tr '\n' ' ')"
+    ;;
+  env-in)
+    # stdin -> an env/key file, validated, atomically installed. Prints NAMES only.
+    # Used by scripts/standby_env_sync.sh (owner-approved). Staged on tmpfs (/run).
+    kind="${1:?env-in secrets|pull|anchor|p8 NAME}"
+    S="$(mktemp -p /run hk-envin.XXXXXX)"; chmod 600 "$S"; trap 'rm -f "$S"; rm -rf "$W"' EXIT
+    cat > "$S"
+    [ -s "$S" ] || die "env-in $kind: empty input (download failed?)"
+    case "$kind" in
+      secrets)
+        grep -qiE '<html|<!doctype' "$S" && die "env-in secrets: got an HTML page, not an env file (login or path wrong)"
+        names="$(/usr/local/bin/node -e 'const u=require("node:util");const e=u.parseEnv(require("fs").readFileSync(process.argv[1],"utf8"));console.log(Object.keys(e).sort().join(" "))' "$S")" \
+          || die "env-in secrets: not parseable as a .env file"
+        for k in JWT_SECRET PHONE_SALT ORACLE_SECRET; do
+          grep -q " $k " <<<" $names " || die "env-in secrets: $k missing — refusing to install"
+        done
+        install -m 0640 -o root -g hawkeye "$S" /etc/hawkeye/secrets.env
+        log "secrets.env installed: $(wc -w <<<"$names") keys: $names"
+        ;;
+      pull)
+        for k in GO54_USERNAME GO54_SECRET DA_BASE; do grep -qE "^$k=." "$S" || die "env-in pull: $k missing"; done
+        install -m 0600 -o root -g root "$S" /etc/hawkeye/pull.env
+        log "pull.env installed (GO54_USERNAME, GO54_SECRET, DA_BASE)"
+        ;;
+      anchor)
+        jq -e 'type == "object"' "$S" >/dev/null 2>&1 || die "env-in anchor: not a JSON object"
+        install -m 0600 -o hawkeye -g hawkeye "$S" /var/lib/hawkeye/storage/anchor_key.json
+        log "anchor_key.json installed (keys: $(jq -r 'keys|join(" ")' "$S"))"
+        ;;
+      p8)
+        name="${2:?env-in p8 NAME}"; [[ "$name" =~ ^[A-Za-z0-9_.-]+\.p8$ ]] || die "env-in p8: bad name"
+        grep -q 'BEGIN PRIVATE KEY' "$S" || die "env-in p8: not a PEM private key"
+        install -d -o root -g hawkeye -m 0750 /etc/hawkeye/keys
+        install -m 0640 -o root -g hawkeye "$S" "/etc/hawkeye/keys/$name"
+        printf 'DEVICECHECK_KEY_FILE=/etc/hawkeye/keys/%s\n' "$name" > /etc/hawkeye/paths.env
+        chmod 0640 /etc/hawkeye/paths.env; chgrp hawkeye /etc/hawkeye/paths.env
+        log "DeviceCheck key installed at /etc/hawkeye/keys/$name (paths.env points at it)"
+        ;;
+      *) die "env-in secrets|pull|anchor|p8 NAME" ;;
+    esac
+    ;;
+  env-path)
+    # Print a PATH-valued variable from production's env (paths are not secrets).
+    var="${1:?env-path VAR}"; [[ "$var" =~ ^[A-Z0-9_]*(FILE|PATH|DIR)$ ]] || die "env-path: only *_FILE/*_PATH/*_DIR variables"
+    grep -E "^$var=" /etc/hawkeye/secrets.env 2>/dev/null | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//'
+    ;;
+  ops-allow)
+    ip="${1:?ops-allow IP}"; [[ "$ip" =~ ^[0-9]{1,3}(\.[0-9]{1,3}){3}(/32)?$ ]] || die "IPv4 address only"
+    iptables -C HAWKEYE-OPS -s "$ip" -j ACCEPT 2>/dev/null || iptables -A HAWKEYE-OPS -s "$ip" -j ACCEPT
+    log "80/443 open to $ip until ops-clear or reboot (not saved)"
+    ;;
+  ops-clear)
+    iptables -F HAWKEYE-OPS; log "ops allowances cleared"
+    ;;
+  *) sed -n '2,24p' "$0"; exit 2 ;;
+esac

@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# hawkeye-standby-cfips — keep the 80/443 allowance equal to Cloudflare's
+# published ranges (www.cloudflare.com/ips-v4, ips-v6). Weekly timer, root.
+# Changes nothing when the lists match; rebuilds without a gap when they do not
+# (the new chain is hooked in before the old one is removed). Refuses a list
+# that does not look like Cloudflare's (empty, non-CIDR, implausible size).
+set -uo pipefail
+log() { echo "cfips: $*"; }
+W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+
+fetch() {  # $1 = v4|v6
+  curl -fsS --max-time 30 "https://www.cloudflare.com/ips-$1" -o "$W/$1" || return 1
+  local n bad
+  n="$(grep -c . "$W/$1")"
+  if [ "$1" = v4 ]; then bad="$(grep -vcE '^[0-9]{1,3}(\.[0-9]{1,3}){3}/[0-9]{1,2}$' "$W/$1")"
+  else bad="$(grep -vcE '^[0-9a-f:]+/[0-9]{1,3}$' "$W/$1")"; fi
+  [ "$n" -ge 5 ] && [ "$n" -le 60 ] && [ "$bad" = 0 ] || { log "ips-$1 looks wrong (n=$n bad=$bad); keeping current rules"; return 1; }
+  sort -u "$W/$1" -o "$W/$1"
+}
+
+rebuild() {  # $1 = iptables|ip6tables, $2 = list file
+  local T="$1" L="$2" cur
+  cur="$($T -S HAWKEYE-WEB 2>/dev/null | awk '$1=="-A" && $3=="-s" {print $4}' | sort -u)"
+  if [ "$cur" = "$(cat "$L")" ]; then log "$T: unchanged ($(wc -l < "$L") ranges)"; return 0; fi
+  $T -N HAWKEYE-WEB2 2>/dev/null || $T -F HAWKEYE-WEB2
+  while read -r c; do $T -A HAWKEYE-WEB2 -s "$c" -j ACCEPT; done < "$L"
+  if [ "$T" = iptables ]; then $T -N HAWKEYE-OPS 2>/dev/null || true; $T -A HAWKEYE-WEB2 -j HAWKEYE-OPS; fi
+  $T -A HAWKEYE-WEB2 -j RETURN
+  $T -I INPUT 1 -p tcp -m multiport --dports 80,443 -j HAWKEYE-WEB2
+  while $T -D INPUT -p tcp -m multiport --dports 80,443 -j HAWKEYE-WEB 2>/dev/null; do :; done
+  $T -F HAWKEYE-WEB; $T -X HAWKEYE-WEB
+  $T -E HAWKEYE-WEB2 HAWKEYE-WEB
+  log "$T: rebuilt with $(wc -l < "$L") ranges"
+}
+
+changed=0
+if fetch v4; then rebuild iptables "$W/v4" && changed=1; fi
+if fetch v6; then rebuild ip6tables "$W/v6" && changed=1; fi
+[ "$changed" = 1 ] && netfilter-persistent save >/dev/null 2>&1
+exit 0

@@ -1,0 +1,216 @@
+#!/usr/bin/env bash
+# hawkeye-standby-pull — fetch, verify, keep and install production DB snapshots.
+# Run hourly by hawkeye-standby-pull.timer (root). Logs to the journal only:
+# a standby raises no alerts (journalctl -u hawkeye-standby-pull).
+#
+#   hawkeye-standby-pull                 normal run (what the timer does)
+#   hawkeye-standby-pull --install-now   also install while promoted read-only
+#   hawkeye-standby-pull --no-install    fetch + verify + keep only
+#   hawkeye-standby-pull --status        print the state, change nothing
+#
+# SOURCES, newest name wins (production writes one hawkeye-YYYY-MM-DD.db.gz a day,
+# backend/src/services/backup.js):
+#   1. GO54, through the DirectAdmin file API — only if /etc/hawkeye/pull.env holds
+#      credentials (standby_env_sync.sh puts them there after the owner approves).
+#      ONE list call and at most ONE download per run: never a retry loop against
+#      the panel (a burst once got the owner's IPs blocked for days).
+#   2. /srv/hawkeye-inbox — snapshots pushed from the laptop
+#      (scripts/standby_sync.sh --db), e.g. the Monday offsite copy.
+#
+# VERIFY before keeping: gzip -t, PRAGMA integrity_check = ok, the register is
+# there (>100k polling units), the ledger head is read. A failure goes to
+# rejected/ (retried after 3 h, in case it was caught mid-write) and is never
+# installed. KEEP newest verified copies (default 8), pruned by count, so a
+# stopped source never ages the good copies away.
+#
+# INSTALL when a verified snapshot is newer than the installed one: stop the
+# service, swap the file (no -wal/-shm left beside it), start, and prove it by
+# behaviour — /api/health answers and its ledger head equals the snapshot's.
+# Otherwise roll back to the previous file. NEVER installs over a promoted
+# primary (/etc/hawkeye/promoted.env); waits for --install-now while the
+# standby is serving traffic read-only (/etc/hawkeye/SERVING).
+set -uo pipefail
+
+SNAP=/var/lib/hawkeye-snapshots
+REJ="$SNAP/rejected"
+INBOX=/srv/hawkeye-inbox
+STORE=/var/lib/hawkeye/storage
+LIVE="$STORE/hawkeye.db"
+INSTALLED="$SNAP/INSTALLED"
+STATUS="$SNAP/status.json"
+KEEP="${KEEP:-8}"
+NAME_RE='hawkeye-[0-9]{4}-[0-9]{2}-[0-9]{2}\.db\.gz'
+MODE=run
+case "${1:-}" in
+  --install-now) MODE=install-now ;;
+  --no-install) MODE=no-install ;;
+  --status) MODE=status ;;
+  "") ;;
+  *) echo "usage: $0 [--install-now|--no-install|--status]"; exit 2 ;;
+esac
+
+log() { echo "standby-pull: $*"; }
+install -d -o root -g root -m 0700 "$SNAP" "$REJ"
+
+if [ "$MODE" = status ]; then
+  echo "installed: $(cat "$INSTALLED" 2>/dev/null || echo none)"
+  echo "kept:"; ls -1 "$SNAP" | grep -E "^$NAME_RE$" | sort | sed 's/^/  /'
+  cat "$STATUS" 2>/dev/null; echo
+  exit 0
+fi
+
+exec 9>/run/hawkeye-standby-pull.lock
+flock -n 9 || { log "another pull is running; skipping"; exit 0; }
+W="$(mktemp -d)"; trap 'rm -rf "$W"' EXIT
+RESULT="ok"; NOTE=""
+
+# A curl config on disk (0600, in the private temp dir) so no secret is ever in
+# argv or the environment of curl.
+curl_cfg_auth() {
+  local u="$1" p="$2" e
+  e="${p//\\/\\\\}"; e="${e//\"/\\\"}"
+  umask 077; printf 'user = "%s:%s"\n' "$u" "$e" > "$W/da.cfg"; umask 022
+}
+origin_hdr_cfg() {   # curl config with X-Origin-Auth if production's env armed the lock
+  : > "$W/origin.cfg"; chmod 600 "$W/origin.cfg"
+  local s
+  s="$( { grep -E '^ORIGIN_AUTH_SECRET=' /etc/hawkeye/secrets.env 2>/dev/null || true; } | tail -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//' -e 's/[[:space:]]*$//')"
+  if [ -n "$s" ]; then s="${s//\\/\\\\}"; s="${s//\"/\\\"}"; printf 'header = "X-Origin-Auth: %s"\n' "$s" > "$W/origin.cfg"; fi
+}
+health() { curl -s --max-time 5 -K "$W/origin.cfg" -H 'cf-connecting-ip: 127.0.0.1' http://127.0.0.1:8430/api/health; }
+
+# ---- verify one candidate .db.gz; prints a meta JSON on success ------------------------
+verify() {
+  local gz="$1" db="$W/verify.db" ic pus obs subs head sha
+  rm -f "$db" "$db-wal" "$db-shm"
+  gzip -t "$gz" 2>/dev/null || { echo "gzip -t failed"; return 1; }
+  gunzip -c "$gz" > "$db" || { echo "gunzip failed"; return 1; }
+  ic="$(sqlite3 "$db" 'PRAGMA integrity_check;' 2>&1 | head -3 | tr '\n' ' ' | sed 's/ $//')"
+  [ "$ic" = ok ] || { echo "integrity_check: $ic"; return 1; }
+  pus="$(sqlite3 "$db" 'SELECT COUNT(*) FROM polling_units;' 2>/dev/null || echo 0)"
+  [ "${pus:-0}" -gt 100000 ] || { echo "polling_units=$pus (register missing)"; return 1; }
+  obs="$(sqlite3 "$db" 'SELECT COUNT(*) FROM observers;' 2>/dev/null || echo -1)"
+  subs="$(sqlite3 "$db" 'SELECT COUNT(*) FROM submissions;' 2>/dev/null || echo -1)"
+  head="$(sqlite3 "$db" "SELECT id || ':' || entry_hash FROM submissions ORDER BY id DESC LIMIT 1;" 2>/dev/null || true)"
+  sha="$(sha256sum "$gz" | cut -d' ' -f1)"
+  printf '{"name":"%s","sha256":"%s","bytes":%s,"integrity":"ok","pollingUnits":%s,"observers":%s,"submissions":%s,"ledgerHead":"%s","verifiedAt":"%s"}\n' \
+    "$(basename "$gz")" "$sha" "$(stat -c %s "$gz")" "$pus" "$obs" "$subs" "$head" "$(date -u +%FT%TZ)"
+}
+
+keep_candidate() {   # $1 = path to a candidate, $2 = source label
+  local f="$1" src="$2" name meta why
+  name="$(basename "$f")"
+  if [ -f "$SNAP/$name" ]; then rm -f "$f"; return 0; fi
+  if meta="$(verify "$f")"; then
+    install -m 0600 "$f" "$SNAP/$name"
+    echo "$meta" | sed "s/}\$/,\"source\":\"$src\"}/" > "$SNAP/$name.meta.json"
+    rm -f "$f"
+    log "verified $name from $src: $meta"
+  else
+    why="$meta"
+    mv -f "$f" "$REJ/$name"; echo "$why" > "$REJ/$name.why"
+    log "REJECTED $name from $src: $why"
+    RESULT="rejected"; NOTE="$name: $why"
+  fi
+}
+
+# ---- 1. GO54 ----------------------------------------------------------------------------
+find "$REJ" -type f -mmin +180 -delete 2>/dev/null || true
+if [ -r /etc/hawkeye/pull.env ] && [ "$MODE" != status ]; then
+  GO54_USERNAME=""; GO54_SECRET=""; DA_BASE="https://da32.host-ww.net:2222"
+  # shellcheck disable=SC1091
+  . /etc/hawkeye/pull.env
+  if [ -n "$GO54_USERNAME" ] && [ -n "$GO54_SECRET" ]; then
+    curl_cfg_auth "$GO54_USERNAME" "$GO54_SECRET"
+    LIST="$(curl -sS --fail --max-time 60 -K "$W/da.cfg" "$DA_BASE/CMD_API_FILE_MANAGER?path=/hawkeye/backend/storage/backups" 2>"$W/list.err")"
+    if [ $? -ne 0 ]; then
+      log "GO54 list failed: $(head -c 200 "$W/list.err") — not retrying this hour"; RESULT="go54-unreachable"
+    else
+      NEWEST="$(printf '%s' "$LIST" | tr '&' '\n' | grep -oE "$NAME_RE" | sort -u | tail -1)"
+      if [ -z "$NEWEST" ]; then log "GO54: no snapshot listed"
+      elif [ -f "$SNAP/$NEWEST" ]; then log "GO54 newest $NEWEST already kept"
+      elif [ -f "$REJ/$NEWEST" ]; then log "GO54 newest $NEWEST was rejected <3 h ago; waiting"
+      else
+        if curl -sS --fail --max-time 600 -K "$W/da.cfg" -o "$W/$NEWEST" \
+            "$DA_BASE/CMD_FILE_MANAGER/hawkeye/backend/storage/backups/$NEWEST?action=download" 2>"$W/dl.err"; then
+          keep_candidate "$W/$NEWEST" go54
+        else
+          log "GO54 download of $NEWEST failed: $(head -c 200 "$W/dl.err")"; RESULT="go54-download-failed"
+        fi
+      fi
+    fi
+    rm -f "$W/da.cfg"
+  else
+    log "pull.env has no GO54 credentials; inbox only"
+  fi
+else
+  log "no /etc/hawkeye/pull.env (standby_env_sync.sh not run yet): inbox only"
+fi
+
+# ---- 2. inbox ----------------------------------------------------------------------------
+for f in "$INBOX"/*.db.gz; do
+  [ -e "$f" ] || continue
+  if ! grep -qxE "$NAME_RE" <<<"$(basename "$f")"; then log "inbox: ignoring $(basename "$f") (unexpected name)"; continue; fi
+  cp "$f" "$W/$(basename "$f")" && rm -f "$f"
+  keep_candidate "$W/$(basename "$f")" inbox
+done
+
+# ---- 3. prune ------------------------------------------------------------------------------
+ls -1 "$SNAP" | grep -xE "$NAME_RE" | sort | head -n "-$KEEP" | while read -r old; do
+  rm -f "$SNAP/$old" "$SNAP/$old.meta.json"; log "pruned $old (keeping newest $KEEP)"
+done
+
+# ---- 4. install --------------------------------------------------------------------------------
+NEWEST_KEPT="$(ls -1 "$SNAP" | grep -xE "$NAME_RE" | sort | tail -1)"
+CUR="$(cut -d' ' -f1 "$INSTALLED" 2>/dev/null || true)"
+do_install=0
+if [ -z "$NEWEST_KEPT" ]; then log "nothing verified to install"
+elif [ "$NEWEST_KEPT" = "$CUR" ] && [ -f "$LIVE" ]; then log "installed is current ($CUR)"
+elif [ "$MODE" = no-install ]; then log "newer snapshot $NEWEST_KEPT kept, not installed (--no-install)"
+elif [ -f /etc/hawkeye/promoted.env ]; then log "PROMOTED to primary: $NEWEST_KEPT kept, NEVER installed over a primary"
+elif [ -f /etc/hawkeye/SERVING ] && [ "$MODE" != install-now ]; then log "serving traffic read-only: $NEWEST_KEPT kept; install with --install-now"
+else do_install=1
+fi
+
+if [ "$do_install" = 1 ]; then
+  name="$NEWEST_KEPT"; meta="$(cat "$SNAP/$name.meta.json")"
+  want_head="$(printf '%s' "$meta" | jq -r '.ledgerHead')"
+  log "installing $name (was: ${CUR:-none})"
+  gunzip -c "$SNAP/$name" > "$STORE/hawkeye.db.new" && chown hawkeye:hawkeye "$STORE/hawkeye.db.new" && chmod 0640 "$STORE/hawkeye.db.new"
+  ic="$(sqlite3 "$STORE/hawkeye.db.new" 'PRAGMA quick_check;' 2>&1 | head -1)"
+  rm -f "$STORE/hawkeye.db.new-wal" "$STORE/hawkeye.db.new-shm"
+  if [ "$ic" != ok ]; then
+    log "INSTALL ABORTED: quick_check on the unpacked file said: $ic"; rm -f "$STORE/hawkeye.db.new"; RESULT="install-aborted"
+  else
+    systemctl stop hawkeye-standby.service
+    [ -f "$LIVE" ] && mv -f "$LIVE" "$STORE/hawkeye.db.prev"
+    rm -f "$LIVE-wal" "$LIVE-shm"
+    mv -f "$STORE/hawkeye.db.new" "$LIVE"
+    systemctl start hawkeye-standby.service
+    origin_hdr_cfg
+    ok=0; H=""
+    for _ in $(seq 1 60); do
+      H="$(health || true)"
+      if printf '%s' "$H" | jq -e '.ok == true' >/dev/null 2>&1; then ok=1; break; fi
+      sleep 1
+    done
+    got_head="$(printf '%s' "$H" | jq -r 'if .ledgerHead then "\(.ledgerHead.id):\(.ledgerHead.hash)" else "" end' 2>/dev/null)"
+    if [ "$ok" = 1 ] && [ "$got_head" = "$want_head" ]; then
+      echo "$name $(printf '%s' "$meta" | jq -r .sha256) $(date -u +%FT%TZ)" > "$INSTALLED"
+      log "installed $name; /api/health ok, ledger head ${want_head:-<empty chain>} matches"
+    else
+      log "INSTALL FAILED (health ok=$ok, head '${got_head}' vs '${want_head}'): rolling back"
+      systemctl stop hawkeye-standby.service
+      rm -f "$LIVE-wal" "$LIVE-shm"
+      [ -f "$STORE/hawkeye.db.prev" ] && mv -f "$STORE/hawkeye.db.prev" "$LIVE"
+      systemctl start hawkeye-standby.service
+      RESULT="install-failed-rolled-back"; NOTE="$name"
+    fi
+  fi
+fi
+
+printf '{"lastRun":"%s","result":"%s","note":"%s","installed":"%s","newestKept":"%s","kept":%s}\n' \
+  "$(date -u +%FT%TZ)" "$RESULT" "$NOTE" "$(cut -d' ' -f1 "$INSTALLED" 2>/dev/null)" "$NEWEST_KEPT" \
+  "$(ls -1 "$SNAP" | grep -cxE "$NAME_RE")" > "$STATUS"
+log "done: $RESULT"
+exit 0

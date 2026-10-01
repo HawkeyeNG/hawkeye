@@ -2717,5 +2717,6 @@
   "irev.admin.done-confirmed": "Confirmed. Its sheets will be checked on the next pass.",
   "irev.admin.done-unconfirmed": "Unconfirmed. It will not be used.",
   "irev.admin.queued": "Queued. The background worker starts it within a minute — refresh then.",
-  "irev.admin.started": "Started. Refresh in a minute to see what it found."
+  "irev.admin.started": "Started. Refresh in a minute to see what it found.",
+  "observe.check-in-at-assigned": "This checks you in at {unit}, the unit you are down for. At a different unit? Choose it in step 2 first."
 }

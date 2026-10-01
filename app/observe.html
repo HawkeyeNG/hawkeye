@@ -424,6 +424,19 @@
            (app.js updateSubmitState): with capture done, two big photo slots
            push step 2 below the fold and nothing says more work remains. The
            summary keeps the ✓ and stays tappable for review/retake. -->
+      <!-- CHECK-IN, AND ONLY FOR PEOPLE WHO HAVE A COORDINATOR.
+           Filled by app.js from /api/my/rooms, which is empty for everybody not
+           on a roster — so an ordinary citizen reporting from their own unit
+           never sees a control implying somebody is expecting them. The SERVER
+           decides; the client is told whether it applies.
+
+           ABOVE THE PHOTOS (2026-10-01): arrival comes before the sheet is on
+           the wall, and an agent who only met this card after both photos had
+           already done the part their coordinator was waiting for. It offers
+           the unit they are down for; choosing another in step 2 redraws it.
+           Outside every fold, so no fold can collapse it away unseen. -->
+      <div id="checkin-host" hidden></div>
+
       <details class="card step-card" id="photo-fold" open>
         <summary style="cursor:pointer;list-style:none">
           <h2 data-i18n-html="observe.1-capture-the-evidence" style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence</h2>
@@ -496,16 +509,6 @@
         </details>
       </details>
 
-      <!-- CHECK-IN, AND ONLY FOR PEOPLE WHO HAVE A COORDINATOR.
-           Filled by app.js from /api/my/rooms, which is empty for everybody not
-           on a roster — so an ordinary citizen reporting from their own unit
-           never sees a control implying somebody is expecting them. The SERVER
-           decides; the client is told whether it applies.
-
-           OUTSIDE the unit fold, deliberately. Step 2 collapses the moment a
-           unit is chosen, and a card inside it appeared for one frame and was
-           then folded away unseen. -->
-      <div id="checkin-host" hidden></div>
 
       <details class="card step-card" id="race-fold" data-step="3">
         <summary style="cursor:pointer;list-style:none">

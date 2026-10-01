@@ -1066,6 +1066,7 @@
   "observe.capture-ec8a": "Capture EC8A",
   "observe.capture-polling-venue": "Capture Polling Venue",
   "observe.card-saved-with-photos": "Saved to your phone with your report photos.",
+  "observe.check-in-at-assigned": "This checks you in at {unit}, the unit you are down for. At a different unit? Choose it in step 2 first.",
   "observe.close-the-sheet": "Close the sheet",
   "observe.code-sent-sms": "Code sent by SMS to <strong>{phone}</strong>.",
   "observe.code-sent-telegram": "Code sent on Telegram to <strong>{phone}</strong>.",

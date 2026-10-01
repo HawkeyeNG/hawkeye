@@ -164,6 +164,63 @@ async function unitChosen() {
   await ctx.close();
 }
 
+// ================================= on ARRIVAL: above the photos, before step 2
+/* The report flow opened and nothing else: no photo, no unit chosen. A roster
+   member with a unit they are down for is offered the check-in HERE, above the
+   camera — and checks in at that unit. */
+async function arrivalOnly() {
+  const ctx = await b.newContext({
+    viewport: { width: 420, height: 900 },
+    permissions: ['geolocation'],
+    geolocation: { latitude: UNIT.lat, longitude: UNIT.lng, accuracy: 8 },
+  });
+  await ctx.addInitScript((t) => {
+    localStorage.setItem('hawkeye_token', t);
+    localStorage.setItem('hawkeye_user', JSON.stringify({ id: 1, name: 'Test' }));
+  }, jwt);
+  const p = await ctx.newPage();
+  const errs = [];
+  p.on('pageerror', (e) => errs.push(String(e).slice(0, 180)));
+  await p.goto(`${base}/observe.html`, { waitUntil: 'networkidle' });
+  await p.waitForFunction(() => typeof window.enterReportFlow === 'function', null, { timeout: 8000 }).catch(() => {});
+  await p.evaluate(() => enterReportFlow()).catch((e) => errs.push('enter: ' + String(e).slice(0, 120)));
+  await p.waitForTimeout(700);
+  return { ctx, p, errs };
+}
+{
+  rooms = [{ id: 1, name: 'Obi 2027', kind: 'campaign', contest: 'PRES', assigned: { ...UNIT }, checkedIn: null }];
+  checkInCalls = [];
+  const { ctx, p, errs } = await arrivalOnly();
+  check('CONTROL arrival: the flow opened without errors', errs, []);
+  check('on arrival, with no unit chosen yet, the agent is offered a check-in', await p.evaluate(() =>
+    !!document.getElementById('btn-checkin') && !window.selectedPu), true);
+  check('…ABOVE the photos', await p.evaluate(() => {
+    const card = document.getElementById('checkin-host');
+    const photos = document.getElementById('photo-fold');
+    return !!(card && photos && (card.compareDocumentPosition(photos) & Node.DOCUMENT_POSITION_FOLLOWING));
+  }), true);
+  check('…naming the unit they are down for', await p.evaluate(() => document.getElementById('checkin-note')?.innerText || ''),
+    (t) => /Wonderland Estate/.test(t) && /step 2/.test(t));
+  await p.evaluate(() => document.getElementById('btn-checkin').click());
+  await p.waitForTimeout(900);
+  check('and checks them in AT that unit', checkInCalls.map((c) => c.pu_code), [UNIT.pu_code]);
+  await ctx.close();
+}
+{
+  rooms = [{ id: 1, name: 'Obi 2027', kind: 'campaign', contest: 'PRES', assigned: null, checkedIn: null }];
+  const { ctx, p } = await arrivalOnly();
+  check('CONTROL arrival: a member with no unit assigned waits for step 2 (nothing to check in at yet)',
+    await p.evaluate(() => !!document.getElementById('btn-checkin')), false);
+  await ctx.close();
+}
+{
+  rooms = [];
+  const { ctx, p } = await arrivalOnly();
+  check('CONTROL arrival: an ordinary voter is shown nothing', await p.evaluate(() =>
+    document.getElementById('checkin-host').hidden && !document.body.innerText.toLowerCase().includes('coordinator')), true);
+  await ctx.close();
+}
+
 await b.close();
 server.close();
 console.log(fail ? `\n${fail} FAILED` : '\nAll passed — a coordinator you have, or nothing at all');

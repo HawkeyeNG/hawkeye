@@ -2743,5 +2743,6 @@
   "irev.admin.done-confirmed": "A ti fìdí rẹ̀ múlẹ̀. A ó ṣàyẹ̀wò àwọn ìwé rẹ̀ ní ìyípo tó kàn.",
   "irev.admin.done-unconfirmed": "A ti yọ ìfìdímúlẹ̀ kúrò. A kò ní lò ó.",
   "irev.admin.queued": "A ti fi sí ìlà. Òṣìṣẹ́ ẹ̀yìn yóò bẹ̀rẹ̀ rẹ̀ láàrin ìṣẹ́jú kan — lẹ́yìn náà sọ ọ́ di tuntun.",
-  "irev.admin.started": "Ó ti bẹ̀rẹ̀. Sọ ọ́ di tuntun lẹ́yìn ìṣẹ́jú kan láti rí ohun tí ó rí."
+  "irev.admin.started": "Ó ti bẹ̀rẹ̀. Sọ ọ́ di tuntun lẹ́yìn ìṣẹ́jú kan láti rí ohun tí ó rí.",
+  "observe.check-in-at-assigned": "Èyí yóò forúkọ rẹ sílẹ̀ pé o ti dé {unit}, ibùdó tí a yàn fún ọ. Ṣé o wà ní ibùdó mìíràn? Yàn án ní ìgbésẹ̀ 2 kọ́kọ́."
 }

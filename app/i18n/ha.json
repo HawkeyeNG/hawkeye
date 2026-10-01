@@ -2744,5 +2744,6 @@
   "irev.admin.done-confirmed": "An tabbatar. Za a duba takardunsa a zagaye na gaba.",
   "irev.admin.done-unconfirmed": "An janye tabbatarwa. Ba za a yi amfani da shi ba.",
   "irev.admin.queued": "An saka a layi. Ma'aikacin baya zai fara shi cikin minti ɗaya — sai ka sabunta.",
-  "irev.admin.started": "An fara. Sabunta bayan minti ɗaya don ganin abin da ya samu."
+  "irev.admin.started": "An fara. Sabunta bayan minti ɗaya don ganin abin da ya samu.",
+  "observe.check-in-at-assigned": "Wannan zai yi maka rajistar isowa a {unit}, rumfar da aka sanya ka. Kana wata rumfa daban? Zaɓe ta a mataki na 2 tukuna."
 }

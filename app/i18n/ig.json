@@ -2743,5 +2743,6 @@
   "irev.admin.done-confirmed": "Akwadoro ya. A ga-elele mpempe akwụkwọ ya n'oge ọzọ.",
   "irev.admin.done-unconfirmed": "E wepụla nkwado. A gaghị eji ya.",
   "irev.admin.queued": "Etinyela ya n'ahịrị. Onye ọrụ azụ ga-amalite ya n'ime otu nkeji — mgbe ahụ mee ọhụrụ.",
-  "irev.admin.started": "Amalitela. Mee ọhụrụ n'ime otu nkeji ka ịhụ ihe ọ chọtara."
+  "irev.admin.started": "Amalitela. Mee ọhụrụ n'ime otu nkeji ka ịhụ ihe ọ chọtara.",
+  "observe.check-in-at-assigned": "Nke a na-edebanye na ị nọ na {unit}, ebe ntuli aka e kenyere gị. Ị nọ n'ebe ọzọ? Họrọ ya na nzọụkwụ 2 mbụ."
 }

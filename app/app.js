@@ -2053,6 +2053,11 @@ function enterReportFlow() {
   // reason to grant it. This is the first moment it is actually needed.
   startLocationKeeper();
   void prepareReportUI(); // parties, contests, logos, vote rows — fills in behind
+  /* CHECK IN ON ARRIVAL, before the photos: a roster member with a unit they
+     are down for gets the card at the top of the report. Never awaited, never
+     scrolled to — the camera card stays where the eye is. */
+  checkInOfferedEarly = false;
+  void renderCheckIn().then((actionable) => { checkInOfferedEarly = actionable; }).catch(() => {});
 }
 
 /**
@@ -2102,11 +2107,27 @@ async function loadMyRooms() {
  * are actually standing at, which is the whole point — it is checking them in
  * HERE, not wherever a coordinator expected.
  */
+/**
+ * WHICH UNIT the card checks them in at: the one chosen in step 2 — or, BEFORE
+ * any is chosen (the card now sits above the photos, where arrival happens),
+ * the unit a room has them down for. Null when neither is known: then the card
+ * waits for step 2, as it always did.
+ */
+function checkInUnit(rooms) {
+  if (selectedPu) return { pu_code: selectedPu.pu_code, name: selectedPu.name, chosen: true };
+  const a = (rooms || []).map((r) => r.assigned).find((x) => x && x.pu_code);
+  return a ? { pu_code: a.pu_code, name: a.name, chosen: false } : null;
+}
+/* Offered at the top of a new report already? Then choosing a unit later must
+   not drag the page back up past the photos to it. */
+let checkInOfferedEarly = false;
+
 async function renderCheckIn() {
   const host = $('checkin-host');
   if (!host) return false;
   const rooms = await loadMyRooms();
-  if (!rooms.length || !selectedPu) { host.hidden = true; host.innerHTML = ''; return false; }
+  const unit = checkInUnit(rooms);
+  if (!rooms.length || !unit) { host.hidden = true; host.innerHTML = ''; return false; }
 
   const done = rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified');
   if (done) {
@@ -2120,14 +2141,16 @@ async function renderCheckIn() {
      to another unit is ordinary — agents get moved, gates get closed — and the
      coordinator needs to see it, so the copy tells them what will be recorded
      rather than warning them off. */
-  const elsewhere = rooms.filter((r) => r.assigned && r.assigned.pu_code !== selectedPu.pu_code);
+  const elsewhere = rooms.filter((r) => r.assigned && r.assigned.pu_code !== unit.pu_code);
   host.hidden = false;
   host.innerHTML = `
     <div class="card" id="checkin-card" style="border-left:4px solid var(--accent);padding:16px 18px">
       <b style="display:block;margin-bottom:4px">${T('observe.check-in-title', 'Tell your coordinator you are here')}</b>
-      <p class="hint" style="margin:0" id="checkin-note">${elsewhere.length
-    ? T('observe.check-in-different-unit', 'You are down for {unit}. Checking in here records where you actually are.', { unit: elsewhere[0].assigned.name })
-    : T('observe.check-in-sub', 'They will see that you have arrived, before any result is filed.')}</p>
+      <p class="hint" style="margin:0" id="checkin-note">${!unit.chosen
+    ? T('observe.check-in-at-assigned', 'This checks you in at {unit}, the unit you are down for. At a different unit? Choose it in step 2 first.', { unit: String(unit.name || unit.pu_code).replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`) })
+    : elsewhere.length
+      ? T('observe.check-in-different-unit', 'You are down for {unit}. Checking in here records where you actually are.', { unit: elsewhere[0].assigned.name })
+      : T('observe.check-in-sub', 'They will see that you have arrived, before any result is filed.')}</p>
       <button type="button" id="btn-checkin" style="width:auto;margin:12px 0 0;background:var(--accent);color:var(--green-950);border-color:transparent;box-shadow:none">${T('observe.check-in', "I'm at my unit")}</button>
     </div>`;
   return true;
@@ -2147,6 +2170,8 @@ async function doFlowCheckIn(btn) {
        the whole timeout and then returns the same value anyway. A check-in
        that fails on a warm phone would be worse than none. */
     const pos = await getPosition();
+    const unit = checkInUnit(myRooms);
+    if (!unit) { btn.disabled = false; return say(T('common.something-went-wrong', 'Something went wrong. Try again.')); }
     const { status, body } = await api('/api/my/check-in', {
       method: 'POST',
       /* BOTH headers matter. Without the Bearer this is a 401; without the
@@ -2158,7 +2183,7 @@ async function doFlowCheckIn(btn) {
         'content-type': 'application/json',
       },
       body: JSON.stringify({
-        pu_code: selectedPu.pu_code,
+        pu_code: unit.pu_code,
         lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
       }),
     });
@@ -2180,9 +2205,10 @@ async function doFlowCheckIn(btn) {
       $('checkin-card').innerHTML = `<p class="hint">${T('observe.checked-in-weak', 'Recorded, but your location could not be confirmed. Your coordinator sees it as unconfirmed.')}</p>`;
     }
     /* The card has just become a receipt with nothing left to do on it, so this
-       is the moment to hand them on — the same move every other step makes. */
-    const race = $('race-fold');
-    if (race) requestAnimationFrame(() => race.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+       is the moment to hand them on — the same move every other step makes:
+       to the photos when they checked in on arrival, else to the race. */
+    const next = unit.chosen ? $('race-fold') : $('photo-fold');
+    if (next) requestAnimationFrame(() => next.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   } catch (e) {
     btn.disabled = false;
     say(e && e.code === 1
@@ -2217,8 +2243,10 @@ function selectUnit(u) {
      So the one card asking the observer to do something appeared above the
      viewport and was never seen. Now: if there is something to check into, the
      page goes to THAT, and checking in is what sends them on to step 3. */
+  /* Offered on arrival already (above the photos)? Then it is redrawn for this
+     unit where it is, and the page moves on to step 3 rather than back up. */
   renderCheckIn().then((actionable) => {
-    const target = actionable ? $('checkin-card') : $('race-fold');
+    const target = actionable && !checkInOfferedEarly ? $('checkin-card') : $('race-fold');
     if (target) requestAnimationFrame(() => target.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   });
 }

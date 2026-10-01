@@ -1,0 +1,89 @@
+name: Play promote (tested build -> production)
+
+# Ship the EXACT bundle testers ran: move an existing versionCode from a
+# testing track to production with release notes. Nothing is built or
+# uploaded here; play-upload.yml builds a NEW bundle and must not be used to
+# release a build that was already tested on a device.
+#
+# Run dry_run first: it reads every track and the listing languages, checks
+# the notes, prints the release it would create, and deletes its edit.
+#
+# send_for_review: Play refuses to stage edits on these apps, so the only way
+# to commit is to send. A plain commit sends EVERY pending change on the app
+# for review (2026-09-16 shipped held, known-bad releases that way). Tick it
+# ONLY after Play Console -> Publishing overview shows nothing else pending.
+#
+# notes_json: {"en-GB": "...", "en-US": "..."} — one entry per listing
+# language, default language required, each <= 500 characters. Passed as an
+# input so store copy does not have to live in the public tree.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app'
+        required: true
+        type: choice
+        options: [native, lite]
+      version_code:
+        description: 'The tested versionCode to promote'
+        required: true
+        type: string
+      from_track:
+        description: 'Track the tested build is on'
+        required: true
+        default: internal
+        type: choice
+        options: [internal, alpha, beta]
+      notes_json:
+        description: 'Release notes JSON {"<lang>": "<text>"}'
+        required: true
+        type: string
+      dry_run:
+        description: 'Read and check only; change nothing'
+        type: boolean
+        default: true
+      send_for_review:
+        description: 'ONLY after Publishing overview shows nothing else pending'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write        # mints the OIDC token for Workload Identity Federation
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Authenticate to Google — no key, short-lived credentials
+        id: auth
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed  # v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Promote
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          NOTES_JSON: ${{ inputs.notes_json }}
+          APP: ${{ inputs.app }}
+          VC: ${{ inputs.version_code }}
+          FROM: ${{ inputs.from_track }}
+          DRY: ${{ inputs.dry_run }}
+          SEND: ${{ inputs.send_for_review }}
+        run: |
+          set -euo pipefail
+          case "$VC" in ''|*[!0-9]*) echo "::error::version_code must be digits"; exit 1 ;; esac
+          ARGS=(--app "$APP" --version-code "$VC" --from-track "$FROM")
+          [ "$DRY" = "true" ] && ARGS+=(--dry-run)
+          [ "$SEND" = "true" ] && ARGS+=(--send-for-review)
+          node scripts/play_promote.mjs "${ARGS[@]}"

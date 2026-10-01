@@ -18,6 +18,14 @@
  *    organisation check instead, and the server's refusal for a past election
  *    comes back as a sentence, not a code.
  *
+ * 4. The party picker listed "Boot Party" twice (BP and BOOT, Accord as A and
+ *    Accord) and had no NDP (2026-10-01): it was built from the EMBLEM
+ *    manifest's keys, which carry spelled-out aliases and only the parties
+ *    someone found a logo for. Asserted: one option per party in INEC's
+ *    register (backend/src/data/parties.json, served as /api/parties), in the
+ *    register's order, no alias keys; and with /api/parties down, still no
+ *    alias and no party twice.
+ *
  * Plus a Hausa run: the new strings are translated, not English fallbacks.
  *
  *   node tests/room_setup_ui_test.mjs
@@ -48,6 +56,10 @@ const LAGOS = {
   stateWide: 'Lagos',
 };
 
+/* INEC's register as the backend serves it — the picker's source of truth. */
+const REGISTER = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/backend/src/data/parties.json', 'utf8'));
+let partiesDown = false;
+
 let posts = [];
 const server = http.createServer((req, res) => {
   const [url, qs] = req.url.split('?');
@@ -66,6 +78,7 @@ const server = http.createServer((req, res) => {
   }
   if (url === '/api/groups') return json({ managing: [], member: [] });
   if (url === '/api/contests') return json(CONTESTS);
+  if (url === '/api/parties') return partiesDown ? json({ error: 'unavailable' }, 503) : json(REGISTER);
   if (url === '/api/group-races') {
     const c = q.get('contest');
     if (c === 'PRES') return json({ kind: 'national', column: '', states: [], races: [] });
@@ -147,7 +160,9 @@ try {
   check('submitting with no organisation is stopped', await alertText(p), (t) => /organisation/i.test(t || ''));
   check('and nothing was sent', posts.length, 0);
   await p.selectOption('#mk-org', 'cdd');
-  check('a listed organisation with no logo shows its initials', (await p.textContent('#mk-org-mark .sr-org-badge') || '').trim(), 'CDD');
+  /* Every listed organisation has a logo now (cdd.png arrived after this was
+     written), so the initials badge has no org to show; the emblem is checked. */
+  check('a listed organisation shows its emblem', await p.getAttribute('#mk-org-mark img', 'src'), 'cso/cdd.png');
   check('the Other name box stays hidden', await p.isVisible('#mk-org-other'), false);
   await p.selectOption('#mk-org', '__other');
   check('Other opens a box for the name', await p.isVisible('#mk-org-other'), true);
@@ -180,6 +195,32 @@ try {
   check('the server\'s "election_over" reads as a sentence', refused, (t) => /over/i.test(t || '') && !/election_over/.test(t || ''));
   check('no page errors', errs, []);
   await p.close();
+
+  /* --- 4. the party picker is INEC's register, each party once ------------ */
+  console.log('\n=== 4. one option per registered party ===');
+  const reg = REGISTER.map((x) => x.code);
+  const r1 = await open('en');
+  const picked = (await options(r1.p, 'mk-party')).slice(1);
+  const vals = picked.map((o) => o.v);
+  check('CONTROL: the register itself has no party twice', new Set(reg).size, reg.length);
+  check('the options ARE the register, in its order', vals, reg);
+  check('no party is offered twice', new Set(vals).size, vals.length);
+  check('no emblem alias is offered (BOOT, Accord)', vals.filter((v) => /^(BOOT|ACCORD)$/i.test(v)), []);
+  check('every registered party is offered, NDP included', reg.filter((c) => !vals.includes(c)), []);
+  check('each option names its party, not just a code',
+    picked.every((o, i) => o.t.includes(REGISTER[i].code) && o.t.includes(REGISTER[i].name)), true);
+  check('no page errors (register)', r1.errs, []);
+  await r1.p.close();
+  partiesDown = true;
+  const r2 = await open('en');
+  const down = (await options(r2.p, 'mk-party')).slice(1).map((o) => o.v);
+  partiesDown = false;
+  check('/api/parties down: still something to pick', down.length > 0, true);
+  check('/api/parties down: no emblem alias', down.filter((v) => /^(BOOT|ACCORD)$/i.test(v)), []);
+  check('/api/parties down: no party twice', new Set(down).size, down.length);
+  check('/api/parties down: only registered codes', down.filter((v) => !reg.includes(v)), []);
+  check('no page errors (register down)', r2.errs, []);
+  await r2.p.close();
 
   /* --- Hausa --------------------------------------------------------------- */
   console.log('\n=== Hausa ===');

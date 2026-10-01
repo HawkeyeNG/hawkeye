@@ -501,9 +501,11 @@ let parties = [];
  * observer reached the counts step with no count to enter, and "Verify counts"
  * then refused because it could find no inputs, which read as a broken button.
  *
- * INEC's register of parties changes between cycles, not between deploys, so a
- * bundled copy is a safe floor. The live list still wins whenever it arrives,
- * and a good response is cached so the next run starts from real data.
+ * INEC's register of parties changes rarely (it last grew in Feb–Mar 2026:
+ * DLA, NDC, NDP), so a bundled copy is a safe floor. It must equal
+ * backend/src/data/parties.json — tests/party_register_test.mjs holds them
+ * together. The live list still wins whenever it arrives, and a good response
+ * is cached so the next run starts from real data.
  */
 const FALLBACK_PARTIES = [
   ['A', 'Accord'], ['AA', 'Action Alliance'], ['AAC', 'African Action Congress'],
@@ -511,6 +513,7 @@ const FALLBACK_PARTIES = [
   ['APC', 'All Progressives Congress'], ['APGA', 'All Progressives Grand Alliance'],
   ['APM', 'Allied Peoples Movement'], ['APP', 'Action Peoples Party'], ['BP', 'Boot Party'],
   ['DLA', 'Democratic Leadership Alliance'], ['LP', 'Labour Party'],
+  ['NDC', 'Nigeria Democratic Congress'], ['NDP', 'National Democratic Party'],
   ['NNPP', 'New Nigeria Peoples Party'], ['NRM', 'National Rescue Movement'],
   ['PDP', 'Peoples Democratic Party'], ['PRP', 'Peoples Redemption Party'],
   ['SDP', 'Social Democratic Party'], ['YP', 'Youth Party'],

@@ -1079,11 +1079,32 @@ async function setupForm() {
   const logos = await (window.fetchData ? window.fetchData('logos/manifest.json') : fetch('logos/manifest.json'))
     .then((r) => r.json()).catch(() => ({}));
   if (gone()) return;
+  /* THE CHOICES ARE INEC'S REGISTER (/api/parties), NOT THE EMBLEM MANIFEST.
+     The picker used to offer the manifest's keys, and that file is a logo
+     lookup: it carries spelled-out aliases the ballot boards meet ("Accord"
+     beside "A", "BOOT" beside "BP" — Boot Party listed twice) and only the
+     parties someone found a logo for (NDP, registered March 2026, was
+     missing). boot() has usually fetched the register already; a repaint can
+     run first, so fetch it here if not. Failing that, the last good copy
+     another page cached, and failing THAT the manifest's own codes — a key
+     whose emblem file is named after it — so an alias is never offered. */
+  let reg = PARTIES.length ? PARTIES
+    : await api('/api/parties').then((r) => (Array.isArray(r.body) ? r.body : [])).catch(() => []);
+  if (gone()) return;
+  if (!reg.length) {
+    try { const c = JSON.parse(localStorage.getItem('hawkeye_parties') || 'null'); if (Array.isArray(c)) reg = c; } catch { /* private mode */ }
+  }
+  if (!reg.length) {
+    reg = Object.keys(logos).filter((k) => String(logos[k]).replace(/^.*\/|\.[a-z]+$/gi, '') === k).sort().map((code) => ({ code }));
+  }
   /* A CAMPAIGN NAMES ITS PARTY — required (every Nigerian candidate stands for
      one), so "Not saying" is gone: it was how a campaign room skipped Room
-     requests altogether. The party is what Hawkeye checks. */
+     requests altogether. The party is what Hawkeye checks. Names stay as INEC
+     registers them, in every language. */
+  const seen = new Set();
   $('mk-party').innerHTML = `<option value="">${T('situation-room.choose-a-party', 'Choose a party…')}</option>`
-    + Object.keys(logos).sort().map((k) => `<option value="${esc(k)}">${esc(k)}</option>`).join('');
+    + reg.filter((x) => x && x.code && !seen.has(x.code) && seen.add(x.code))
+      .map((x) => `<option value="${esc(x.code)}">${esc(x.name ? `${x.code} — ${x.name}` : x.code)}</option>`).join('');
   const paintMark = () => {
     const p = $('mk-party').value;
     $('mk-party-mark').innerHTML = p && logos[p] ? `<img src="${esc(logos[p])}" alt="" />` : '';

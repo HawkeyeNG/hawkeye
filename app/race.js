@@ -21,7 +21,7 @@
     ADP: '#455a64', APGA: '#f9a825', APM: '#283593', APP: '#ef6c00', BP: '#37474f',
     NNPP: '#1565c0', PRP: '#827717', YPP: '#c2185b', ZLP: '#5e35b1', PDP: '#c62828',
     LP: '#8bc34a', SDP: '#5e35b1', NRM: '#827717', NDC: '#2e3192', YP: '#00695c',
-    DLA: '#6a1b9a', Accord: '#00838f', BOOT: '#37474f',
+    DLA: '#6a1b9a', NDP: '#880e4f', Accord: '#00838f', BOOT: '#37474f',
   };
   const color = (p) => PC[p] || '#9aa7a0';
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));

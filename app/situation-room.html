@@ -14,10 +14,12 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <!-- THE ROOM'S OWN MANIFEST. The site's manifest starts at /observe.html, so
-       "Install" from this page would have installed the observer app. Scope
-       stays "/" because a room lives at /room/<slug> as well as here, and a
-       manifest takes one scope, not two. -->
-  <link rel="manifest" href="room.webmanifest?v=3" />
+       "Install" from this page would have installed the observer app. Its
+       scope is THIS PAGE ONLY (/situation-room.html): with scope "/" the room
+       and the admin console each covered the other's pages, and once one was
+       installed Chrome stopped offering Install for the other. /room/<slug>
+       is outside that scope, so it forwards here (script after authgate). -->
+  <link rel="manifest" href="room.webmanifest?v=4" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=194" />
   <script src="native.js?v=123"></script>
@@ -25,6 +27,39 @@
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=4"></script>
+  <script>/*hk-room-forward*/
+  /* THE INSTALLED ROOM'S SCOPE IS /situation-room.html (room.webmanifest), so
+     two addresses forward into it. After authgate.js: signed out, authgate's
+     sign-in may win the race, and it already hands back the in-scope form
+     (next=situation-room.html?room=<slug>, or ?join=… which forwards then).
+       /room/<slug>[?…][#…]          → /situation-room.html?…&room=<slug>#…
+         (the shared, pasted address — it keeps working everywhere)
+       /situation-room.html?join=%s  → /join.html?t=<token>
+         (the web+hawkeye: protocol handler; %s is the whole web+hawkeye:<token>
+          URL, so the scheme is stripped and the token must look like one —
+          anything else is dropped, never forwarded) */
+  (function () {
+    try {
+      var q = new URLSearchParams(location.search);
+      var room = location.pathname.match(/^\/room\/([^/]+)\/?$/);
+      if (room) {
+        var slug = '';
+        try { slug = decodeURIComponent(room[1]); } catch (e) { /* malformed */ }
+        if (/^[a-z0-9-]{1,80}$/i.test(slug)) q.set('room', slug); else q.delete('room');
+        var s = q.toString();
+        location.replace('/situation-room.html' + (s ? '?' + s : '') + location.hash);
+        return;
+      }
+      if (!q.has('join')) return;
+      var t = String(q.get('join') || '').replace(/^web[+ ]hawkeye:(\/\/)?/i, '');
+      try { t = decodeURIComponent(t); } catch (e) { t = ''; }
+      if (/^[A-Za-z0-9_-]{8,64}$/.test(t)) { location.replace('/join.html?t=' + encodeURIComponent(t)); return; }
+      q.delete('join');
+      var rest = q.toString();
+      history.replaceState(null, '', location.pathname + (rest ? '?' + rest : '') + location.hash);
+    } catch (e) { /* an old browser keeps the address it has */ }
+  })();
+  </script>
   <script src="ward-map.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
@@ -3868,8 +3903,10 @@ async function showInvite(sheet) {
 function pickGroup(id) {
   const g = (S.groups || []).find((x) => x.id === id);
   if (g && g.slug) {
-    location.assign('/room/' + encodeURIComponent(g.slug)
-      + (S.tab && S.tab !== 'overview' ? '?tab=' + encodeURIComponent(S.tab) : ''));
+    /* The in-scope address, not /room/<slug>: this navigates INSIDE the
+       installed window, whose scope is /situation-room.html. */
+    location.assign('/situation-room.html?room=' + encodeURIComponent(g.slug)
+      + (S.tab && S.tab !== 'overview' ? '&tab=' + encodeURIComponent(S.tab) : ''));
     return;
   }
   /* A room with no slug cannot be addressed, so it still switches in place —
@@ -3896,10 +3933,10 @@ let LOGOS = {};
    votes, which is what it did before. */
 let PARTIES = [];
 
-/* The slug in the address bar, if we arrived at /room/<slug>. */
-/* ?room= is how sign-in hands the room back: the /room/<slug> path cannot
-   survive app.js's `next` guard, so authgate re-expresses it this way and
-   syncUrl() below restores the pretty address once the room loads. */
+/* The room in the address: ?room=<slug>. /room/<slug> forwards to that form in
+   the <head> (the installed window's scope is /situation-room.html), and
+   sign-in hands the room back the same way. The path is still read, for the
+   moment between that forward starting and the page going. */
 const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1]
   || new URLSearchParams(location.search).get('room') || '';
 
@@ -3908,12 +3945,14 @@ const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1]
  *
  * replaceState, not a navigation: switching rooms should leave a shareable URL
  * behind without adding a history entry per switch, so Back still leaves the
- * console rather than walking through every room visited.
+ * console rather than walking through every room visited. The in-scope form:
+ * /room/<slug> would put the installed window outside its own scope. Copy link
+ * still hands out /room/<slug>, which forwards here.
  */
 function syncUrl(g) {
   if (!g || !g.slug) return;
-  const want = '/room/' + g.slug;
-  if (location.pathname !== want) history.replaceState(null, '', want);
+  if (location.pathname === '/situation-room.html' && new URLSearchParams(location.search).get('room') === g.slug) return;
+  history.replaceState(null, '', '/situation-room.html?room=' + encodeURIComponent(g.slug));
 }
 
 /* The taskbar jump list (manifest "shortcuts") opens ?tab=team and the like.

@@ -155,29 +155,39 @@ const man = (f) => JSON.parse(fs.readFileSync(path.join(APP, f), 'utf8'));
 const admin = man('admin.webmanifest');
 const room = man('room.webmanifest');
 
-/* SCOPE IS NOT THE IDENTITY. `id` is what Chrome keys an installed app on, and
-   these two have always had different ones. Narrowing scope to separate them
-   was a guess, and it cost the room its window chrome: an installed PWA shows
-   a URL bar across the top the moment it navigates outside its scope, and
-   situation-room.html goes to /room/<slug>.
+/* SCOPES MUST NOT OVERLAP (2026-10-01). Both were "/", so whichever console
+   was installed covered the other's pages, and Chrome stopped offering Install
+   for the second one — the owner hit it both ways round. `id` is still what
+   Chrome keys an app on; scope is what decides whose page a page is.
 
-   So the requirement is the opposite of what this once asserted — each app's
-   scope must CONTAIN every page it navigates to. */
+   The room's scope is its own page, /situation-room.html. Its in-window
+   navigations stay inside it: /room/<slug> (the shared address) forwards to
+   /situation-room.html?room=<slug>, the campaign picker goes there directly,
+   and the web+hawkeye: handler lands on ?join= first. */
 const covers = (m, url) => url.startsWith(m.scope);
 check('their ids differ, which is what Chrome installs by', admin.id !== room.id, true);
 check('each app is inside its own scope',
   covers(admin, admin.start_url) && covers(room, room.start_url), true);
+check('NEITHER covers the other\'s pages',
+  [covers(admin, room.start_url), covers(room, admin.start_url), covers(admin, room.scope), covers(room, admin.scope)],
+  [false, false, false, false]);
+check('CONTROL the old scope "/" would have covered both',
+  [covers({ scope: '/' }, room.start_url), covers({ scope: '/' }, admin.start_url)], [true, true]);
+for (const [name, m] of [['admin', admin], ['room', room]]) {
+  const urls = [...(m.shortcuts || []).map((x) => x.url), ...(m.protocol_handlers || []).map((x) => x.url)];
+  check(`${name}: every shortcut and protocol handler is inside its scope`, urls.filter((u) => !covers(m, u)), []);
+}
 
 // Read the room's real navigations out of the page rather than listing them
-// here, or this passes the day someone adds a new destination.
+// here, or this passes the day someone adds a new destination. The one
+// deliberate exit is the invite forward to /join.html (the join page's own).
 const roomHtml = fs.readFileSync(path.join(APP, 'situation-room.html'), 'utf8');
-const dests = [...new Set([
-  ...[...roomHtml.matchAll(/location\.href\s*=\s*['"](\/[^'"]*)/g)].map((m) => m[1]),
-  ...[...roomHtml.matchAll(/href="(\/[^"]*)"/g)].map((m) => m[1]),
-])];
+const dests = [...new Set(
+  [...roomHtml.matchAll(/location\.(?:href\s*=\s*|assign\(|replace\()['"](\/[^'"]*)/g)].map((m) => m[1]),
+)];
 check('CONTROL the room does navigate somewhere', dests.length > 0, true);
 check('and every destination is inside the room app\'s scope',
-  dests.filter((d) => !covers(room, d)), []);
+  dests.filter((d) => !covers(room, d) && !d.startsWith('/join.html?t=')), []);
 
 // Distinct identity is not only the id: two identical pictures in a taskbar are
 // two apps the reader cannot tell apart.

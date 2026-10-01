@@ -614,10 +614,13 @@ SOURCES_8 = [{ id: 92, name: 'Only In Eight', contest: 'PRES', scope: '', copyab
      selectOption resolves — waitForLoadState answered about the page still on
      screen and this read the OLD url, failing against correct code. Wait for
      the address itself, and let it time out loudly if it never moves. */
-  await p.waitForURL((u) => String(u).includes('/room/second-room'), { timeout: 10000 })
+  /* The in-scope address (room.webmanifest scope is /situation-room.html):
+     /room/<slug> would leave the installed window's scope. */
+  await p.waitForURL((u) => new URL(String(u)).searchParams.get('room') === 'second-room', { timeout: 10000 })
     .catch(() => { /* leave the assertions below to report what it did instead */ });
   const url = new URL(p.url());
-  check('picking a campaign lands on that room\'s address', url.pathname, '/room/second-room');
+  check('picking a campaign lands on that room\'s address',
+    [url.pathname, url.searchParams.get('room')], ['/situation-room.html', 'second-room']);
   check('and carries the tab across, not back to Overview', url.searchParams.get('tab'), 'team');
 
   /* THE DEFECT ITSELF. The address changed even under the old code, because

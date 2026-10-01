@@ -4,12 +4,12 @@
   "short_name": "Situation Room",
   "description": "Watch a race and your own observers on one screen: which units have reported, where coverage is thin, and who has yet to file.",
   "start_url": "/situation-room.html",
-  "scope": "/",
+  "scope": "/situation-room.html",
   "display": "standalone",
   "protocol_handlers": [
     {
       "protocol": "web+hawkeye",
-      "url": "/join.html?t=%s"
+      "url": "/situation-room.html?join=%s"
     }
   ],
   "launch_handler": {

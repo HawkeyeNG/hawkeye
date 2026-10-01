@@ -36,6 +36,14 @@ import { typedInviteCode } from '@/lib/invite-parse';
 import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import {
+  offerPasskeyLater,
+  passkeyErrorText,
+  passkeysUsable,
+  registerPasskeyHere,
+  shouldOfferPasskey,
+  signInWithPasskey,
+} from '@/lib/passkeys';
 import { openWhatsApp, startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
@@ -57,6 +65,13 @@ type Channel = 'whatsapp' | 'telegram' | 'sms';
  *                 replaces request -> otp for WhatsApp while /api/health says
  *                 `waInbound`, and ends exactly where a verified code does
  *   set-password  choose + confirm a password (mandatory when the account has none)
+ *   pk-offer      "Sign in faster next time": after a RETURNING sign-in, an
+ *                 inline offer to make a passkey on this phone (lib/passkeys.ts)
+ *
+ * A PASSKEY is the other way in on the password step: "Sign in with a passkey"
+ * goes straight to the system's passkey sheet — shown only where the binary
+ * has the module and the server has passkeys on, so 1.0.11 and older (OTA)
+ * never see it.
  *
  * `purpose` is what the OTP is FOR, and it drives every line of copy on the
  * request/set-password steps — the mechanics are identical in all three cases.
@@ -66,7 +81,7 @@ type Channel = 'whatsapp' | 'telegram' | 'sms';
  * made the button spin for a whole round-trip, which reads as a slow app. On
  * failure we drop back to the request step with the error line.
  */
-type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'set-password' | 'exists';
+type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'set-password' | 'exists' | 'pk-offer';
 /** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
 type Purpose = 'signup' | 'reset' | 'no-password';
 
@@ -85,12 +100,20 @@ export default function SignIn() {
   const [smsOk, setSmsOk] = useState(false);
   // WhatsApp in reverse (free) — same fail-closed switch; see api.waInboundEnabled.
   const [waOk, setWaOk] = useState(false);
+  /** Passkeys: this binary has the module AND the server has them on (lib/passkeys.ts). */
+  const [pkUsable, setPkUsable] = useState(false);
   useEffect(() => {
     let alive = true;
     api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
     api.waInboundEnabled().then((ok) => { if (alive) setWaOk(ok); });
+    passkeysUsable().then((ok) => { if (alive) setPkUsable(ok); }).catch(() => {});
     return () => { alive = false; };
   }, []);
+  /** The passkey sheet is up (sign-in or the offer); its own flag, so `busy` keeps meaning the form. */
+  const [pkBusy, setPkBusy] = useState(false);
+  /** The offer made its passkey: the button becomes Continue. */
+  const [pkSaved, setPkSaved] = useState(false);
+  const [pkMsg, setPkMsg] = useState<string | null>(null);
   /**
    * The free WhatsApp route for this screen: the code the observer sends us,
    * the link that opens WhatsApp with it typed, our number, and what the
@@ -253,6 +276,75 @@ export default function SignIn() {
     setTgLink(null);
     setLine(null);
     setStep('request');
+  };
+
+  /**
+   * A RETURNING sign-in has landed. Offer a passkey on this phone first when
+   * lib/passkeys.ts says it may (never a new account, never within 30 days of
+   * "Not now", never once this phone has one, only where one can be made — it
+   * answers within 3 s), else straight in. The offer is a step of this screen,
+   * inline, not a pop-up. Twin of app/app.js offerPasskeyThen().
+   */
+  const finishReturning = async () => {
+    if (await shouldOfferPasskey(false)) {
+      setLine(null);
+      setPkMsg(null);
+      setPkSaved(false);
+      setStep('pk-offer');
+      return;
+    }
+    router.replace('/(tabs)');
+  };
+  /** The same, from a button that holds no busy state of its own. */
+  const continueReturning = async () => {
+    setBusy(true);
+    try {
+      await finishReturning();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  /** "Sign in with a passkey": the system sheet, then the app. A pressed Cancel says nothing. */
+  const onPasskeySignIn = async () => {
+    if (busy || pkBusy) return;
+    setPkBusy(true);
+    setLine(null);
+    try {
+      const r = await signInWithPasskey();
+      if (r.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        // A returning sign-in, like the password: no sign-up routing, no offer
+        // (this phone has just used a passkey).
+        router.replace('/(tabs)');
+        return;
+      }
+      if (r.error !== 'cancelled') setLine(passkeyErrorText(r.error));
+    } catch {
+      setLine(passkeyErrorText('network'));
+    } finally {
+      setPkBusy(false);
+    }
+  };
+
+  /** The offer's button: make a passkey on this phone for the account just signed in. */
+  const onAddPasskey = async () => {
+    setPkBusy(true);
+    setPkMsg(null);
+    try {
+      const r = await registerPasskeyHere();
+      if (r.ok) {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setPkSaved(true);
+        setPkMsg(i18nT('passkey.saved'));
+        return;
+      }
+      setPkMsg(passkeyErrorText(r.error));
+    } catch {
+      setPkMsg(passkeyErrorText('network'));
+    } finally {
+      setPkBusy(false);
+    }
   };
 
   /** Sign up with an organisation code: no OTP, then the usual password step. */
@@ -481,8 +573,9 @@ export default function SignIn() {
         return;
       }
       // hp === true, or null because the check itself failed: never strand
-      // someone on a password screen over a failed status call.
-      router.replace('/(tabs)');
+      // someone on a password screen over a failed status call. A returning
+      // sign-in: the passkey offer may come first.
+      await finishReturning();
     } catch {
       setLine(i18nT('n.app.sign-in.network-error-try-again'));
     } finally {
@@ -531,7 +624,7 @@ export default function SignIn() {
   const phoneReady = phone.trim().length >= 10;
   const blankPw = password.length === 0;
   const loginDisabled =
-    busy || !phoneReady || (blankPw ? pwRequiredFor === phone.trim() : password.length < 8);
+    busy || pkBusy || !phoneReady || (blankPw ? pwRequiredFor === phone.trim() : password.length < 8);
 
   const onPasswordLogin = async () => {
     // Also the guard for onSubmitEditing, which fires straight from the keyboard.
@@ -544,7 +637,8 @@ export default function SignIn() {
       const r = await passwordLogin(typedPhone, password);
       if (r.ok) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        router.replace('/(tabs)');
+        // /login has no isNew: a password sign-in is always a returning one.
+        await finishReturning();
         return;
       }
       // An account with no password_hash is an EXISTING observer from before
@@ -618,7 +712,9 @@ export default function SignIn() {
           return;
         }
         clearInviteUnit();
-        router.replace('/(tabs)');
+        // Not a new account (a reset, a rescue, or an existing number signing
+        // up again): a returning sign-in, so the passkey offer may come first.
+        await finishReturning();
         return;
       }
       setLine(
@@ -641,7 +737,7 @@ export default function SignIn() {
 
   const onAbandonPassword = async () => {
     if (!mustSetPassword) {
-      router.replace('/(tabs)');
+      await continueReturning();
       return;
     }
     await signOut();
@@ -708,7 +804,9 @@ export default function SignIn() {
           ) : (
             <Pressable
               hitSlop={12}
-              onPress={() => router.back()}
+              // On the passkey offer the person is already signed in: closing
+              // it goes into the app, never back to a sign-in form.
+              onPress={() => (step === 'pk-offer' ? router.replace('/(tabs)') : router.back())}
               className="h-9 w-9 items-center justify-center rounded-full bg-card"
             >
               <Feather name="x" size={18} color={ui.ink} />
@@ -717,11 +815,13 @@ export default function SignIn() {
           <Text className="pl-3 text-lg font-bold text-ink">
             {step === 'set-password'
               ? i18nT('n.app.sign-in.title-your-password')
-              : step === 'exists'
-                ? i18nT('n.app.sign-in.title-exists')
-                : purpose === 'signup' && step !== 'password'
-                  ? i18nT('n.app.sign-in.title-create-account')
-                  : i18nT('n.app.sign-in.title-sign-in')}
+              : step === 'pk-offer'
+                ? i18nT('n.app.sign-in.title-sign-in')
+                : step === 'exists'
+                  ? i18nT('n.app.sign-in.title-exists')
+                  : purpose === 'signup' && step !== 'password'
+                    ? i18nT('n.app.sign-in.title-create-account')
+                    : i18nT('n.app.sign-in.title-sign-in')}
           </Text>
         </View>
 
@@ -771,6 +871,35 @@ export default function SignIn() {
                   <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
                 )}
               </Pressable>
+              {/* PASSKEY: shown only where it can work (lib/passkeys.ts). An
+                  ordinary button — pressing it opens the system's own passkey
+                  sheet, with nothing of ours in front of it. No phone number
+                  needed: the phone offers its Hawkeye passkeys. Twin of
+                  observe.html #pk-signin. */}
+              {pkUsable ? (
+                <>
+                  <Pressable
+                    disabled={busy || pkBusy}
+                    onPress={() => void onPasskeySignIn()}
+                    accessibilityRole="button"
+                    className={`mt-3 flex-row items-center justify-center rounded-2xl py-4 ${
+                      busy || pkBusy ? 'bg-disabled' : 'bg-card active:opacity-80'
+                    }`}
+                  >
+                    {pkBusy ? (
+                      <ActivityIndicator color={ui.tint.good.ink} accessibilityLabel={i18nT('passkey.signing-in')} />
+                    ) : (
+                      <>
+                        <Feather name="key" size={17} color={ui.tint.good.ink} />
+                        <Text className="pl-2 text-base font-bold text-good-ink">{i18nT('passkey.signin-button')}</Text>
+                      </>
+                    )}
+                  </Pressable>
+                  <Text className="pt-2 text-center text-xs text-muted" accessibilityLiveRegion="polite">
+                    {pkBusy ? i18nT('passkey.signing-in') : i18nT('passkey.signin-hint')}
+                  </Text>
+                </>
+              ) : null}
               <Pressable className="mt-4 items-center" onPress={() => startOtp('reset')}>
                 <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.forgot-password')}</Text>
               </Pressable>
@@ -922,7 +1051,8 @@ export default function SignIn() {
 
               {existsAfterOtp ? (
                 <Pressable
-                  onPress={() => router.replace('/(tabs)')}
+                  disabled={busy}
+                  onPress={() => void continueReturning()}
                   className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
                 >
                   <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.sign-in.continue-to-hawkeye')}</Text>
@@ -995,6 +1125,50 @@ export default function SignIn() {
                   <Text className="text-sm font-semibold text-muted">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               )}
+            </>
+          ) : step === 'pk-offer' ? (
+            <>
+              {/* "SIGN IN FASTER NEXT TIME" — after a RETURNING sign-in, inline
+                  and skippable, never a pop-up (owner rule): the button goes
+                  straight to the system's passkey sheet. The person is already
+                  signed in, so every way off this step goes into the app.
+                  "Not now" = not asked again on this phone for 30 days.
+                  Twin of observe.html #pk-offer. */}
+              <Text className="text-2xl font-bold text-ink">{i18nT('passkey.offer-title')}</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">{i18nT('passkey.offer-body')}</Text>
+              <Pressable
+                disabled={pkBusy}
+                onPress={() => (pkSaved ? router.replace('/(tabs)') : void onAddPasskey())}
+                accessibilityRole="button"
+                className={`items-center rounded-2xl py-4 ${pkBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+              >
+                {pkBusy ? (
+                  <ActivityIndicator color={BRAND.gold} />
+                ) : (
+                  <Text className="text-base font-bold text-hawk-gold">
+                    {pkSaved ? i18nT('passkey.continue') : i18nT('passkey.offer-yes')}
+                  </Text>
+                )}
+              </Pressable>
+              {pkMsg ? (
+                <Text
+                  className={`pt-3 text-sm ${pkSaved ? 'text-good-ink' : 'text-warn-ink'}`}
+                  accessibilityLiveRegion="polite"
+                >
+                  {pkMsg}
+                </Text>
+              ) : null}
+              {!pkSaved ? (
+                <Pressable
+                  className="mt-4 items-center"
+                  disabled={pkBusy}
+                  onPress={() => {
+                    void offerPasskeyLater().finally(() => router.replace('/(tabs)'));
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-good-ink">{i18nT('passkey.offer-no')}</Text>
+                </Pressable>
+              ) : null}
             </>
           ) : step === 'wa-send' ? (
             <>

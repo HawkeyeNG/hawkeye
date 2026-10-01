@@ -18,9 +18,11 @@
  *      allowed exception is a VIDEO — on a binary without expo-video, or when a
  *      clip will not play in components/video-viewer.tsx — and it must sit
  *      behind a `type === 'video'` guard.
- *   3. OTA SAFETY — the only native module added is expo-video (the player,
- *      new after 1.0.9), and the incident screen asks canPlayVideoInApp()
- *      before using it, so older binaries keep opening videos as before.
+ *   3. OTA SAFETY — the native modules added are expo-video (the player, new
+ *      after 1.0.9) and react-native-passkeys (1.0.12; guarded, see
+ *      tests/native_passkeys_test.mjs); the incident screen asks
+ *      canPlayVideoInApp() before using the player, so older binaries keep
+ *      opening videos as before.
  *
  *   node tests/native_no_web_pages_test.mjs
  */
@@ -210,11 +212,14 @@ try { head = execSync('git -c safe.directory=* show HEAD:native/package.json', {
 check('CONTROL HEAD\'s package.json was readable', !!head, true);
 const now = deps(read(`${ROOT}/native/package.json`));
 if (head) {
-  // expo-video arrives with the player; anything else new is a store-build item
-  // this test has not been told about.
+  // expo-video arrives with the player, react-native-passkeys with native
+  // passkeys (1.0.12; its import guard is proved by tests/native_passkeys_test.mjs);
+  // anything else new is a store-build item this test has not been told about.
   const was = deps(head);
   const diff = [...now.filter((d) => !was.includes(d)), ...was.filter((d) => !now.includes(d))];
-  check('native dependencies differ from HEAD by expo-video at most', diff.filter((d) => d !== 'expo-video'), []);
+  const KNOWN = ['expo-video', 'react-native-passkeys'];
+  check('native dependencies differ from HEAD by the known store-build modules at most', diff.filter((d) => !KNOWN.includes(d)), []);
+  check('CONTROL an unknown new dependency would be caught', ['expo-video', 'some-new-native-lib'].filter((d) => !KNOWN.includes(d)), ['some-new-native-lib']);
 }
 check('expo-video is the player; expo-av is not installed', [now.includes('expo-video'), now.includes('expo-av')], [true, false]);
 /* A 1.0.9-or-older binary has no expo-video and still runs this JS: the screen

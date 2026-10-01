@@ -107,6 +107,16 @@
       background: var(--surface, #fff); border: 1px solid var(--border, #d5ddd7);
       box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
     }
+    /* THE RECEIPT in the done modal — the card a unit result gets. Height-capped
+       so the two buttons under it stay on screen on a small phone; the modal
+       scrolls only as a last resort. [hidden] first: no broken-image icon. */
+    #done-modal .modal-card { max-height: calc(100vh - 40px); overflow-y: auto; }
+    #receipt-wrap[hidden] { display: none; }
+    #receipt-wrap { margin: 12px 0 4px; }
+    #receipt-img {
+      display: block; max-width: 100%; max-height: 38vh; width: auto; height: auto;
+      border-radius: 14px; border: 1px solid var(--line);
+    }
     /* "You can add more" as a TILE in the grid rather than a sentence under it —
        the same affordance the native screen uses. It sits at the end of the
        thumbnails, so the place you add media is the place your media already is,
@@ -305,6 +315,15 @@
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="done-title">
         <h2 data-i18n="incidents.sent-for-review" id="done-title" style="margin-top:0">✅ Sent for Review</h2>
         <p id="done-msg" class="hint"></p>
+        <!-- YOUR COPY — the card a unit result gets (receipt.js), labelled
+             INCIDENT: the type and the time only, never the description, the
+             media, the unit or a position (it is forwarded before review).
+             "Sent for review", or "saved on your phone" while it waits. -->
+        <div id="receipt-wrap" hidden>
+          <h2 data-i18n="observe.your-copy" class="sec-label">Your Copy</h2>
+          <img id="receipt-img" alt="" />
+          <p class="hint" id="receipt-note"></p>
+        </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
           <button data-i18n="incidents.report-another-incident" id="btn-another" style="flex:1;min-width:150px">Report another incident</button>
           <button data-i18n="incidents.exit" id="btn-exit" class="secondary" style="flex:1;min-width:110px">Exit</button>
@@ -329,6 +348,7 @@
   <script src="outbox.js" defer></script>
   <script src="capture.js?v=5"></script>
   <script src="save-media.js?v=1"></script>
+  <script src="receipt.js?v=3" defer></script>
   <script src="video-player.js?v=1"></script>
   <!-- One wording for every "we could not get your position", shared with
        map-unit.html and the native screens. The strings that used to live
@@ -961,6 +981,22 @@
         // Built now: `files` IS `attachments`, which both outcomes below empty.
         const copies = files.map((f) => ({ blob: f, kind: /^video\//.test(f.type) ? 'video' : 'photo', picked: !captured.has(f) }));
         const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(copies, 'incident');
+        /* THE OBSERVER'S COPY, in the done modal at both hand-offs: the TYPE and
+           the time, nothing else of the report (receipt.js says why). `ref` is
+           the server's reference — "sent for review"; none = still queued. */
+        const showCopy = (ref) => {
+          $('receipt-wrap').hidden = true;
+          if (!window.HAWKEYE_RECEIPT || !window.HAWKEYE_RECEIPT.show) return;
+          window.HAWKEYE_RECEIPT.show({
+            kind: 'incident',
+            incident: kindLabels()[kind] || kind,
+            reference: ref,
+            at: Date.now(),
+          }, { wrap: $('receipt-wrap'), img: $('receipt-img'), note: $('receipt-note'), tag: 'incident-receipt' }, T);
+        };
+        /* The modal's heading says which ending this is; the attribute goes too,
+           so a language change repaints the right one. */
+        const doneTitle = (key, en) => { $('done-title').setAttribute('data-i18n', key); $('done-title').textContent = T(key, en); };
         let res;
         try {
           res = await postWithProgress('/api/incidents', fd, headers, total);
@@ -977,6 +1013,13 @@
           keepCopies(); // once, at queueing — never again when the outbox sends it
           $('desc').value = ''; attachments.length = 0; renderPreview();
           $('status').textContent = T('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.');
+          // The same ending as a sent report — the modal and the card — in its
+          // waiting state: "Saved on your phone", no claim that it was sent.
+          doneTitle('receipt.title-pending', 'Saved on your phone');
+          $('done-msg').setAttribute('data-i18n', 'incidents.saved-offline');
+          $('done-msg').textContent = T('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.');
+          $('done-modal').hidden = false;
+          showCopy(null);
           $('btn-submit').disabled = false;
           return;
         }
@@ -994,9 +1037,12 @@
           const doneEn = puAttached
             ? 'Once approved it appears in the feed below, and watchers of that polling unit are alerted (Telegram or the in-app feed). A human reviews every report before anything is published.'
             : 'Once approved it appears in the feed below. A human reviews every report before anything is published.';
+          doneTitle('incidents.sent-for-review', '✅ Sent for Review');
           $('done-msg').setAttribute('data-i18n', doneKey);
           $('done-msg').textContent = T(doneKey, doneEn);
           $('done-modal').hidden = false;
+          // An older server sends no id; the report was still received.
+          showCopy(body.id != null ? body.id : 'sent');
           $('btn-submit').disabled = false;
           return; // the modal IS the outcome; skip the inline status/scroll below
         } else if (res.status === 401) {

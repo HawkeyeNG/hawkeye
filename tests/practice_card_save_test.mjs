@@ -67,8 +67,10 @@ check("CONTROL the practice PHOTOS still save", /'practice'\);/.test(web), true)
 for (const [what, src] of [['web', read(A + 'receipt.js')], ['native', read(N + 'lib/receipt.ts')]]) {
   check(`${what}: a saved practice card still says it is practice`,
     /receipt\.title-practice/.test(src) && /receipt\.status-practice/.test(src), true);
+  // `(pending || practice || kind !== 'result')` since collation and incident
+  // cards joined (2026-10-01): practice still blanks the link, first in line.
   check(`${what}: and carries no verify link`,
-    /\(pending \|\| practice\)/.test(src), true);
+    /verify: \(pending \|\| practice\b[^)]*\) \? ''/.test(src), true);
 }
 
 // ==================== the capture must not cancel itself

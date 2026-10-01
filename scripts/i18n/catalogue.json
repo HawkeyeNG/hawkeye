@@ -1985,5 +1985,12 @@
   "video-player.position": "{elapsed} of {total}",
   "video-player.replay": "Play again from the start",
   "video-player.seek": "Playback position",
-  "video-player.unmute": "Turn sound on"
+  "video-player.unmute": "Turn sound on",
+  "receipt.kind-collation": "Collation",
+  "receipt.kind-incident": "Incident",
+  "receipt.title-report": "Your copy of this report",
+  "receipt.status-review": "Sent for review — a person checks every report before anything is published.",
+  "receipt.status-incident-pending": "Not sent yet — it sends when you are back online.",
+  "receipt.collation-ledger-entry": "COLLATION LEDGER ENTRY",
+  "receipt.foot-incident": "Hawkeye publishes an incident only after a person has reviewed it."
 }

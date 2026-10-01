@@ -864,6 +864,8 @@ export default {
     "n.auth.wa-safety": "Ka aika ta kawai idan kai da kanka ka fara wannan shigar.",
     "n.auth.wa-starting": "Ana samo lambarka…",
     "n.auth.wa-title": "Aiko mana wannan lambar ta WhatsApp",
+    "n.passkey.none-here": "Babu passkey na Hawkeye a wannan wayar tukuna. Shiga ta wata hanya.",
+    "n.passkey.needs-lock": "Da farko saita sawun yatsa, fuska ko makullin allo a wannan wayar.",
     "n.auth.wa-too-many": "An yi ƙoƙari da yawa don wannan lambar. Jira awa ɗaya, ko ka samu lamba ta WhatsApp maimakon haka.",
     "n.auth.wa-verified": "An tabbatar — ana shigar da kai…",
     "n.auth.wa-waiting": "Muna jiran saƙonka…",

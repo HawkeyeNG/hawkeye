@@ -863,6 +863,8 @@ export default {
   "n.auth.wa-safety": "Zipu ya naanị ma ọ bụrụ na gị onwe gị malitere ịbanye a.",
   "n.auth.wa-starting": "A na-enweta koodu gị…",
   "n.auth.wa-title": "Zitere anyị koodu a na WhatsApp",
+  "n.passkey.none-here": "Enweghị passkey Hawkeye na ekwentị a ka ugbu a. Banye n'ụzọ ọzọ.",
+  "n.passkey.needs-lock": "Buru ụzọ hazie mkpịsị aka, ihu ma ọ bụ mkpọchi ihuenyo na ekwentị a.",
   "n.auth.wa-too-many": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ nweta koodu na WhatsApp kama.",
   "n.auth.wa-verified": "Enyochala ya — anyị na-abanye gị…",
   "n.auth.wa-waiting": "Anyị na-eche ozi gị…",

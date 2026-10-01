@@ -22,6 +22,7 @@ import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
 import { NoElection } from '@/components/no-election';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
+import { ReceiptCopy } from '@/components/receipt-copy';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
@@ -291,6 +292,8 @@ export default function ReportCollation() {
   /** Held in the offline outbox rather than delivered — a different ending. */
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
+  /** When it was handed off — the time on the card, fixed rather than re-read on every render. */
+  const [doneAt, setDoneAt] = useState(0);
 
   const onSubmit = async () => {
     tap();
@@ -331,7 +334,10 @@ export default function ReportCollation() {
       });
       // Handed off — accepted, or safe in the outbox. Saved here, once; the
       // outbox flush never saves again.
-      if (r.ok || r.queued) saveReportMedia([sheet.uri, venue.uri]);
+      if (r.ok || r.queued) {
+        saveReportMedia([sheet.uri, venue.uri]);
+        setDoneAt(Date.now());
+      }
       if (r.ok) {
         setReceipt(r);
         setQueued(false);
@@ -878,6 +884,25 @@ export default function ReportCollation() {
             {receipt.entryHash ? (
               <RekorAnchor entryHash={receipt.entryHash} chain="collation" />
             ) : null}
+
+            {/* YOUR OWN COPY — the same card a unit result gets, labelled
+                COLLATION: the area as its headline, the form under it, the
+                totals, and the collation-chain entry (no verify link: ledger
+                .html lists the unit chain only). Queued = saved on the phone,
+                no hash. lib/receipt.ts decides every line. */}
+            <ReceiptCopy
+              data={{
+                kind: 'collation',
+                area: (level === 'ward' ? wardSel : level === 'lga' ? lgaSel : stateSel) ?? '',
+                form: levelDef?.form,
+                lga: level === 'ward' ? (lgaSel ?? undefined) : undefined,
+                state: level !== 'state' ? (stateSel ?? undefined) : undefined,
+                contest: contest?.name,
+                votes,
+                entryHash: queued ? '' : receipt.entryHash,
+                at: doneAt,
+              }}
+            />
 
             {/* What was filed, in the observer's own figures. The collation route
                 answers with the entry hash alone — no consensus or OCR block like

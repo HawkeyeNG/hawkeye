@@ -402,6 +402,54 @@ export async function passwordLogin(
 }
 
 /**
+ * PASSKEY SIGN-IN (lib/passkeys.ts drives the system sheet between these two).
+ *
+ * Step 1: a fresh, single-use challenge. No account is named — the phone
+ * offers its own Hawkeye passkeys — so nothing here can tell anyone whether a
+ * number is registered.
+ */
+export async function passkeyLoginOptions(): Promise<
+  { ok: true; options: Record<string, unknown> } | { ok: false; error: string }
+> {
+  const r = await postStatus<{ options?: Record<string, unknown>; error?: string }>(
+    '/api/observers/passkeys/login-options',
+    {},
+  );
+  if (r.status === 200 && r.body?.options) return { ok: true, options: r.body.options };
+  return { ok: false, error: r.body?.error || (r.status === 503 ? 'passkeys_unavailable' : 'failed') };
+}
+
+/**
+ * Step 2: the signed assertion. Bound to this device's key and id exactly as
+ * every other sign-in is, and it takes this phone's session slot (x-device-
+ * class: phone, owner decision D3) — another phone signed in to the account is
+ * signed out, a computer is not. A passkey session is `via: 'pk'`: never phone
+ * proof, so it cannot reset a password without the current one. Stored the
+ * way passwordLogin stores a session. One refusal for every failure
+ * (`passkey_failed`), by the server's design.
+ */
+export async function passkeyLogin(
+  response: object,
+): Promise<{ ok: true; needsUnit: boolean } | { ok: false; error: string }> {
+  const id = await getIdentity();
+  const r = await postStatus<{ ok?: boolean; observerId?: number; token?: string; error?: string; needsUnit?: boolean }>(
+    '/api/observers/passkeys/login',
+    { response, publicKeyJwk: id.publicKeyJwk },
+    { 'x-device-id': id.deviceId },
+  );
+  const b = r.body ?? {};
+  if (r.status === 200 && b.ok && b.token && b.observerId) {
+    await SecureStore.setItemAsync(K_TOKEN, b.token);
+    await SecureStore.setItemAsync(K_OBSERVER, String(b.observerId));
+    await SecureStore.deleteItemAsync(K_OPTED_OUT);
+    await clearSignedOutElsewhere();
+    set({ status: 'signedIn', observerId: b.observerId, token: b.token });
+    return { ok: true, needsUnit: b.needsUnit === true };
+  }
+  return { ok: false, error: b.error || (r.status === 503 ? 'passkeys_unavailable' : 'passkey_failed') };
+}
+
+/**
  * Set (or reset) the password on the CURRENT session.
  *
  * The server only asks for the current password when the account already has

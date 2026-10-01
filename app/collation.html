@@ -61,6 +61,14 @@
     .vote-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
     .vote-row label { flex: 1; margin: 0; font-weight: 700; }
     .vote-row input { width: 110px; margin: 0; }
+    /* THE RECEIPT — the same card and sizing as observe.html. [hidden] first,
+       so an unfilled card never shows a broken-image icon. */
+    #receipt-wrap[hidden] { display: none; }
+    #receipt-wrap { margin: 18px 0 8px; }
+    #receipt-img {
+      display: block; width: 100%; max-width: 340px; height: auto;
+      border-radius: 14px; border: 1px solid var(--line);
+    }
   </style>
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Hawkeye">
@@ -199,6 +207,15 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         <div id="submit-facts" class="submit-facts" hidden></div>
         <button data-i18n="collation.sign-submit-collation-report" id="btn-submit" disabled>Sign &amp; submit collation report</button>
         <p id="status" class="status" role="status"></p>
+        <!-- YOUR COPY — the card a unit result gets (receipt.js), labelled
+             COLLATION: the area, the form, the totals and the collation-chain
+             entry; "saved on your phone" while it waits offline. Drawn at the
+             hand-off and saved with the photos, under the same Profile switch. -->
+        <div id="receipt-wrap" hidden>
+          <h2 data-i18n="observe.your-copy" class="sec-label">Your Copy</h2>
+          <img id="receipt-img" alt="" />
+          <p class="hint" id="receipt-note"></p>
+        </div>
       </div>
     </section>
   </main>
@@ -231,6 +248,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="scan.js?v=9"></script>
   <script src="capture.js?v=5"></script>
   <script src="save-media.js?v=1"></script>
+  <script src="receipt.js?v=3" defer></script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
@@ -581,6 +599,25 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         // A device copy of the two photos exactly as signed and sent, at hand-off.
         const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(
           [shots.sheet, shots.venue].filter(Boolean).map((s) => ({ blob: s.blob, kind: 'photo' })), 'collation');
+        /* THE OBSERVER'S COPY, at both hand-offs (accepted, or queued offline)
+           — receipt.js decides what it may claim from the entry hash. The
+           area is the headline; only the levels above it go under. */
+        const FORMS = { ward: 'EC8B', lga: 'EC8C', state: 'EC8D' };
+        const showCopy = (entryHash) => {
+          $('receipt-wrap').hidden = true;
+          if (!window.HAWKEYE_RECEIPT || !window.HAWKEYE_RECEIPT.show) return;
+          window.HAWKEYE_RECEIPT.show({
+            kind: 'collation',
+            area: level === 'ward' ? scope.ward : level === 'lga' ? scope.lga : scope.state,
+            form: FORMS[level] || '',
+            lga: level === 'ward' ? scope.lga : '',
+            state: level !== 'state' ? scope.state : '',
+            contest: (CONTESTS.find((x) => x.code === scope.contest) || {}).name || scope.contest,
+            votes,
+            entryHash: entryHash || '',
+            at: Date.now(),
+          }, { wrap: $('receipt-wrap'), img: $('receipt-img'), note: $('receipt-note'), tag: 'collation-receipt' }, T);
+        };
         let r;
         try {
           r = await fetch('/api/collations', {
@@ -601,6 +638,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           keepCopies(); // save-media.js — once, here, never again when the outbox flushes
           shots.sheet = shots.venue = null;
           $('status').textContent = T('collation.saved-offline', 'Saved offline — this signed report will send automatically when you are back online.');
+          showCopy('');
           $('btn-submit').disabled = false;
           return;
         }
@@ -609,6 +647,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           $('status').textContent = T('collation.report-recorded', '✅ {v0} report recorded and being checked against polling-unit evidence.', { v0: b.form });
           keepCopies();
           shots.sheet = shots.venue = null;
+          showCopy(b.entryHash);
         } else if (r.status === 401) {
           localStorage.removeItem('hawkeye_token');
           $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=observe' });

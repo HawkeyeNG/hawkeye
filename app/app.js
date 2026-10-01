@@ -3053,36 +3053,20 @@ $('btn-submit').onclick = async () => {
  */
 let receiptBlob = null;
 async function showReceipt(data) {
+  /**
+   * IT SAVES WITH THE PHOTOS, at the same hand-off and under the same switch.
+   *
+   * The two sheet photos already copy themselves to the phone the moment a
+   * report is accepted; making the CARD the one artefact that needs a button
+   * is an inconsistency the observer has to discover, and it is the item most
+   * likely to be forwarded — friction there defeats the point of having it.
+   * receipt.js show() does the drawing, the saving and the note, the same for
+   * this page, collation.html and incidents.html.
+   */
   try {
     const R = window.HAWKEYE_RECEIPT;
-    if (!R) return;
-    const canvas = R.render(data, await R.loadLogo(), T);
-    receiptBlob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
-    if (!receiptBlob) return;
-    $('receipt-img').src = URL.createObjectURL(receiptBlob);
-    $('receipt-img').alt = R.lines(data).title;
-    $('receipt-wrap').hidden = false;
-    /* SAY WHAT THE SAVE BUTTON WILL DO BEFORE IT IS PRESSED. When the profile
-       switch is off, HAWKEYE_SAVE_MEDIA deliberately does nothing — so a button
-       that looked ready and then silently did nothing would read as broken,
-       when it is actually the observer's own safety setting working. */
-    /**
-     * IT SAVES WITH THE PHOTOS, at the same hand-off and under the same switch.
-     *
-     * The two sheet photos already copy themselves to the phone the moment a
-     * report is accepted; making the CARD the one artefact that needs a button
-     * is an inconsistency the observer has to discover, and it is the item most
-     * likely to be forwarded — friction there defeats the point of having it.
-     *
-     * When copies are off nothing is written and the card stays on screen to be
-     * screenshotted. Either way the row says which happened, because a save
-     * that silently does nothing looks exactly like a broken feature.
-     */
-    const on = (() => { try { return localStorage.getItem('hawkeye_save_media') !== '0'; } catch { return true; } })();
-    if (on) window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA([{ blob: receiptBlob, kind: 'photo' }], 'receipt');
-    $('receipt-note').textContent = on
-      ? T('observe.card-saved-with-photos', 'Saved to your phone with your report photos.')
-      : T('observe.copies-off-note', 'Copies to this phone are turned off in My Profile. Screenshot this card if you want to keep it.');
+    if (!R || !R.show) return;
+    receiptBlob = await R.show(data, { wrap: $('receipt-wrap'), img: $('receipt-img'), note: $('receipt-note'), tag: 'receipt' }, T);
   } catch { /* a report is not worth failing over a picture of itself */ }
 }
 

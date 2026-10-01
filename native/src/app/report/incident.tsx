@@ -19,6 +19,7 @@ import {
 
 import { SafeScreen } from '@/components/safe-screen';
 import { ButtonText } from '@/components/button-text';
+import { ReceiptCopy } from '@/components/receipt-copy';
 import { CaptureCamera, type Media } from '@/components/capture-camera';
 import {
   envelopeText,
@@ -564,9 +565,21 @@ export default function ReportIncident() {
 
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
-  const [done, setDone] = useState<{ title: string; line: string; icon: 'check' | 'clock' } | null>(
-    null,
-  );
+  /**
+   * The ending, and what its receipt card is drawn from: the TYPE as the
+   * observer picked it, the server's reference once it has one (none while it
+   * waits in the outbox) and the moment it was handed off. Nothing else of the
+   * report reaches the card — see lib/receipt.ts on what an incident card may
+   * show.
+   */
+  const [done, setDone] = useState<{
+    title: string;
+    line: string;
+    icon: 'check' | 'clock';
+    kind: string;
+    reference: number | string | null;
+    at: number;
+  } | null>(null);
 
   /** A decision about the unit has been made, either way. */
   const unitDecided = !!unit || noUnit;
@@ -1124,6 +1137,9 @@ export default function ReportIncident() {
           title: i18nT('n.app.report.incident.saved-to-send-later'),
           icon: 'clock',
           line: i18nT('n.app.report.incident.saved-on-this-phone-it-sends'),
+          kind,
+          reference: null,
+          at: Date.now(),
         });
         return;
       }
@@ -1140,6 +1156,11 @@ export default function ReportIncident() {
           title: i18nT('n.app.report.incident.incident-reported'),
           icon: 'check',
           line: i18nT('n.app.report.incident.your-report-is-under-review-if'),
+          kind,
+          // The server's reference is what makes the card say "sent for
+          // review"; an older server that sends none still filed it.
+          reference: typeof body.id === 'number' ? body.id : 'sent',
+          at: Date.now(),
         });
       } else {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
@@ -1202,21 +1223,43 @@ export default function ReportIncident() {
   }
 
   if (done) {
+    const kindDef = KINDS.find((k) => k.code === done.kind);
     return (
-      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
-        <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
-          {/* A tick on a queued report would claim a delivery that has not
-              happened — the icon has to tell the two outcomes apart. */}
-          <Feather name={done.icon} size={28} color={BRAND.gold} />
+      <SafeScreen className="flex-1 bg-surface">
+        <ScrollView contentContainerClassName="px-6 pb-4 pt-8">
+          <View className="items-center">
+            <View className="h-16 w-16 items-center justify-center rounded-full bg-hawk-green">
+              {/* A tick on a queued report would claim a delivery that has not
+                  happened — the icon has to tell the two outcomes apart. */}
+              <Feather name={done.icon} size={28} color={BRAND.gold} />
+            </View>
+            <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
+            <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
+          </View>
+          {/* YOUR OWN COPY — the card a unit result gets, labelled INCIDENT.
+              Only the TYPE and the time: no description, media, unit or
+              position, because this card is forwarded before anyone has
+              reviewed the report (lib/receipt.ts). Sent = "sent for review";
+              queued = "saved on your phone". Saves with the photos. */}
+          <ReceiptCopy
+            data={{
+              kind: 'incident',
+              incident: kindDef ? i18nT(kindDef.label) : done.kind,
+              reference: done.reference,
+              at: done.at,
+            }}
+          />
+        </ScrollView>
+        {/* Pinned below the scroll: the card pushes it down on a small phone,
+            and the one action here must never need scrolling to reach. */}
+        <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+          <Pressable
+            className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+            onPress={() => router.back()}
+          >
+            <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
+          </Pressable>
         </View>
-        <Text className="pt-4 text-center text-lg font-bold text-ink">{done.title}</Text>
-        <Text className="pt-2 text-center text-sm text-muted">{done.line}</Text>
-        <Pressable
-          className="mt-6 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
-          onPress={() => router.back()}
-        >
-          <Text className="text-base font-bold text-hawk-gold">{i18nT('n.app.map-unit.done')}</Text>
-        </Pressable>
       </SafeScreen>
     );
   }

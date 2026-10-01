@@ -16,6 +16,8 @@ export async function authedSend<T = unknown>(
   method: 'GET' | 'POST' | 'DELETE',
   path: string,
   body?: object,
+  /** Extra request headers — e.g. x-device-id, which the passkey routes require. */
+  headers: Record<string, string> = {},
 ): Promise<Sent<T>> {
   const go = async (token: string | null) => {
     // RN's fetch has no timeout of its own; same 12 s deadline as authedGet.
@@ -30,6 +32,7 @@ export async function authedSend<T = unknown>(
           // The app is always the PHONE session (backend services/sessions.js).
           'x-device-class': 'phone',
           ...(body ? { 'content-type': 'application/json' } : {}),
+          ...headers,
         },
         body: body ? JSON.stringify(body) : undefined,
         signal: ctl.signal,

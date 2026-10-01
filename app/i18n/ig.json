@@ -2659,5 +2659,12 @@
   "situation-room.note-seat-shares-lga": "Ndekọ aha anaghị ekwu oche nke ọchịchị ime obodo a ebe ntuli aka na-atụ vootu maka ya, ya mere ọnụ ụlọ a na-agụ ọchịchị ime obodo ahụ dum.",
   "situation-room.note-by-election-seat": "Ntuli aka nnọchi a bụ maka otu oche: {v0}.",
   "situation-room.org-pending-banner": "Hawkeye na-enyocha na ọnụ ụlọ a na-anọchite anya {v0} — a na-enyocha nzukọ ọ bụla n’otu ụzọ ahụ. Ruo mgbe ahụ, njikọ òkù anaghị arụ ọrụ, ọ dịghịkwa onye ọhụrụ nwere ike ịbanye. Ị nwere ike ịhazi ọnụ ụlọ ahụ ka ọ dị ugbu a.",
-  "situation-room.org-block-banner": "Hawkeye enweghị ike ịkwenye na ọnụ ụlọ a na-anọchite anya nzukọ ọ họrọ, ya mere ọ dịghị onye ọhụrụ nwere ike ịbanye."
+  "situation-room.org-block-banner": "Hawkeye enweghị ike ịkwenye na ọnụ ụlọ a na-anọchite anya nzukọ ọ họrọ, ya mere ọ dịghị onye ọhụrụ nwere ike ịbanye.",
+  "receipt.kind-collation": "Nchịkọta",
+  "receipt.kind-incident": "Ihe merenụ",
+  "receipt.title-report": "Nnomi gị nke akụkọ a",
+  "receipt.status-review": "Ezigara ya maka nyocha — ọ bụ mmadụ na-enyocha akụkọ ọ bụla tupu e bipụta ihe ọ bụla.",
+  "receipt.status-incident-pending": "Ezigabeghị ya — ọ ga-eziga ozugbo ị laghachiri n'ịntanetị.",
+  "receipt.collation-ledger-entry": "NDEBANYE AKWỤKWỌ NCHỊKỌTA",
+  "receipt.foot-incident": "Hawkeye na-ebipụta ihe merenụ naanị mgbe mmadụ nyochachara ya."
 }

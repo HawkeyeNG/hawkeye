@@ -64,8 +64,7 @@ import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
-import { ReceiptCard, type ReceiptCardHandle } from '@/components/receipt-card';
-import { saveReceiptPng } from '@/lib/receipt-file';
+import { ReceiptCopy } from '@/components/receipt-copy';
 import { checkIn, myRooms, type MyRoom } from '@/lib/check-in';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -1591,12 +1590,6 @@ export default function ReportResult() {
   const [line, setLine] = useState<string | null>(null);
   const [done, setDone] = useState<{ title: string; line: string }>({ title: '', line: '' });
   const [receipt, setReceipt] = useState<Receipt>({});
-  /* The observer's own copy of what they just reported. The ref is how the
-     drawn card becomes a PNG — react-native-svg's toDataURL, so no capture
-     library and no new native module. */
-  const cardRef = useRef<ReceiptCardHandle>(null);
-  /** null until the save has been tried, so the row says nothing prematurely. */
-  const [cardSaved, setCardSaved] = useState<boolean | null>(null);
   /** Held in the offline outbox rather than delivered — a different ending. */
   const [queued, setQueued] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -2510,39 +2503,22 @@ export default function ReportResult() {
                 something is a card most people never see — and it decides for
                 itself what it may claim: with no entry hash it prints none and
                 says it is not on the ledger yet (see lib/receipt.ts). */}
-            <Text className="pb-1 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
-              {i18nT('observe.your-copy')}
-            </Text>
-            <View className="items-start">
-              <ReceiptCard
-                ref={cardRef}
-                onReady={async () => {
-                  if (cardSaved !== null) return;      // once per report
-                  setCardSaved(await saveReceiptPng(cardRef.current));
-                }}
-                data={{
-                  puName: unit?.name,
-                  puCode: unit?.pu_code,
-                  ward: unit?.ward,
-                  lga: unit?.lga,
-                  state: unit?.state,
-                  contest: contest?.name,
-                  votes,
-                  entryHash: receipt.entryHash,
-                  at: Date.now(),
-                }}
-              />
-              {/* IT SAVES WITH THE PHOTOS, under the same switch — see the web
-                  twin. The row below says which happened, because a save that
-                  silently does nothing looks exactly like a broken feature. */}
-              <Text className="pt-2 text-xs text-muted">
-                {cardSaved === null
-                  ? ''
-                  : cardSaved
-                    ? i18nT('observe.card-saved-with-photos')
-                    : i18nT('observe.copies-off-note')}
-              </Text>
-            </View>
+            {/* IT SAVES WITH THE PHOTOS, under the same switch — see the web
+                twin and components/receipt-copy.tsx, which the collation and
+                incident screens share. */}
+            <ReceiptCopy
+              data={{
+                puName: unit?.name,
+                puCode: unit?.pu_code,
+                ward: unit?.ward,
+                lga: unit?.lga,
+                state: unit?.state,
+                contest: contest?.name,
+                votes,
+                entryHash: receipt.entryHash,
+                at: Date.now(),
+              }}
+            />
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (
               <View className="mt-3 rounded-2xl bg-card px-4 py-2">

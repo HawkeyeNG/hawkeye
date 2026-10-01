@@ -51,7 +51,8 @@
         ]
       },
       "associatedDomains": [
-        "applinks:hawkeye.com.ng"
+        "applinks:hawkeye.com.ng",
+        "webcredentials:hawkeye.com.ng"
       ]
     },
     "android": {

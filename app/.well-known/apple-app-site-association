@@ -18,5 +18,10 @@
         ]
       }
     ]
+  },
+  "webcredentials": {
+    "apps": [
+      "G99KD9RW94.ng.com.hawkeye.observer"
+    ]
   }
 }

@@ -863,6 +863,8 @@ export default {
   "n.auth.wa-safety": "Fi ránṣẹ́ kìkì bí ìwọ fúnra rẹ bá bẹ̀rẹ̀ wíwọlé yìí.",
   "n.auth.wa-starting": "À ń gba kóòdù rẹ…",
   "n.auth.wa-title": "Fi kóòdù yìí ránṣẹ́ sí wa lórí WhatsApp",
+  "n.passkey.none-here": "Kò tíì sí passkey Hawkeye lórí fóònù yìí. Wọlé ní ọ̀nà mìíràn.",
+  "n.passkey.needs-lock": "Kọ́kọ́ ṣètò ìka ọwọ́, ojú tàbí títìpa ìbòjú lórí fóònù yìí.",
   "n.auth.wa-too-many": "Ìgbìyànjú ti pọ̀ jù fún nọ́mbà yìí. Dúró fún wákàtí kan, tàbí gba kóòdù lórí WhatsApp dípò.",
   "n.auth.wa-verified": "A ti fìdí rẹ̀ múlẹ̀ — à ń mú ọ wọlé…",
   "n.auth.wa-waiting": "À ń dúró de ìfiránṣẹ́ rẹ…",

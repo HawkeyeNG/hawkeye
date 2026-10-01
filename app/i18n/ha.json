@@ -2660,5 +2660,12 @@
   "situation-room.note-seat-shares-lga": "Rajista ba ta faɗi a wacce daga cikin kujerun wannan karamar hukuma rumfar zaɓe take ba, don haka wannan ɗakin yana ƙidaya dukkan karamar hukumar.",
   "situation-room.note-by-election-seat": "Wannan zaɓen cike gurbi na kujera ɗaya ne: {v0}.",
   "situation-room.org-pending-banner": "Hawkeye yana tabbatar da cewa wannan ɗakin yana wakiltar {v0} — ana duba kowace ƙungiya haka nan. Kafin nan hanyoyin gayyata ba sa aiki kuma babu sabon mutum da zai iya shiga. Za ka iya shirya ɗakin a halin yanzu.",
-  "situation-room.org-block-banner": "Hawkeye bai iya tabbatar da cewa wannan ɗakin yana wakiltar ƙungiyar da ya zaɓa ba, don haka babu sabon mutum da zai iya shiga."
+  "situation-room.org-block-banner": "Hawkeye bai iya tabbatar da cewa wannan ɗakin yana wakiltar ƙungiyar da ya zaɓa ba, don haka babu sabon mutum da zai iya shiga.",
+  "receipt.kind-collation": "Tattarawa",
+  "receipt.kind-incident": "Lamari",
+  "receipt.title-report": "Kwafinka na wannan rahoto",
+  "receipt.status-review": "An aika don bita — mutum ne ke duba kowane rahoto kafin a wallafa komai.",
+  "receipt.status-incident-pending": "Ba a riga an aika ba — zai tafi idan ka dawo kan layi.",
+  "receipt.collation-ledger-entry": "SHIGARWAR LITTAFIN TATTARAWA",
+  "receipt.foot-incident": "Hawkeye tana wallafa lamari ne kawai bayan mutum ya duba shi."
 }

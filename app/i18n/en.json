@@ -2633,5 +2633,12 @@
   "situation-room.note-seat-shares-lga": "The register does not say which of this local government’s seats a polling unit votes in, so this room counts the whole local government.",
   "situation-room.note-by-election-seat": "This by-election is for one seat: {v0}.",
   "situation-room.org-pending-banner": "Hawkeye is checking that this room speaks for {v0} — every organisation is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
-  "situation-room.org-block-banner": "Hawkeye could not verify that this room speaks for the organisation it chose, so nobody new can join."
+  "situation-room.org-block-banner": "Hawkeye could not verify that this room speaks for the organisation it chose, so nobody new can join.",
+  "receipt.kind-collation": "Collation",
+  "receipt.kind-incident": "Incident",
+  "receipt.title-report": "Your copy of this report",
+  "receipt.status-review": "Sent for review — a person checks every report before anything is published.",
+  "receipt.status-incident-pending": "Not sent yet — it sends when you are back online.",
+  "receipt.collation-ledger-entry": "COLLATION LEDGER ENTRY",
+  "receipt.foot-incident": "Hawkeye publishes an incident only after a person has reviewed it."
 }

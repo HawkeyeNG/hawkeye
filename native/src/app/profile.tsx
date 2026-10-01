@@ -36,6 +36,14 @@ import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
 import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
+import {
+  createState,
+  listPasskeys,
+  passkeyErrorText,
+  registerPasskeyHere,
+  removePasskey,
+  type PasskeyItem,
+} from '@/lib/passkeys';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -258,6 +266,66 @@ export default function Profile() {
     const next = !saveOn;
     setSaveOn(next);
     void setSaveToDeviceEnabled(next);
+  };
+
+  /**
+   * PASSKEYS (lib/passkeys.ts): list, remove, and add one on this phone where
+   * a passkey can work. Listing and removing need no native module, so the row
+   * also shows on a binary without one (1.0.11 and older, by OTA) when the
+   * account already has a passkey made elsewhere — only "Add" needs the module.
+   * Inline under the row, not a modal: the add button opens the system's own
+   * sheet, and nothing of ours sits in front of it. Twin of profile.html #pk-modal.
+   */
+  const [pkItems, setPkItems] = useState<PasskeyItem[] | null>(null);
+  const [pkCreate, setPkCreate] = useState<'yes' | 'no-lock' | 'no'>('no');
+  const [pkOpen, setPkOpen] = useState(false);
+  const [pkMsg, setPkMsg] = useState<string | null>(null);
+  /** 'add', or the id being removed. */
+  const [pkBusy, setPkBusy] = useState<string | null>(null);
+  useEffect(() => {
+    if (auth.status !== 'signedIn') return;
+    let alive = true;
+    listPasskeys().then((l) => { if (alive && l) setPkItems(l); });
+    createState().then((s) => { if (alive) setPkCreate(s); }).catch(() => {});
+    return () => { alive = false; };
+  }, [auth.status]);
+  const pkCount = pkItems?.length ?? 0;
+  const showPasskeys = pkCreate === 'yes' || pkCount > 0;
+
+  const onAddPasskey = async () => {
+    setPkBusy('add');
+    setPkMsg(null);
+    try {
+      const r = await registerPasskeyHere();
+      if (r.ok) {
+        setPkItems(r.passkeys);
+        setPkMsg(i18nT('passkey.added'));
+        return;
+      }
+      setPkMsg(passkeyErrorText(r.error));
+    } catch {
+      setPkMsg(passkeyErrorText('network'));
+    } finally {
+      setPkBusy(null);
+    }
+  };
+
+  const onRemovePasskey = async (id: string) => {
+    setPkBusy(id);
+    setPkMsg(null);
+    try {
+      const r = await removePasskey(id);
+      if (r.ok) {
+        setPkItems(r.passkeys);
+        setPkMsg(i18nT('passkey.removed'));
+        return;
+      }
+      setPkMsg(passkeyErrorText(r.error));
+    } catch {
+      setPkMsg(passkeyErrorText('network'));
+    } finally {
+      setPkBusy(null);
+    }
   };
 
   // --- password modal ------------------------------------------------------
@@ -575,6 +643,84 @@ export default function Profile() {
                 chevron
                 onPress={openPw}
               />
+              {showPasskeys ? (
+                <>
+                  <Row
+                    icon="lock"
+                    label={i18nT('passkey.profile-row')}
+                    value={pkCount ? i18nT('passkey.count', { n: pkCount }) : i18nT('passkey.count-none')}
+                    onPress={() => {
+                      setPkMsg(null);
+                      setPkOpen((o) => !o);
+                    }}
+                  />
+                  {pkOpen ? (
+                    <View className="px-4 pb-4">
+                      <Text className="text-xs text-muted">{i18nT('passkey.modal-body')}</Text>
+                      {pkCount ? (
+                        (pkItems ?? []).map((p) => (
+                          <View key={p.id} className="flex-row items-center pt-3">
+                            <View className="flex-1 pr-2">
+                              <Text className="text-sm font-semibold text-ink" numberOfLines={1}>
+                                {p.label ?? ''}
+                              </Text>
+                              <Text className="text-[11px] text-muted">
+                                {[
+                                  i18nT('passkey.added-on', { date: dt(p.createdAt) }),
+                                  p.lastUsedAt ? i18nT('passkey.last-used', { date: dt(p.lastUsedAt) }) : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </Text>
+                            </View>
+                            <Pressable
+                              disabled={!!pkBusy}
+                              onPress={() => void onRemovePasskey(p.id)}
+                              accessibilityRole="button"
+                              accessibilityLabel={i18nT('passkey.remove-aria', { label: p.label ?? '' })}
+                              className="rounded-full bg-bad px-3 py-1.5 active:opacity-70"
+                            >
+                              {pkBusy === p.id ? (
+                                <ActivityIndicator size="small" color={ui.tint.bad.ink} />
+                              ) : (
+                                <Text className="text-xs font-bold text-bad-ink">{i18nT('passkey.remove')}</Text>
+                              )}
+                            </Pressable>
+                          </View>
+                        ))
+                      ) : (
+                        <Text className="pt-3 text-sm text-muted">{i18nT('passkey.none-yet')}</Text>
+                      )}
+                      {/* Add: only where this phone can make one. A phone with no
+                          lock is told what to set up; an older binary (no module)
+                          or a server with passkeys off simply has no button. */}
+                      {pkCreate === 'yes' ? (
+                        <Pressable
+                          disabled={!!pkBusy}
+                          onPress={() => void onAddPasskey()}
+                          accessibilityRole="button"
+                          className={`mt-4 items-center rounded-2xl py-3 ${
+                            pkBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                          }`}
+                        >
+                          {pkBusy === 'add' ? (
+                            <ActivityIndicator color={BRAND.gold} />
+                          ) : (
+                            <Text className="text-sm font-bold text-hawk-gold">{i18nT('passkey.add')}</Text>
+                          )}
+                        </Pressable>
+                      ) : pkCreate === 'no-lock' ? (
+                        <Text className="pt-3 text-xs text-muted">{i18nT('n.passkey.needs-lock')}</Text>
+                      ) : null}
+                      {pkMsg ? (
+                        <Text className="pt-2 text-sm text-muted" accessibilityLiveRegion="polite">
+                          {pkMsg}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </>
+              ) : null}
               {/* Unpressable when the phone cannot satisfy it, rather than a
                   switch that would flip and change nothing. */}
               <Row

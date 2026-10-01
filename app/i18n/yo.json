@@ -2659,5 +2659,12 @@
   "situation-room.note-seat-shares-lga": "Àkọsílẹ̀ kò sọ èwo nínú àwọn ìjókòó ìjọba ìbílẹ̀ yìí ni ilé ìdìbò kan ń dìbò fún, nítorí náà yàrá yìí ń ka gbogbo ìjọba ìbílẹ̀ náà.",
   "situation-room.note-by-election-seat": "Ìdìbò àfidípò yìí jẹ́ fún ìjókòó kan: {v0}.",
   "situation-room.org-pending-banner": "Hawkeye ń fìdí rẹ̀ múlẹ̀ pé yàrá yìí ń ṣojú fún {v0} — bákan náà ni a ń ṣàyẹ̀wò gbogbo àjọ. Títí di ìgbà náà, àwọn ìjápọ̀ ìpè kò ní ṣiṣẹ́, kò sì sí ẹni tuntun tí ó lè darapọ̀. O lè ṣètò yàrá náà ní báyìí ná.",
-  "situation-room.org-block-banner": "Hawkeye kò lè fìdí rẹ̀ múlẹ̀ pé yàrá yìí ń ṣojú fún àjọ tí ó yàn, nítorí náà kò sí ẹni tuntun tí ó lè darapọ̀."
+  "situation-room.org-block-banner": "Hawkeye kò lè fìdí rẹ̀ múlẹ̀ pé yàrá yìí ń ṣojú fún àjọ tí ó yàn, nítorí náà kò sí ẹni tuntun tí ó lè darapọ̀.",
+  "receipt.kind-collation": "Àkójọpọ̀",
+  "receipt.kind-incident": "Iṣẹlẹ",
+  "receipt.title-report": "Ẹ̀dà rẹ ti ìròyìn yìí",
+  "receipt.status-review": "A ti fi ránṣẹ́ fún àyẹ̀wò — ènìyàn ni ó ń ṣàyẹ̀wò ìròyìn kọ̀ọ̀kan ṣáájú kí a tó tẹ̀ ohunkóhun jáde.",
+  "receipt.status-incident-pending": "Kò tíì ránṣẹ́ — yóò ránṣẹ́ nígbà tí o bá padà sórí ẹ̀rọ ayélujára.",
+  "receipt.collation-ledger-entry": "ÀKỌSÍLẸ̀ ÌWÉ ÀKÓJỌPỌ̀",
+  "receipt.foot-incident": "Hawkeye máa ń tẹ iṣẹlẹ jáde lẹ́yìn tí ènìyàn bá ti ṣàyẹ̀wò rẹ̀ nìkan."
 }

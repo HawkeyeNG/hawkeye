@@ -309,13 +309,25 @@ async function waInboundEnabled(): Promise<boolean> {
 }
 
 /**
- * ONE /api/health request for every switch read in the same moment. The
- * sign-in screen asks for SMS and WhatsApp together on mount; two identical
- * requests on the slowest link of the day would be one too many. Shared only
- * while in flight, so a later mount still gets a fresh answer. Never rejects:
- * a failure is `null`, which every reader treats as "off".
+ * Whether the server signs in with passkeys (`passkeys`, true once
+ * @simplewebauthn/server is installed there) for the RP ID this binary is
+ * associated with. A server whose RP ID is anything else would refuse every
+ * passkey this app can make, so that counts as off. FAILS CLOSED, like the
+ * two above. lib/passkeys.ts is the only reader.
  */
-type Health = { smsOtp?: boolean; waInbound?: boolean };
+async function passkeysEnabled(rpId: string): Promise<boolean> {
+  const h = await health();
+  return h?.passkeys === true && h?.passkeyRpId === rpId;
+}
+
+/**
+ * ONE /api/health request for every switch read in the same moment. The
+ * sign-in screen asks for SMS, WhatsApp and passkeys together on mount; three
+ * identical requests on the slowest link of the day would be two too many.
+ * Shared only while in flight, so a later mount still gets a fresh answer.
+ * Never rejects: a failure is `null`, which every reader treats as "off".
+ */
+type Health = { smsOtp?: boolean; waInbound?: boolean; passkeys?: boolean; passkeyRpId?: string };
 let healthInFlight: Promise<Health | null> | null = null;
 function health(): Promise<Health | null> {
   if (!healthInFlight) {
@@ -330,6 +342,7 @@ export const api = {
   contests: contestsWithCache,
   smsOtpEnabled,
   waInboundEnabled,
+  passkeysEnabled,
   /**
    * A contest's board. `state` crops it to one state and subdivides one level
    * finer; `level` asks for a specific breakdown — a race map draws LGAs, and a

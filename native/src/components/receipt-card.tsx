@@ -128,6 +128,11 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
        every other Hawkeye header carries the hawk. */
     push(<SvgImage key="crest" href={RECEIPT_CREST} x={PAD} y={y} width={84} height={84} preserveAspectRatio="xMidYMid meet" />);
     push(<SvgText key="mark" x={PAD + 104} y={y + 56} fontSize={46} fill={INK} fontWeight="700" fontFamily={SANS}>Hawkeye</SvgText>);
+    /* WHICH REPORT, top right on the wordmark's baseline: COLLATION or
+       INCIDENT. A unit result has no label and draws as it always has. */
+    if (L.label) {
+      push(<SvgText key="kind" x={W - PAD} y={y + 56} fontSize={30} fill={GOLD} fontWeight="700" fontFamily={SANS} textAnchor="end">{L.label.toUpperCase()}</SvgText>);
+    }
     y += 84 + 64;
 
     line(L.title.toUpperCase(), 30, GOLD, '700');
@@ -143,24 +148,29 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
     line(L.when, 30, FAINT, '400');
     y += 56;
 
-    // The tallies, right-aligned so the digits line up.
-    const boxTop = y - 12;
-    const rowH = 58;
-    const boxH = 30 + L.votes.length * rowH + (L.votes.length ? 60 : 0);
-    push(<Rect key="box" x={PAD - 24} y={boxTop} width={W - (PAD - 24) * 2} height={boxH} rx={20} fill="rgba(255,255,255,0.05)" />);
-    y += 34;
-    for (const v of L.votes) {
-      push(<SvgText key={`p${v.party}`} x={PAD} y={y} fontSize={34} fill={INK} fontWeight="600" fontFamily={SANS}>{v.party}</SvgText>);
-      push(<SvgText key={`n${v.party}`} x={W - PAD} y={y} fontSize={34} fill={INK} fontWeight="700" fontFamily={MONO} textAnchor="end">{String(v.count)}</SvgText>);
-      y += rowH;
+    // The tallies, right-aligned so the digits line up. An incident has no
+    // figures, so no box: straight on to its status band.
+    if (L.figures) {
+      const boxTop = y - 12;
+      const rowH = 58;
+      const boxH = 30 + L.votes.length * rowH + (L.votes.length ? 60 : 0);
+      push(<Rect key="box" x={PAD - 24} y={boxTop} width={W - (PAD - 24) * 2} height={boxH} rx={20} fill="rgba(255,255,255,0.05)" />);
+      y += 34;
+      for (const v of L.votes) {
+        push(<SvgText key={`p${v.party}`} x={PAD} y={y} fontSize={34} fill={INK} fontWeight="600" fontFamily={SANS}>{v.party}</SvgText>);
+        push(<SvgText key={`n${v.party}`} x={W - PAD} y={y} fontSize={34} fill={INK} fontWeight="700" fontFamily={MONO} textAnchor="end">{String(v.count)}</SvgText>);
+        y += rowH;
+      }
+      if (L.votes.length) {
+        push(<Rect key="rule" x={PAD} y={y - 36} width={W - PAD * 2} height={2} fill="rgba(255,255,255,0.16)" />);
+        push(<SvgText key="totl" x={PAD} y={y + 8} fontSize={30} fill={MUTED} fontWeight="600" fontFamily={SANS}>{L.totalLabel}</SvgText>);
+        push(<SvgText key="totn" x={W - PAD} y={y + 8} fontSize={32} fill={INK} fontWeight="700" fontFamily={MONO} textAnchor="end">{String(L.total)}</SvgText>);
+        y += 60;
+      }
+      y = boxTop + boxH + 64;
+    } else {
+      y += 52;
     }
-    if (L.votes.length) {
-      push(<Rect key="rule" x={PAD} y={y - 36} width={W - PAD * 2} height={2} fill="rgba(255,255,255,0.16)" />);
-      push(<SvgText key="totl" x={PAD} y={y + 8} fontSize={30} fill={MUTED} fontWeight="600" fontFamily={SANS}>{L.totalLabel}</SvgText>);
-      push(<SvgText key="totn" x={W - PAD} y={y + 8} fontSize={32} fill={INK} fontWeight="700" fontFamily={MONO} textAnchor="end">{String(L.total)}</SvgText>);
-      y += 60;
-    }
-    y = boxTop + boxH + 64;
 
     if (L.practice) {
       /* SAID TWICE, because this is the card most likely to be forwarded out of
@@ -173,7 +183,9 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
         for (const ln of chunk(L.hash, 26, W - PAD * 2)) { line(ln, 26, FAINT, '400', MONO); y += 32; }
         y += 10;
       }
-    } else if (L.pending) {
+    } else if (L.pending || !L.hash) {
+      /* Waiting to send — or, for an incident, sent for review: no hash to
+         show either way, so the status gets the band. */
       push(<Rect key="pend" x={PAD - 24} y={y - 40} width={W - (PAD - 24) * 2} height={96} rx={16} fill="rgba(245,179,1,0.14)" />);
       for (const ln of wrap(L.status, 28, W - PAD * 2 - 8)) { line(ln, 28, GOLD, '600'); y += 38; }
       y += 34;
@@ -181,8 +193,11 @@ export const ReceiptCard = forwardRef<ReceiptCardHandle, { data: ReceiptData; wi
       line(L.hashLabel, 26, MUTED, '600'); y += 42;
       for (const ln of chunk(L.hash, 30, W - PAD * 2)) { line(ln, 30, GOLD, '700', MONO); y += 38; }
       y += 14;
-      line(L.verifyLabel, 26, FAINT, '400');
-      y += 44;
+      // Only where there IS a page that shows this entry (a unit result).
+      if (L.verify) {
+        line(L.verifyLabel, 26, FAINT, '400');
+        y += 44;
+      }
     }
 
     y += 30;

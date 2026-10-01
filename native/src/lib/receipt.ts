@@ -22,7 +22,20 @@
 
 export type ReceiptVote = { party: string; count: number };
 
+/** Which report the card is for. See the note in receiptLines. */
+export type ReceiptKind = 'result' | 'collation' | 'incident';
+
 export type ReceiptData = {
+  /** Unset = a unit result, the original card. */
+  kind?: ReceiptKind;
+  /** collation: the area's name (ward, LGA or state) — the card's headline. */
+  area?: string;
+  /** collation: the form, e.g. "EC8B". */
+  form?: string;
+  /** incident: the TYPE, already in the reader's language. */
+  incident?: string;
+  /** incident: the server's reference once sent. Absent = still on the phone. */
+  reference?: string | number | null;
   /** A rehearsal, not a result. See the three-state note in receiptLines. */
   practice?: boolean;
   puName?: string;
@@ -58,6 +71,11 @@ export type ReceiptLines = {
   totalLabel: string;
   hashLabel: string;
   verifyLabel: string;
+  kind: ReceiptKind;
+  /** COLLATION / INCIDENT in the top corner; '' on a unit result. */
+  label: string;
+  /** Draw the figures box. False on an incident, which has none. */
+  figures: boolean;
 };
 
 const two = (n: number) => String(n).padStart(2, '0');
@@ -95,6 +113,19 @@ export function receiptLines(
 ): ReceiptLines {
   const data = d || {};
   /**
+   * WHICH REPORT THIS IS — the twin of the same note in app/receipt.js.
+   * Unknown = a unit result, the original card.
+   *  - collation: the area is the headline and the form sits under it. Its
+   *    hash is on the collation chain, which ledger.html does not list, so it
+   *    carries the hash and NO verify link.
+   *  - incident: not on any ledger. Sent for review once the server gave it a
+   *    reference, saved on the phone before. Only what the public incident feed
+   *    shows once published — type, state, time — never the description,
+   *    media, unit or a position. No figures box.
+   */
+  const kind: ReceiptKind = data.kind === 'collation' || data.kind === 'incident' ? data.kind : 'result';
+  const incident = kind === 'incident';
+  /**
    * THREE STATES, NOT TWO.
    *
    * Practice is how someone learns what this card is before they ever stand at
@@ -107,13 +138,20 @@ export function receiptLines(
    * this card must never do.
    */
   const practice = !!data.practice;
-  const votes = (data.votes || [])
+  const votes = incident ? [] : (data.votes || [])
     .filter((v) => Number(v.count) > 0)
     .slice()
     .sort((a, b) => (b.count - a.count) || String(a.party).localeCompare(String(b.party)));
   const total = votes.reduce((n, v) => n + Number(v.count), 0);
-  const pending = !data.entryHash;
-  const where = [data.ward, data.lga, data.state].filter(Boolean).join(' · ');
+  /* An incident is never on a chain: SENT (it has the server's reference) or
+     not yet. Everything else is pending until it has an entry hash. */
+  const pending = incident ? !data.reference : !data.entryHash;
+  const hash = pending || incident ? '' : String(data.entryHash);
+  /* The incident's TYPE is its headline, in place of a unit; `where` may only
+     be the state, the one place the public feed names. No race line. */
+  const where = incident ? (data.state || '') : [data.ward, data.lga, data.state].filter(Boolean).join(' · ');
+  const unit = kind === 'collation' ? (data.area || '') : incident ? (data.incident || '') : (data.puName || '');
+  const contest = incident ? '' : (data.contest || '');
   return {
     practice,
     pending,
@@ -121,28 +159,37 @@ export function receiptLines(
       ? t('receipt.title-practice', 'Practice run — not a real result')
       : pending
         ? t('receipt.title-pending', 'Saved on your phone')
-        : t('receipt.title-recorded', 'Your copy of this result'),
-    unit: data.puName || '',
-    code: data.puCode || '',
+        : incident
+          ? t('receipt.title-report', 'Your copy of this report')
+          : t('receipt.title-recorded', 'Your copy of this result'),
+    unit,
+    code: kind === 'collation' ? (data.form || '') : incident ? '' : (data.puCode || ''),
     where,
-    contest: data.contest || '',
+    contest,
     when: t('receipt.reported', 'Reported {v0}').replace('{v0}', stamp(data.at || Date.now(), t)),
     votes,
     total,
     /* Short form for the face of the card; the full hash is what verifies, and
        it is printed underneath so a photograph of this card is enough. */
-    hashShort: pending ? '' : String(data.entryHash).slice(0, 16),
-    hash: pending ? '' : String(data.entryHash),
+    hashShort: hash.slice(0, 16),
+    hash,
     /* NO VERIFY LINK ON A PRACTICE CARD. The practice chain is not the public
        ledger and ledger.html cannot show it; a link there would 404 and, worse,
-       imply the rehearsal was published. */
-    verify: (pending || practice) ? '' : 'hawkeye.com.ng/ledger.html#' + String(data.entryHash),
+       imply the rehearsal was published. The same for a collation (its own
+       chain, not listed there) and an incident (no chain at all). */
+    verify: (pending || practice || kind !== 'result') ? '' : 'hawkeye.com.ng/ledger.html#' + hash,
     status: practice
       ? t('receipt.status-practice', 'Practice chain only — this is a rehearsal and is never counted.')
-      : pending
-        ? t('receipt.status-pending', 'Not yet on the public ledger — it sends when you are back online.')
-        : t('receipt.status-recorded', 'Recorded on the public ledger.'),
-    foot: t('receipt.foot', 'Hawkeye does not declare results — official results are announced by INEC.'),
+      : incident
+        ? (pending
+          ? t('receipt.status-incident-pending', 'Not sent yet — it sends when you are back online.')
+          : t('receipt.status-review', 'Sent for review — a person checks every report before anything is published.'))
+        : pending
+          ? t('receipt.status-pending', 'Not yet on the public ledger — it sends when you are back online.')
+          : t('receipt.status-recorded', 'Recorded on the public ledger.'),
+    foot: incident
+      ? t('receipt.foot-incident', 'Hawkeye publishes an incident only after a person has reviewed it.')
+      : t('receipt.foot', 'Hawkeye does not declare results — official results are announced by INEC.'),
     /* THE RENDERER'S OWN LABELS LIVE HERE TOO. They used to be typed
        straight into the drawing, which put them outside everything that
        compares or translates the card - the one place a string is
@@ -150,7 +197,15 @@ export function receiptLines(
     totalLabel: t('receipt.total-on-this-sheet', 'Total on this sheet'),
     hashLabel: practice
       ? t('receipt.practice-chain-entry', 'PRACTICE CHAIN ENTRY')
-      : t('receipt.ledger-entry', 'LEDGER ENTRY'),
+      : kind === 'collation'
+        ? t('receipt.collation-ledger-entry', 'COLLATION LEDGER ENTRY')
+        : t('receipt.ledger-entry', 'LEDGER ENTRY'),
     verifyLabel: t('receipt.verify-at', 'Verify at hawkeye.com.ng/ledger.html'),
+    kind,
+    /* The one thing that differs on the face of the card: which report. */
+    label: kind === 'collation'
+      ? t('receipt.kind-collation', 'Collation')
+      : incident ? t('receipt.kind-incident', 'Incident') : '',
+    figures: !incident,
   };
 }

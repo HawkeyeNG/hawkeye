@@ -598,6 +598,25 @@
         </div>
         <div id="pair-summary" class="hint" style="margin:8px 0"></div>
         <div id="pair-work"></div>
+        <!-- IReV ELECTIONS (routes/irev.js, services/irevChain.js): which INEC
+             result-viewer ids the comparison uses. The server finds them and
+             confirms the unambiguous ones by itself; these buttons are the
+             override, and an Unconfirm is sticky. Loads on first open. -->
+        <details id="irev-wrap" style="margin-top:18px">
+          <summary data-i18n="irev.admin.title" style="cursor:pointer;font-weight:700">IReV elections</summary>
+          <p data-i18n="irev.admin.intro" class="hint">The INEC result-viewer elections this comparison uses. The server looks them up by itself and confirms one only when exactly one record matches the date, the race and the seat. Confirm or unconfirm here to override it; an election you unconfirm is never picked up again automatically.</p>
+          <div class="row" style="margin-top:8px;gap:8px;flex-wrap:wrap">
+            <button data-i18n="coverage.admin.refresh" id="irev-refresh" class="secondary" style="width:auto;margin:0">Refresh</button>
+            <button data-i18n="irev.admin.look-now" id="irev-resolve" type="button" class="secondary" style="width:auto;margin:0">Look for elections now</button>
+            <button data-i18n="irev.admin.scan-now" id="irev-scan" type="button" class="secondary" style="width:auto;margin:0">Check sheets now</button>
+          </div>
+          <p id="irev-chain" class="meta" role="status"></p>
+          <!-- A one-column grid with a minmax(0,1fr) track contributes no
+               min-content width, so the wide tables scroll inside it instead
+               of stretching the console past a phone's edge. -->
+          <div id="irev-out" style="display:grid;grid-template-columns:minmax(0,1fr)"></div>
+          <p id="irev-status" class="status" role="status"></p>
+        </details>
     </div><div class="panel" data-p="push" hidden>
     <h1 data-i18n="admin.send-a-push">Send a Push</h1>
     <p class="hint">Goes to <strong data-i18n="admin.every-registered-device-on-the-platforms">every registered device on the platforms you tick</strong> —
@@ -2183,6 +2202,236 @@
       if (!(await hkConfirm('Close these races on PRODUCTION?\n\nThis deletes the follow rows and sends a push to everyone who was following. A push cannot be recalled.', { ok: 'Close races', danger: true }))) return;
       call(true);
     };
+  })();
+  </script>
+
+  <script>
+  /**
+   * IReV ELECTIONS — GET /api/irev/elections (routes/irev.js). Which INEC
+   * result-viewer ids the comparison uses, how each one was decided, how far
+   * the sheet index has got, and the Confirm / Unconfirm override.
+   *
+   * Lives in the Pairs panel as <details id="irev-wrap">. Own <script> and own
+   * helpers — nothing declared in the other IIFEs is in scope here. Loads the
+   * first time it is opened; repaints without refetching on a language change.
+   * The server's own reason strings are English diagnostics, so they are mapped
+   * to keyed sentences here rather than shown raw.
+   */
+  (function () {
+    const panel = document.getElementById('irev-wrap');
+    const out = document.getElementById('irev-out');
+    const line = document.getElementById('irev-chain');
+    const statusEl = document.getElementById('irev-status');
+    if (!panel || !out) return;
+
+    const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => (k in vars ? vars[k] : m));
+    const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const num = (n) => Number(n || 0).toLocaleString();
+    const when = (ms) => (ms ? new Date(ms).toLocaleString() : '—');
+
+    let data = null;
+    let err = null;
+    let loaded = false;
+    let seq = 0;
+    let msg = null;   // { k, en, vars, bad } — kept as a KEY so a language change repaints it
+
+    const RACE = {
+      PRES: ['irev.admin.race-pres', 'Presidential'],
+      SEN: ['irev.admin.race-sen', 'Senate'],
+      REPS: ['irev.admin.race-reps', 'House of Representatives'],
+      GOV: ['irev.admin.race-gov', 'Governorship'],
+      ASSEMBLY: ['irev.admin.race-assembly', 'State House of Assembly'],
+    };
+    const race = (c) => (RACE[c] ? T(RACE[c][0], RACE[c][1]) : (c || '—'));
+    const seat = (e) => (e.code === 'PRES' ? T('irev.admin.nationwide', 'Nationwide')
+      : [e.domain, e.state].filter(Boolean).join(' · ') || '—');
+
+    function statusLabel(e) {
+      if (e.status === 'confirmed') {
+        if (e.confirmedBy === 'auto') return T('irev.admin.st-auto', 'Confirmed automatically');
+        if (e.confirmedBy === 'admin') return T('irev.admin.st-admin', 'Confirmed by you');
+        return T('irev.admin.st-server', 'Set on the server');
+      }
+      if (e.status === 'rejected') return T('irev.admin.st-held', 'Unconfirmed by you — not used');
+      return T('irev.admin.st-unconfirmed', 'Not confirmed — not used');
+    }
+    function why(e) {
+      const d = String(e.decision || '');
+      if (d.startsWith('confirm')) return T('irev.admin.why-confirm', 'Exactly one record matched the date, the race and the seat.');
+      if (d.startsWith('hold')) return T('irev.admin.why-ambiguous', 'More than one record matches this seat. Check it on IReV before confirming.');
+      if (d.startsWith('unmatched')) return T('irev.admin.why-unmatched', 'None of our races matches this record, so it cannot be confirmed here.');
+      if (d.startsWith('env')) return T('irev.admin.why-env', 'Set by IREV_ELECTION_ID on the server.');
+      return '';
+    }
+    function coverage(e) {
+      const x = e.index;
+      if (!x || !x.units) return T('irev.admin.cov-none', 'Not checked yet');
+      let s = fill(T('irev.admin.cov', '{sheets} of {units} units have a sheet'), { sheets: num(x.withSheet), units: num(x.units) });
+      if (x.noSheetFinal) s += ' · ' + fill(T('irev.admin.cov-final', '{n} still had no sheet at the cut-off'), { n: num(x.noSheetFinal) });
+      if (x.replaced) s += ' · ' + fill(T('irev.admin.cov-replaced', '{n} sheets replaced after upload'), { n: num(x.replaced) });
+      return s;
+    }
+    function chainHtml(c, s) {
+      if (!c) return '';
+      const parts = [];
+      if (c.rehearsal) parts.push('<b>' + esc(T('irev.admin.chain-rehearsal', 'REHEARSAL MODE')) + '</b>');
+      parts.push(esc(c.resolverLastAt
+        ? fill(T('irev.admin.chain-looked', 'Last looked for elections: {when}'), { when: when(c.resolverLastAt) })
+        : T('irev.admin.chain-never', 'Has not looked for elections yet')));
+      parts.push(esc(c.resolverHourly
+        ? T('irev.admin.chain-hourly', 'looking hourly — a polling date is near')
+        : T('irev.admin.chain-daily', 'looking daily')));
+      if (c.indexer && c.indexer.lastAt) parts.push(esc(fill(T('irev.admin.chain-sheets', 'sheets last checked: {when}'), { when: when(c.indexer.lastAt) })));
+      const up = (c.hosts || []).some((h) => !h.open && h.lastOkAt);
+      const down = (c.hosts || []).every((h) => h.open);
+      if (up) parts.push(esc(T('irev.admin.chain-up', 'IReV answering')));
+      else if (down) parts.push('<span class="bad">' + esc(T('irev.admin.chain-down', 'IReV not answering — retrying with backoff')) + '</span>');
+      let html = parts.join(' · ');
+      const k = s && s.counts;
+      if (k && Object.keys(k).length) {
+        html += '<br>' + esc(fill(T('irev.admin.panels', 'Agreed by the panel: {match} match · {mismatch} mismatch · {open} still open · {nosheet} with no sheet yet'),
+          { match: num(k.consistent), mismatch: num(k.mismatch), open: num(k.inconclusive), nosheet: num(k.no_doc) }));
+      }
+      return html;
+    }
+
+    function rowHtml(e) {
+      let act = '';
+      if (e.status === 'confirmed') {
+        act = '<button type="button" class="secondary irev-act" data-act="unconfirm" data-id="' + esc(e.irevId) + '" style="width:auto;margin:0">' + esc(T('irev.admin.unconfirm', 'Unconfirm')) + '</button>';
+      } else if (e.contest) {
+        act = '<button type="button" class="irev-act" data-act="confirm" data-id="' + esc(e.irevId) + '" style="width:auto;margin:0">' + esc(T('irev.admin.confirm', 'Confirm')) + '</button>';
+      }
+      const w = why(e);
+      return '<tr><td>' + esc(seat(e)) + '<div class="meta mono">' + esc(e.irevId) + '</div></td>'
+        + '<td>' + esc(statusLabel(e)) + (w ? '<div class="meta">' + esc(w) + '</div>' : '') + '</td>'
+        + '<td>' + esc(coverage(e)) + '</td>'
+        + '<td class="num">' + esc(fill(T('irev.admin.ours', '{n} · {sheets} with a sheet'), { n: num(e.pairs.total), sheets: num(e.pairs.withSheet) })) + '</td>'
+        + '<td>' + act + '</td></tr>';
+    }
+
+    function paint() {
+      line.innerHTML = data ? chainHtml(data.chain, data.summary) : '';
+      statusEl.className = 'status' + (msg && msg.bad ? ' bad' : '');
+      statusEl.textContent = msg ? fill(T(msg.k, msg.en), msg.vars || {}) : '';
+      if (err) {
+        out.innerHTML = '<p class="status bad">' + esc(err === 'unlock'
+          ? T('irev.admin.unlock-first', 'Unlock the console first.')
+          : fill(T('irev.admin.load-failed', 'Could not load IReV elections ({error}).'), { error: err })) + '</p>';
+        return;
+      }
+      if (!data) { out.innerHTML = '<p class="empty">' + esc(T('index.loading', 'Loading…')) + '</p>'; return; }
+      const list = data.elections || [];
+      if (!list.length) {
+        out.innerHTML = '<p class="empty">' + esc(T('irev.admin.none', 'No IReV elections found yet. INEC creates them a day or two before polling day; the server looks hourly from three days before.')) + '</p>';
+        return;
+      }
+      const head = '<thead><tr><th scope="col">' + esc(T('irev.admin.col-seat', 'Seat')) + '</th><th scope="col">' + esc(T('irev.admin.col-status', 'Status'))
+        + '</th><th scope="col">' + esc(T('irev.admin.col-sheets', 'INEC sheets')) + '</th><th scope="col" class="num">' + esc(T('irev.admin.col-ours', 'Our units'))
+        + '</th><th scope="col" aria-label="' + esc(T('irev.admin.col-action', 'Action')) + '"></th></tr></thead>';
+      /* By date, then by race. Undecided rows first: they are the ones that
+         need the owner. A race with many seats folds into a <details>. */
+      const byDate = new Map();
+      for (const e of list) {
+        if (!byDate.has(e.date)) byDate.set(e.date, new Map());
+        const m = byDate.get(e.date);
+        if (!m.has(e.code)) m.set(e.code, []);
+        m.get(e.code).push(e);
+      }
+      let html = '';
+      for (const [date, races] of byDate) {
+        html += '<h2 style="margin-top:14px">' + esc(date ? new Date(date + 'T12:00:00').toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '—') + '</h2>';
+        for (const [code, rows] of races) {
+          rows.sort((a, b) => Number(a.status === 'confirmed') - Number(b.status === 'confirmed'));
+          const open = rows.filter((x) => x.status !== 'confirmed' && x.contest).length;
+          const conf = rows.filter((x) => x.status === 'confirmed').length;
+          const sum = esc(fill(T('irev.admin.group', '{race}: {n} on IReV · {confirmed} confirmed · {open} need a decision'),
+            { race: race(code), n: num(rows.length), confirmed: num(conf), open: num(open) }));
+          const tbl = '<div style="overflow-x:auto"><table class="cov-adm">' + head + '<tbody>' + rows.map(rowHtml).join('') + '</tbody></table></div>';
+          html += rows.length > 6
+            ? '<details' + (open ? ' open' : '') + ' style="margin-top:8px"><summary style="cursor:pointer;font-weight:700">' + sum + '</summary>' + tbl + '</details>'
+            : '<p style="margin:10px 0 4px;font-weight:700">' + sum + '</p>' + tbl;
+        }
+      }
+      out.innerHTML = html;
+    }
+
+    async function load() {
+      loaded = true;
+      const mine = ++seq;
+      const secret = sessionStorage.getItem('hawkeye_admin') || '';
+      data = null; err = secret ? null : 'unlock';
+      paint();
+      if (!secret) return;
+      try {
+        const r = await fetch('/api/irev/elections', { headers: { 'x-admin-secret': secret } });
+        const body = await r.json().catch(() => null);
+        if (mine !== seq) return;
+        if (!r.ok || !body) err = (body && body.error) || ('HTTP ' + r.status);
+        else data = body;
+      } catch (e) {
+        if (mine !== seq) return;
+        err = e.message || String(e);
+      }
+      paint();
+    }
+
+    async function post(path, body) {
+      const secret = sessionStorage.getItem('hawkeye_admin') || '';
+      if (!secret) { msg = { k: 'irev.admin.unlock-first', en: 'Unlock the console first.', bad: true }; paint(); return null; }
+      try {
+        const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', 'x-admin-secret': secret }, body: JSON.stringify(body || {}) });
+        const d = await r.json().catch(() => null);
+        if (!r.ok || !d) {
+          msg = { k: 'irev.admin.failed', en: 'That did not work ({error}).', vars: { error: (d && d.error) || ('HTTP ' + r.status) }, bad: true };
+          paint();
+          return null;
+        }
+        return d;
+      } catch (e) {
+        msg = { k: 'irev.admin.failed', en: 'That did not work ({error}).', vars: { error: e.message || String(e) }, bad: true };
+        paint();
+        return null;
+      }
+    }
+
+    out.addEventListener('click', async (ev) => {
+      const b = ev.target.closest('.irev-act');
+      if (!b || !data) return;
+      const e = (data.elections || []).find((x) => x.irevId === b.getAttribute('data-id'));
+      if (!e) return;
+      const act = b.getAttribute('data-act');
+      const vars = { race: race(e.code), seat: seat(e) };
+      const ok = act === 'confirm'
+        ? await hkConfirm(fill(T('irev.admin.confirm-ask', 'Use this IReV election for {race} — {seat}? Our results for that seat will be compared with its sheets.'), vars),
+          { ok: T('irev.admin.confirm', 'Confirm') })
+        : await hkConfirm(fill(T('irev.admin.unconfirm-ask', 'Stop using this IReV election for {race} — {seat}? It will not be picked up again automatically until you confirm it.'), vars),
+          { ok: T('irev.admin.unconfirm', 'Unconfirm'), danger: true });
+      if (!ok) return;
+      b.disabled = true;
+      const d = await post('/api/irev/elections/' + encodeURIComponent(e.irevId) + '/' + act, {});
+      if (d) {
+        msg = act === 'confirm'
+          ? { k: 'irev.admin.done-confirmed', en: 'Confirmed. Its sheets will be checked on the next pass.' }
+          : { k: 'irev.admin.done-unconfirmed', en: 'Unconfirmed. It will not be used.' };
+        load();
+      } else b.disabled = false;
+    });
+
+    async function run(what) {
+      const d = await post('/api/irev/run', what);
+      if (!d) return;
+      msg = d.queued
+        ? { k: 'irev.admin.queued', en: 'Queued. The background worker starts it within a minute — refresh then.' }
+        : { k: 'irev.admin.started', en: 'Started. Refresh in a minute to see what it found.' };
+      paint();
+    }
+    document.getElementById('irev-refresh').addEventListener('click', () => { msg = null; load(); });
+    document.getElementById('irev-resolve').addEventListener('click', () => run({ resolve: true }));
+    document.getElementById('irev-scan').addEventListener('click', () => run({ scan: true }));
+    panel.addEventListener('toggle', () => { if (panel.open && !loaded) load(); });
+    document.addEventListener('hawkeye-lang', () => { if (loaded) paint(); });
   })();
   </script>
 

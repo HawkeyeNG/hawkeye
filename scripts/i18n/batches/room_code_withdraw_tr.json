@@ -1,0 +1,96 @@
+{
+  "situation-room.codes-not-allowed-org": {
+    "ha": "Mamallakin wannan ɗaki kaɗai, ko mai kula da aka naɗa wa ƙungiyarka, ne zai iya duba lambobi.",
+    "ig": "Naanị onye nwe ọnụ ụlọ a, ma ọ bụ onye nhazi a họpụtara maka nzukọ gị, nwere ike ilele koodu.",
+    "yo": "Ẹni tó ni yàrá yìí nìkan, tàbí olùṣàkóso tí a yàn fún àjọ rẹ, ni ó lè ṣàyẹ̀wò kóòdù."
+  },
+  "situation-room.codes-privacy-org": {
+    "ha": "Lambar da aka yi amfani da ita tana nuna ranar da aka yi amfani da ita, ba wanda ya yi amfani da ita ba. Lambar da ba ta ƙungiyarka ba ce, ko wadda babu ita, tana nuna “Ba ta cikin naku” — Hawkeye ba ya faɗin wanne.",
+    "ig": "Koodu e jirila mee ihe na-egosi ụbọchị e jiri ya mee ihe, ọ naghị egosi onye jiri ya. Koodu na-abụghị nke nzukọ gị, ma ọ bụ nke na-adịghị adị, na-egosi “Ọ bụghị nke unu” — Hawkeye anaghị ekwu nke ọ bụ.",
+    "yo": "Kóòdù tí a ti lò ń fi ọjọ́ tí a lò ó hàn, kì í ṣe ẹni tí ó lò ó. Kóòdù tí kì í ṣe ti àjọ rẹ, tàbí tí kò sí, ń hàn gẹ́gẹ́ bí “Kì í ṣe tiyín” — Hawkeye kò sọ èwo nínú méjèèjì."
+  },
+  "situation-room.codes-write-not-allowed": {
+    "ha": "Mamallakin wannan ɗaki kaɗai, ko mai kula da aka naɗa wa jam'iyyarka, ne zai iya janye ko maido da lambobi.",
+    "ig": "Naanị onye nwe ọnụ ụlọ a, ma ọ bụ onye nhazi a họpụtara maka pati gị, nwere ike iwepụ ma ọ bụ iweghachi koodu.",
+    "yo": "Ẹni tó ni yàrá yìí nìkan, tàbí olùṣàkóso tí a yàn fún ẹgbẹ́ òṣèlú rẹ, ni ó lè fagi kóòdù tàbí dá a padà."
+  },
+  "situation-room.codes-write-not-allowed-org": {
+    "ha": "Mamallakin wannan ɗaki kaɗai, ko mai kula da aka naɗa wa ƙungiyarka, ne zai iya janye ko maido da lambobi.",
+    "ig": "Naanị onye nwe ọnụ ụlọ a, ma ọ bụ onye nhazi a họpụtara maka nzukọ gị, nwere ike iwepụ ma ọ bụ iweghachi koodu.",
+    "yo": "Ẹni tó ni yàrá yìí nìkan, tàbí olùṣàkóso tí a yàn fún àjọ rẹ, ni ó lè fagi kóòdù tàbí dá a padà."
+  },
+  "situation-room.codes-write-rate-limited": {
+    "ha": "Canje-canje sun yi yawa a cikin awa ɗaya da ta wuce. Sake gwadawa bayan minti {v0}.",
+    "ig": "Mgbanwe adịla ọtụtụ n'ime otu awa gara aga. Nwaa ọzọ mgbe nkeji {v0} gachara.",
+    "yo": "Àyípadà ti pọ̀ jù láàárín wákàtí kan sẹ́yìn. Tún gbìyànjú lẹ́yìn ìṣẹ́jú {v0}."
+  },
+  "situation-room.codes-restore-cap": {
+    "ha": "Ba za a iya maido da waɗannan lambobi ba: hakan zai wuce iyakar lambobinku.",
+    "ig": "Enweghị ike iweghachi koodu ndị a: nke ahụ ga-agafe oke koodu unu.",
+    "yo": "A kò lè dá àwọn kóòdù wọ̀nyí padà: ìyẹn yóò kọjá iye kóòdù tí a fún yín."
+  },
+  "situation-room.codes-write-failed": {
+    "ha": "An kasa ajiye wannan canji. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike ichekwa mgbanwe ahụ. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "A kò lè fi àyípadà yẹn pamọ́. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "situation-room.codes-withdrawing": { "ha": "Ana janye {v0} cikin {v1}…", "ig": "Na-ewepụ {v0} n'ime {v1}…", "yo": "À ń fagi {v0} nínú {v1}…" },
+  "situation-room.codes-restoring": { "ha": "Ana maido da {v0} cikin {v1}…", "ig": "Na-eweghachi {v0} n'ime {v1}…", "yo": "À ń dá {v0} nínú {v1} padà…" },
+  "situation-room.codes-write-partial": { "ha": "Ba a canza sauran ba.", "ig": "Agbanweghị ndị fọdụrụ.", "yo": "A kò yí àwọn ìyókù padà." },
+  "situation-room.codes-withdraw-confirm-one": {
+    "ha": "A janye lamba 1? Ba za a iya amfani da lambar da aka janye wajen yin rajista ba. Asusun da aka riga aka buɗe da lambobinku ba zai shafu ba.",
+    "ig": "Wepụ koodu 1? Enweghị ike iji koodu e wepụrụ debanye aha ọzọ. Akaụntụ e meelarị site na koodu unu agaghị emetụta.",
+    "yo": "Fagi kóòdù 1? A kò lè lo kóòdù tí a ti fagi láti forúkọ sílẹ̀ mọ́. Àwọn àkáǹtì tí a ti ṣí pẹ̀lú kóòdù yín kò ní yí padà."
+  },
+  "situation-room.codes-withdraw-confirm-many": {
+    "ha": "A janye lambobi {v0}? Ba za a iya amfani da lambar da aka janye wajen yin rajista ba. Asusun da aka riga aka buɗe da lambobinku ba zai shafu ba.",
+    "ig": "Wepụ koodu {v0}? Enweghị ike iji koodu e wepụrụ debanye aha ọzọ. Akaụntụ e meelarị site na koodu unu agaghị emetụta.",
+    "yo": "Fagi kóòdù {v0}? A kò lè lo kóòdù tí a ti fagi láti forúkọ sílẹ̀ mọ́. Àwọn àkáǹtì tí a ti ṣí pẹ̀lú kóòdù yín kò ní yí padà."
+  },
+  "situation-room.codes-withdraw-title": { "ha": "Janye lambobi", "ig": "Wepụ koodu", "yo": "Fagi kóòdù" },
+  "situation-room.codes-withdraw-ok": { "ha": "Janye", "ig": "Wepụ", "yo": "Fagi" },
+  "situation-room.codes-withdrawn-one": {
+    "ha": "An janye lamba 1. Ba za a iya amfani da ita wajen yin rajista ba kuma.",
+    "ig": "E wepụla koodu 1. Enweghị ike iji ya debanye aha ọzọ.",
+    "yo": "A ti fagi kóòdù 1. A kò lè lò ó láti forúkọ sílẹ̀ mọ́."
+  },
+  "situation-room.codes-withdrawn-many": {
+    "ha": "An janye lambobi {v0}. Ba za a iya amfani da su wajen yin rajista ba kuma.",
+    "ig": "E wepụla koodu {v0}. Enweghị ike iji ha debanye aha ọzọ.",
+    "yo": "A ti fagi kóòdù {v0}. A kò lè lò wọ́n láti forúkọ sílẹ̀ mọ́."
+  },
+  "situation-room.codes-withdraw-skipped": {
+    "ha": "Ba a janye {v0} ba: an yi amfani da su ko an janye su a halin yanzu. Ana nuna matsayinsu a ƙasa.",
+    "ig": "E wepụghị {v0}: e jirila ha mee ihe ma ọ bụ e wepụla ha n'oge a. A na-egosi ọnọdụ ha n'okpuru.",
+    "yo": "A kò fagi {v0}: a ti lò wọ́n tàbí a ti fagi wọn ní àsìkò yìí. Ipò wọn hàn nísàlẹ̀."
+  },
+  "situation-room.codes-restore-none": {
+    "ha": "Ba a maido da komai ba: wannan ɗakin bai janye waɗannan lambobi ba kuma. Ana nuna matsayinsu a ƙasa.",
+    "ig": "Eweghachighị ihe ọ bụla: ọnụ ụlọ a anọghịzi na-ewepụ koodu ndị ahụ. A na-egosi ọnọdụ ha n'okpuru.",
+    "yo": "A kò dá nǹkankan padà: yàrá yìí kò fagi àwọn kóòdù yẹn mọ́. Ipò wọn hàn nísàlẹ̀."
+  },
+  "situation-room.codes-restored-one": {
+    "ha": "An maido da lamba 1. Za a iya sake amfani da ita wajen yin rajista.",
+    "ig": "E weghachila koodu 1. Enwere ike iji ya debanye aha ọzọ.",
+    "yo": "A ti dá kóòdù 1 padà. A tún lè lò ó láti forúkọ sílẹ̀."
+  },
+  "situation-room.codes-restored-many": {
+    "ha": "An maido da lambobi {v0}. Za a iya sake amfani da su wajen yin rajista.",
+    "ig": "E weghachila koodu {v0}. Enwere ike iji ha debanye aha ọzọ.",
+    "yo": "A ti dá kóòdù {v0} padà. A tún lè lò wọ́n láti forúkọ sílẹ̀."
+  },
+  "situation-room.codes-withdraw-selected": { "ha": "Janye zaɓaɓɓu ({v0})", "ig": "Wepụ ndị a họrọ ({v0})", "yo": "Fagi àwọn tí a yàn ({v0})" },
+  "situation-room.codes-restore": { "ha": "Maido", "ig": "Weghachi", "yo": "Dá a padà" },
+  "situation-room.codes-undo": { "ha": "Mayar", "ig": "Laghachi", "yo": "Yí i padà" },
+  "situation-room.codes-select-all": {
+    "ha": "Zaɓi duk waɗanda ba a yi amfani da su ba ({v0})",
+    "ig": "Họrọ ndị niile a na-ejibeghị ({v0})",
+    "yo": "Yan gbogbo àwọn tí a kò tíì lò ({v0})"
+  },
+  "situation-room.codes-withdraw-hint": {
+    "ha": "Yi alama a lambobin da ba a yi amfani da su ba don janye su. Ba za a iya amfani da lambar da aka janye wajen yin rajista ba; za a iya maido da lambobin da aka janye a nan.",
+    "ig": "Kaa akara na koodu a na-ejibeghị iji wepụ ha. Enweghị ike iji koodu e wepụrụ debanye aha; enwere ike iweghachi koodu e wepụrụ ebe a.",
+    "yo": "Sàmì sí àwọn kóòdù tí a kò tíì lò láti fagi wọn. A kò lè lo kóòdù tí a ti fagi láti forúkọ sílẹ̀; a lè dá àwọn kóòdù tí a fagi níbí padà."
+  },
+  "orgcode.admin.withdrawn-by-rooms": { "ha": "Ɗakuna sun janye {n}", "ig": "Ọnụ ụlọ wepụrụ {n}", "yo": "Àwọn yàrá fagi {n}" }
+}

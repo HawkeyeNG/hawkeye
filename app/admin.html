@@ -2546,7 +2546,8 @@
    * becomes a CSV download at once) and POST …/batches/:id/revoke. Counts only:
    * the server never sends a phone hash here, and no observer id except the
    * party coordinators the owner names (POST …/issuers/:id/party,
-   * …/coordinators, …/coordinators/:observerId/remove). Own <script>
+   * …/coordinators, …/coordinators/:observerId/remove), and the listed
+   * civil-society organisation an issuer speaks for (…/issuers/:id/cso). Own <script>
    * and helpers, like Captains above; loads the first time the <details> opens
    * and repaints without refetching on a language change.
    */
@@ -2595,7 +2596,9 @@
     function batchRow(b, issuer) {
       const line = fill(T('orgcode.admin.batch', 'Batch {id} · {size} codes · {date}'), { id: b.id, size: b.size, date: day(b.createdAt) })
         + ' — ' + fill(T('orgcode.admin.batch-usage', '{created} accounts · {unused} unused'), { created: b.created, unused: b.unused })
-        + (b.refused ? ' · ' + fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: b.refused }) : '');
+        + (b.refused ? ' · ' + fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: b.refused }) : '')
+        // Unused codes a party's or organisation's own room withdrew one at a time.
+        + (b.withdrawn ? ' · ' + fill(T('orgcode.admin.withdrawn-by-rooms', '{n} withdrawn by rooms'), { n: b.withdrawn }) : '');
       const action = b.revokedAt
         ? '<span class="meta">' + esc(fill(T('orgcode.admin.revoked', 'Withdrawn {date}'), { date: day(b.revokedAt) })) + '</span>'
         : '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-revoke="' + b.id + '">' + esc(T('orgcode.admin.revoke', 'Withdraw batch')) + '</button>';
@@ -2612,6 +2615,31 @@
      * one of them labels for THIS party is approved on creation; a duplicate of
      * an approved room still comes to Room requests. services/orgCodes.js.
      */
+    /*
+     * ORGANISATION LINK (owner console only, English): the CSO twin of the
+     * party mark. Linking an issuer to a LISTED organisation (app/cso/
+     * manifest.json) gives that organisation's APPROVED rooms this issuer's
+     * code checker — owner and named coordinators only. It approves nothing.
+     * "Other" (typed) organisations can never be linked. POST …/issuers/:id/cso.
+     */
+    const orgName = (id) => (((data && data.csoOrgs) || []).find((o) => o.id === id) || {}).name || id;
+    function csoRow(i) {
+      const id = Number(i.id);
+      const orgs = (data && data.csoOrgs) || [];
+      return '<p class="meta" style="margin-top:8px"><b>Civil-society organisation.</b> '
+        + (i.cso
+          ? 'Linked to <b>' + esc(orgName(i.cso)) + '</b>. Its approved situation rooms get the Codes tab for this organisation’s codes: the room’s owner, and coordinators named here. Rooms are still approved by hand in Room requests. Same rules for every organisation.'
+          : 'Not linked. Link it to a listed organisation so that organisation’s approved rooms can check and withdraw these codes. Organisations typed under “Other” cannot be linked.')
+        + '</p>'
+        + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
+        + '<label for="org-adm-cso-' + id + '" style="margin:0">Organisation</label>'
+        + '<select id="org-adm-cso-' + id + '" style="width:auto;max-width:320px;margin:0">'
+        + opt('', '— not linked —', i.cso || '') + orgs.map((o) => opt(o.id, o.name, i.cso || '')).join('')
+        + '</select>'
+        + '<button type="button" class="secondary" style="width:auto;margin:0" data-cso="' + id + '">' + (i.cso ? 'Save organisation' : 'Link organisation') + '</button>'
+        + '</div>';
+    }
+
     function partyBlock(i) {
       const id = Number(i.id);
       const coords = i.coordinators || [];
@@ -2624,8 +2652,9 @@
             + ' · ' + esc(day(c.addedAt)) + '</span>'
             + '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-coord-remove="' + id + ':' + Number(c.observerId) + '">Remove</button></li>').join('') + '</ul>'
         : '';
-      return '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line, #e5e5e5)">'
-        + '<p class="meta"><b>Party pre-approval.</b> '
+      /* A party and an organisation are different claims: an issuer is one or
+         the other (the server refuses both), so only the open choice shows. */
+      const partyRow = i.cso ? '' : '<p class="meta"><b>Party pre-approval.</b> '
         + (i.party
           ? 'Marked as <b>' + esc(i.party) + '</b>. A situation room labelled ' + esc(i.party) + ' and created by a coordinator named here is approved on creation — unless '
             + esc(i.party) + ' already has an approved room for that race and area, which still comes to Room requests. Same rules for every party.'
@@ -2635,8 +2664,11 @@
         + '<label for="org-adm-party-' + id + '" style="margin:0">Party acronym</label>'
         + '<input id="org-adm-party-' + id + '" value="' + esc(i.party || '') + '" placeholder="e.g. ADC" maxlength="12" style="width:110px;margin:0" />'
         + '<button type="button" class="secondary" ' + btn + ' data-party="' + id + '">' + (i.party ? 'Save party' : 'Mark as party') + '</button>'
-        + '</div>'
-        + (i.party
+        + '</div>';
+      return '<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line, #e5e5e5)">'
+        + partyRow
+        + (i.party ? '' : csoRow(i))
+        + (i.party || i.cso
           ? '<p class="meta" style="margin-top:8px">Coordinators: ' + esc(coords.length) + ' of ' + esc(data.coordinatorMax) + '</p>' + list
             + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
             + '<label for="org-adm-coord-' + id + '" style="margin:0">Account id, or the ORG code they signed up with</label>'
@@ -2652,8 +2684,12 @@
       const m = {
         unknown_party: 'That is not a party acronym Hawkeye knows.',
         party_taken: 'Another organisation is already marked as this party' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '.',
-        has_coordinators: 'Remove this organisation’s coordinators before changing or clearing its party.',
-        issuer_not_party: 'Mark the organisation as a party first.',
+        has_coordinators: 'Remove this organisation’s coordinators before changing or clearing its party or organisation link.',
+        issuer_not_party: 'Mark it as a party, or link it to a listed organisation, first.',
+        unknown_org: 'That organisation is not on the list (app/cso/manifest.json).',
+        org_taken: 'Another issuer is already linked to this organisation' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '.',
+        issuer_is_party: 'This issuer is marked as a party. Clear the party first.',
+        issuer_is_cso: 'This issuer is linked to an organisation. Clear the link first.',
         account_required: 'Type an account id or an ORG code.',
         unknown_account: 'No account with that id.',
         account_not_active: 'That account is not active' + (b && b.status ? ' (' + b.status + ')' : '') + '.',
@@ -2661,7 +2697,7 @@
         code_not_this_issuer: 'That code belongs to a different organisation.',
         code_made_no_account: 'That code has not created an account (unused, or refused for an existing number).',
         already_coordinator: 'That account is already a coordinator here.',
-        coordinator_elsewhere: 'That account is already a coordinator for another party.',
+        coordinator_elsewhere: 'That account is already a coordinator for another party or organisation.',
         coordinator_cap: 'This organisation already has the maximum of ' + (b && b.cap) + ' coordinators.',
         not_a_coordinator: 'That account is not a coordinator here.',
       };
@@ -2741,7 +2777,7 @@
       const usage = fill(T('orgcode.admin.usage', '{created} accounts · {used} codes used · {issued} issued · {committed} of {cap} committed'),
         { created: i.created, used: i.used, issued: i.issued, committed: i.committed, cap: i.cap });
       return '<div class="card" style="margin:10px 0;padding:10px 12px">'
-        + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + (i.party ? ' · ' + esc(i.party) : '') + '</span></p>'
+        + '<p><b>' + esc(i.name) + '</b> <span class="meta">' + esc(kindLabel(i.kind)) + (i.party ? ' · ' + esc(i.party) : '') + (i.cso ? ' · ' + esc(orgName(i.cso)) : '') + '</span></p>'
         + '<p class="meta">' + esc(usage) + (i.refused ? ' · ' + esc(fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: i.refused })) : '') + '</p>'
         + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
         + '<label for="org-adm-size-' + i.id + '" style="margin:0">' + esc(T('orgcode.admin.size-label', 'Codes in the next batch')) + '</label>'
@@ -2850,6 +2886,7 @@
       const csv = e.target.closest('[data-csv]');
       const scopeBtn = e.target.closest('[data-scope-save]');
       const partyBtn = e.target.closest('[data-party]');
+      const csoBtn = e.target.closest('[data-cso]');
       const addBtn = e.target.closest('[data-coord-add]');
       const rmBtn = e.target.closest('[data-coord-remove]');
       if (csv) { downloadCsv(Number(csv.getAttribute('data-csv'))); return; }
@@ -2877,12 +2914,18 @@
         paint();
         return;
       }
-      if (partyBtn || addBtn || rmBtn) {
-        const b = partyBtn || addBtn || rmBtn;
+      if (partyBtn || csoBtn || addBtn || rmBtn) {
+        const b = partyBtn || csoBtn || addBtn || rmBtn;
         b.disabled = true;
         try {
           let r;
-          if (partyBtn) {
+          if (csoBtn) {
+            const id = Number(csoBtn.getAttribute('data-cso'));
+            const cso = ((document.getElementById('org-adm-cso-' + id) || {}).value || '').trim();
+            if (!cso && !(await hkConfirm('Clear the organisation link? That organisation’s rooms lose the Codes tab for these codes.', { danger: true }))) { b.disabled = false; return; }
+            r = await post('/api/admin/org-codes/issuers/' + id + '/cso', { cso });
+            if (r.status === 200) msg = { ok: true, text: r.body.issuer.cso ? 'Linked to ' + orgName(r.body.issuer.cso) + '.' : 'Organisation link cleared.' };
+          } else if (partyBtn) {
             const id = Number(partyBtn.getAttribute('data-party'));
             const party = ((document.getElementById('org-adm-party-' + id) || {}).value || '').trim();
             if (!party && !(await hkConfirm('Clear the party mark on this organisation?', { danger: true }))) { b.disabled = false; return; }

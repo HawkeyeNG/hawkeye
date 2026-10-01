@@ -410,6 +410,11 @@
   padding: 8px 10px; font: 0.85rem/1.4 var(--sr-mono, monospace); }
 .sr-tbl.codes { min-width: 0; }
 .sr-tbl.codes td.sr-code-cell { font-family: var(--sr-mono, monospace); text-align: left; }
+/* A tick beside each UNUSED code, and "select all unused" above the table. The
+   global label rule is a 600-weight block caption; these read inline. */
+.sr-cc-pick, .sr-cc-all { display: inline-flex; align-items: center; margin: 0; font-weight: 400; cursor: pointer; }
+.sr-cc-all { font-size: 0.85rem; }
+.sr-tbl.codes td .sr-btn.mini { margin: 0 0 0 6px; }
 /* One panel height for both columns, so the map and the gap list read as a pair
    rather than two cards that happen to sit side by side. The lists scroll INSIDE
    it: truncating to the worst six hid the rest of the election, and "most
@@ -2979,10 +2984,18 @@ async function afterInvite(invited, unknown) {
 /* --- organisation codes ------------------------------------------------ */
 
 /**
- * THE PARTY'S CODE CHECKER — which of the organisation codes the party was
- * handed are still unused. Drawn only when the server says this reader may use
- * it (group.org_code_check: an approved party room's owner, or a coordinator
- * the owner named for that party); the server checks again on every call.
+ * THE ROOM'S CODE CHECKER — which of the organisation codes the party (or the
+ * listed civil-society organisation) was handed are still unused. Drawn only
+ * when the server says this reader may use it (group.org_code_check: the owner
+ * of an approved party room, or of an approved room for a listed organisation
+ * the owner linked to its codes, or a coordinator named for that issuer); the
+ * server checks again on every call.
+ *
+ * WITHDRAW SELECTED. Unused codes get a tick; "Withdraw selected" asks in the
+ * branded dialog (dialog.js hkConfirm), then the server withdraws only those
+ * that are STILL unused and answers for every code. "Undo" right after, and
+ * "Restore" on any code this room's people withdrew, put them back — the
+ * server refuses codes whose whole batch Hawkeye withdrew.
  *
  * THE FILE IS PARSED HERE. Only the codes go to the server — squashed to
  * ORG + 12 characters, so 5,000 fit one call. Whatever else the party keeps in
@@ -3058,10 +3071,13 @@ function parseCsv(text) {
 /** This room's checker state — a new room starts clean. */
 function codeState() {
   if (!S.codes || S.codes.gid !== S.gid) {
-    S.codes = { gid: S.gid, text: '', header: null, rows: [], delim: ',', name: '', results: {}, busy: false, progress: '', msg: '' };
+    S.codes = { gid: S.gid, text: '', header: null, rows: [], delim: ',', name: '', results: {}, busy: false, progress: '', msg: '',
+      sel: new Set(), note: '', undo: null };
   }
   return S.codes;
 }
+/** A civil-society room: its sentences say "organisation" where a party room's say "party". */
+const orgRoom = () => !!(S.group && S.group.kind === 'cso');
 
 const CODE_PILL = { unused: 'ok', used: 'idle', revoked: 'off', not_yours: 'wait', malformed: 'off', none: 'idle', unchecked: 'idle' };
 function codeWord(x, forFile) {
@@ -3085,13 +3101,17 @@ function rowStatus(C, r) {
   return r.codes.map((c) => {
     if (c.bad) return { s: 'malformed', code: c.code };
     const x = C.results[c.code];
-    return x ? { s: x.status, usedOn: x.usedOn || '', code: c.code } : { s: 'unchecked', code: c.code };
+    return x ? { s: x.status, usedOn: x.usedOn || '', restorable: !!x.restorable, code: c.code } : { s: 'unchecked', code: c.code };
   });
 }
 
 function codeCheckError(r) {
   const e = (r.body && r.body.error) || '';
-  if (r.status === 403) return T('situation-room.codes-not-allowed', 'Only this room’s owner, or a coordinator named for your party, can check codes.');
+  if (r.status === 403) {
+    return orgRoom()
+      ? T('situation-room.codes-not-allowed-org', 'Only this room’s owner, or a coordinator named for your organisation, can check codes.')
+      : T('situation-room.codes-not-allowed', 'Only this room’s owner, or a coordinator named for your party, can check codes.');
+  }
   if (r.status === 429) return T('situation-room.codes-rate-limited', 'Too many checks in the last hour. Try again in {v0} minutes.', { v0: n(r.body.retryAfterMin || 60) });
   if (e === 'too_many_codes') return T('situation-room.codes-run-too-big', 'That is more than {v0} codes. Split the file and check it in parts.', { v0: n(r.body.max || CODE_CHUNK) });
   return T('situation-room.codes-failed', 'Could not check the codes. Check your connection and try again.');
@@ -3100,7 +3120,7 @@ function codeCheckError(r) {
 /** Send every distinct valid code, 5,000 at a time, and repaint as they come back. */
 async function runCodeCheck(header, rows, delim, name) {
   const C = codeState();
-  Object.assign(C, { header, rows, delim, name, results: {}, msg: '', progress: '' });
+  Object.assign(C, { header, rows, delim, name, results: {}, msg: '', progress: '', sel: new Set(), note: '', undo: null });
   const unique = [...new Set(rows.flatMap((r) => r.codes.filter((c) => !c.bad).map((c) => c.code)))];
   if (!rows.some((r) => r.codes.length)) {
     Object.assign(C, { rows: [], header: null, msg: T('situation-room.codes-none-found', 'No codes found. A code looks like ORG-XXXX-XXXX-XXXX.') });
@@ -3131,6 +3151,115 @@ async function runCodeCheck(header, rows, delim, name) {
   C.busy = false;
   C.progress = '';
   renderCodes();
+}
+
+function codeWriteError(r) {
+  const e = (r.body && r.body.error) || '';
+  if (r.status === 403) {
+    return orgRoom()
+      ? T('situation-room.codes-write-not-allowed-org', 'Only this room’s owner, or a coordinator named for your organisation, can withdraw or restore codes.')
+      : T('situation-room.codes-write-not-allowed', 'Only this room’s owner, or a coordinator named for your party, can withdraw or restore codes.');
+  }
+  if (r.status === 429) return T('situation-room.codes-write-rate-limited', 'Too many changes in the last hour. Try again in {v0} minutes.', { v0: n(r.body.retryAfterMin || 60) });
+  if (e === 'cap_exceeded') return T('situation-room.codes-restore-cap', 'These codes cannot be restored: that would take you past your code limit.');
+  return T('situation-room.codes-write-failed', 'Could not save that change. Check your connection and try again.');
+}
+
+/**
+ * Withdraw or restore `codes`, 5,000 a call, folding each answer into the
+ * results. Returns the codes the server actually changed (it answers for every
+ * code, and changes only those still eligible) and any refusal, or null if the
+ * reader moved to another room meanwhile.
+ */
+async function codeWrite(kind, codes) {
+  const C = codeState();
+  const changed = [];
+  let error = '';
+  Object.assign(C, { busy: true, msg: '', note: '', undo: null });
+  for (let i = 0; i < codes.length; i += CODE_CHUNK) {
+    const vars = { v0: n(Math.min(i + CODE_CHUNK, codes.length)), v1: n(codes.length) };
+    C.progress = kind === 'withdraw'
+      ? T('situation-room.codes-withdrawing', 'Withdrawing {v0} of {v1}…', vars)
+      : T('situation-room.codes-restoring', 'Restoring {v0} of {v1}…', vars);
+    renderCodes();
+    let r;
+    try {
+      r = await api('/api/groups/' + S.gid + '/org-codes/' + kind, {
+        method: 'POST', body: JSON.stringify({ codes: codes.slice(i, i + CODE_CHUNK).map((c) => c.replace(/-/g, '')) }),
+      });
+    } catch (e) { r = { status: 0, body: {} }; }
+    if (S.codes !== C) return null;
+    if (r.status !== 200) {
+      error = codeWriteError(r) + (i ? ' ' + T('situation-room.codes-write-partial', 'The rest were not changed.') : '');
+      break;
+    }
+    for (const x of r.body.results || []) {
+      if (x.changed) changed.push(x.code);
+      C.results[x.code] = { code: x.code, status: x.status, usedOn: x.usedOn, restorable: x.restorable };
+    }
+  }
+  Object.assign(C, { busy: false, progress: '' });
+  // Whatever is no longer unused cannot stay ticked.
+  for (const c of [...C.sel]) if ((C.results[c] || {}).status !== 'unused') C.sel.delete(c);
+  return { changed, error };
+}
+
+async function withdrawSelected() {
+  const C = codeState();
+  const codes = [...C.sel].filter((c) => (C.results[c] || {}).status === 'unused');
+  if (!codes.length || C.busy) return;
+  const sure = await hkConfirm(codes.length === 1
+    ? T('situation-room.codes-withdraw-confirm-one', 'Withdraw 1 code? A withdrawn code can no longer be used to sign up. Accounts already created with your codes are not affected.')
+    : T('situation-room.codes-withdraw-confirm-many', 'Withdraw {v0} codes? A withdrawn code can no longer be used to sign up. Accounts already created with your codes are not affected.', { v0: n(codes.length) }),
+  { title: T('situation-room.codes-withdraw-title', 'Withdraw codes'), ok: T('situation-room.codes-withdraw-ok', 'Withdraw'), danger: true });
+  if (!sure) return;
+  const r = await codeWrite('withdraw', codes);
+  if (!r) return;
+  const k = r.changed.length;
+  const bits = [];
+  if (k) {
+    bits.push(k === 1
+      ? T('situation-room.codes-withdrawn-one', '1 code withdrawn. It can no longer be used to sign up.')
+      : T('situation-room.codes-withdrawn-many', '{v0} codes withdrawn. They can no longer be used to sign up.', { v0: n(k) }));
+  }
+  if (!r.error && k < codes.length) {
+    bits.push(T('situation-room.codes-withdraw-skipped', 'Not withdrawn: {v0} — used or withdrawn in the meantime. See the status below.', { v0: n(codes.length - k) }));
+  }
+  Object.assign(C, { note: bits.join(' '), undo: k ? r.changed : null, msg: r.error });
+  renderCodes();
+}
+
+/** Put codes back: the Undo after a withdraw, or one row's Restore. */
+async function restoreCodes(codes) {
+  const C = codeState();
+  if (!codes.length || C.busy) return;
+  const r = await codeWrite('restore', codes);
+  if (!r) return;
+  const k = r.changed.length;
+  const note = !k ? (r.error ? '' : T('situation-room.codes-restore-none', 'Nothing was restored: those codes are no longer withdrawn by this room. Their status is shown below.'))
+    : k === 1 ? T('situation-room.codes-restored-one', '1 code restored. It can be used to sign up again.')
+      : T('situation-room.codes-restored-many', '{v0} codes restored. They can be used to sign up again.', { v0: n(k) });
+  Object.assign(C, { note, undo: null, msg: r.error });
+  renderCodes();
+}
+
+/** Keep the ticks, "select all" and the Withdraw button in step without redrawing the table. */
+function paintCodeSelection() {
+  const C = codeState();
+  const unused = Object.values(C.results).filter((x) => x.status === 'unused').map((x) => x.code);
+  const picked = unused.filter((c) => C.sel.has(c)).length;
+  const all = $('cc-all');
+  if (all) {
+    all.checked = !!unused.length && picked === unused.length;
+    all.indeterminate = picked > 0 && picked < unused.length;
+    all.disabled = C.busy || !unused.length;
+  }
+  const btn = $('cc-withdraw');
+  if (btn) {
+    btn.textContent = T('situation-room.codes-withdraw-selected', 'Withdraw selected ({v0})', { v0: n(picked) });
+    btn.disabled = C.busy || !picked;
+  }
+  document.querySelectorAll('#cc-table input.cc-pick').forEach((el) => { el.checked = C.sel.has(el.value); });
 }
 
 /**
@@ -3196,14 +3325,24 @@ function renderCodes() {
   const count = (s) => [...seen.values()].filter((v) => v === s).length;
   const unusedRows = C.rows.filter((r, i) => r.codes.length && statuses[i].every((x) => x.s === 'unused')).length;
   const done = hasRows && !C.busy;
-  const pills = (st) => st.map((x) => `<span class="pill ${CODE_PILL[x.s] || 'idle'}"><i>&#9679;</i>${esc(codeWord(x))}</span>`).join(' ');
+  const anyUnused = Object.values(C.results).some((x) => x.status === 'unused');
+  const restoreBtn = (x) => (x.s === 'revoked' && x.restorable
+    ? ` <button class="sr-btn mini" data-restore="${esc(x.code)}"${C.busy ? ' disabled' : ''}>${T('situation-room.codes-restore', 'Restore')}</button>` : '');
+  const pills = (st) => st.map((x) => `<span class="pill ${CODE_PILL[x.s] || 'idle'}"><i>&#9679;</i>${esc(codeWord(x))}</span>${restoreBtn(x)}`).join(' ');
+  /* The tick sits on the CODE, not the row: a row of a party's own CSV can
+     hold two codes, and only an unused one can be withdrawn. */
+  const codeCell = (c) => ((C.results[c.code] || {}).status === 'unused' && !c.bad
+    ? `<label class="sr-cc-pick"><input type="checkbox" class="cc-pick" value="${esc(c.code)}"${C.sel.has(c.code) ? ' checked' : ''}${C.busy ? ' disabled' : ''} />${esc(c.code)}</label>`
+    : esc(c.code));
   const head = (cls, v, label) => `<div class="sr-head ${cls}"><b class="num">${n(v)}</b><span>${label}</span></div>`;
   const ph = esc(T('situation-room.codes-placeholder', 'ORG-XXXX-XXXX-XXXX — one code, or many'));
   body.innerHTML = `
     <div class="sr-card">
       <div class="sr-h2" style="margin:0 0 4px">${T('situation-room.codes-title', 'Check your organisation codes')}</div>
       <p class="sr-fine" style="margin:0 0 6px">${T('situation-room.codes-intro', 'Type or paste codes, or upload the CSV file you were given, to see which are still unused. Only the codes are sent to Hawkeye — the rest of your file stays on this computer, and nothing is stored.')}</p>
-      <p class="sr-fine" style="margin:0 0 10px">${T('situation-room.codes-privacy', 'A used code shows the day it was used, never who used it. A code that is not your party’s, or does not exist, shows as “Not one of yours” — Hawkeye does not say which.')}</p>
+      <p class="sr-fine" style="margin:0 0 10px">${orgRoom()
+    ? T('situation-room.codes-privacy-org', 'A used code shows the day it was used, never who used it. A code that is not your organisation’s, or does not exist, shows as “Not one of yours” — Hawkeye does not say which.')
+    : T('situation-room.codes-privacy', 'A used code shows the day it was used, never who used it. A code that is not your party’s, or does not exist, shows as “Not one of yours” — Hawkeye does not say which.')}</p>
       <textarea id="cc-text" class="sr-codes-in" rows="4" spellcheck="false" autocomplete="off"
         aria-label="${ph}" placeholder="${ph}"${C.busy ? ' disabled' : ''}>${esc(C.text)}</textarea>
       <div class="sr-tools" style="padding:10px 0 0">
@@ -3215,6 +3354,8 @@ function renderCodes() {
         <button class="sr-btn" id="cc-dl-unused"${unusedRows ? '' : ' disabled'}>${T('situation-room.codes-download-unused', 'Download unused codes only')}</button>` : ''}
       </div>
       ${C.progress ? `<p class="sr-fine" role="status" id="cc-status">${esc(C.progress)}</p>` : ''}
+      ${C.note ? `<p class="sr-fine" role="status" id="cc-note">${esc(C.note)}${C.undo && C.undo.length && !C.busy
+    ? ` <button class="sr-btn mini" id="cc-undo">${T('situation-room.codes-undo', 'Undo')}</button>` : ''}</p>` : ''}
       ${C.msg ? `<p class="sr-fine" role="alert" id="cc-msg" style="color:var(--off)">${esc(C.msg)}</p>` : ''}
     </div>
     ${hasRows ? `
@@ -3229,10 +3370,16 @@ function renderCodes() {
     ? T('situation-room.codes-results-for', 'Results for {v0}', { v0: esc(C.name) })
     : T('situation-room.codes-results-pasted', 'Results for the codes you entered')}${C.rows.length > CODE_TABLE_MAX
     ? ' · ' + T('situation-room.codes-shown', 'Showing the first {v0} of {v1} rows. The download has them all.', { v0: n(CODE_TABLE_MAX), v1: n(C.rows.length) }) : ''}</p>
+    ${anyUnused ? `<div class="sr-tools" id="cc-select">
+      <label class="sr-cc-all"><input type="checkbox" id="cc-all" />${T('situation-room.codes-select-all', 'Select all unused ({v0})', { v0: n(Object.values(C.results).filter((x) => x.status === 'unused').length) })}</label>
+      <div class="spacer"></div>
+      <button class="sr-btn" id="cc-withdraw" disabled></button>
+    </div>
+    <p class="sr-fine" style="margin:0 0 8px">${T('situation-room.codes-withdraw-hint', 'Tick unused codes to withdraw them. A withdrawn code can no longer be used to sign up; codes withdrawn here can be restored.')}</p>` : ''}
     <div class="sr-wrap"><table class="sr-tbl text codes" id="cc-table">
       <thead><tr><th>${T('situation-room.codes-col-row', 'Row')}</th><th>${T('situation-room.codes-col-code', 'Code')}</th><th>${T('situation-room.codes-col-status', 'Status')}</th></tr></thead>
       <tbody>${C.rows.slice(0, CODE_TABLE_MAX).map((r, i) => `<tr><td>${n(i + 1)}</td>
-        <td class="sr-code-cell">${r.codes.length ? r.codes.map((c) => esc(c.code)).join('<br>') : '<span class="z">&mdash;</span>'}</td>
+        <td class="sr-code-cell">${r.codes.length ? r.codes.map(codeCell).join('<br>') : '<span class="z">&mdash;</span>'}</td>
         <td>${pills(statuses[i])}</td></tr>`).join('')}</tbody>
     </table></div>` : ''}`;
   if ($('cc-text')) $('cc-text').addEventListener('input', (e) => { codeState().text = e.target.value; });
@@ -3241,6 +3388,29 @@ function renderCodes() {
   if ($('cc-file')) $('cc-file').addEventListener('change', codesFromFile);
   if ($('cc-dl-all')) $('cc-dl-all').addEventListener('click', () => downloadCodes(false));
   if ($('cc-dl-unused')) $('cc-dl-unused').addEventListener('click', () => downloadCodes(true));
+  if ($('cc-all')) {
+    $('cc-all').addEventListener('change', (e) => {
+      C.sel = e.target.checked
+        ? new Set(Object.values(C.results).filter((x) => x.status === 'unused').map((x) => x.code)) : new Set();
+      paintCodeSelection();
+    });
+  }
+  if ($('cc-withdraw')) $('cc-withdraw').addEventListener('click', withdrawSelected);
+  if ($('cc-undo')) $('cc-undo').addEventListener('click', () => restoreCodes(C.undo || []));
+  const table = $('cc-table');
+  if (table) {
+    table.addEventListener('change', (e) => {
+      const box = e.target.closest('input.cc-pick');
+      if (!box) return;
+      if (box.checked) C.sel.add(box.value); else C.sel.delete(box.value);
+      paintCodeSelection();
+    });
+    table.addEventListener('click', (e) => {
+      const b = e.target.closest('[data-restore]');
+      if (b) restoreCodes([b.getAttribute('data-restore')]);
+    });
+  }
+  paintCodeSelection();
 }
 
 /**

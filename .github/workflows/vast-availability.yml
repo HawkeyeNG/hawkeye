@@ -1,0 +1,55 @@
+name: Vast GPU availability sampler
+
+# Every 6 hours from 2 Oct to 2 Nov 2026: how many RTX 4090 / 5090 / 3090 cards
+# Vast.ai has free, how many fit our image (verified, reliability >= 0.98,
+# CUDA >= 13), and at what price. One JSON line per run on the orphan branch
+# `vast-availability` (data/vast.jsonl), so main stays clean. Guides when to
+# start grabbing cards before 16 Jan / 6 Feb 2027.
+on:
+  schedule:
+    - cron: '17 */6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: vast-availability
+  cancel-in-progress: false
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Stop after the sampling window
+        id: window
+        run: |
+          if [ "$(date -u +%Y%m%d)" -gt 20261102 ]; then echo "over=1" >> "$GITHUB_OUTPUT"; fi
+      - uses: actions/checkout@v4
+        if: steps.window.outputs.over != '1'
+        with:
+          sparse-checkout: scripts/vast_availability.mjs
+          sparse-checkout-cone-mode: false
+          path: src
+      - uses: actions/checkout@v4
+        if: steps.window.outputs.over != '1'
+        with:
+          ref: vast-availability
+          path: data-branch
+      - uses: actions/setup-node@v4
+        if: steps.window.outputs.over != '1'
+        with:
+          node-version: '22'
+      - name: Sample
+        if: steps.window.outputs.over != '1'
+        run: node src/scripts/vast_availability.mjs data-branch/data/vast.jsonl
+      - name: Commit
+        if: steps.window.outputs.over != '1'
+        working-directory: data-branch
+        run: |
+          git config user.name "hawkeye-bot"
+          git config user.email "noreply@hawkeye.com.ng"
+          git add data/vast.jsonl
+          git commit -q -m "vast sample $(date -u +%FT%H:%MZ)" || exit 0
+          git push -q origin HEAD:vast-availability

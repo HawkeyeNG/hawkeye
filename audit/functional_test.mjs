@@ -43,7 +43,7 @@ async function makeObserver({ password = null } = {}) {
   // getDeviceId; injecting a token bound to a different device would trip
   // device_mismatch. Device binding itself is covered by the API smoke test.)
   const h = { 'content-type': 'application/json' };
-  let r = await fetch(BASE + '/api/observers/register', { method: 'POST', headers: h, body: JSON.stringify({ phone }) });
+  let r = await fetch(BASE + '/api/observers/register', { method: 'POST', headers: h, body: JSON.stringify({ phone, channel: 'telegram' }) });
   const reg = await r.json();
   if (!reg.devOtp) throw new Error('backend must run with SMS_PROVIDER=console (no devOtp)');
   r = await fetch(BASE + '/api/observers/verify', { method: 'POST', headers: h, body: JSON.stringify({ phone, otp: reg.devOtp, publicKeyJwk: await newJwk() }) });

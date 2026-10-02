@@ -31,7 +31,7 @@ async function mintToken() {
   const dev = 'e'.repeat(64);
   const h = { 'content-type': 'application/json', 'x-device-id': dev };
   const phone = '0803' + String(crypto.randomInt(1000000, 9999999));
-  let r = await fetch(BASE + '/api/observers/register', { method: 'POST', headers: h, body: JSON.stringify({ phone }) });
+  let r = await fetch(BASE + '/api/observers/register', { method: 'POST', headers: h, body: JSON.stringify({ phone, channel: 'telegram' }) });
   const { devOtp } = await r.json();
   r = await fetch(BASE + '/api/observers/verify', { method: 'POST', headers: h, body: JSON.stringify({ phone, otp: devOtp, publicKeyJwk: jwk }) });
   const b = await r.json();

@@ -2752,5 +2752,6 @@
   "situation-room.no-rooms-heading": "Ba ku da ɗakin sa ido",
   "situation-room.no-rooms-after-delete": "An goge {name}, kuma ba ku da wani ɗaki.",
   "situation-room.no-rooms-after-leave": "Kun fita daga {name}, kuma ba ku da wani ɗaki.",
-  "situation-room.no-rooms-hint": "Don fara sabon kamfen, danna Sabon ɗaki a saman shafin."
+  "situation-room.no-rooms-hint": "Don fara sabon kamfen, danna Sabon ɗaki a saman shafin.",
+  "auth.choose-route": "Da farko zaɓi yadda za ka tabbatar da lambarka."
 }

@@ -985,11 +985,19 @@ function syncChannelGate() {
   probeSmsOnce();
   const btn = document.getElementById('btn-auth');
   const pick = document.getElementById('channel-pick');
+  const need = document.getElementById('channel-need');
   if (!btn) return;
-  // No picker on screen (password sign-in sends no code) => nothing to gate.
-  if (!pick || pick.hidden) { btn.disabled = false; return; }
-  btn.disabled = !document.querySelector('input[name="otp-channel"]:checked');
+  // No picker on screen (password sign-in sends no code, or an organisation
+  // code replaces it) => nothing to gate.
+  if (!pick || pick.hidden) { btn.disabled = false; if (need) need.hidden = true; return; }
+  // NO DEFAULT ROUTE: disabled, with a one-line prompt, until one is picked.
+  const none = !document.querySelector('input[name="otp-channel"]:checked');
+  btn.disabled = none;
+  if (need) need.hidden = !none;
 }
+// First paint too: the prompt belongs on the form before anything is touched.
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => syncChannelGate(), { once: true });
+else syncChannelGate();
 document.addEventListener('change', (e) => {
   if (e.target && e.target.name === 'otp-channel') syncChannelGate();
 });
@@ -1116,7 +1124,7 @@ $('btn-auth').onclick = async () => {
     const phone = input.value.trim();
     if (orgCodeTyped()) { await orgSignUp(phone); return; }
     const channel = pickedChannel();
-    if (!channel) return void hkAlert(T('auth.choose-code-channel', 'Choose where to receive your code — WhatsApp or Telegram.'));
+    if (!channel) return void hkAlert(T('auth.choose-route', 'Choose how to verify your number first.'));
     if (!inviteFieldOk()) return;
     // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
     // the code. Tried whenever paid codes are off too (the server decides: 503

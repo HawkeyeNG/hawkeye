@@ -38,7 +38,7 @@ function realSendHappened(body) {
 }
 
 function register(phone, tag) {
-  const res = http.post(url('/api/observers/register'), JSON.stringify({ phone, channel: '', lang: 'en', intent: 'signup' }),
+  const res = http.post(url('/api/observers/register'), JSON.stringify({ phone, channel: 'telegram', lang: 'en', intent: 'signup' }),
     { headers: headers(J), tags: { name: tag }, responseCallback: EXPECT_REGISTER });
   noteResponse(res);
   return res;

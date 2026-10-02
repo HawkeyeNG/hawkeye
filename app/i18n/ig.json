@@ -2751,5 +2751,6 @@
   "situation-room.no-rooms-heading": "Ị nweghị ọnụ ụlọ nlekọta ọ bụla",
   "situation-room.no-rooms-after-delete": "E hichapụla {name}, ị nweghịkwa ọnụ ụlọ ọzọ.",
   "situation-room.no-rooms-after-leave": "Ị hapụla {name}, ị nweghịkwa ọnụ ụlọ ọzọ.",
-  "situation-room.no-rooms-hint": "Iji malite mkpọsa ọhụrụ, pịa Ọnụ ụlọ ọhụrụ n’isi peeji a."
+  "situation-room.no-rooms-hint": "Iji malite mkpọsa ọhụrụ, pịa Ọnụ ụlọ ọhụrụ n’isi peeji a.",
+  "auth.choose-route": "Buru ụzọ họrọ otu ị ga-esi kwado nọmba gị."
 }

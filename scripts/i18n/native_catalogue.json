@@ -1,4 +1,5 @@
 {
+  "auth.choose-route": "Choose how to verify your number first.",
   "auth.wa-too-many-free": "Too many tries for this number. Wait an hour, or use Telegram instead.",
   "auth.wa-unavailable": "WhatsApp sign-in is not available right now. Use Telegram instead.",
   "captain-guide.invite-1": "Your own invite link is in <a class=\"link\" href=\"profile.html\">My Profile</a>, under Invite. Share it on WhatsApp or by text. Each person who signs up with it shows on your profile.",

@@ -44,6 +44,7 @@
   "admin.train-html-review-flagged-sheets": "train.html → Review flagged sheets",
   "admin.update-hawkeye-from-your-app-store": "Update Hawkeye from your app store",
   "auth.choose-code-channel": "Choose where to receive your code — WhatsApp or Telegram.",
+  "auth.choose-route": "Choose how to verify your number first.",
   "auth.code-hint": "A friend's invite code, or an ORG- code from your party or civic group.",
   "auth.code-invalid": "Not a code we recognise. A friend's invite has 6 letters and numbers; an organisation code looks like ORG-ABCD-EFGH-JKMN.",
   "auth.code-kind-invite": "Invite from a friend.",

@@ -985,6 +985,12 @@ export default function SignIn() {
                   </Pressable>
                 ))}
               </View>
+              {/* NO DEFAULT ROUTE (owner, 2026-10-02): Send code stays disabled,
+                  and this line says why, until a chip is picked — or an
+                  organisation code replaces the code. */}
+              {!withOrgCode && !channel ? (
+                <Text className="pt-2 text-sm text-muted">{i18nT('auth.choose-route')}</Text>
+              ) : null}
               {/* Sign-up only: reset and rescue are for accounts that exist,
                   and a referral or an organisation code can only make a new one.
                   ONE field for both; the line under it names the kind. */}

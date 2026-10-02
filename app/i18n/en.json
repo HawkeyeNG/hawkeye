@@ -2725,5 +2725,6 @@
   "situation-room.no-rooms-heading": "You have no situation rooms",
   "situation-room.no-rooms-after-delete": "{name} was deleted, and you have no other rooms.",
   "situation-room.no-rooms-after-leave": "You stepped back from {name}, and you have no other rooms.",
-  "situation-room.no-rooms-hint": "To start a new campaign, click New room in the header above."
+  "situation-room.no-rooms-hint": "To start a new campaign, click New room in the header above.",
+  "auth.choose-route": "Choose how to verify your number first."
 }

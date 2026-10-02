@@ -45,6 +45,8 @@ const RULES = {
     /const freeWhatsapp = channel === 'whatsapp' && \(!waPaid \|\| \(waOk && !waLimited\)\);/.test(s),
   'the switches come from the server (api.waRoutes)': (s) =>
     /api\.waRoutes\(\)\.then\(\(r\) => \{[\s\S]{0,120}setWaPaid\(r\?\.paid === true\)/.test(s),
+  'no chip picked: a prompt says to choose (no default route)': (s) =>
+    /\{!withOrgCode && !channel \? \(\s*<Text[^>]*>\{i18nT\('auth\.choose-route'\)\}<\/Text>/.test(s),
 };
 const MUTANTS = {
   'native Send code is disabled with no channel (unless an organisation code)': (s) => s.replace('|| (!withOrgCode && !channel);', ';'),
@@ -54,6 +56,7 @@ const MUTANTS = {
   'a 503 from /wa-start falls back to the paid code only while waPaid': (s) => s.replace('if (waPaid) {\n          paidCode', 'if (true) {\n          paidCode'),
   'with paid codes off the WhatsApp choice is always the free route': (s) => s.replace('(!waPaid || (waOk && !waLimited))', 'waOk && !waLimited'),
   'the switches come from the server (api.waRoutes)': (s) => s.replace('setWaPaid(r?.paid === true)', 'setWaPaid(true)'),
+  'no chip picked: a prompt says to choose (no default route)': (s) => s.replace("{i18nT('auth.choose-route')}", '{null}'),
 };
 
 console.log('=== native sign-in ===');

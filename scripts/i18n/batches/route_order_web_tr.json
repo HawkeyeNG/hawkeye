@@ -1,0 +1,12 @@
+{
+  "auth.reset-before-9-jan": {
+    "ha": "Yi duk wani sake saiti kafin 9 ga Janairu. Daga 9 zuwa 17 ga Janairu za ka ci gaba da kasancewa a ciki, ba tare da buƙatar lamba ba.",
+    "ig": "Mee mgbanwe ọ bụla tupu 9 Jenụwarị. Site na 9 ruo 17 Jenụwarị ị ga-anọgide n'ime, na-enweghị mkpa koodu.",
+    "yo": "Ṣe àtúntò èyíkéyìí ṣáájú 9 Oṣù Kínní. Láti 9 sí 17 Oṣù Kínní, o máa wà nínú àkọọ́lẹ̀ rẹ láìsí kóòdù."
+  },
+  "auth.sms-fallback": {
+    "ha": "Sai idan Telegram da WhatsApp ba su yi aiki ba",
+    "ig": "Naanị ma Telegram na WhatsApp arụghị ọrụ",
+    "yo": "Kìkì bí Telegram àti WhatsApp kò bá ṣiṣẹ́"
+  }
+}

@@ -1,5 +1,7 @@
 {
   "auth.choose-route": "Da farko zaɓi yadda za ka tabbatar da lambarka.",
+  "auth.reset-before-9-jan": "Yi duk wani sake saiti kafin 9 ga Janairu. Daga 9 zuwa 17 ga Janairu za ka ci gaba da kasancewa a ciki, ba tare da buƙatar lamba ba.",
+  "auth.sms-fallback": "Sai idan Telegram da WhatsApp ba su yi aiki ba",
   "auth.wa-too-many-free": "Ƙoƙari ya yi yawa don wannan lambar. Jira awa ɗaya, ko ka yi amfani da Telegram maimakon haka.",
   "auth.wa-unavailable": "Shiga ta WhatsApp ba ya samuwa yanzu. Yi amfani da Telegram maimakon haka.",
   "captain-guide.invite-1": "Hanyar gayyatarka tana cikin Bayanaina, ƙarƙashin Gayyata. Raba ta a WhatsApp ko ta saƙon tes. Duk wanda ya yi rijista da ita zai bayyana a bayananka.",

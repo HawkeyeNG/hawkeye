@@ -2726,5 +2726,7 @@
   "situation-room.no-rooms-after-delete": "{name} was deleted, and you have no other rooms.",
   "situation-room.no-rooms-after-leave": "You stepped back from {name}, and you have no other rooms.",
   "situation-room.no-rooms-hint": "To start a new campaign, click New room in the header above.",
-  "auth.choose-route": "Choose how to verify your number first."
+  "auth.choose-route": "Choose how to verify your number first.",
+  "auth.reset-before-9-jan": "Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.",
+  "auth.sms-fallback": "Only if Telegram and WhatsApp don't work"
 }

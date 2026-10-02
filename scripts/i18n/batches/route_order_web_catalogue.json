@@ -1,0 +1,4 @@
+{
+  "auth.reset-before-9-jan": "Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.",
+  "auth.sms-fallback": "Only if Telegram and WhatsApp don't work"
+}

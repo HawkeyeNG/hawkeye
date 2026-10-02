@@ -47,7 +47,10 @@ const nativeOrder = (src) => {
   const block = src.match(/const CHANNELS[^=]*=\s*\[([\s\S]*?)\];/);
   return block ? [...block[1].matchAll(/key: '(\w+)'/g)].map((m) => m[1]) : null;
 };
-check('native sign-in chips', nativeOrder(signIn), ['telegram', 'whatsapp', 'sms']);
+// The chip row holds the two free routes; SMS (D2, 2026-10-02) is a smaller
+// option rendered AFTER that row, labelled as the fallback.
+check('native sign-in chips: Telegram, WhatsApp in the row; SMS after it', [nativeOrder(signIn),
+  signIn.indexOf("setChannel('sms')") > signIn.indexOf('CHANNELS.map(')], [['telegram', 'whatsapp'], true]);
 check('CONTROL the pre-change native order is caught',
   nativeOrder("const CHANNELS: X = [\n { key: 'whatsapp', label: 'WhatsApp' },\n { key: 'telegram', label: 'Telegram' },\n ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),\n];"),
   ['whatsapp', 'telegram', 'sms']);

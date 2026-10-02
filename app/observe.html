@@ -151,6 +151,9 @@
     #wa-send a.btn-link:hover { filter: none; color: var(--green); }
     #wa-send .auth-alt { margin: 10px 0 0; }
     .wa-spin[hidden] { display: none; }
+    /* The channel labels carry an inline display:flex, which outranks the UA's
+       [hidden]; without this a switched-off SMS option still showed. */
+    #otp-sms-opt[hidden], #otp-wa-opt[hidden] { display: none !important; }
     .wa-spin {
       flex: none; width: 14px; height: 14px; border-radius: 999px;
       border: 2px solid var(--line); border-top-color: var(--muted);
@@ -289,16 +292,22 @@
                flipping SMS_OTP_ENABLED on the server turns it on everywhere with
                no redeploy and no rebuild. Hidden until then — an option that
                silently arrives over WhatsApp is worse than no option. -->
+          <!-- SMS LAST AND SECONDARY (D2, owner 2026-10-02): it costs per code,
+               so it sits apart, smaller, labelled as the fallback. Still no
+               default — the reader picks. -->
           <label id="otp-sms-opt" hidden
-                 style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
+                 style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:8px 0 2px;padding-top:8px;border-top:1px dashed var(--border);font-size:.88rem;color:var(--muted)">
             <input type="radio" name="otp-channel" value="sms" style="width:auto;margin:0" />
-            <span data-i18n="observe.sms">SMS</span>
+            <span><span data-i18n="observe.sms">SMS</span> — <span data-i18n="auth.sms-fallback">Only if Telegram and WhatsApp don't work</span></span>
           </label>
         </fieldset>
         <!-- NO DEFAULT ROUTE (owner, 2026-10-02): Request OTP stays disabled, and
              this line shows, until a route is picked (or an organisation code
              replaces the code). app.js syncChannelGate(). -->
         <p id="channel-need" class="hint" data-i18n="auth.choose-route" hidden>Choose how to verify your number first.</p>
+        <!-- D3: the forgotten-password route nudges resets to before the election
+             window, when sessions are held open (app.js paintResetNudge). -->
+        <p id="reset-nudge" class="hint" data-i18n="auth.reset-before-9-jan" hidden>Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.</p>
         <div id="pw-signin-wrap" hidden>
           <label data-i18n="common.password" for="pw-signin-input">Password</label>
           <input data-i18n-attr="placeholder:observe.your-password" id="pw-signin-input" type="password" placeholder="Your password" autocomplete="current-password" />
@@ -674,7 +683,7 @@
        nothing read it back. Also catches ?r=/&unit= arriving here directly. -->
   <script src="referral.js?v=2"></script>
   <script src="passkey.js?v=1"></script>
-  <script src="app.js?v=190" defer></script>
+  <script src="app.js?v=191" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

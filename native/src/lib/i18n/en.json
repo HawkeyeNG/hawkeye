@@ -1,5 +1,7 @@
 {
   "auth.choose-route": "Choose how to verify your number first.",
+  "auth.reset-before-9-jan": "Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.",
+  "auth.sms-fallback": "Only if Telegram and WhatsApp don't work",
   "auth.wa-too-many-free": "Too many tries for this number. Wait an hour, or use Telegram instead.",
   "auth.wa-unavailable": "WhatsApp sign-in is not available right now. Use Telegram instead.",
   "captain-guide.invite-1": "Your own invite link is in My Profile, under Invite. Share it on WhatsApp or by text. Each person who signs up with it shows on your profile.",

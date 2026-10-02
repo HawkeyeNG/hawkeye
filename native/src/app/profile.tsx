@@ -53,6 +53,8 @@ const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 /** The reset-code routes, worded exactly as the sign-in screen words them —
  *  the same three buttons on two screens must not read differently. */
 type ResetChannel = 'whatsapp' | 'telegram' | 'sms';
+/** D3: resets nudged to before the election window (sessions held open 9-17 Jan). Module scope keeps render pure. */
+const NUDGE_RESETS = Date.now() < Date.parse('2027-01-09T00:00:00+01:00');
 const RESET_CHANNEL_LABEL: Record<ResetChannel, string> = {
   whatsapp: 'WhatsApp',
   telegram: 'Telegram',
@@ -1204,6 +1206,10 @@ export default function Profile() {
                 <Text className="pb-3 text-sm text-muted">
                   {i18nT('n.app.profile.enter-the-number-registered-to-this')}
                 </Text>
+                {/* D3: before the election window (sessions are held open 9-17 Jan). */}
+                {NUDGE_RESETS ? (
+                  <Text className="pb-3 text-xs text-muted">{i18nT('auth.reset-before-9-jan')}</Text>
+                ) : null}
                 <TextInput
                   value={resetPhone}
                   onChangeText={setResetPhone}

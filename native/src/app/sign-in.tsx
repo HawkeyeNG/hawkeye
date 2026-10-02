@@ -39,6 +39,7 @@ import { t as i18nT } from '@/lib/i18n';
 import {
   offerPasskeyLater,
   passkeyErrorText,
+  passkeyHereOnDevice,
   passkeysUsable,
   registerPasskeyHere,
   shouldOfferPasskey,
@@ -47,6 +48,8 @@ import {
 import { openWhatsApp, startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
 
 type Channel = 'whatsapp' | 'telegram' | 'sms';
+/** D3: resets are nudged to before the election window (9 Jan 2027 00:00 WAT). */
+const NUDGE_RESETS = Date.now() < Date.parse('2027-01-09T00:00:00+01:00'); // module scope: render stays pure
 
 /**
  * Sign in — password-first, the way a normal app works.
@@ -107,6 +110,8 @@ export default function SignIn() {
   const [waNone, setWaNone] = useState(false);
   /** Passkeys: this binary has the module AND the server has them on (lib/passkeys.ts). */
   const [pkUsable, setPkUsable] = useState(false);
+  /** This phone made or used a Hawkeye passkey: the passkey leads the sign-in (D2). */
+  const [pkHere, setPkHere] = useState(false);
   useEffect(() => {
     let alive = true;
     api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
@@ -120,6 +125,7 @@ export default function SignIn() {
       if (none) setChannel((c) => (c === 'whatsapp' ? null : c));
     });
     passkeysUsable().then((ok) => { if (alive) setPkUsable(ok); }).catch(() => {});
+    passkeyHereOnDevice().then((h) => { if (alive) setPkHere(h); }).catch(() => {});
     return () => { alive = false; };
   }, []);
   /** The passkey sheet is up (sign-in or the offer); its own flag, so `busy` keeps meaning the form. */
@@ -791,10 +797,11 @@ export default function SignIn() {
   // message, so it is the fallback, not the first thing under the thumb.
   // WhatsApp goes only when the server has ANSWERED that it runs neither the
   // free route nor paid codes (waNone).
+  // Telegram and WhatsApp side by side, equal (D2). SMS is NOT in this row: it
+  // costs per code, so it sits below, smaller, labelled as the fallback.
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'telegram', label: 'Telegram' },
     ...(waNone ? [] : [{ key: 'whatsapp' as Channel, label: 'WhatsApp' }]),
-    ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),
   ];
 
   const requestCopy =
@@ -871,6 +878,28 @@ export default function SignIn() {
             <>
               <SignedOutElsewhereNote />
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.welcome-back')}</Text>
+              {/* PASSKEY FIRST ON A PHONE THAT HAS ONE (D2): the default, the
+                  primary button, above the number and password. Elsewhere it
+                  stays right after Sign in (below). */}
+              {pkUsable && pkHere ? (
+                <Pressable
+                  disabled={busy || pkBusy}
+                  onPress={() => void onPasskeySignIn()}
+                  accessibilityRole="button"
+                  className={`mt-4 flex-row items-center justify-center rounded-2xl py-4 ${
+                    busy || pkBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                  }`}
+                >
+                  {pkBusy ? (
+                    <ActivityIndicator color={BRAND.gold} accessibilityLabel={i18nT('passkey.signing-in')} />
+                  ) : (
+                    <>
+                      <Feather name="key" size={17} color={BRAND.gold} />
+                      <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('passkey.signin-button')}</Text>
+                    </>
+                  )}
+                </Pressable>
+              ) : null}
               <Text className="pb-4 pt-1 text-sm text-muted">
                 {i18nT('n.app.sign-in.your-phone-number-and-password-your')}
               </Text>
@@ -916,8 +945,8 @@ export default function SignIn() {
                   ordinary button — pressing it opens the system's own passkey
                   sheet, with nothing of ours in front of it. No phone number
                   needed: the phone offers its Hawkeye passkeys. Twin of
-                  observe.html #pk-signin. */}
-              {pkUsable ? (
+                  observe.html #pk-signin. On a phone that has one it leads instead (above). */}
+              {pkUsable && !pkHere ? (
                 <>
                   <Pressable
                     disabled={busy || pkBusy}
@@ -985,11 +1014,30 @@ export default function SignIn() {
                   </Pressable>
                 ))}
               </View>
+              {/* SMS LAST AND SECONDARY (D2): a small option apart from the two
+                  free routes, labelled as the fallback. Never pre-selected. */}
+              {smsOk && !withOrgCode ? (
+                <Pressable
+                  onPress={() => setChannel('sms')}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected: channel === 'sms' }}
+                  className={`mt-3 self-start rounded-full px-3 py-1.5 ${channel === 'sms' ? 'bg-hawk-green' : ''}`}
+                >
+                  <Text className={`text-xs ${channel === 'sms' ? 'font-semibold text-hawk-gold' : 'text-muted'}`}>
+                    SMS · {i18nT('auth.sms-fallback')}
+                  </Text>
+                </Pressable>
+              ) : null}
               {/* NO DEFAULT ROUTE (owner, 2026-10-02): Send code stays disabled,
                   and this line says why, until a chip is picked — or an
                   organisation code replaces the code. */}
               {!withOrgCode && !channel ? (
                 <Text className="pt-2 text-sm text-muted">{i18nT('auth.choose-route')}</Text>
+              ) : null}
+              {/* D3: a reset done now, not during the election window (9-17 Jan,
+                  when sessions are held open). Shown until 9 Jan 2027. */}
+              {purpose === 'reset' && NUDGE_RESETS ? (
+                <Text className="pt-2 text-xs text-muted">{i18nT('auth.reset-before-9-jan')}</Text>
               ) : null}
               {/* Sign-up only: reset and rescue are for accounts that exist,
                   and a referral or an organisation code can only make a new one.

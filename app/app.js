@@ -986,6 +986,7 @@ function syncChannelGate() {
   const btn = document.getElementById('btn-auth');
   const pick = document.getElementById('channel-pick');
   const need = document.getElementById('channel-need');
+  paintResetNudge();
   if (!btn) return;
   // No picker on screen (password sign-in sends no code, or an organisation
   // code replaces it) => nothing to gate.
@@ -1509,7 +1510,30 @@ async function paintPasskeySignIn() {
   let ok = false;
   try { ok = await window.HawkeyePasskey.supported(); } catch { ok = false; }
   // Re-read: the mode may have changed while support was being checked.
-  wrap.hidden = !(ok && IS_SIGNIN && authMode === 'password');
+  const show = ok && IS_SIGNIN && authMode === 'password';
+  wrap.hidden = !show;
+  // PASSKEY FIRST ON A DEVICE THAT HAS ONE (D2, owner 2026-10-02): this
+  // browser made or used a Hawkeye passkey (passkey.js sets the flag), so the
+  // passkey is the default — the primary button, above the number and
+  // password. Everywhere else it stays where it was, right after Sign In.
+  let here = false;
+  try { here = localStorage.getItem('hawkeye_pk_here') === '1'; } catch { /* a courtesy flag */ }
+  const lead = show && here;
+  const top = $('auth-input-label');
+  if (lead && top && wrap.parentNode === top.parentNode && wrap.nextElementSibling !== top) {
+    top.parentNode.insertBefore(wrap, top);
+    wrap.style.margin = '0 0 16px';
+  }
+  if ($('pk-signin')) $('pk-signin').classList.toggle('secondary', !lead);
+}
+
+/* D3: the forgotten-password route asks for resets BEFORE the election window,
+   when sessions are held open (no code needed 9-17 Jan). Shown until 9 Jan. */
+function paintResetNudge() {
+  const el = $('reset-nudge');
+  if (!el) return;
+  const until = Date.parse('2027-01-09T00:00:00+01:00');
+  el.hidden = !(IS_SIGNIN && authMode !== 'password' && Date.now() < until);
 }
 if ($('pk-signin')) $('pk-signin').onclick = async () => {
   const btn = $('pk-signin');

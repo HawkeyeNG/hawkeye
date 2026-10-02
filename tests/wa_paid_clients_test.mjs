@@ -47,6 +47,15 @@ const RULES = {
     /api\.waRoutes\(\)\.then\(\(r\) => \{[\s\S]{0,120}setWaPaid\(r\?\.paid === true\)/.test(s),
   'no chip picked: a prompt says to choose (no default route)': (s) =>
     /\{!withOrgCode && !channel \? \(\s*<Text[^>]*>\{i18nT\('auth\.choose-route'\)\}<\/Text>/.test(s),
+  'D2: SMS is not in the Telegram/WhatsApp row; it sits below, small, labelled as the fallback': (s) =>
+    !/key: 'sms'/.test(s.slice(s.indexOf('const CHANNELS'), s.indexOf('const CHANNELS') + 400))
+    && /\{smsOk && !withOrgCode \? \(\s*<Pressable\s*onPress=\{\(\) => setChannel\('sms'\)\}[\s\S]{0,400}text-xs[\s\S]{0,120}SMS · \{i18nT\('auth\.sms-fallback'\)\}/.test(s),
+  'D2: a phone that has a passkey leads with it (primary, above the password); otherwise it stays below': (s) =>
+    /\{pkUsable && pkHere \? \(\s*<Pressable[\s\S]{0,300}bg-hawk-green/.test(s) && /\{pkUsable && !pkHere \? \(/.test(s)
+    && s.indexOf('{pkUsable && pkHere ?') < s.indexOf("n.app.sign-in.your-phone-number-and-password-your"),
+  'D3: a reset nudges "before 9 January" until then': (s) =>
+    /purpose === 'reset' && NUDGE_RESETS \? \(\s*<Text[^>]*>\{i18nT\('auth\.reset-before-9-jan'\)\}/.test(s)
+    && /const NUDGE_RESETS = Date\.now\(\) < Date\.parse\('2027-01-09T00:00:00\+01:00'\);/.test(s),
 };
 const MUTANTS = {
   'native Send code is disabled with no channel (unless an organisation code)': (s) => s.replace('|| (!withOrgCode && !channel);', ';'),
@@ -57,6 +66,10 @@ const MUTANTS = {
   'with paid codes off the WhatsApp choice is always the free route': (s) => s.replace('(!waPaid || (waOk && !waLimited))', 'waOk && !waLimited'),
   'the switches come from the server (api.waRoutes)': (s) => s.replace('setWaPaid(r?.paid === true)', 'setWaPaid(true)'),
   'no chip picked: a prompt says to choose (no default route)': (s) => s.replace("{i18nT('auth.choose-route')}", '{null}'),
+  'D2: SMS is not in the Telegram/WhatsApp row; it sits below, small, labelled as the fallback': (s) =>
+    s.replace("{ key: 'telegram', label: 'Telegram' },", "{ key: 'telegram', label: 'Telegram' },\n    { key: 'sms', label: 'SMS' },"),
+  'D2: a phone that has a passkey leads with it (primary, above the password); otherwise it stays below': (s) => s.replace('{pkUsable && pkHere ? (', '{false ? ('),
+  'D3: a reset nudges "before 9 January" until then': (s) => s.replace("{i18nT('auth.reset-before-9-jan')}", '{null}'),
 };
 
 console.log('=== native sign-in ===');

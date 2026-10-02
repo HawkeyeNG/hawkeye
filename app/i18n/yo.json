@@ -2752,5 +2752,7 @@
   "situation-room.no-rooms-after-delete": "A ti pa {name} rẹ́, o kò sì ní yàrá mìíràn.",
   "situation-room.no-rooms-after-leave": "O ti kúrò nínú {name}, o kò sì ní yàrá mìíràn.",
   "situation-room.no-rooms-hint": "Láti bẹ̀rẹ̀ ìpolongo tuntun, tẹ Yàrá tuntun ní òkè ojú-ìwé.",
-  "auth.choose-route": "Kọ́kọ́ yan bí o ṣe fẹ́ fìdí nọ́mbà rẹ múlẹ̀."
+  "auth.choose-route": "Kọ́kọ́ yan bí o ṣe fẹ́ fìdí nọ́mbà rẹ múlẹ̀.",
+  "auth.reset-before-9-jan": "Ṣe àtúntò èyíkéyìí ṣáájú 9 Oṣù Kínní. Láti 9 sí 17 Oṣù Kínní, o máa wà nínú àkọọ́lẹ̀ rẹ láìsí kóòdù.",
+  "auth.sms-fallback": "Kìkì bí Telegram àti WhatsApp kò bá ṣiṣẹ́"
 }

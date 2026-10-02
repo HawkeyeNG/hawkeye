@@ -348,6 +348,15 @@ async function markHere(on: boolean): Promise<void> {
   }
 }
 
+/** This phone made or used a Hawkeye passkey: sign-in leads with it (D2). */
+export async function passkeyHereOnDevice(): Promise<boolean> {
+  try {
+    return (await AsyncStorage.getItem(K_HERE)) === '1';
+  } catch {
+    return false;
+  }
+}
+
 /** "Not now": not asked again on this phone for 30 days. */
 export async function offerPasskeyLater(): Promise<void> {
   try {

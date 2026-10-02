@@ -26,7 +26,7 @@
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
-  <script src="authgate.js?v=4"></script>
+  <script src="authgate.js?v=5"></script>
   <script>/*hk-room-forward*/
   /* THE INSTALLED ROOM'S SCOPE IS /situation-room.html (room.webmanifest), so
      two addresses forward into it. After authgate.js: signed out, authgate's
@@ -811,9 +811,28 @@ async function api(path, opts = {}) {
     },
   });
   const body = await res.json().catch(() => ({}));
-  if (res.status === 401) { location.replace('observe.html?intent=signin&next=' + encodeURIComponent(
-    URL_SLUG ? 'situation-room.html?room=' + URL_SLUG : 'situation-room.html')); throw new Error('signed out'); }
+  if (res.status === 401) {
+    /* The server refused this token (groups routes answer 401 only from the
+       auth middleware). Drop it: kept, observe.html would read it as signed in
+       and send the manager straight back here, to another 401, in a loop that
+       never shows the sign-in form. */
+    try { localStorage.removeItem('hawkeye_token'); } catch { /* storage blocked */ }
+    location.replace('observe.html?intent=signin&next=' + encodeURIComponent(signInReturn()));
+    throw new Error('signed out');
+  }
   return { status: res.status, body };
+}
+
+/* Where sign-in hands the manager back: this room AND the tab they were on.
+   Built from state, not location.search — syncUrl() rewrites the address to
+   ?room= alone once a room opens, so the tab is no longer in it. */
+function signInReturn() {
+  const q = new URLSearchParams();
+  const slug = URL_SLUG || (S.group && S.group.slug) || '';
+  if (slug) q.set('room', slug);
+  if (S.tab && S.tab !== 'overview') q.set('tab', S.tab);
+  const s = q.toString();
+  return 'situation-room.html' + (s ? '?' + s : '');
 }
 
 const S = {

@@ -93,8 +93,19 @@
     // slug fails that guard and the manager lands on the homepage instead of the
     // room they were opening. Re-expressed in the shape the guard accepts, rather
     // than loosening the guard for one route.
+    // The REST of the query rides along (?tab=team from a jump-list shortcut or
+    // a pasted link): rebuilding the address from the slug alone dropped it, and
+    // the manager came back from sign-in on Overview. Same shape as the page's
+    // own /room/ forward, which keeps the query and sets room=.
     var room = location.pathname.match(/^\/room\/([a-z0-9-]+)\/?$/i);
-    if (room) here = 'situation-room.html?room=' + room[1];
+    if (room) {
+      here = 'situation-room.html?room=' + room[1];
+      try {
+        var q = new URLSearchParams(location.search);
+        q.set('room', room[1]);
+        here = 'situation-room.html?' + q.toString();
+      } catch (e) { /* an old engine still gets the room, as before */ }
+    }
     return here;
   }
 })();

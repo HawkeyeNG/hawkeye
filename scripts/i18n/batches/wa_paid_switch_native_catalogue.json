@@ -1,0 +1,4 @@
+{
+  "auth.wa-too-many-free": "Too many tries for this number. Wait an hour, or use Telegram instead.",
+  "auth.wa-unavailable": "WhatsApp sign-in is not available right now. Use Telegram instead."
+}

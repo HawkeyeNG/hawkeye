@@ -98,14 +98,27 @@ export default function SignIn() {
   const [channel, setChannel] = useState<Channel | null>(null);
   // Offered only when the SERVER says it can deliver it — see api.smsOtpEnabled.
   const [smsOk, setSmsOk] = useState(false);
-  // WhatsApp in reverse (free) — same fail-closed switch; see api.waInboundEnabled.
+  // WhatsApp in reverse (free) — same fail-closed switch; see api.waRoutes.
   const [waOk, setWaOk] = useState(false);
+  // A PAID WhatsApp code (WA_PAID_OTP on the server; off by default): only
+  // then are "get a code on WhatsApp" fallbacks offered.
+  const [waPaid, setWaPaid] = useState(false);
+  // The server ANSWERED and runs neither WhatsApp route: no WhatsApp chip.
+  const [waNone, setWaNone] = useState(false);
   /** Passkeys: this binary has the module AND the server has them on (lib/passkeys.ts). */
   const [pkUsable, setPkUsable] = useState(false);
   useEffect(() => {
     let alive = true;
     api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
-    api.waInboundEnabled().then((ok) => { if (alive) setWaOk(ok); });
+    api.waRoutes().then((r) => {
+      if (!alive) return;
+      setWaOk(r?.free === true);
+      setWaPaid(r?.paid === true);
+      const none = !!r && !r.free && !r.paid;
+      setWaNone(none);
+      // No WhatsApp route at all: let go of a WhatsApp pick made meanwhile.
+      if (none) setChannel((c) => (c === 'whatsapp' ? null : c));
+    });
     passkeysUsable().then((ok) => { if (alive) setPkUsable(ok); }).catch(() => {});
     return () => { alive = false; };
   }, []);
@@ -185,8 +198,16 @@ export default function SignIn() {
    */
   const kind = codeKind(inviteCode);
   const withOrgCode = purpose === 'signup' && looksLikeOrgCode(inviteCode);
-  /** WhatsApp, and the server can receive: the observer sends US the code, free (step 'wa-send'). */
-  const freeWhatsapp = channel === 'whatsapp' && waOk && !waLimited;
+  /**
+   * WhatsApp runs as the free route (step 'wa-send', the observer sends US the
+   * code) unless the server sends paid codes AND the free one is out (cannot
+   * receive, or this number hit its hourly limit) — then, as before, the paid
+   * code. With paid codes off it is ALWAYS the free route: the server decides,
+   * and a 503 says so rather than anything being sent.
+   */
+  const freeWhatsapp = channel === 'whatsapp' && (!waPaid || (waOk && !waLimited));
+  /** Send code: a full number, and a channel unless an organisation code replaces the code. */
+  const sendBlocked = busy || phone.trim().length < 10 || (!withOrgCode && !channel);
   useEffect(() => {
     let alive = true;
     pendingInviteCode().then((c) => {
@@ -226,6 +247,13 @@ export default function SignIn() {
   // `verb` picks one of two WHOLE sentences — never an English word glued into
   // a translated one ("Sending" inside a Hausa line was how this used to read).
   const send = (verb: 'Sending' | 'Re-sending', via: Channel = channel as Channel) => {
+    // NEVER WITHOUT A CHANNEL. A request with none used to be served "WhatsApp
+    // first" by the server — a paid code nobody chose (2026-10-02). The button
+    // is disabled until a chip is picked; this is the backstop.
+    if (!via) {
+      setStep('request');
+      return;
+    }
     setLine(verb === 'Re-sending'
       ? i18nT('n.app.sign-in.resending-code-to', { v0: phone.trim() })
       : i18nT('n.app.sign-in.sending-code-to', { v0: phone.trim() }));
@@ -401,6 +429,7 @@ export default function SignIn() {
       return;
     }
     setInviteBad(false);
+    if (!channel) return; // Send code is disabled until a channel is picked
     setTgLink(null);
     if (freeWhatsapp) {
       void startWa();
@@ -413,6 +442,8 @@ export default function SignIn() {
 
   /** The code comes TO the observer (paid): the WhatsApp step's fallbacks, and a server that cannot receive. */
   const paidCode = (via: Channel) => {
+    // A paid WhatsApp code only while the server sends them (WA_PAID_OTP).
+    if (via === 'whatsapp' && !waPaid) return;
     setChannel(via);
     setLine(null);
     setStep('otp');
@@ -424,8 +455,9 @@ export default function SignIn() {
    * Start (or restart) WhatsApp in reverse: the server hands over a code, the
    * observer sends it from their own WhatsApp, the poller collects the session
    * and hands it to afterProof — the same tail as a typed code. A server that
-   * cannot receive right now (503) gets the paid WhatsApp code instead, exactly
-   * as before and without a word. Same validation as a send: onRequest has
+   * cannot receive right now (503) gets the paid WhatsApp code instead only
+   * while it sends paid codes (waPaid); otherwise the line says WhatsApp is
+   * unavailable and nothing is sent. Same validation as a send: onRequest has
    * already checked the invite field, and an ORG- code never reaches here.
    */
   const startWa = async () => {
@@ -459,12 +491,19 @@ export default function SignIn() {
       }
       if (r.error === 'wa_inbound_unavailable') {
         setWaOk(false);
-        paidCode('whatsapp');
+        // The paid code exactly as before — but only while the server sends
+        // them. Otherwise say so; nothing is sent.
+        if (waPaid) {
+          paidCode('whatsapp');
+        } else {
+          setStep('request');
+          setLine(i18nT('auth.wa-unavailable'));
+        }
         return;
       }
       if (r.error === 'too_many_requests') setWaLimited(true);
       setLine(
-        r.error === 'too_many_requests' ? i18nT('n.auth.wa-too-many')
+        r.error === 'too_many_requests' ? (waPaid ? i18nT('n.auth.wa-too-many') : i18nT('auth.wa-too-many-free'))
         : r.error === 'invalid_phone' ? i18nT('n.auth.wa-invalid-phone')
         : i18nT('n.app.sign-in.could-not-send-a-code-check'),
       );
@@ -750,9 +789,11 @@ export default function SignIn() {
   // sender-ID approval that turned it on did not need an app release — and a
   // future suspension takes it away the same way. Appended last: it costs per
   // message, so it is the fallback, not the first thing under the thumb.
+  // WhatsApp goes only when the server has ANSWERED that it runs neither the
+  // free route nor paid codes (waNone).
   const CHANNELS: { key: Channel; label: string }[] = [
     { key: 'telegram', label: 'Telegram' },
-    { key: 'whatsapp', label: 'WhatsApp' },
+    ...(waNone ? [] : [{ key: 'whatsapp' as Channel, label: 'WhatsApp' }]),
     ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),
   ];
 
@@ -978,11 +1019,14 @@ export default function SignIn() {
                   ) : null}
                 </View>
               ) : null}
+              {/* Disabled until a channel is picked (an organisation code
+                  needs none). It used to fire with no chip, and the server
+                  served that as a paid WhatsApp code (2026-10-02). */}
               <Pressable
-                disabled={busy || phone.trim().length < 10}
+                disabled={sendBlocked}
                 onPress={onRequest}
                 className={`mt-5 items-center rounded-2xl py-4 ${
-                  busy || phone.trim().length < 10 ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                  sendBlocked ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                 }`}
               >
                 {busy ? (
@@ -1238,11 +1282,14 @@ export default function SignIn() {
                       {i18nT('n.auth.wa-number', { number: wa.waNumber })}
                     </Text>
                   ) : null}
-                  <Pressable className="mt-3 items-center" disabled={busy} onPress={() => paidCode('whatsapp')}>
-                    <Text className="text-center text-sm font-semibold text-good-ink">
-                      {i18nT('n.auth.wa-fallback-whatsapp')}
-                    </Text>
-                  </Pressable>
+                  {/* A PAID code: only while the server sends them (WA_PAID_OTP). */}
+                  {waPaid ? (
+                    <Pressable className="mt-3 items-center" disabled={busy} onPress={() => paidCode('whatsapp')}>
+                      <Text className="text-center text-sm font-semibold text-good-ink">
+                        {i18nT('n.auth.wa-fallback-whatsapp')}
+                      </Text>
+                    </Pressable>
+                  ) : null}
                   {smsOk ? (
                     <Pressable className="mt-3 items-center" disabled={busy} onPress={() => paidCode('sms')}>
                       <Text className="text-center text-sm font-semibold text-good-ink">

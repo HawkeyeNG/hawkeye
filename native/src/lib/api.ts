@@ -299,13 +299,28 @@ async function smsOtpEnabled(): Promise<boolean> {
  * them a paid one. /api/health's `waInbound`, set only while the server can
  * actually receive those messages.
  *
- * FAILS CLOSED, like smsOtp: no answer means the WhatsApp chip keeps sending
- * the paid code exactly as before. A 503 from /wa-start later says the same
- * thing and the sign-in screen falls back without a word.
+ * FAILS CLOSED, like smsOtp: no answer means no free route is assumed. What
+ * the WhatsApp chip does then is waRoutes()'s question below.
  */
 async function waInboundEnabled(): Promise<boolean> {
   const h = await health();
   return h?.waInbound === true;
+}
+
+/**
+ * BOTH WHATSAPP SWITCHES, for the screens that offer WhatsApp (owner,
+ * 2026-10-02: WhatsApp sign-in is the free route only):
+ *  - free: the observer sends US a code (`waInbound`);
+ *  - paid: we send a code we pay for (`waPaidOtp` — WA_PAID_OTP on the
+ *    server, OFF unless set). Only while it is true may a screen offer "get a
+ *    code on WhatsApp", and the server refuses that send otherwise anyway.
+ * null = no answer: keep WhatsApp on screen and let the server decide when it
+ * is chosen (/wa-start answers 503 if it cannot receive). An answer with
+ * neither route means the WhatsApp chip goes away.
+ */
+async function waRoutes(): Promise<{ free: boolean; paid: boolean } | null> {
+  const h = await health();
+  return h ? { free: h.waInbound === true, paid: h.waPaidOtp === true } : null;
 }
 
 /**
@@ -327,7 +342,7 @@ async function passkeysEnabled(rpId: string): Promise<boolean> {
  * Shared only while in flight, so a later mount still gets a fresh answer.
  * Never rejects: a failure is `null`, which every reader treats as "off".
  */
-type Health = { smsOtp?: boolean; waInbound?: boolean; passkeys?: boolean; passkeyRpId?: string };
+type Health = { smsOtp?: boolean; waInbound?: boolean; waPaidOtp?: boolean; passkeys?: boolean; passkeyRpId?: string };
 let healthInFlight: Promise<Health | null> | null = null;
 function health(): Promise<Health | null> {
   if (!healthInFlight) {
@@ -342,6 +357,7 @@ export const api = {
   contests: contestsWithCache,
   smsOtpEnabled,
   waInboundEnabled,
+  waRoutes,
   passkeysEnabled,
   /**
    * A contest's board. `state` crops it to one state and subdivides one level

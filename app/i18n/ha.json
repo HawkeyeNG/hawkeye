@@ -264,7 +264,7 @@
   "faq.when-is-a-count-marked-verified": "Yaushe ake yi wa ƙidaya alamar \"an tabbatar\"?",
   "faq.who-can-be-an-observer": "Wa zai iya zama mai lura?",
   "faq.why-must-photos-be-taken-live": "Me ya sa dole a ɗauki hotuna kai tsaye? Ba zan iya ɗora daga gallery na ba?",
-  "faq.your-one-time-code-arrives-free": "Lambarka ta lokaci ɗaya tana zuwa kyauta a tashar da ka zaɓa lokacin rijista — Telegram ko WhatsApp. Buɗe hanyar haɗin da aka nuna a can, ka tabbatar da lambarka (dole ta yi daidai da wadda ka rubuta), sai lambar ta zo nan take. Sanarwar gasa tana zuwa maka a jerin sanarwar manhajar, kuma ana wallafa ta a tasharmu ta Telegram, @HawkeyeNG_Hausa.",
+  "faq.your-one-time-code-arrives-free": "Tabbatar da lambarka kyauta ne. Zaɓi Telegram ko WhatsApp lokacin rijista. A Telegram, buɗe hanyar haɗin da aka nuna, ka tabbatar da lambarka (dole ta yi daidai da wadda ka rubuta), sai lambarka ta lokaci ɗaya ta zo nan take. A WhatsApp, kai ne za ka aiko mana da gajeriyar lamba daga WhatsApp na wannan lambar — wannan saƙon shi ne tabbatarwar, don haka babu abin da zai dawo maka ka rubuta. Sanarwar gasa tana zuwa maka a jerin sanarwar manhajar, kuma ana wallafa ta a tasharmu ta Telegram, @HawkeyeNG_Hausa.",
   "guide.before-election-day": "Kafin Ranar Zaɓe",
   "guide.everything-you-need-to-do-before": "Duk abin da kake buƙatar yi — kafin, lokacin da bayan ƙidaya a rukunin zaɓenka.",
   "guide.geofenced-units-only-accept-reports-from": "Rukunan da ke da iyakar wuri suna karɓar rahoto daga waɗanda ke tsaye a wurin kaɗai.",
@@ -2337,7 +2337,7 @@
   "passkey.modal-body": "Passkey yana ba ka damar shiga da sawun yatsanka, fuskarka ko makullin allonka maimakon lamba ko kalmar sirri.",
   "passkey.network": "Ba a iya isa Hawkeye ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
   "passkey.none-yet": "Babu passkey tukuna.",
-  "passkey.not-here": "Za ka iya ƙara passkey a hawkeye.com.ng a cikin burauzar yanar gizo ta zamani. Manhajojin Hawkeye ba za su iya ƙara shi ba tukuna.",
+  "passkey.not-here": "Za ka iya ƙara passkey a manhajar Hawkeye (ba Hawkeye Lite ba), ko a hawkeye.com.ng a cikin burauzar yanar gizo ta zamani.",
   "passkey.offer-body": "Yi amfani da sawun yatsanka, fuskarka ko makullin allonka maimakon lamba ko kalmar sirri. Sawun yatsanka ko fuskarka ba sa barin wannan na'urar.",
   "passkey.offer-no": "Ba yanzu ba",
   "passkey.offer-title": "Shiga da sauri nan gaba",
@@ -2745,5 +2745,12 @@
   "irev.admin.done-unconfirmed": "An janye tabbatarwa. Ba za a yi amfani da shi ba.",
   "irev.admin.queued": "An saka a layi. Ma'aikacin baya zai fara shi cikin minti ɗaya — sai ka sabunta.",
   "irev.admin.started": "An fara. Sabunta bayan minti ɗaya don ganin abin da ya samu.",
-  "observe.check-in-at-assigned": "Wannan zai yi maka rajistar isowa a {unit}, rumfar da aka sanya ka. Kana wata rumfa daban? Zaɓe ta a mataki na 2 tukuna."
+  "observe.check-in-at-assigned": "Wannan zai yi maka rajistar isowa a {unit}, rumfar da aka sanya ka. Kana wata rumfa daban? Zaɓe ta a mataki na 2 tukuna.",
+  "auth.wa-too-many-free": "Ƙoƙari ya yi yawa don wannan lambar. Jira awa ɗaya, ko ka yi amfani da Telegram maimakon haka.",
+  "auth.wa-unavailable": "Shiga ta WhatsApp ba ya samuwa yanzu. Yi amfani da Telegram maimakon haka.",
+  "observe.prefer-whatsapp-free": "Ka fi son WhatsApp? Tabbatar a can maimakon haka.",
+  "situation-room.no-rooms-heading": "Ba ku da ɗakin sa ido",
+  "situation-room.no-rooms-after-delete": "An goge {name}, kuma ba ku da wani ɗaki.",
+  "situation-room.no-rooms-after-leave": "Kun fita daga {name}, kuma ba ku da wani ɗaki.",
+  "situation-room.no-rooms-hint": "Don fara sabon kamfen, danna Sabon ɗaki a saman shafin."
 }

@@ -1,0 +1,17 @@
+{
+  "auth.wa-too-many-free": {
+    "ha": "Ƙoƙari ya yi yawa don wannan lambar. Jira awa ɗaya, ko ka yi amfani da Telegram maimakon haka.",
+    "ig": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ jiri Telegram kama.",
+    "yo": "Ìgbìyànjú ti pọ̀ jù fún nọ́mbà yìí. Dúró fún wákàtí kan, tàbí lo Telegram dípò bẹ́ẹ̀."
+  },
+  "auth.wa-unavailable": {
+    "ha": "Shiga ta WhatsApp ba ya samuwa yanzu. Yi amfani da Telegram maimakon haka.",
+    "ig": "Ịbanye site na WhatsApp adịghị ugbu a. Jiri Telegram kama.",
+    "yo": "Wíwọlé pẹ̀lú WhatsApp kò sí lọ́wọ́lọ́wọ́. Lo Telegram dípò bẹ́ẹ̀."
+  },
+  "observe.prefer-whatsapp-free": {
+    "ha": "Ka fi son WhatsApp? Tabbatar a can maimakon haka.",
+    "ig": "Ị kacha mmasị WhatsApp? Kwado n'ebe ahụ kama.",
+    "yo": "Ṣé o fẹ́ràn WhatsApp jù? Ṣe ìfìdímúlẹ̀ níbẹ̀ dípò rẹ̀."
+  }
+}

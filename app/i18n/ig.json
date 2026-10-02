@@ -263,7 +263,7 @@
   "faq.when-is-a-count-marked-verified": "Kedu mgbe a na-akara ọnụọgụgụ \"e nyochara\"?",
   "faq.who-can-be-an-observer": "Onye nwere ike ịbụ onye na-ekiri ihe?",
   "faq.why-must-photos-be-taken-live": "Gịnị mere a ga-eji see foto ozugbo? Ọ bụ na m enweghị ike ibulite site na gallery m?",
-  "faq.your-one-time-code-arrives-free": "Koodu otu oge gị na-abịa n'efu n'ọwa ị họọrọ mgbe ị na-edebanye aha — Telegram ma ọ bụ WhatsApp. Mepee njikọ e gosiri ebe ahụ, kwado nọmba gị (ọ ga-adaba na nke ị pịnyere), koodu ahụ ga-abịa ozugbo. Ọkwa asọmpi na-eru gị n'ebe ọkwa nke ngwa ahụ, anyị na-ebipụtakwa ha n'ọwa Telegram anyị, @HawkeyeNG_Igbo.",
+  "faq.your-one-time-code-arrives-free": "Ịkwado nọmba gị bụ n'efu. Họrọ Telegram ma ọ bụ WhatsApp mgbe ị na-edebanye aha. Na Telegram, mepee njikọ e gosiri, kwado nọmba gị (ọ ga-adaba na nke ị pịnyere), koodu otu oge gị ga-abịa ozugbo. Na WhatsApp, ị ga-ezitere anyị obere koodu site na WhatsApp nke nọmba ahụ — ozi ahụ bụ nkwenye, ya mere ọ dịghị ihe ga-alaghachi ka ị pịnye. Ọkwa asọmpi na-eru gị n'ebe ọkwa nke ngwa ahụ, anyị na-ebipụtakwa ha n'ọwa Telegram anyị, @HawkeyeNG_Igbo.",
   "guide.before-election-day": "Tupu Ụbọchị Ntuli Aka",
   "guide.everything-you-need-to-do-before": "Ihe niile ị ga-eme — tupu, n'oge na mgbe ọgụgụ gasịrị na ngalaba ntuli aka gị.",
   "guide.geofenced-units-only-accept-reports-from": "Ngalaba nwere oke ebe na-anabata naanị akụkọ ndị guzo ebe ahụ.",
@@ -2336,7 +2336,7 @@
   "passkey.modal-body": "Passkey na-ekwe ka i jiri mkpịsị aka gị, ihu gị ma ọ bụ mkpọchi ihuenyo gị banye kama koodu ma ọ bụ okwuntughe.",
   "passkey.network": "Enweghị ike iru Hawkeye. Lelee njikọ gị ma nwaa ọzọ.",
   "passkey.none-yet": "Enweghị passkey ka ugbu a.",
-  "passkey.not-here": "Ị nwere ike itinye passkey na hawkeye.com.ng n'ihe nchọgharị weebụ ọhụrụ. Ngwa Hawkeye enweghị ike itinye ya ka ugbu a.",
+  "passkey.not-here": "Ị nwere ike itinye passkey n'ime ngwa Hawkeye (ọ bụghị Hawkeye Lite), ma ọ bụ na hawkeye.com.ng n'ihe nchọgharị weebụ ọhụrụ.",
   "passkey.offer-body": "Jiri mkpịsị aka gị, ihu gị ma ọ bụ mkpọchi ihuenyo gị kama koodu ma ọ bụ okwuntughe. Mkpịsị aka gị ma ọ bụ ihu gị anaghị ahapụ ngwaọrụ a.",
   "passkey.offer-no": "Ọ bụghị ugbu a",
   "passkey.offer-title": "Banye ngwa ngwa oge ọzọ",
@@ -2744,5 +2744,12 @@
   "irev.admin.done-unconfirmed": "E wepụla nkwado. A gaghị eji ya.",
   "irev.admin.queued": "Etinyela ya n'ahịrị. Onye ọrụ azụ ga-amalite ya n'ime otu nkeji — mgbe ahụ mee ọhụrụ.",
   "irev.admin.started": "Amalitela. Mee ọhụrụ n'ime otu nkeji ka ịhụ ihe ọ chọtara.",
-  "observe.check-in-at-assigned": "Nke a na-edebanye na ị nọ na {unit}, ebe ntuli aka e kenyere gị. Ị nọ n'ebe ọzọ? Họrọ ya na nzọụkwụ 2 mbụ."
+  "observe.check-in-at-assigned": "Nke a na-edebanye na ị nọ na {unit}, ebe ntuli aka e kenyere gị. Ị nọ n'ebe ọzọ? Họrọ ya na nzọụkwụ 2 mbụ.",
+  "auth.wa-too-many-free": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ jiri Telegram kama.",
+  "auth.wa-unavailable": "Ịbanye site na WhatsApp adịghị ugbu a. Jiri Telegram kama.",
+  "observe.prefer-whatsapp-free": "Ị kacha mmasị WhatsApp? Kwado n'ebe ahụ kama.",
+  "situation-room.no-rooms-heading": "Ị nweghị ọnụ ụlọ nlekọta ọ bụla",
+  "situation-room.no-rooms-after-delete": "E hichapụla {name}, ị nweghịkwa ọnụ ụlọ ọzọ.",
+  "situation-room.no-rooms-after-leave": "Ị hapụla {name}, ị nweghịkwa ọnụ ụlọ ọzọ.",
+  "situation-room.no-rooms-hint": "Iji malite mkpọsa ọhụrụ, pịa Ọnụ ụlọ ọhụrụ n’isi peeji a."
 }

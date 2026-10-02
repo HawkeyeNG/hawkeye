@@ -1,6 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as Clipboard from 'expo-clipboard';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from '@/lib/secure-store';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import {
@@ -346,14 +347,21 @@ export default function Profile() {
   /** SMS only when /api/health says the server can deliver it — same switch the
    *  sign-in screen reads, so the two pickers can never disagree. */
   const [smsOk, setSmsOk] = useState(false);
+  /** A WhatsApp code sent TO the observer is PAID: offered only while the
+   *  server sends them (WA_PAID_OTP; off by default). The free WhatsApp route
+   *  lives on the sign-in screen ("Forgot password?"). */
+  const [waPaid, setWaPaid] = useState(false);
   useEffect(() => {
     let alive = true;
     api.smsOtpEnabled().then((ok) => { if (alive) setSmsOk(ok); });
+    api.waRoutes().then((r) => { if (alive) setWaPaid(r?.paid === true); });
     return () => { alive = false; };
   }, []);
-  const resetChannels: ResetChannel[] = smsOk
-    ? ['whatsapp', 'telegram', 'sms']
-    : ['whatsapp', 'telegram'];
+  const resetChannels: ResetChannel[] = [
+    ...(waPaid ? (['whatsapp'] as ResetChannel[]) : []),
+    'telegram',
+    ...(smsOk ? (['sms'] as ResetChannel[]) : []),
+  ];
 
   const load = useCallback(async () => {
     if (auth.status !== 'signedIn') return;
@@ -471,9 +479,24 @@ export default function Profile() {
     setPwMsg(null);
     try {
       const r = await requestOtp(resetPhone.trim(), resetChannel as ResetChannel);
-      if (r.ok || r.viaSms || r.viaWhatsapp) {
+      const to = resetPhone.trim();
+      if (r.telegramLink && !r.viaSms) {
+        // Telegram not linked to this number yet (or the chat refused the
+        // message): the bot sends the code once the contact is shared there.
         setPwMode('reset-otp');
-        setPwMsg(r.devOtp ? i18nT('n.app.profile.dev-mode-your-code-is', { v0: r.devOtp }) : i18nT('n.app.profile.code-sent-check-whatsapp-sms'));
+        setPwMsg(i18nT('n.app.sign-in.open-telegram-tap-start-then-share'));
+        WebBrowser.openBrowserAsync(r.telegramLink).catch(() => {});
+      } else if (r.ok || r.viaSms || r.viaWhatsapp) {
+        setPwMode('reset-otp');
+        // Where the code actually went — never "check WhatsApp/SMS" for a
+        // code that went to Telegram.
+        setPwMsg(
+          r.devOtp ? i18nT('n.app.profile.dev-mode-your-code-is', { v0: r.devOtp })
+          : r.viaWhatsapp ? i18nT('n.app.sign-in.code-sent-on-whatsapp-to', { v0: to })
+          : r.viaSms ? i18nT('n.app.sign-in.code-sent-by-sms-to', { v0: to })
+          : r.viaTelegram ? i18nT('n.app.sign-in.code-sent-on-telegram-to', { v0: to })
+          : i18nT('n.app.sign-in.code-sent-to', { v0: to }),
+        );
       } else {
         setPwMsg(r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check'));
       }

@@ -263,7 +263,7 @@
   "faq.when-is-a-count-marked-verified": "Nígbà wo ni a ń fi àmì \"a fìdí rẹ̀ múlẹ̀\" sí ìkà kan?",
   "faq.who-can-be-an-observer": "Ta ni ó lè jẹ́ olùwòran?",
   "faq.why-must-photos-be-taken-live": "Kí ló dé tí a fi gbọ́dọ̀ ya fọ́tò tààrà? Ṣé n kò lè gbé e sókè láti gallery mi?",
-  "faq.your-one-time-code-arrives-free": "Kóòdù ìgbà kan rẹ ń dé lọ́fẹ̀ẹ́ ní ọ̀nà tí o yàn nígbà ìforúkọsílẹ̀ — Telegram tàbí WhatsApp. Ṣí ọ̀nà tí a fi hàn níbẹ̀, fìdí ìbánisọ̀rọ̀ rẹ múlẹ̀ (ó gbọ́dọ̀ bá nọ́mbà tí o tẹ mu), kóòdù náà yóò sì dé lẹ́sẹ̀kẹsẹ̀. Ìkìlọ̀ ìdíje ń dé bá ọ nínú àtòjọ ìkìlọ̀ ohun èlò náà, a sì tún ń fi wọ́n sí ìkànnì Telegram wa, @HawkeyeNG_Yoruba.",
+  "faq.your-one-time-code-arrives-free": "Fífi ìdí nọ́mbà rẹ múlẹ̀ jẹ́ ọ̀fẹ́. Yan Telegram tàbí WhatsApp nígbà ìforúkọsílẹ̀. Lórí Telegram, ṣí ọ̀nà tí a fi hàn, fìdí ìbánisọ̀rọ̀ rẹ múlẹ̀ (ó gbọ́dọ̀ bá nọ́mbà tí o tẹ mu), kóòdù ìgbà kan rẹ yóò sì dé lẹ́sẹ̀kẹsẹ̀. Lórí WhatsApp, ìwọ ni yóò fi kóòdù kúkúrú ránṣẹ́ sí wa láti WhatsApp nọ́mbà náà — ìfiránṣẹ́ yẹn ni ìfìdímúlẹ̀, nítorí náà kò sí ohun tí yóò padà wá fún ọ láti tẹ̀. Ìkìlọ̀ ìdíje ń dé bá ọ nínú àtòjọ ìkìlọ̀ ohun èlò náà, a sì tún ń fi wọ́n sí ìkànnì Telegram wa, @HawkeyeNG_Yoruba.",
   "guide.before-election-day": "Ṣáájú Ọjọ́ Ìdìbò",
   "guide.everything-you-need-to-do-before": "Gbogbo ohun tí o nílò láti ṣe — ṣáájú, nígbà àti lẹ́yìn ìkà ní ẹ̀ka ìdìbò rẹ.",
   "guide.geofenced-units-only-accept-reports-from": "Àwọn ẹ̀ka tí ó ní ààlà ibi ń gba ìròyìn láti ọ̀dọ̀ àwọn tí wọ́n dúró níbẹ̀ nìkan.",
@@ -2336,7 +2336,7 @@
   "passkey.modal-body": "Passkey jẹ́ kí o wọlé pẹ̀lú ìka ọwọ́ rẹ, ojú rẹ tàbí títìpa ìbòjú rẹ dípò kóòdù tàbí ọ̀rọ̀ ìpamọ́.",
   "passkey.network": "A kò lè dé Hawkeye. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbìyànjú lẹ́ẹ̀kan sí i.",
   "passkey.none-yet": "Kò sí passkey síbẹ̀.",
-  "passkey.not-here": "O lè fi passkey kún un ní hawkeye.com.ng nínú aṣàwákiri wẹ́ẹ̀bù tuntun. Àwọn áàpù Hawkeye kò tíì lè fi kún un.",
+  "passkey.not-here": "O lè fi passkey kún un nínú áàpù Hawkeye (kì í ṣe Hawkeye Lite), tàbí ní hawkeye.com.ng nínú aṣàwákiri wẹ́ẹ̀bù tuntun.",
   "passkey.offer-body": "Lo ìka ọwọ́ rẹ, ojú rẹ tàbí títìpa ìbòjú rẹ dípò kóòdù tàbí ọ̀rọ̀ ìpamọ́. Ìka ọwọ́ tàbí ojú rẹ kì í kúrò lórí ẹ̀rọ yìí.",
   "passkey.offer-no": "Kì í ṣe báyìí",
   "passkey.offer-title": "Wọlé ní kíákíá nígbà míì",
@@ -2744,5 +2744,12 @@
   "irev.admin.done-unconfirmed": "A ti yọ ìfìdímúlẹ̀ kúrò. A kò ní lò ó.",
   "irev.admin.queued": "A ti fi sí ìlà. Òṣìṣẹ́ ẹ̀yìn yóò bẹ̀rẹ̀ rẹ̀ láàrin ìṣẹ́jú kan — lẹ́yìn náà sọ ọ́ di tuntun.",
   "irev.admin.started": "Ó ti bẹ̀rẹ̀. Sọ ọ́ di tuntun lẹ́yìn ìṣẹ́jú kan láti rí ohun tí ó rí.",
-  "observe.check-in-at-assigned": "Èyí yóò forúkọ rẹ sílẹ̀ pé o ti dé {unit}, ibùdó tí a yàn fún ọ. Ṣé o wà ní ibùdó mìíràn? Yàn án ní ìgbésẹ̀ 2 kọ́kọ́."
+  "observe.check-in-at-assigned": "Èyí yóò forúkọ rẹ sílẹ̀ pé o ti dé {unit}, ibùdó tí a yàn fún ọ. Ṣé o wà ní ibùdó mìíràn? Yàn án ní ìgbésẹ̀ 2 kọ́kọ́.",
+  "auth.wa-too-many-free": "Ìgbìyànjú ti pọ̀ jù fún nọ́mbà yìí. Dúró fún wákàtí kan, tàbí lo Telegram dípò bẹ́ẹ̀.",
+  "auth.wa-unavailable": "Wíwọlé pẹ̀lú WhatsApp kò sí lọ́wọ́lọ́wọ́. Lo Telegram dípò bẹ́ẹ̀.",
+  "observe.prefer-whatsapp-free": "Ṣé o fẹ́ràn WhatsApp jù? Ṣe ìfìdímúlẹ̀ níbẹ̀ dípò rẹ̀.",
+  "situation-room.no-rooms-heading": "O kò ní yàrá ìṣàkóso kankan",
+  "situation-room.no-rooms-after-delete": "A ti pa {name} rẹ́, o kò sì ní yàrá mìíràn.",
+  "situation-room.no-rooms-after-leave": "O ti kúrò nínú {name}, o kò sì ní yàrá mìíràn.",
+  "situation-room.no-rooms-hint": "Láti bẹ̀rẹ̀ ìpolongo tuntun, tẹ Yàrá tuntun ní òkè ojú-ìwé."
 }

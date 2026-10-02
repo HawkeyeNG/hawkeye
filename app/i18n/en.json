@@ -263,7 +263,7 @@
   "faq.when-is-a-count-marked-verified": "When is a count marked \"verified\"?",
   "faq.who-can-be-an-observer": "Who can be an observer?",
   "faq.why-must-photos-be-taken-live": "Why must photos be taken live? Can I upload from my gallery?",
-  "faq.your-one-time-code-arrives-free": "Your one-time code arrives free of charge on the channel you choose at sign-up — Telegram or WhatsApp. Open the link shown there, confirm your contact (it must match the number you typed), and the code arrives instantly. Race alerts reach you in the app's notifications feed and also post in our Telegram channel, @HawkeyeNG_Results.",
+  "faq.your-one-time-code-arrives-free": "Verifying your number is free. Choose Telegram or WhatsApp at sign-up. On Telegram, open the link shown, confirm your contact (it must match the number you typed), and your one-time code arrives instantly. On WhatsApp, you send us a short code from the WhatsApp on that number — that message is the verification, so nothing comes back to type. Race alerts reach you in the app's notifications feed and also post in our Telegram channel, @HawkeyeNG_Results.",
   "guide.before-election-day": "Before Election Day",
   "guide.everything-you-need-to-do-before": "Everything you need to do — before, during and after the count at your polling unit.",
   "guide.geofenced-units-only-accept-reports-from": "Geofenced units only accept reports from people standing there.",
@@ -2310,7 +2310,7 @@
   "passkey.modal-body": "A passkey lets you sign in with your fingerprint, face or screen lock instead of a code or password.",
   "passkey.network": "Could not reach Hawkeye. Check your connection and try again.",
   "passkey.none-yet": "No passkeys yet.",
-  "passkey.not-here": "You can add a passkey at hawkeye.com.ng in an up-to-date web browser. The Hawkeye apps cannot add one yet.",
+  "passkey.not-here": "You can add a passkey in the Hawkeye app (not Hawkeye Lite), or at hawkeye.com.ng in an up-to-date web browser.",
   "passkey.offer-body": "Use your fingerprint, face or screen lock instead of a code or password. Your fingerprint or face never leaves this device.",
   "passkey.offer-no": "Not now",
   "passkey.offer-title": "Sign in faster next time",
@@ -2718,5 +2718,12 @@
   "irev.admin.done-unconfirmed": "Unconfirmed. It will not be used.",
   "irev.admin.queued": "Queued. The background worker starts it within a minute — refresh then.",
   "irev.admin.started": "Started. Refresh in a minute to see what it found.",
-  "observe.check-in-at-assigned": "This checks you in at {unit}, the unit you are down for. At a different unit? Choose it in step 2 first."
+  "observe.check-in-at-assigned": "This checks you in at {unit}, the unit you are down for. At a different unit? Choose it in step 2 first.",
+  "auth.wa-too-many-free": "Too many tries for this number. Wait an hour, or use Telegram instead.",
+  "auth.wa-unavailable": "WhatsApp sign-in is not available right now. Use Telegram instead.",
+  "observe.prefer-whatsapp-free": "Prefer WhatsApp? Verify there instead.",
+  "situation-room.no-rooms-heading": "You have no situation rooms",
+  "situation-room.no-rooms-after-delete": "{name} was deleted, and you have no other rooms.",
+  "situation-room.no-rooms-after-leave": "You stepped back from {name}, and you have no other rooms.",
+  "situation-room.no-rooms-hint": "To start a new campaign, click New room in the header above."
 }

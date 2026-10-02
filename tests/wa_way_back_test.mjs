@@ -107,7 +107,9 @@ const WA_LINK = 'https://wa.me/2347042248544?text=Sign%20me%20in%20to%20Hawkeye.
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
-  if (url === '/api/health') return json({ ok: true, waInbound: true, smsOtp: false });
+  // waPaidOtp on: the pane with its paid fallback line, whose ORDER is measured
+  // below (with paid codes off that line is hidden — backend/tests/signin_routes_ui_test.mjs).
+  if (url === '/api/health') return json({ ok: true, waInbound: true, waPaidOtp: true, smsOtp: false });
   if (url === '/api/observers/wa-start') return json({ pollToken: 'p1', code: 'HK-4K7Q2M', waLink: WA_LINK, waNumber: '+234 704 224 8544', expiresInS: 600, pollAfterMs: 60000 });
   if (url === '/api/observers/wa-status') return json({ status: 'pending', mismatch: false });
   if (url.startsWith('/api/')) return json({});

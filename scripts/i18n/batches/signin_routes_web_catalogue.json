@@ -31,7 +31,7 @@
   "passkey.modal-body": "A passkey lets you sign in with your fingerprint, face or screen lock instead of a code or password.",
   "passkey.network": "Could not reach Hawkeye. Check your connection and try again.",
   "passkey.none-yet": "No passkeys yet.",
-  "passkey.not-here": "You can add a passkey at hawkeye.com.ng in an up-to-date web browser. The Hawkeye apps cannot add one yet.",
+  "passkey.not-here": "You can add a passkey in the Hawkeye app (not Hawkeye Lite), or at hawkeye.com.ng in an up-to-date web browser.",
   "passkey.offer-body": "Use your fingerprint, face or screen lock instead of a code or password. Your fingerprint or face never leaves this device.",
   "passkey.offer-no": "Not now",
   "passkey.offer-title": "Sign in faster next time",

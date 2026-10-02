@@ -538,6 +538,12 @@ let pendingPhone = '';
 /* /api/health waInbound: the WhatsApp choice runs in reverse (free). Set by
    revealSmsOptionIfEnabled(); false until the server says otherwise. */
 let WA_INBOUND = false;
+/* /api/health waPaidOtp: the server will send a PAID WhatsApp code (WA_PAID_OTP
+   on). False until it says so — fail closed: every "get a code on WhatsApp"
+   link stays hidden, and the WhatsApp choice is the free route or nothing.
+   WA_HEALTH: the server has answered at all (only then may WhatsApp be hidden). */
+let WA_PAID = false;
+let WA_HEALTH = false;
 /* The free WhatsApp route in progress (startWaSend), or null. Declared up here
    because resetAuthPane() reads it. */
 let wa = null;   // { pollToken, code, link, deadline, delay, timer, busy, fails, newPw, gen }
@@ -913,6 +919,9 @@ function revealSmsOptionIfEnabled(tries = 2) {
       // when the server says so; otherwise the WhatsApp choice sends a paid
       // code exactly as before. Same fail-closed contract as SMS below.
       if (h && h.waInbound === true) WA_INBOUND = true;
+      if (h && h.waPaidOtp === true) WA_PAID = true;
+      if (h) WA_HEALTH = true;
+      paintWaRoutes();
       paintPasskeySignIn();
       if (h && h.smsOtp === true) {
         opt.hidden = false;
@@ -928,6 +937,26 @@ function revealSmsOptionIfEnabled(tries = 2) {
       // and the cost of losing it is an option that silently never appears.
       if (tries > 1) setTimeout(() => revealSmsOptionIfEnabled(tries - 1), 2500);
     });
+}
+
+/**
+ * WHATSAPP OFFERS ONLY WHAT THE SERVER RUNS (owner, 2026-10-02: free route only).
+ *  - "Can't send it? Get a code on WhatsApp instead" (a PAID code) shows only
+ *    while /api/health says waPaidOtp — hidden in the markup until then.
+ *  - The WhatsApp choice itself goes away only when the server has ANSWERED
+ *    and runs neither route; with no answer it stays, and the server decides
+ *    when it is chosen (/wa-start answers 503 if it cannot receive).
+ */
+function paintWaRoutes() {
+  if ($('wa-paid-line')) $('wa-paid-line').hidden = !WA_PAID;
+  const opt = $('otp-wa-opt');
+  if (!opt) return;
+  const none = WA_HEALTH && !WA_INBOUND && !WA_PAID;
+  opt.hidden = none;
+  // The label's inline display:flex outranks the UA's [hidden] rule.
+  opt.style.display = none ? 'none' : 'flex';
+  const radio = opt.querySelector('input');
+  if (none && radio && radio.checked) { radio.checked = false; syncChannelGate(); }
 }
 
 let smsProbed = false;
@@ -1004,7 +1033,14 @@ function renderOtpSent(body) {
      is its own key — two sentences side by side, not one glued together. */
   const to = pendingPhone.replace(/&/g, '&amp;').replace(/</g, '&lt;');
   const hint = $('otp-hint');
-  const waSwitch = ` <a class="btn-link" id="switch-wa" href="#">${T('observe.prefer-whatsapp-instead', 'Prefer WhatsApp? Get the code there instead.')}</a>`;
+  // The WhatsApp switch under a Telegram send: a PAID code only while the
+  // server sends them (WA_PAID); otherwise the free route — the observer sends
+  // US a code — when the server runs it; otherwise no switch at all.
+  const waSwitch = WA_PAID
+    ? ` <a class="btn-link" id="switch-wa" href="#">${T('observe.prefer-whatsapp-instead', 'Prefer WhatsApp? Get the code there instead.')}</a>`
+    : WA_INBOUND
+      ? ` <a class="btn-link" id="switch-wa-free" href="#">${T('observe.prefer-whatsapp-free', 'Prefer WhatsApp? Verify there instead.')}</a>`
+      : '';
   if (body.devOtp) {
     hint.textContent = T('observe.dev-mode-your-code-is', 'DEV MODE — your code is {code}').replace('{code}', body.devOtp);
   } else if (body.viaWhatsapp) {
@@ -1028,8 +1064,27 @@ function renderOtpSent(body) {
     hint.innerHTML = T('observe.code-sent-to', 'Code sent to <strong>{phone}</strong>.', { phone: to });
   }
   const sw = $('switch-wa');
-  if (sw) sw.onclick = (e) => { e.preventDefault(); resendVia('whatsapp'); };
+  if (sw) sw.onclick = (e) => { e.preventDefault(); if (WA_PAID) resendVia('whatsapp'); };
+  const swf = $('switch-wa-free');
+  if (swf) swf.onclick = (e) => { e.preventDefault(); switchToFreeWa(); };
   showOtpPhone();
+}
+
+/* From a Telegram send to the free WhatsApp route, keeping the number. The
+   sign-in completes by itself when the message lands, so the password (sign-up
+   or reset) is chosen first, exactly as on the first screen. */
+async function switchToFreeWa() {
+  const pw = $('pw-opt-input') ? $('pw-opt-input').value : '';
+  if (pw.length < 8) {
+    if ($('pw-opt')) $('pw-opt').hidden = false;
+    if ($('pw-opt-input')) $('pw-opt-input').focus();
+    return void hkAlert(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'));
+  }
+  try {
+    if (!(await startWaSend(pendingPhone, pw))) hkAlert(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
+  } catch {
+    hkAlert(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
+  }
 }
 
 // A code that never arrived or expired is recoverable in place — the server
@@ -1064,9 +1119,11 @@ $('btn-auth').onclick = async () => {
     if (!channel) return void hkAlert(T('auth.choose-code-channel', 'Choose where to receive your code — WhatsApp or Telegram.'));
     if (!inviteFieldOk()) return;
     // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
-    // the code. Anything that stops it (server says unavailable) drops through
-    // to the paid code below, so the choice always does something.
-    if (channel === 'whatsapp' && WA_INBOUND) {
+    // the code. Tried whenever paid codes are off too (the server decides: 503
+    // if it cannot receive) — a server that sends paid codes and cannot
+    // receive drops through to the paid code below, as before; one that sends
+    // neither says so, and nothing is sent.
+    if (channel === 'whatsapp' && (WA_INBOUND || !WA_PAID)) {
       const pw = $('pw-opt-input') ? $('pw-opt-input').value : '';
       if ($('pw-opt') && $('pw-opt').hidden) {
         // Forgotten-password route: the new password is chosen BEFORE the
@@ -1077,6 +1134,7 @@ $('btn-auth').onclick = async () => {
       }
       if (pw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
       if (await startWaSend(phone, pw)) return;
+      if (!WA_PAID) return void hkAlert(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
     }
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
@@ -1188,7 +1246,8 @@ function enterOtpMode(phone, channel, body) {
  * Polling is BOUNDED: first after the server's pollAfterMs, then x1.5 up to
  * 10 s, never past the code's expiry, and at once when the page comes back
  * into view (the observer returning from WhatsApp). One poll in flight at a
- * time. The paid WhatsApp code and SMS stay one tap away. */
+ * time. SMS (when the server sends it) stays one tap away, and a paid WhatsApp
+ * code only while /api/health says waPaidOtp (paintWaRoutes). */
 function showWaPane(on) {
   if ($('wa-send')) $('wa-send').hidden = !on;
   for (const id of ['auth-input', 'auth-input-label', 'btn-auth']) if ($(id)) $(id).hidden = on;
@@ -1229,7 +1288,12 @@ async function startWaSend(phone, newPw) {
   });
   $('otp-hint').textContent = '';
   if (status === 503) { WA_INBOUND = false; return false; }
-  if (status === 429) { hkAlert(T('auth.wa-too-many', 'Too many tries for this number. Wait an hour, or get a code on WhatsApp instead.')); return true; }
+  if (status === 429) {
+    hkAlert(WA_PAID
+      ? T('auth.wa-too-many', 'Too many tries for this number. Wait an hour, or get a code on WhatsApp instead.')
+      : T('auth.wa-too-many-free', 'Too many tries for this number. Wait an hour, or use Telegram instead.'));
+    return true;
+  }
   if (status !== 200) { hkAlert(explain(body)); return true; }
   pendingPhone = phone;
   pendingChannel = 'whatsapp';
@@ -1406,10 +1470,13 @@ if ($('wa-copy')) $('wa-copy').onclick = async (e) => {
 if ($('wa-again')) $('wa-again').onclick = () => {
   const pw = wa && wa.newPw;
   startWaSend(pendingPhone, pw || ($('pw-opt-input') ? $('pw-opt-input').value : '')).then((started) => {
-    if (!started) waFallback('whatsapp');
+    if (started) return;
+    if (WA_PAID) waFallback('whatsapp');
+    else waStatus(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
   });
 };
-if ($('wa-paid')) $('wa-paid').onclick = (e) => { e.preventDefault(); waFallback('whatsapp'); };
+// A PAID code: only while the server sends them (the line is hidden otherwise).
+if ($('wa-paid')) $('wa-paid').onclick = (e) => { e.preventDefault(); if (WA_PAID) waFallback('whatsapp'); };
 if ($('wa-sms')) $('wa-sms').onclick = (e) => { e.preventDefault(); waFallback('sms'); };
 // Back from WhatsApp: check straight away instead of waiting out the backoff.
 function waWake() {

@@ -160,9 +160,9 @@
     "yo": "Kò sí passkey síbẹ̀."
   },
   "passkey.not-here": {
-    "ha": "Za ka iya ƙara passkey a hawkeye.com.ng a cikin burauzar yanar gizo ta zamani. Manhajojin Hawkeye ba za su iya ƙara shi ba tukuna.",
-    "ig": "Ị nwere ike itinye passkey na hawkeye.com.ng n'ihe nchọgharị weebụ ọhụrụ. Ngwa Hawkeye enweghị ike itinye ya ka ugbu a.",
-    "yo": "O lè fi passkey kún un ní hawkeye.com.ng nínú aṣàwákiri wẹ́ẹ̀bù tuntun. Àwọn áàpù Hawkeye kò tíì lè fi kún un."
+    "ha": "Za ka iya ƙara passkey a manhajar Hawkeye (ba Hawkeye Lite ba), ko a hawkeye.com.ng a cikin burauzar yanar gizo ta zamani.",
+    "ig": "Ị nwere ike itinye passkey n'ime ngwa Hawkeye (ọ bụghị Hawkeye Lite), ma ọ bụ na hawkeye.com.ng n'ihe nchọgharị weebụ ọhụrụ.",
+    "yo": "O lè fi passkey kún un nínú áàpù Hawkeye (kì í ṣe Hawkeye Lite), tàbí ní hawkeye.com.ng nínú aṣàwákiri wẹ́ẹ̀bù tuntun."
   },
   "passkey.offer-body": {
     "ha": "Yi amfani da sawun yatsanka, fuskarka ko makullin allonka maimakon lamba ko kalmar sirri. Sawun yatsanka ko fuskarka ba sa barin wannan na'urar.",

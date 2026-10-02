@@ -887,7 +887,8 @@ function nameError(body) {
 }
 
 function render() {
-  if (!S.groups.length) return renderWelcome();
+  if (!S.groups.length) return S.gone ? renderNoRooms() : renderWelcome();
+  S.gone = null;
   const g = S.group || {};
   /* The Coverage tab is the deployment overlay; a plain member does not get it,
      including by ?tab=coverage or a drill from the overview. */
@@ -1000,6 +1001,26 @@ function contestName(en) {
       '{v0} By-Election{v1}', { v0: T(CONTEST_KEY[m[1]] || 'x', m[1]), v1: m[2] });
   }
   return T(CONTEST_KEY[s] || 'x', s);
+}
+
+/**
+ * NO ROOMS LEFT — after this account deleted (or stepped back from) its last
+ * room. Not the setup form straight away: the reader just removed something and
+ * should see that it is gone. The header keeps one action, New room, and the
+ * page points at it. The old room's levers (Invite, Delete…) are cleared.
+ */
+function renderNoRooms() {
+  const gone = S.gone; S.gone = null;
+  $('sr-actions').innerHTML = `<button id="new-btn" title="${T('situation-room.title-set-up-another-room', 'Set up another situation room')}">${T('situation-room.new-room', 'New room')}</button>`;
+  $('new-btn').addEventListener('click', () => { S.groupsHeld = []; renderWelcome(); });
+  $('sr').innerHTML = `
+    <div class="sr-empty">
+      <h2>${T('situation-room.no-rooms-heading', 'You have no situation rooms')}</h2>
+      <p>${esc(gone.how === 'left'
+    ? T('situation-room.no-rooms-after-leave', 'You stepped back from {name}, and you have no other rooms.', { name: gone.name })
+    : T('situation-room.no-rooms-after-delete', '{name} was deleted, and you have no other rooms.', { name: gone.name }))}</p>
+      <p>${T('situation-room.no-rooms-hint', 'To start a new campaign, click New room in the header above.')}</p>
+    </div>`;
 }
 
 function renderWelcome() {
@@ -3837,14 +3858,19 @@ async function deleteRoom() {
       : T('situation-room.could-not-delete-that-room', 'Could not delete that room.'));
   }
   history.replaceState(null, '', '/situation-room.html');
+  URL_SLUG = '';
+  S.gone = { name: g.name, how: 'deleted' };
   S.gid = null; S.group = null; S.groups = [];
-  boot();
+  boot();   // opens the next room this account has, or the "no rooms" page
 }
 
 async function leaveRoom() {
   if (!await ask(T('situation-room.confirm-stop-managing', 'Stop managing {name}? You will lose access to this room unless the owner adds you back.', { name: S.group.name }))) return;
   const { status } = await api('/api/groups/' + S.gid + '/managers/' + S.group.me_id, { method: 'DELETE' });
   if (status !== 200) return void hkAlert(T('situation-room.could-not-step-back-from-this-room', 'Could not step back from this room.'));
+  history.replaceState(null, '', '/situation-room.html');
+  URL_SLUG = '';
+  S.gone = { name: S.group.name, how: 'left' };
   S.gid = null; S.group = null;
   boot();
 }
@@ -3958,7 +3984,9 @@ let PARTIES = [];
    the <head> (the installed window's scope is /situation-room.html), and
    sign-in hands the room back the same way. The path is still read, for the
    moment between that forward starting and the page going. */
-const URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1]
+/* `let`, not const: deleting or leaving the room the address names must forget
+   it, or boot() would answer "not your room" instead of opening the next one. */
+let URL_SLUG = (location.pathname.match(/^\/room\/([^/]+)/) || [])[1]
   || new URLSearchParams(location.search).get('room') || '';
 
 /**

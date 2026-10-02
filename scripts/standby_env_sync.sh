@@ -67,7 +67,9 @@ rssh() { ssh -i "$STANDBY_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=20 "$STAND
 [ -r "$ENVF" ] || die "no $ENVF (the GO54 login lives there)"
 
 # Read single values from backend/.env without echoing them (same parsing as pull_backup.sh).
-envval() { grep -E "^$1=" "$ENVF" | tail -1 | sed -e "s/^$1=//" -e 's/[[:space:]]*$//' -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"; }
+# `|| true`: an ABSENT optional key (GO54_DA_BASE) made grep fail, and under
+# `set -euo pipefail` that exited the whole script silently before step 1.
+envval() { { grep -E "^$1=" "$ENVF" || true; } | tail -1 | sed -e "s/^$1=//" -e 's/[[:space:]]*$//' -e 's/^"\(.*\)"$/\1/' -e "s/^'\(.*\)'\$/\1/"; }
 U="$(envval GO54_USERNAME)"; P="$(envval GO54_PASSWORD)"; K="$(envval GO54_STANDBY_KEY)"
 DA="$(envval GO54_DA_BASE)"; DA="${DA:-https://da32.host-ww.net:2222}"
 [ -n "$U" ] && [ -n "$P" ] || die "GO54_USERNAME / GO54_PASSWORD missing from backend/.env"

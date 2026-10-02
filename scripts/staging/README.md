@@ -300,7 +300,7 @@ sudo hawkeye-restart
 sudo install -d -o hawkeye -g hawkeye /var/lib/hawkeye/loadtest
 sudo -u hawkeye bash -c 'set -a; . /etc/hawkeye/staging.env; . /run/hawkeye/app.env; set +a; cd /opt/hawkeye/current
   node scripts/loadtest/seed/make_sample_jpegs.mjs /var/lib/hawkeye/loadtest
-  node scripts/loadtest/seed/seed_staging.mjs --i-am-on-staging --host staging.hawkeye.com.ng \
+  node backend/scripts/seed_staging.mjs --i-am-on-staging --host staging.hawkeye.com.ng \
     --count 100000 --auth 2000 --out /var/lib/hawkeye/loadtest/staging.json'
 sudo -u hawkeye sqlite3 /var/lib/hawkeye/storage/hawkeye.db ".backup /var/lib/hawkeye/pretest.db"   # the reset point
 sudo aws s3 cp --recursive /var/lib/hawkeye/loadtest/ s3://hawkeye-staging-replica-025232685387/fixtures/

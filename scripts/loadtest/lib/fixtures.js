@@ -1,4 +1,4 @@
-// Test-only fixtures produced ON THE STAGING HOST by seed/seed_staging.mjs.
+// Test-only fixtures produced ON THE STAGING HOST by backend/scripts/seed_staging.mjs (private repo).
 // They hold staging-only JWTs and private keys for flagged test observers
 // (is_staff=1, phone_hash prefixed "loadtest:"). Never commit them: .fixtures/
 // is gitignored. FIXTURES must be an ABSOLUTE path (run.sh makes it absolute).

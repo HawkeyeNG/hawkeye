@@ -36,7 +36,7 @@ path. That is only safe because of the following checks:
   `SENDCHAMP_API_KEY`, `TERMII_API_KEY`, `BULKSMS_NG_API_TOKEN`,
   `WA_CLOUD_TOKEN` or `WA_PHONE_NUMBER_ID`. On that provider, outside
   production, the server returns the code as `devOtp`.
-- `seed/seed_staging.mjs` refuses to run unless all of that is true on the host
+- `backend/scripts/seed_staging.mjs` (private repo: it loads server code) refuses to run unless all of that is true on the host
   itself. It writes an attestation into the fixtures, which k6 rejects if it
   was made for another host or is more than 24 hours old.
 - `run.sh` and `setup()` refuse unless `/api/health` reports `smsOtp:false`
@@ -95,7 +95,7 @@ shape to about 6 minutes.
 
    ```bash
    node scripts/loadtest/seed/make_sample_jpegs.mjs scripts/loadtest/.fixtures
-   APP_ENV=staging node scripts/loadtest/seed/seed_staging.mjs --i-am-on-staging \
+   APP_ENV=staging node backend/scripts/seed_staging.mjs --i-am-on-staging \
      --host staging.hawkeye.com.ng --count 60000 --auth 2000 \
      --out scripts/loadtest/.fixtures/staging.json
    ```

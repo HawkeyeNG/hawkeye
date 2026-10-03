@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BRAND } from '@/lib/api';
 import { t as i18nT } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 /**
  * EVIDENCE VIDEOS, FULL SCREEN, IN THE APP — with Hawkeye's own controls.
@@ -449,6 +450,8 @@ export function VideoViewer({
   const V = uri ? videoModule() : null;
   return (
     <Modal visible={!!uri} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+      <HoldUpdates />
       {/* A Modal is its own native window on Android: the scrubber's gesture
           needs a root of its own there, as image-viewer.tsx's pinch does. */}
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>

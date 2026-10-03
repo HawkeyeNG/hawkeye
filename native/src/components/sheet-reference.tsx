@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 /**
  * THE SHEET, STILL READABLE WHEN THE FIGURES ARE TYPED.
@@ -66,6 +67,8 @@ export function SheetReference({
         onRequestClose={() => setOpen(false)}
         statusBarTranslucent
       >
+        {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+        <HoldUpdates />
         <Zoomable uri={uri} onClose={() => setOpen(false)} />
       </Modal>
     </>

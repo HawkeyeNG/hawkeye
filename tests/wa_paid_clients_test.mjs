@@ -112,7 +112,7 @@ console.log('\n=== native: the ONLY paid WhatsApp link is the gated one ===');
   check('one use of the paid-link string, inside the waPaid gate', uses.length === 1 && gate > 0 && uses[0] > gate && uses[0] - gate < 400, true);
 }
 
-console.log('\n=== native: a published OTA runs after a real absence (lib/fresh-updates.ts) ===');
+console.log('\n=== native: a published OTA runs at the next SAFE moment (lib/fresh-updates.ts) ===');
 {
   const { stripTypeScriptTypes } = await import('node:module');
   const os = await import('node:os');
@@ -121,10 +121,12 @@ console.log('\n=== native: a published OTA runs after a real absence (lib/fresh-
   const ts = read('native/src/lib/fresh-updates.ts');
   const body = stripTypeScriptTypes(ts.replace(/^import [^;]+;\n/gm, ''), { mode: 'strip' });
   const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hk-fresh-')), 'm.mjs');
-  fs.writeFileSync(f, 'const Updates = {}; const AppState = {}; const useEffect = () => {}; const __DEV__ = false;\n' + body);
+  fs.writeFileSync(f, 'const Updates = {}; const AppState = {}; const useEffect = () => {}; const __DEV__ = false;\n'
+    + 'const outboxBusy = () => globalThis.__outboxBusy === true;\n' + body);
   const M = await import(pathToFileURL(f).href);
-  const run = async ({ awayMin, available = true, enabled = true }) => {
-    let t = 0;
+  /** Leave the app from `where`, come back after `awayMin`; returns the calls made. */
+  const scenario = async ({ where, awayMin = 20, available = true, enabled = true, hold = false, busy = false }) => {
+    let t = 1_000_000;
     const calls = [];
     const api = {
       isEnabled: enabled,
@@ -132,18 +134,61 @@ console.log('\n=== native: a published OTA runs after a real absence (lib/fresh-
       fetchUpdateAsync: async () => { calls.push('fetch'); },
       reloadAsync: async () => { calls.push('reload'); },
     };
-    const l = M.freshUpdatesListener(api, () => t);
-    l('background');
+    globalThis.__outboxBusy = busy;
+    M.noteRoute(where);
+    const l = M.freshUpdatesListener(api, () => t);   // the real safety check
+    const release = hold ? M.holdUpdates() : null;
+    l.onState('background');
     t += awayMin * 60_000;
-    await l('active');
-    return calls;
+    await l.onState('active');
+    return { calls: [...calls], calls_: calls, release, l };
   };
-  check('back after 20 min with a newer update: check, fetch, RELOAD', await run({ awayMin: 20 }), ['check', 'fetch', 'reload']);
-  check('CONTROL back after 1 min (mid-task, e.g. sending the WhatsApp code): nothing', await run({ awayMin: 1 }), []);
-  check('CONTROL nothing newer: check only, no reload', await run({ awayMin: 20, available: false }), ['check']);
-  check('CONTROL updates disabled (development): nothing', await run({ awayMin: 20, enabled: false }), []);
+  const HOME = ['(tabs)'];
+  const WA_WAIT = ['sign-in'];   // the "Send us this code on WhatsApp" waiting step lives on /sign-in
+  let s = await scenario({ where: HOME });
+  check('Home, nothing pending, 20 min away: check, fetch, RELOAD', s.calls, ['check', 'fetch', 'reload']);
+  s = await scenario({ where: WA_WAIT });
+  check('WhatsApp sign-in waiting screen, 20 min away: fetched but NO reload', s.calls, ['check', 'fetch']);
+  M.noteRoute(['(tabs)', 'alerts']);
+  await new Promise((r) => setTimeout(r, 10));
+  check('...then on a tab root (Alerts): the waiting update is applied', s.calls_.at(-1), 'reload');
+  for (const [label, where] of [['a report in progress', ['report', 'capture']], ['the Report tab (holds a draft)', ['(tabs)', 'report']],
+    ['an incident report', ['incidents']], ['a practice run', ['practice']], ['Profile (forms)', ['profile']]]) {
+    s = await scenario({ where });
+    check(`${label}: no reload`, s.calls.includes('reload'), false);
+  }
+  s = await scenario({ where: HOME, hold: true });
+  check('Home with a sheet/modal open: no reload', s.calls.includes('reload'), false);
+  s.release();
+  await new Promise((r) => setTimeout(r, 10));
+  check('...the sheet closes: applied', s.calls_.at(-1), 'reload');
+  s = await scenario({ where: HOME, busy: true });
+  check('Home with reports queued or sending: no reload', s.calls.includes('reload'), false);
+  globalThis.__outboxBusy = false;
+  s = await scenario({ where: HOME, awayMin: 1 });
+  check('CONTROL a short trip out (1 min): nothing asked at all', s.calls, []);
+  s = await scenario({ where: HOME, available: false });
+  check('CONTROL nothing newer: check only', s.calls, ['check']);
+  s = await scenario({ where: HOME, enabled: false });
+  check('CONTROL updates disabled (development): nothing', s.calls, []);
   const layout = read('native/src/app/_layout.tsx');
-  check('mounted in the root layout', /import \{ useFreshUpdates \} from '@\/lib\/fresh-updates';/.test(layout) && /\n  useFreshUpdates\(\);/.test(layout), true);
+  check('root layout: mounted, and reports the route', /import \{ noteRoute, useFreshUpdates \} from '@\/lib\/fresh-updates';/.test(layout)
+    && /\n  useFreshUpdates\(\);/.test(layout) && /useEffect\(\(\) => \{ noteRoute\(segments\); \}, \[segments\]\);/.test(layout), true);
+  const modals = ['components/modal-card.tsx', 'components/confirm-sheet.tsx', 'components/image-viewer.tsx', 'components/video-viewer.tsx',
+    'components/sheet-reference.tsx', 'components/report-content.tsx', 'app/(tabs)/alerts.tsx'];
+  check('every Modal holds updates while visible', modals.filter((m) => !/<Modal[\s\S]{0,700}?>\s*\{\/\*[^*]*\*\/\}\s*<HoldUpdates \/>/.test(read(`native/src/${m}`))), []);
+  const allModal = execList();
+  // A Modal on a non-tab screen (practice, profile, support) is already covered: those routes are never safe.
+  check('...and no Modal on a tab root or in a shared component without a HoldUpdates', allModal.filter((m) => !modals.includes(m) && (m.startsWith('components/') || m.startsWith('app/(tabs)/'))), []);
+}
+function execList() {
+  const out = [];
+  const walk = (d) => { for (const e of fs.readdirSync(`${ROOT}/native/src/${d}`, { withFileTypes: true })) {
+    const p = d ? `${d}/${e.name}` : e.name;
+    if (e.isDirectory()) walk(p); else if (/\.tsx$/.test(e.name) && /<Modal[\s>]/.test(read(`native/src/${p}`))) out.push(p);
+  } };
+  walk('');
+  return out;
 }
 
 console.log(`\n${fail ? `${fail} FAILED` : 'ALL PASSED'}`);

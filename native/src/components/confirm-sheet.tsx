@@ -3,6 +3,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 
 import { t as i18nT } from '@/lib/i18n';
 import { useUi } from '@/lib/theme';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 /**
  * Two-step confirmation as an in-app sheet rather than a system Alert.
@@ -45,6 +46,8 @@ export function ConfirmSheet({
   const ui = useUi();
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onCancel}>
+      {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+      <HoldUpdates />
       <View className="flex-1 justify-end bg-black/40">
         <View className="rounded-t-3xl bg-surface px-5 pb-8 pt-5">
           <View className="flex-row items-center pb-2">

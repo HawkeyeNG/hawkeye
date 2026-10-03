@@ -122,6 +122,11 @@ function publish(next: Partial<OutboxState>) {
   listeners.forEach((l) => l());
 }
 
+/** Reports queued or being sent: an OTA reload waits (lib/fresh-updates.ts). */
+export function outboxBusy(): boolean {
+  return snapshot.pending > 0 || snapshot.sending;
+}
+
 /** Subscribe a screen to the queue depth — same store idiom as useAuth(). */
 export function useOutbox(): OutboxState {
   return useSyncExternalStore(

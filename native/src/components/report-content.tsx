@@ -16,6 +16,7 @@ import {
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -106,6 +107,8 @@ export function ReportContent({
       </Pressable>
 
       <Modal visible={open} transparent animationType="slide" onRequestClose={() => setOpen(false)}>
+        {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+        <HoldUpdates />
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           className="flex-1 justify-end bg-black/40"

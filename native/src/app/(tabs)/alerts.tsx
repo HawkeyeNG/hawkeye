@@ -15,6 +15,7 @@ import { authedGet, useAuth } from '@/lib/auth';
 import { clearAlerts, markRead, openNotificationTarget, refreshUnread, setUnread, useUnread } from '@/lib/push';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, useI18n } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 type Notification = {
   id: number;
@@ -451,6 +452,8 @@ export default function Alerts() {
         // two paths cannot both act.
         onDismiss={firePending}
       >
+        {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+        <HoldUpdates />
         <Pressable
           className="flex-1 items-center justify-center bg-black/60 p-5"
           onPress={() => setDetail(null)}

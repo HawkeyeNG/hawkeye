@@ -4,6 +4,7 @@ import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 /**
  * A centred modal whose BODY SCROLLS and whose actions stay put.
@@ -70,6 +71,8 @@ export function ModalCard({
   const ui = useUi();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} onShow={onShow}>
+      {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+      <HoldUpdates />
       {/* Backdrop closes; the inner Pressable swallows the tap so the card stays. */}
       <Pressable
         onPress={dismissOnBackdrop ? onClose : undefined}

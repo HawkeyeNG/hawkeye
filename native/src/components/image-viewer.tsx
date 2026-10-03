@@ -7,6 +7,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { t as i18nT } from '@/lib/i18n';
+import { HoldUpdates } from '@/lib/fresh-updates';
 
 /**
  * EVIDENCE PHOTOS, FULL SCREEN, IN THE APP.
@@ -143,6 +144,8 @@ export function ImageViewer({
   const insets = useSafeAreaInsets();
   return (
     <Modal visible={!!uri} transparent animationType="fade" onRequestClose={onClose} statusBarTranslucent>
+      {/* a visible sheet holds back an OTA reload (lib/fresh-updates.ts) */}
+      <HoldUpdates />
       {/* A Modal is its own native window on Android: gestures inside it need a
           root of their own, the app's root does not reach in. */}
       <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#000' }}>

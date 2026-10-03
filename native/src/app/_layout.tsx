@@ -19,7 +19,7 @@ import { captureInstallReferrer } from '@/lib/pending-invite';
 // full-page result sheets).
 import '@/lib/memory';
 import { usePushNotifications } from '@/lib/push';
-import { useFreshUpdates } from '@/lib/fresh-updates';
+import { noteRoute, useFreshUpdates } from '@/lib/fresh-updates';
 import { ThemePrefProvider, themeClass, useThemePref } from '@/lib/theme-pref';
 import { LangProvider, t as i18nT } from '@/lib/i18n';
 
@@ -194,6 +194,8 @@ function RootShell() {
   // Device-verify: no flash, no loop, correct bounce.
   const auth = useAuth();
   const segments = useSegments();
+  // Where the reader is decides whether a waiting OTA may reload now (lib/fresh-updates.ts).
+  useEffect(() => { noteRoute(segments); }, [segments]);
 
   // ANDROID, FRESH INSTALL FROM AN INVITE: the code and unit rode through Play
   // as the install referrer. Read once auth has resolved, so an update to a

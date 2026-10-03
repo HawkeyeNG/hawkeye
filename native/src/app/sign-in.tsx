@@ -316,8 +316,10 @@ export default function SignIn() {
     requestOtp(phone.trim(), via, purpose === 'signup' ? 'signup' : undefined)
       .then((r) => {
         if (r.telegramLink && !r.viaSms) {
-          // Telegram needs a one-time bot link — that UI lives on the request step.
-          setStep('request');
+          // Telegram needs a one-time bot link. STAY ON THE CODE STEP: once the
+          // number is shared the bot sends the code waiting on the OTP row, so
+          // this screen is where it gets typed. Bouncing back to the request step
+          // (as this used to) flashed "Enter the code" and then took it away.
           setTgLink(r.telegramLink);
           setLine(i18nT('n.app.sign-in.open-telegram-tap-start-then-share'));
         } else if (r.ok) {
@@ -1449,6 +1451,16 @@ export default function SignIn() {
             <>
               <Text className="text-2xl font-bold text-ink">{i18nT('n.app.sign-in.enter-the-code')}</Text>
               <Text className="pb-4 pt-1 text-sm text-muted">{line}</Text>
+              {tgLink ? (
+                <Pressable
+                  className="mb-4 items-center rounded-2xl bg-card py-3 active:opacity-80"
+                  onPress={() => {
+                    Linking.openURL(tgLink).catch(() => WebBrowser.openBrowserAsync(tgLink));
+                  }}
+                >
+                  <Text className="text-base font-semibold text-good-ink">{i18nT('n.app.sign-in.open-telegram')}</Text>
+                </Pressable>
+              ) : null}
               {/* NO letterSpacing (tracking-*) ON ANY TextInput. On iOS a
                   TextInput's native view is recycled once it unmounts, and the
                   kerning this code box used to carry stayed on the view: the
@@ -1489,7 +1501,12 @@ export default function SignIn() {
                     {cooldown > 0 ? i18nT('n.app.sign-in.resend-in-s', { v0: cooldown }) : i18nT('n.app.sign-in.resend-code')}
                   </Text>
                 </Pressable>
-                <Pressable onPress={() => setStep('request')}>
+                <Pressable
+                  onPress={() => {
+                    setTgLink(null);
+                    setStep('request');
+                  }}
+                >
                   <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               </View>
@@ -1540,7 +1557,7 @@ export default function SignIn() {
           {step !== 'otp' && line ? (
             <Text className="pt-3 text-sm text-warn-ink">{line}</Text>
           ) : null}
-          {tgLink ? (
+          {tgLink && step !== 'otp' ? (
             <Pressable
               className="mt-3 items-center rounded-2xl bg-card py-3"
               onPress={() => WebBrowser.openBrowserAsync(tgLink)}

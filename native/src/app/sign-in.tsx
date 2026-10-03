@@ -19,6 +19,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { LangButton } from '@/components/lang-button';
 import { PasswordField } from '@/components/password-field';
 import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import {
@@ -752,9 +753,14 @@ export default function SignIn() {
       setLine(
         r.error === 'invalid_phone'
           ? i18nT('n.auth.wa-invalid-phone')
-          // wrong_password / too_many_attempts hints are user-ready copy and
-          // both already point at the code path — show them verbatim.
-          : (r.hint ?? i18nT('n.app.sign-in.sign-in-failed-try-again')),
+          // The server's wrong_password / too_many_attempts hints are ENGLISH
+          // (walkthrough #2): the same sentences, in the reader's language —
+          // the web's keys, so both clients say it the same way.
+          : r.error === 'wrong_password'
+            ? i18nT('auth.err.wrong-password')
+            : r.error === 'too_many_attempts'
+              ? i18nT('auth.err.too-many-passwords')
+              : (r.hint ?? i18nT('n.app.sign-in.sign-in-failed-try-again')),
       );
     } catch {
       setLine(i18nT('n.app.sign-in.network-error-try-again'));
@@ -920,6 +926,14 @@ export default function SignIn() {
                     ? i18nT('n.app.sign-in.title-create-account')
                     : i18nT('n.app.sign-in.title-sign-in')}
           </Text>
+          {/* LANGUAGE, on the two first steps only (walkthrough #4). A change
+              remounts the screen, so it is offered before a code is on its
+              way or a password is half set — never mid-flow. */}
+          {step === 'request' || step === 'password' ? (
+            <View className="ml-auto">
+              <LangButton />
+            </View>
+          ) : null}
         </View>
 
         <ScrollView

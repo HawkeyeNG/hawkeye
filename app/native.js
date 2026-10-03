@@ -3,6 +3,67 @@
    activates only inside the Capacitor shell (window.Capacitor present). Keeps ONE
    codebase: web and app run the same app/ bundle; native features light up
    when wrapped. Loaded first in <head> so it runs before any page fetch. */
+
+/**
+ * VIEW TRANSITIONS NEVER THROW AND NEVER HOLD A PAGE (first-time walkthrough
+ * #7, 2026-10-03).
+ *
+ * styles.css turns on cross-document view transitions. When the browser skips
+ * one — the next page took longer than its ~4 s budget (an ordinary Slow-4G
+ * load here), the tab went to the background, a second tap — every promise on
+ * the ViewTransition rejects with "AbortError: Transition was skipped", and
+ * nothing handled it: an uncaught error on in-site links, straight into Sentry.
+ * This is the first script on every page, so it is in place before the old page
+ * lets go (pageswap) and before the new page's first frame (pagereveal).
+ *
+ *  - Every promise of every transition gets a no-op catch: outgoing, incoming,
+ *    and document.activeViewTransition for an incoming one not yet revealed.
+ *  - An incoming transition still unrevealed 1.5 s after this script ran is
+ *    skipped. The cross-fade is decoration; nothing waits on it.
+ *  - The OUTGOING page skips its transition on a saver / 2G / 3G connection
+ *    (the browser would skip it there anyway, after making the reader wait for
+ *    it) and under automation (navigator.webdriver): Playwright-driven Chromium
+ *    stops painting the next page after ANY cross-document transition —
+ *    reproduced headless AND headed on a bare two-page site with nothing of
+ *    ours on it — so a test run must not take this path to be able to look at
+ *    the page at all.
+ *
+ * invite.html does not load this file and carries a copy of this block.
+ */
+(function () {
+  if (!('onpagereveal' in window) && !('onpageswap' in window)) return;
+  var quiet = function (vt) {
+    if (!vt) return;
+    ['ready', 'finished', 'updateCallbackDone'].forEach(function (k) {
+      try { if (vt[k] && vt[k].catch) vt[k].catch(function () {}); } catch (e) { /* nothing to quiet */ }
+    });
+  };
+  var skip = function (vt) { try { vt.skipTransition(); } catch (e) { /* already done */ } };
+  var slow = function () {
+    var c = navigator.connection;
+    return !!(c && (c.saveData || /(^|-)(2g|3g)$/.test(c.effectiveType || '')));
+  };
+  var revealed = false;
+  window.addEventListener('pageswap', function (e) {
+    var vt = e.viewTransition;
+    if (!vt) return;
+    quiet(vt);
+    if (navigator.webdriver || slow()) skip(vt);
+  });
+  window.addEventListener('pagereveal', function (e) {
+    revealed = true;
+    var vt = e.viewTransition;
+    if (!vt) return;
+    quiet(vt);
+    if (document.visibilityState === 'hidden') skip(vt);
+  });
+  quiet(document.activeViewTransition);
+  setTimeout(function () {
+    var vt = document.activeViewTransition;
+    if (vt && !revealed) { quiet(vt); skip(vt); }
+  }, 1500);
+})();
+
 (function () {
   const Cap = window.Capacitor;
   const native = !!(Cap && typeof Cap.isNativePlatform === 'function' && Cap.isNativePlatform());

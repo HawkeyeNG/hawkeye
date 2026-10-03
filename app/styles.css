@@ -756,6 +756,18 @@ button.secondary:hover { background: var(--tint); filter: none; }
   letter-spacing: 0.07em; color: var(--ink);
 }
 .auth-brand img { display: block; width: 26px; height: 26px; }
+/* LANGUAGE ON THE SIGN-UP SCREEN (first-time walkthrough #4). The header — and
+   with it the EN/HA button — is hidden here, so someone who arrived in the
+   wrong language had to go back to Home to change it. The same one-tap cycle as
+   the header's .lang-btn (it wears that class too, so it reads and behaves as
+   the same control), drawn for the page background instead of the green bar. */
+.auth-top button.auth-lang {
+  width: auto; min-width: 44px; height: 38px; margin: 0; padding: 0 10px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--border); border-radius: 9px; box-shadow: none;
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; cursor: pointer;
+}
+.auth-top button.auth-lang:hover { background: var(--tint); border-color: var(--green); filter: none; }
 .auth-back { display: none; }
 /* A real button, sitting above everything else on the auth screen. */
 .auth-screen .auth-back {
@@ -1556,6 +1568,13 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
   body.has-tabbar #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
 }
+/* THE BUBBLES STEP ASIDE WHILE SOMEONE TYPES (first-time walkthrough #3). With
+   the keyboard up the visible area is a few hundred pixels, and a 56px button
+   pinned to its bottom-right corner sat on the very number being typed — on the
+   practice counts only the first digit of "212" showed. menu.js puts
+   .hk-typing on <body> while a text field has focus (web, Lite and the app
+   shell alike); the button comes back the moment the field lets go. */
+body.hk-typing :is(#hk-fab, #hk-chat-fab) { display: none !important; }
 .tabbar .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
   text-decoration: none; color: var(--muted); font-size: 0.64rem; font-weight: 600;

@@ -28,7 +28,11 @@
 <meta name="description" data-i18n-attr="content:invite.meta-description" content="Someone has invited you to observe an election with Hawkeye — a public copy of the result announced at your polling unit.">
 <meta name="theme-color" content="#00251a">
 <link rel="icon" href="/favicon.ico">
-<link rel="stylesheet" href="/styles.css?v=194">
+<link rel="stylesheet" href="/styles.css?v=195">
+<!-- A COPY of the view-transition guard at the top of native.js, which this page
+     does not load: a skipped cross-document transition must not throw, and must
+     not hold the page. Keep the two in step. -->
+<script>(function(){if(!('onpagereveal' in window)&&!('onpageswap' in window))return;var q=function(v){if(!v)return;['ready','finished','updateCallbackDone'].forEach(function(k){try{if(v[k]&&v[k].catch)v[k].catch(function(){});}catch(e){}});};var s=function(v){try{v.skipTransition();}catch(e){}};var slow=function(){var c=navigator.connection;return !!(c&&(c.saveData||/(^|-)(2g|3g)$/.test(c.effectiveType||'')));};var r=false;addEventListener('pageswap',function(e){var v=e.viewTransition;if(!v)return;q(v);if(navigator.webdriver||slow())s(v);});addEventListener('pagereveal',function(e){r=true;var v=e.viewTransition;if(!v)return;q(v);if(document.visibilityState==='hidden')s(v);});q(document.activeViewTransition);setTimeout(function(){var v=document.activeViewTransition;if(v&&!r){q(v);s(v);}},1500);})();</script>
 <style>
   /* The landing hero's own recipe, from styles.css, applied to the whole page
      rather than a band at the top: this page IS the hero. */

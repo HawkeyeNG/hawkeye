@@ -458,7 +458,14 @@ export default function Profile() {
         ),
       });
       if (status !== 200) {
-        setPwMsg(String(body.hint ?? body.error ?? i18nT('n.app.profile.failed-http', { v0: status })));
+        // The server's hints for these are English; the refusals this form can
+        // meet are said in the reader's language (the sign-in screen's keys).
+        setPwMsg(
+          body.error === 'password_too_short' ? i18nT('n.app.sign-in.use-at-least-8-characters')
+          : body.error === 'password_too_long' ? i18nT('n.app.sign-in.password-too-long')
+          : body.error === 'current_password_wrong' ? i18nT('auth.err.current-password-wrong')
+          : String(body.hint ?? body.error ?? i18nT('n.app.profile.failed-http', { v0: status })),
+        );
         return;
       }
       setMe((m) => (m ? { ...m, hasPassword: true } : m));

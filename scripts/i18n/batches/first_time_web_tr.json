@@ -1,0 +1,82 @@
+{
+  "auth.err.account-exists": {
+    "ha": "An riga an yi rijistar wannan lambar. Shiga da kalmar sirrinka, ko ka sake saita ta.",
+    "ig": "E debanyelarị nọmba a aha. Jiri okwuntughe gị banye, ma ọ bụ tọgharịa ya.",
+    "yo": "Nọ́mbà yìí ti forúkọsílẹ̀ tẹ́lẹ̀. Wọlé pẹ̀lú ọ̀rọ̀ ìpamọ́ rẹ, tàbí tún un ṣe."
+  },
+  "auth.err.current-password-wrong": {
+    "ha": "Shigar da kalmar sirrinka ta yanzu — ko ka fara shiga da lamba ta lokaci ɗaya don sake saita ta.",
+    "ig": "Tinye okwuntughe gị ugbu a — ma ọ bụ buru ụzọ jiri koodu otu oge banye iji tọgharịa ya.",
+    "yo": "Tẹ ọ̀rọ̀ ìpamọ́ rẹ lọ́wọ́lọ́wọ́ sí i — tàbí kọ́kọ́ wọlé pẹ̀lú kóòdù ìgbà kan láti tún un ṣe."
+  },
+  "auth.err.device-key": {
+    "ha": "Maɓallin shiga na wannan na'urar bai yi aiki ba. Sabunta shafin ka sake gwadawa.",
+    "ig": "Igodo mbanye nke ngwaọrụ a arụghị ọrụ. Megharịa ibe a wee nwaa ọzọ.",
+    "yo": "Kọ́kọ́rọ́ ìwọlé ẹ̀rọ yìí kò ṣiṣẹ́. Sọ ojú-ìwé náà dọ̀tun kí o sì tún gbìyànjú."
+  },
+  "auth.err.invalid-phone": {
+    "ha": "Shigar da lambar wayar Najeriya, misali 08031234567.",
+    "ig": "Tinye nọmba ekwentị Naịjirịa, dịka 08031234567.",
+    "yo": "Tẹ nọ́mbà fóònù Nàìjíríà sí i, fún àpẹẹrẹ 08031234567."
+  },
+  "auth.err.password-login-unavailable": {
+    "ha": "Shiga da kalmar sirri ba ya samuwa ga wannan lambar. Shiga da lamba ta lokaci ɗaya, sannan ka saita kalmar sirri a bayananka. Idan ka goge asusunka, shiga ta wannan hanya zai dawo da shi.",
+    "ig": "Ịbanye site na okwuntughe adịghị maka nọmba a. Jiri koodu otu oge banye, wee tọọ okwuntughe na profaịlụ gị. Ọ bụrụ na i hichapụrụ akaụntụ gị, ịbanye n'ụzọ a ga-eweghachi ya.",
+    "yo": "Wíwọlé pẹ̀lú ọ̀rọ̀ ìpamọ́ kò sí fún nọ́mbà yìí. Wọlé pẹ̀lú kóòdù ìgbà kan, lẹ́yìn náà ṣètò ọ̀rọ̀ ìpamọ́ lórí profaili rẹ. Bí o bá ti pa àkàǹtì rẹ rẹ́, wíwọlé ní ọ̀nà yìí yóò dá a padà."
+  },
+  "auth.err.password-too-long": {
+    "ha": "Kalmar sirrin ta yi tsawo sosai (haruffa 200 mafi yawa).",
+    "ig": "Okwuntughe ahụ dị ogologo karịa (mkpụrụedemede 200 kacha).",
+    "yo": "Ọ̀rọ̀ ìpamọ́ náà ti gùn jù (àmì-ìkọ 200 ní púpọ̀ jùlọ)."
+  },
+  "auth.err.too-many-passwords": {
+    "ha": "Kalmomin sirri marasa daidai sun yi yawa. Jira awa ɗaya, ko ka shiga da lamba ta lokaci ɗaya maimakon haka.",
+    "ig": "Okwuntughe ezighi ezi karịrị akarị. Chere otu awa, ma ọ bụ jiri koodu otu oge banye kama.",
+    "yo": "Ọ̀rọ̀ ìpamọ́ tí kò tọ̀nà ti pọ̀ jù. Dúró fún wákàtí kan, tàbí wọlé pẹ̀lú kóòdù ìgbà kan dípò bẹ́ẹ̀."
+  },
+  "auth.err.wrong-password": {
+    "ha": "Kalmar sirri ba daidai ba ce. Ka manta da ita? Shiga da lamba ta lokaci ɗaya don sake saita ta.",
+    "ig": "Okwuntughe ezighi ezi. Ị chefuru ya? Jiri koodu otu oge banye iji tọgharịa ya.",
+    "yo": "Ọ̀rọ̀ ìpamọ́ kò tọ̀nà. Ṣé o gbàgbé rẹ̀? Wọlé pẹ̀lú kóòdù ìgbà kan láti tún un ṣe."
+  },
+  "practice.ledger-entry-label": {
+    "ha": "Shigarwar littafin atisaye:",
+    "ig": "Ndebanye akwụkwọ omume:",
+    "yo": "Àkọsílẹ̀ ìwé àdánwò:"
+  },
+  "practice.party-letter": {
+    "ha": "Jam'iyya {v0}",
+    "ig": "Pati {v0}",
+    "yo": "Ẹgbẹ́ {v0}"
+  },
+  "practice.preview-status": {
+    "ha": "<span class=\"status-reported\">REPORTED</span> · rahotanni 1/1 sun yi daidai",
+    "ig": "<span class=\"status-reported\">REPORTED</span> · akụkọ 1/1 dabara",
+    "yo": "<span class=\"status-reported\">REPORTED</span> · ìròyìn 1/1 tí ó bára mu"
+  },
+  "practice.sample-election": {
+    "ha": "Zaɓen Atisaye na 2027",
+    "ig": "Ntuli Aka Omume 2027",
+    "yo": "Ìdìbò Àdánwò 2027"
+  },
+  "practice.sample-lga": {
+    "ha": "Karamar Hukumar Misali",
+    "ig": "LGA Ihe Atụ",
+    "yo": "Ìjọba Ìbílẹ̀ Àpẹẹrẹ"
+  },
+  "practice.sample-office": {
+    "ha": "Zaɓen Shugaban Ƙasa 2027",
+    "ig": "Ntuli aka onye isi ala 2027",
+    "yo": "Ìdìbò Ààrẹ 2027"
+  },
+  "practice.sample-state": {
+    "ha": "Atisaye",
+    "ig": "Omume",
+    "yo": "Àdánwò"
+  },
+  "practice.sample-ward": {
+    "ha": "Mazaɓar Misali",
+    "ig": "Ward Ihe Atụ",
+    "yo": "Wọ́ọ̀dù Àpẹẹrẹ"
+  }
+}

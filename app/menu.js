@@ -26,6 +26,25 @@
   }
 })();
 
+/* WHILE SOMEONE TYPES, THE FLOATING BUBBLES STEP ASIDE (first-time walkthrough
+   #3). A text field with focus is the one signal every platform agrees on for
+   "the keyboard is up" — Lite's WebView resizes with it, iOS Safari overlays it
+   — and with the keyboard up the round Ask Hawkeye button sat on the number
+   being typed. body.hk-typing hides #hk-fab and #hk-chat-fab (styles.css) until
+   focus leaves. Typing inside the assistant's own panel is excluded: there the
+   bubble is the panel's toggle, and on a phone the panel already hides it. */
+(function () {
+  const TEXT = /^(text|tel|number|email|password|search|url)$/;
+  const typing = (el) => !!el && !(el.closest && el.closest('#hk-panel'))
+    && (el.tagName === 'TEXTAREA' || el.isContentEditable
+      || (el.tagName === 'INPUT' && TEXT.test(el.type || 'text')));
+  const sync = () => { if (document.body) document.body.classList.toggle('hk-typing', typing(document.activeElement)); };
+  document.addEventListener('focusin', sync);
+  // After the event: during focusout activeElement is still the old field (or
+  // body), and the next field's focusin may be on its way.
+  document.addEventListener('focusout', () => setTimeout(sync, 0));
+})();
+
 /**
  * i18n FOR TEXT menu.js PAINTS ITSELF.
  *
@@ -651,7 +670,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
    * silently suppressed the theme toggle.
    */
   const themeToggle = document.querySelector('.theme-btn:not(.close-btn)');
-  if (themeToggle && !document.querySelector('.lang-btn')
+  // :not(.auth-lang): observe.html's sign-up screen has its own language button
+  // (the header is hidden there); the header still needs one for the report
+  // flow that follows sign-in.
+  if (themeToggle && !document.querySelector('.lang-btn:not(.auth-lang)')
       && window.HawkeyeI18n && window.HawkeyeLang) {
     const lb = document.createElement('button');
     // Both classes: .theme-btn for the box, .lang-btn for the text sizing and

@@ -23,12 +23,59 @@
   }
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  /* THE SAMPLE SPEAKS THE READER'S LANGUAGE (first-time walkthrough #6).
+     backend/src/data/practice.json names its stand-in election, office, unit,
+     ward, LGA, state and parties in English, and they reached a Hausa reader
+     as sent. They are the SAMPLE's own words, not register data, so each known
+     value has a key — resolved when painted, and repainted on 'hawkeye-lang'.
+     Anything else (a future config, a real unit) is shown exactly as sent. The
+     server and the practice chain keep the English: only the screen changes. */
+  const SAMPLE = {
+    '2027 Practice Election': ['practice.sample-election', '2027 Practice Election'],
+    '2027 Presidential': ['practice.sample-office', '2027 Presidential'],
+    'Practice Polling Unit': ['practice.practice-polling-unit', 'Practice Polling Unit'],
+    'Demo Ward': ['practice.sample-ward', 'Demo Ward'],
+    'Demo LGA': ['practice.sample-lga', 'Demo LGA'],
+    Practice: ['practice.sample-state', 'Practice'],
+  };
+  const sample = (v) => (Object.prototype.hasOwnProperty.call(SAMPLE, v) ? T(SAMPLE[v][0], SAMPLE[v][1]) : v);
+  /* "Party A" … "Party F": the letter is the name, the word is translated. The
+     submitted vote keeps the code ("Party A") — that is what the chain stores. */
+  const partyLabel = (code) => {
+    const m = /^Party ([A-Z])$/.exec(String(code || ''));
+    return m ? T('practice.party-letter', 'Party {v0}', { v0: m[1] }) : String(code || '');
+  };
   const shots = { sheet: false, venue: false };
   // The photo behind each slot — a Blob from the app's scanner/camera or the
   // in-page camera's data URL. A skipped slot has none, and saves nothing.
   const photos = { sheet: null, venue: null };
   let PARTIES = [];
   let UNIT_CODE = null;
+  let UNIT_NAME = null;
+  // The finished run, kept so the done screen can repaint in another language.
+  let lastVotes = null;
+  let lastEntryHash = '';
+  let receiptAt = 0;
+
+  /* The practice card, drawn in the CURRENT language. Called once when the run
+     is recorded and again on every language change (the image is pixels — no
+     data-i18n reaches it). Returns the canvas, or null with no renderer. */
+  async function paintReceipt() {
+    const R = window.HAWKEYE_RECEIPT;
+    if (!R || !lastVotes) return null;
+    const canvas = R.render({
+      puName: $('prac-unit-name').textContent,
+      puCode: UNIT_CODE,
+      contest: T('practice.practice-run', 'Practice run'),
+      votes: lastVotes.map((v) => ({ ...v, party: partyLabel(v.party) })),
+      entryHash: lastEntryHash,
+      practice: true,
+      at: receiptAt || Date.now(),
+    }, await R.loadLogo(), T);
+    $('receipt-img').src = canvas.toDataURL('image/png');
+    $('receipt-wrap').hidden = false;
+    return canvas;
+  }
 
   function refreshSubmit() {
     $('btn-submit').disabled = !(shots.sheet && shots.venue);
@@ -116,7 +163,8 @@
       const r = await fetch('/api/practice/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-device-id': await getDeviceId() },
-        body: JSON.stringify({ votes, puName: $('prac-unit-name').textContent, puCode: UNIT_CODE }),
+        // The server's own name, never the translated label on screen.
+        body: JSON.stringify({ votes, puName: UNIT_NAME || $('prac-unit-name').textContent, puCode: UNIT_CODE }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) {
@@ -127,27 +175,19 @@
         return;
       }
       $('entry-hash').textContent = d.entryHash || '';
+      lastVotes = votes;
+      lastEntryHash = d.entryHash || '';
       // Device copies of the practice photos (save-media.js), once the run is recorded.
       if (window.HAWKEYE_SAVE_MEDIA) {
         window.HAWKEYE_SAVE_MEDIA(['sheet', 'venue'].filter((s) => photos[s]).map((s) => ({ blob: photos[s], kind: 'photo' })), 'practice');
       }
       /* THE CARD, in its practice state. Same renderer as the real flow — a
          separate "practice-looking" card would teach the wrong picture. */
+      receiptAt = Date.now();
       (async () => {
         try {
-          const R = window.HAWKEYE_RECEIPT;
-          if (!R) return;
-          const canvas = R.render({
-            puName: $('prac-unit-name').textContent,
-            puCode: UNIT_CODE,
-            contest: T('practice.practice-run', 'Practice run'),
-            votes: votes,
-            entryHash: d.entryHash || '',
-            practice: true,
-            at: Date.now(),
-          }, await R.loadLogo(), T);
-          $('receipt-img').src = canvas.toDataURL('image/png');
-          $('receipt-wrap').hidden = false;
+          const canvas = await paintReceipt();
+          if (!canvas) return;
           /* IT SAVES WITH THE PHOTOS, like a real report's card and under the
              same switch. The practice photos above already copy themselves, so
              leaving the card out made it the one artefact that behaved
@@ -165,11 +205,15 @@
             const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
             if (blob) window.HAWKEYE_SAVE_MEDIA([{ blob: blob, kind: 'photo' }], 'practice-card');
           }
-          $('receipt-note').textContent = on
-            ? T('practice.card-note-saved',
-                'Saved to your phone with your practice photos. On a real report this is yours to keep and send on \u2014 nothing here is counted.')
-            : T('practice.card-note',
-                'On a real report this is yours to keep and send on. Nothing here is counted.');
+          // keyed(), not textContent: the note carries its key, so a language
+          // switch on this screen moves it with everything else.
+          if (on) {
+            keyed($('receipt-note'), 'practice.card-note-saved',
+              'Saved to your phone with your practice photos. On a real report this is yours to keep and send on \u2014 nothing here is counted.');
+          } else {
+            keyed($('receipt-note'), 'practice.card-note',
+              'On a real report this is yours to keep and send on. Nothing here is counted.');
+          }
         } catch { /* the practice run is not worth failing over a picture */ }
       })();
       renderPreview(votes);
@@ -196,8 +240,8 @@
     $('pv-name').textContent = $('prac-unit-name').textContent;
     // Exactly the real card's shape: "[CONTEST] code · ward, lga, state".
     const scope = $('prac-unit-scope').textContent;
-    $('pv-meta').textContent = `[PRACTICE]${UNIT_CODE ? ` ${UNIT_CODE}` : ''}${scope ? ` · ${scope}` : ''}`;
-    $('pv-votes').textContent = votes.filter((v) => v.count > 0).map((v) => `${v.party} ${v.count}`).join(' · ') || T('practice.all-zero', 'all zero');
+    $('pv-meta').textContent = `[${T('practice.practice-2', 'PRACTICE')}]${UNIT_CODE ? ` ${UNIT_CODE}` : ''}${scope ? ` · ${scope}` : ''}`;
+    $('pv-votes').textContent = votes.filter((v) => v.count > 0).map((v) => `${partyLabel(v.party)} ${v.count}`).join(' · ') || T('practice.all-zero', 'all zero');
     const strip = $('pv-sheets');
     strip.textContent = '';
     if (src) {
@@ -231,30 +275,37 @@
     if (!cfg.active) { $('closed').hidden = false; return; }
 
     PARTIES = cfg.parties || [];
-    $('prac-title').firstChild.textContent = `${cfg.name} `;
     // cfg.note is deliberately dropped: it restated "nothing is published" a
     // third time, after the phase banner and the receipt already say it.
     const u = cfg.unit || {};
     UNIT_CODE = u.code || null;
+    UNIT_NAME = u.name || null;
+    $('vote-inputs').innerHTML = PARTIES.map((p) => `
+      <div class="vote-row">
+        <label><span class="swatch" style="background:${esc(p.color || '#888')}"></span><span class="party-name" data-code="${esc(p.code)}">${esc(p.code)}</span></label>
+        <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${esc(p.code)}" />
+      </div>`).join('');
     /* Painted at boot, which can land before the language bundle has — so it
        repaints on 'hawkeye-lang'. A unit the server NAMES is a name, not a
        sentence: its data-i18n comes off, or apply() would swap it back to the
-       markup's "Practice Polling Unit". */
+       markup's "Practice Polling Unit" — unless the name IS the sample's, which
+       keeps its key. The done screen (preview + card) repaints with it. */
     const paintCfg = () => {
-      $('prac-sub').textContent = T('practice.office-practice-contest', '{v0} — a practice contest.', { v0: cfg.office });
-      if (u.name) {
+      $('prac-title').firstChild.textContent = `${sample(cfg.name)} `;
+      $('prac-sub').textContent = T('practice.office-practice-contest', '{v0} — a practice contest.', { v0: sample(cfg.office) });
+      if (u.name && !Object.prototype.hasOwnProperty.call(SAMPLE, u.name)) {
         $('prac-unit-name').removeAttribute('data-i18n');
         $('prac-unit-name').textContent = u.name;
       } else keyed($('prac-unit-name'), 'practice.practice-polling-unit', 'Practice Polling Unit');
+      $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).map(sample).join(', ');
+      document.querySelectorAll('#vote-inputs .party-name').forEach((el) => { el.textContent = partyLabel(el.dataset.code); });
+      if (lastVotes && !$('done').hidden) {
+        renderPreview(lastVotes);
+        paintReceipt().catch(() => {});
+      }
     };
     paintCfg();
     document.addEventListener('hawkeye-lang', paintCfg);
-    $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).join(', ');
-    $('vote-inputs').innerHTML = PARTIES.map((p) => `
-      <div class="vote-row">
-        <label><span class="swatch" style="background:${esc(p.color || '#888')}"></span>${esc(p.code)}</label>
-        <input type="number" min="0" inputmode="numeric" placeholder="0" data-party="${esc(p.code)}" />
-      </div>`).join('');
     $('flow').hidden = false;
   })();
 })();

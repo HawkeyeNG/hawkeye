@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=194" />
-  <script src="native.js?v=123"></script>
+  <link rel="stylesheet" href="styles.css?v=195" />
+  <script src="native.js?v=124"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -796,7 +796,15 @@
       const { status, body } = await api('/api/observers/set-password', {
         method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload),
       });
-      if (status !== 200) { $('pw-msg').textContent = body.hint || body.error || T('profile.failed', 'Failed.'); return; }
+      // The server's hints here are English; these three are the refusals this
+      // form can meet, in the reader's language (app.js AUTH_ERRORS, same keys).
+      const PW_ERR = {
+        password_too_short: ['profile.use-at-least-8-characters', 'Use at least 8 characters.'],
+        password_too_long: ['auth.err.password-too-long', 'That password is too long (200 characters max).'],
+        current_password_wrong: ['auth.err.current-password-wrong', 'Enter your current password — or sign in with a one-time code first to reset it.'],
+      };
+      const pe = PW_ERR[body && body.error];
+      if (status !== 200) { $('pw-msg').textContent = pe ? T(pe[0], pe[1]) : (body.hint || body.error || T('profile.failed', 'Failed.')); return; }
       $('pw-new').value = ''; $('pw-new2').value = ''; $('pw-current').value = '';
       hasPassword = true;
       $('pw-current-wrap').hidden = false;
@@ -914,7 +922,7 @@
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=191"></script>
+  <script src="menu.js?v=192"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

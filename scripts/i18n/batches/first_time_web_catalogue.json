@@ -1,0 +1,18 @@
+{
+  "auth.err.account-exists": "This number is already registered. Sign in with your password, or reset it.",
+  "auth.err.current-password-wrong": "Enter your current password — or sign in with a one-time code first to reset it.",
+  "auth.err.device-key": "This device's sign-in key did not work. Refresh the page and try again.",
+  "auth.err.invalid-phone": "Enter a Nigerian mobile number, e.g. 08031234567.",
+  "auth.err.password-login-unavailable": "Password sign-in is not available for this number. Sign in with a one-time code, then set a password on your profile. If you deleted your account, signing in this way restores it.",
+  "auth.err.password-too-long": "That password is too long (200 characters max).",
+  "auth.err.too-many-passwords": "Too many wrong passwords. Wait an hour, or sign in with a one-time code instead.",
+  "auth.err.wrong-password": "Wrong password. Forgot it? Sign in with a one-time code to reset it.",
+  "practice.ledger-entry-label": "Practice ledger entry:",
+  "practice.party-letter": "Party {v0}",
+  "practice.preview-status": "<span class=\"status-reported\">REPORTED</span> · 1/1 matching reports",
+  "practice.sample-election": "2027 Practice Election",
+  "practice.sample-lga": "Demo LGA",
+  "practice.sample-office": "2027 Presidential",
+  "practice.sample-state": "Practice",
+  "practice.sample-ward": "Demo Ward"
+}

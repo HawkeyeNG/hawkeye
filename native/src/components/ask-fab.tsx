@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { StyleSheet, Text, useWindowDimensions } from 'react-native';
+import { Keyboard, Platform, StyleSheet, Text, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   FadeIn,
@@ -70,6 +70,45 @@ type Bounds = {
   restY: number;
 };
 
+/**
+ * IS SOMEONE TYPING? (first-time walkthrough #3)
+ *
+ * With the keyboard up the visible area is a few hundred points, and the bubble
+ * — resting above the tab bar — landed on the field being typed into. It steps
+ * aside while the keyboard is shown and comes back when it closes. iOS gets the
+ * "will" events (the bubble leaves as the keyboard starts to rise); Android only
+ * has "did". The web export has no keyboard events at all, so there a focused
+ * text field stands in for the keyboard, as it does on the website (menu.js).
+ */
+function useTyping(): boolean {
+  const [typing, setTyping] = useState(() => Platform.OS !== 'web' && Keyboard.isVisible());
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      if (typeof document === 'undefined') return;
+      const TEXT = /^(text|tel|number|email|password|search|url)$/;
+      const sync = () => {
+        const el = document.activeElement as HTMLElement | null;
+        const input = el?.tagName === 'INPUT' && TEXT.test((el as HTMLInputElement).type || 'text');
+        setTyping(!!el && (input || el.tagName === 'TEXTAREA' || el.isContentEditable));
+      };
+      const out = () => setTimeout(sync, 0);
+      document.addEventListener('focusin', sync);
+      document.addEventListener('focusout', out);
+      return () => {
+        document.removeEventListener('focusin', sync);
+        document.removeEventListener('focusout', out);
+      };
+    }
+    const ios = Platform.OS === 'ios';
+    const subs = [
+      Keyboard.addListener(ios ? 'keyboardWillShow' : 'keyboardDidShow', () => setTyping(true)),
+      Keyboard.addListener(ios ? 'keyboardWillHide' : 'keyboardDidHide', () => setTyping(false)),
+    ];
+    return () => subs.forEach((s) => s.remove());
+  }, []);
+  return typing;
+}
+
 function useBounds(): Bounds {
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -106,6 +145,7 @@ export function AskFab() {
   const { slug } = useGlobalSearchParams<{ slug?: string }>();
   const onChatPage = pathname === '/page' && (slug === 'faq' || slug === 'about');
   const bounds = useBounds();
+  const typing = useTyping();
   const [pos, setPos] = useState<Pos | null>(null);
   const [hint, setHint] = useState(false);
 
@@ -148,7 +188,8 @@ export function AskFab() {
     AsyncStorage.setItem(K_POS, JSON.stringify(next)).catch(() => {});
   }, []);
 
-  if (!pos || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
+  // Unmounted while typing; `pos` lives up here, so it comes back where it was.
+  if (!pos || typing || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
 
   return (
     // NO full-screen wrapper. There was one, with pointerEvents="box-none", and it

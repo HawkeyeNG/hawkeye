@@ -6,16 +6,22 @@ import { useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { LangButton } from '@/components/lang-button';
 import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
-const POINTS: { icon: keyof typeof Feather.glyphMap; text: string }[] = [
-  { icon: 'camera', text: 'Photograph the result sheet where it was announced' },
-  { icon: 'shield', text: 'Signed on your phone, chained on a public ledger' },
-  { icon: 'users', text: 'Verified when independent observers agree' },
+/* KEYS, NOT WORDS (first-time walkthrough #5). These three were English
+   literals in a module constant, so the first screen of the app stayed English
+   in Hausa, Igbo and Yorùbá. A module constant is evaluated once, at import,
+   before the stored language is read — so it holds the KEY and the render below
+   resolves it (memory: frozen-at-import). */
+const POINTS: { icon: keyof typeof Feather.glyphMap; key: string }[] = [
+  { icon: 'camera', key: 'n.app.welcome.point-photograph' },
+  { icon: 'shield', key: 'n.app.welcome.point-signed' },
+  { icon: 'users', key: 'n.app.welcome.point-verified' },
 ];
 
 /**
@@ -85,6 +91,11 @@ export default function Welcome() {
       {/* The whole screen is the fixed brand green, so every scrim on it is
           fixed white at low alpha — bg-card/10 followed the theme and turned
           into a dark plate on dark green. */}
+      {/* Language, top right — the first screen is where someone reading in
+          the wrong language most needs to change it (walkthrough #4). */}
+      <View className="flex-row justify-end px-5 pt-2">
+        <LangButton tone="onGreen" />
+      </View>
       <View className="flex-1 items-center justify-center px-8">
         {/* THE HAWK ALONE, no tile. It sat on a rounded white/10 plate, which
             read as the launcher icon — a square badge — above the wordmark.
@@ -107,7 +118,7 @@ export default function Welcome() {
               <View className="h-9 w-9 items-center justify-center rounded-full bg-white/10">
                 <Feather name={p.icon} size={16} color={BRAND.gold} />
               </View>
-              <Text className="flex-1 pl-3 text-sm text-emerald-50">{p.text}</Text>
+              <Text className="flex-1 pl-3 text-sm text-emerald-50">{i18nT(p.key)}</Text>
             </View>
           ))}
         </View>
@@ -131,9 +142,12 @@ export default function Welcome() {
         >
           <Text className="text-base font-bold text-white">{i18nT('index.sign-in')}</Text>
         </Pressable>
+        {/* Keyed like everything else on this screen; the copyright line is
+            the web footer's own key, so both say it the same way. */}
         <Text className="pt-4 text-center text-[11px] leading-4 text-emerald-200/70">
-          Hawkeye is independent and nonpartisan. It does not declare results — all official
-          results are announced by INEC.{'\n'}© 2026 IniXien, LLC. All rights reserved.
+          {i18nT('n.app.welcome.disclaimer')}
+          {'\n'}
+          {i18nT('common.2026-inixien-llc-all-rights-reserved')}
         </Text>
       </View>
     </SafeAreaView>

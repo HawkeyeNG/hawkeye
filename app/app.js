@@ -396,12 +396,61 @@ const ERRORS = {
   device_too_fast: ['observe.err.device-too-fast', 'This device just submitted a report — wait a few minutes and try again.'],
   reporting_not_open: ['observe.err.reporting-not-open', 'Result reporting opens on election day, when polls open. Come back then.'],
 };
+/* SIGN-UP AND SIGN-IN REFUSALS, IN THE READER'S LANGUAGE (first-time
+   walkthrough #2). The server's `hint` for most of these is a fixed English
+   sentence — "Nigerian mobile, e.g. 08031234567" reached Hausa, Igbo and
+   Yorùbá readers verbatim, because explain() put the hint first. Every code the
+   auth routes return (backend routes/observers.js: /register, /verify,
+   /wa-start, /wa-status, /login, /set-password, /passkeys/login, and the token
+   check every authenticated call makes) is answered here instead, so the hint
+   is never what a reader sees for these. The four the server already writes in
+   the client's language (anonymous_number, channel_required, wa_paid_off,
+   sms_off — t(hl, …) from the `lang` this page sends) are left to its hint.
+   ORG_ERRORS below covers the organisation-code refusals. Same keys-beside-
+   English shape as ERRORS: resolved when shown, never at import. */
+const AUTH_ERRORS = {
+  invalid_phone: ['auth.err.invalid-phone', 'Enter a Nigerian mobile number, e.g. 08031234567.'],
+  not_a_nigerian_number: ['auth.err.invalid-phone', 'Enter a Nigerian mobile number, e.g. 08031234567.'],
+  account_exists: ['auth.err.account-exists', 'This number is already registered. Sign in with your password, or reset it.'],
+  password_login_unavailable: ['auth.err.password-login-unavailable', 'Password sign-in is not available for this number. Sign in with a one-time code, then set a password on your profile. If you deleted your account, signing in this way restores it.'],
+  wrong_password: ['auth.err.wrong-password', 'Wrong password. Forgot it? Sign in with a one-time code to reset it.'],
+  password_too_short: ['auth.password-too-short', 'Your password must be at least 8 characters.'],
+  password_too_long: ['auth.err.password-too-long', 'That password is too long (200 characters max).'],
+  current_password_wrong: ['auth.err.current-password-wrong', 'Enter your current password — or sign in with a one-time code first to reset it.'],
+  passkey_failed: ['passkey.failed', 'That passkey did not work here. Sign in another way.'],
+  passkeys_unavailable: ['passkey.unavailable', 'Passkeys are not available here. Sign in another way.'],
+  wa_inbound_unavailable: ['auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'],
+  wa_code_expired: ['auth.wa-expired', 'This code has expired. Start again for a new one.'],
+  invalid_public_key: ['auth.err.device-key', "This device's sign-in key did not work. Refresh the page and try again."],
+  device_required: ['auth.err.device-key', "This device's sign-in key did not work. Refresh the page and try again."],
+  signed_in_elsewhere: ['auth.signed-out-elsewhere', 'You were signed out because this account signed in on another device.'],
+  missing_token: ['notifications.session-expired', 'Your session has expired.'],
+  invalid_token: ['notifications.session-expired', 'Your session has expired.'],
+  unknown_observer: ['notifications.session-expired', 'Your session has expired.'],
+  device_mismatch: ['notifications.session-expired', 'Your session has expired.'],
+};
 const errorText = (code) => {
-  const e = ERRORS[code];
+  const e = ERRORS[code] || AUTH_ERRORS[code];
   return e ? T(e[0], e[1]) : null;
 };
-const explain = (body) => body.hint || errorText(body.error) || body.error
-  || T('observe.err.something-went-wrong', 'Something went wrong.');
+/* The client's own sentence first for every auth code. For the rest (the report
+   refusals) the server's hint can carry detail — a distance, a limit — so it
+   still leads in English; in any other language our translated sentence beats
+   an English hint. */
+const explain = (body) => {
+  const code = body && body.error;
+  if (AUTH_ERRORS[code]) return errorText(code);
+  const own = errorText(code);
+  const lang = (window.HawkeyeI18n && window.HawkeyeI18n.current) || chosenLang() || 'en';
+  if (own && lang !== 'en') return own;
+  return (body && body.hint) || own || code
+    || T('observe.err.something-went-wrong', 'Something went wrong.');
+};
+/* /login's too_many_attempts is about PASSWORDS — ten wrong ones in an hour —
+   not the code-entry limit ERRORS describes ("tap Resend code"). */
+const explainLogin = (body) => (body && body.error === 'too_many_attempts'
+  ? T('auth.err.too-many-passwords', 'Too many wrong passwords. Wait an hour, or sign in with a one-time code instead.')
+  : explain(body));
 
 // Mirror of backend/src/services/scope.js — the polling unit determines the race.
 // The FCT has an appointed minister: no governorship, no state assembly.
@@ -560,6 +609,26 @@ const INTENT_DEST = { map: 'map-unit.html', incident: 'incidents.html' };
 // afterVerified() already routes every non-'observe' intent there, so returning
 // users no longer get dropped into the report flow's unit picker.
 const IS_SIGNIN = AUTH_INTENT === 'signin';
+
+/* LANGUAGE ON THE SIGN-UP / SIGN-IN SCREEN (first-time walkthrough #4). This
+   screen hides the header and with it the EN/HA button, so someone who arrived
+   in the wrong language had to leave to change it. #auth-lang is the header
+   button's twin: same one-tap cycle (HawkeyeLang.cycle — remembers, tells the
+   server, settles the first-run prompt), same code on its face, repainted on
+   every 'hawkeye-lang'. Nothing typed is lost: the page is not reloaded. */
+(function authLang() {
+  const b = $('auth-lang');
+  if (!b || !window.HawkeyeI18n || !window.HawkeyeLang) return;
+  const paint = () => {
+    const code = String(window.HawkeyeI18n.current || 'en').toUpperCase();
+    b.textContent = code;
+    b.setAttribute('aria-label', window.HawkeyeI18n.t('lang.current', 'Language') + ': ' + code);
+  };
+  b.addEventListener('click', () => (window.HawkeyeLang.cycle || window.HawkeyeLang.open)());
+  document.addEventListener('hawkeye-lang', paint);
+  paint();
+  b.hidden = false;
+})();
 
 // Telegram hybrid /report handoff: PU + votes were chosen in chat; prefill and
 // jump straight to the live-capture screen (the photo + signature must happen here).
@@ -1223,7 +1292,7 @@ $('btn-auth').onclick = async () => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (status !== 200) return void hkAlert(explain(body));
+  if (status !== 200) return void hkAlert(authMode === 'password' ? explainLogin(body) : explain(body));
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,

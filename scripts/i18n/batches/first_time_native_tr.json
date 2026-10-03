@@ -1,0 +1,22 @@
+{
+  "n.app.welcome.disclaimer": {
+    "ha": "Hawkeye mai zaman kanta ce kuma ba ta goyon bayan kowace jam’iyya. Ba ta sanar da sakamako — INEC ce ke sanar da dukkan sakamako na hukuma.",
+    "ig": "Hawkeye nweere onwe ya, ọ naghịkwa akwado pati ọ bụla. Ọ naghị ekwupụta nsonaazụ — ọ bụ INEC na-ekwupụta nsonaazụ gọọmentị niile.",
+    "yo": "Hawkeye jẹ́ olómìnira, kò sì ṣe ti ẹgbẹ́ kankan. Kì í kéde àbájáde — INEC ni ó ń kéde gbogbo àbájáde ìjọba."
+  },
+  "n.app.welcome.point-photograph": {
+    "ha": "Ɗauki hoton takardar sakamako a inda aka sanar da shi",
+    "ig": "See foto mpempe akwụkwọ nsonaazụ ebe a kwupụtara ya",
+    "yo": "Ya fọ́tò ìwé àbájáde níbi tí wọ́n ti kéde rẹ̀"
+  },
+  "n.app.welcome.point-signed": {
+    "ha": "Ana sa masa hannu a wayarka, ana haɗa shi a littafin jama'a",
+    "ig": "E binyere aka na ekwentị gị, jikọta ya n'akwụkwọ ndekọ ọha",
+    "yo": "A fọwọ́ sí i lórí fóònù rẹ, a sì so ó mọ́ ìwé àkọsílẹ̀ gbangba"
+  },
+  "n.app.welcome.point-verified": {
+    "ha": "Ana tabbatar da shi idan masu lura masu zaman kansu suka yarda",
+    "ig": "A na-akwado ya mgbe ndị na-ekiri ihe nweere onwe ha kwekọrịtara",
+    "yo": "A fìdí rẹ̀ múlẹ̀ nígbà tí àwọn olùwòran olómìnira bá fohùn ṣọ̀kan"
+  }
+}

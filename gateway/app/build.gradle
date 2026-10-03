@@ -1,0 +1,41 @@
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
+
+android {
+    namespace 'ng.com.hawkeye.callgate'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'ng.com.hawkeye.callgate'
+        // ROLE_CALL_SCREENING (RoleManager) arrived in Android 10.
+        minSdk 29
+        targetSdk 36
+        versionCode 1
+        versionName '1.0'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+dependencies {
+    // EncryptedSharedPreferences: the hook secret and the short-lived queue of
+    // caller numbers are encrypted at rest with a key held in the Android Keystore.
+    implementation 'androidx.security:security-crypto:1.1.0-alpha06'
+}

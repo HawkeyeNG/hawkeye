@@ -1,0 +1,17 @@
+// The same Android Gradle Plugin as mobile/android (and the Kotlin plugin the
+// native build already caches), on the buildscript classpath so no plugin
+// marker has to be fetched.
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:8.13.0'
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.20'
+    }
+}
+
+tasks.register('clean', Delete) {
+    delete rootProject.layout.buildDirectory
+}

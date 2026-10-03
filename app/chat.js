@@ -61,13 +61,13 @@
     + '#hk-chat-fab{position:fixed;right:18px;bottom:max(18px,var(--fab-dock,0px));transition:bottom .18s ease;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}'
     + '#hk-chat-fab:hover{filter:brightness(1.08)}#hk-chat-fab:focus-visible{outline:3px solid var(--gold,#f5b301);outline-offset:2px}'
     // Above the app's tab bar, exactly where #hk-fab sits (styles.css).
-    + 'body.has-tabbar #hk-chat-fab{bottom:max(calc(78px + env(safe-area-inset-bottom)),var(--fab-dock,0px))}'
+    + 'body.has-tabbar #hk-chat-fab{bottom:max(calc(78px + var(--sab, env(safe-area-inset-bottom, 0px))),var(--fab-dock,0px))}'
     // On a phone Intercom's messenger is full-screen from y=0. Lite draws under
     // the status bar (viewport-fit=cover), so its header spilled under the clock
     // and notch, and its composer under the home indicator. Inset it by the safe
     // areas — env() is 0 in a normal browser tab, so the web is unchanged.
-    + '@media (max-width:450px){.intercom-messenger-frame{top:env(safe-area-inset-top)!important;'
-    + 'bottom:env(safe-area-inset-bottom)!important;height:auto!important;max-height:none!important}}';
+    + '@media (max-width:450px){.intercom-messenger-frame{top:var(--sat, env(safe-area-inset-top, 0px))!important;'
+    + 'bottom:var(--sab, env(safe-area-inset-bottom, 0px))!important;height:auto!important;max-height:none!important}}';
   document.head.appendChild(st);
   const fab = document.createElement('button');
   fab.type = 'button';

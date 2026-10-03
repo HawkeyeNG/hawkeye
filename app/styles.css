@@ -22,10 +22,20 @@
 }
 
 :root {
+  /* THE STATUS-BAR INSET, from whichever source is right. Capacitor 8 (Lite on
+     Android) writes --safe-area-inset-* on <html> from the real window insets;
+     some WebViews report env() as 0 while the page is drawn edge-to-edge, so the
+     header sat under the clock (Infinix Note 13 Pro, 2026-10-03). Browsers and
+     iOS never set the variable, so max() leaves env() in charge there. */
+  --sat: max(var(--safe-area-inset-top, 0px), env(safe-area-inset-top, 0px));
+  --sab: max(var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px));
+}
+
+:root {
   /* Readable from JS: env() is not available to getComputedStyle on its own,
      so menu.js reads this to reserve the gesture-bar inset when it sizes the
      dropdown above the tab bar. */
-  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-bottom: var(--sab, env(safe-area-inset-bottom, 0px));
   --green: #004225;         /* Nigeria green (kept for accents) */
   --green-dark: #00482b;
   --green-darker: #00331e;
@@ -207,7 +217,7 @@ main.wrap { max-width: 840px; }
   /* Edge-to-edge apps (Android 15+, notched phones) draw under the status bar —
      extend the green header up into that inset so time/battery sit on green and
      content isn't clipped. env() is 0 on browsers without an inset, so no-op there. */
-  padding-top: env(safe-area-inset-top, 0px);
+  padding-top: var(--sat, env(safe-area-inset-top, 0px));
   /* Promote to its own compositor layer and animate only transform, so the slide
      runs on the GPU thread instead of repainting the blurred bar every frame. The
      Material standard-easing curve reads smoother than plain `ease`. */
@@ -219,7 +229,7 @@ main.wrap { max-width: 840px; }
    panel is open. Desktop keeps the header persistent. */
 .gov-header.hdr-hidden { transform: translateY(-100%); }
 /* Tight top, normal bottom: in edge-to-edge the header's own padding-top sits ON
-   TOP of env(safe-area-inset-top), so a 12px here read as a 12px empty band ABOVE
+   TOP of var(--sat, env(safe-area-inset-top, 0px)), so a 12px here read as a 12px empty band ABOVE
    the status-bar band. 6px keeps the logo off the clock without adding a second
    gap; the bottom keeps its breathing room before the border. */
 /* NOT space-between. The row is [brand][nav][bell][lang][theme][menu], and
@@ -801,7 +811,7 @@ button.secondary:hover { background: var(--tint); filter: none; }
 .auth-screen .gov-footer,
 .auth-screen .phase-banner { display: none; }
 /* Header gone: restore breathing room and clear the status-bar inset. */
-.auth-screen main { padding-top: calc(20px + env(safe-area-inset-top)); }
+.auth-screen main { padding-top: calc(20px + var(--sat, env(safe-area-inset-top, 0px))); }
 /* Desktop: a one-field form stretched across 1440px reads as a broken page. */
 .auth-screen main.wrap { max-width: 480px; }
 @media (min-width: 900px) { .auth-screen main { padding-top: min(7vh, 56px); } }
@@ -1048,13 +1058,13 @@ a.signin-btn:hover::before { border-color: #fff; background: rgba(255, 255, 255,
   .menu-panel {
     /* Starts right under the status bar and covers the header; the status-bar
        band stays green (the ::before below). */
-    position: fixed; top: env(safe-area-inset-top, 0px); bottom: var(--bar-h, 0px); left: 0; right: 0;
+    position: fixed; top: var(--sat, env(safe-area-inset-top, 0px)); bottom: var(--bar-h, 0px); left: 0; right: 0;
     /* !important: menu.js sets an inline max-height on open (room for the Ask
        bubble + 16px), which left a gap above the tab bar. Here the panel ends
        exactly at the bar's top edge; the bar (z 95, outside the header's
        stacking context) paints over it, so the camera button's arch overlaps. */
     max-height: none !important; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
-    padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
+    padding: 8px 0 calc(8px + var(--sab, env(safe-area-inset-bottom, 0px)));
   }
   /* THE WEBSITE KEEPS ITS HEADER ROW ABOVE THE SHEET (design audit W1): the
      sheet covered it, so the ☰ that closes it was underneath with no visible
@@ -1081,7 +1091,7 @@ a.signin-btn:hover::before { border-color: #fff; background: rgba(255, 255, 255,
      themes (native.js turns the icons light to match). 0 tall in a browser. */
   body:has(.menu-panel:not([hidden]))::before {
     content: ''; position: fixed; top: 0; left: 0; right: 0; z-index: 200;
-    height: env(safe-area-inset-top, 0px); background: #00251a;
+    height: var(--sat, env(safe-area-inset-top, 0px)); background: #00251a;
   }
 }
 .menu-panel .sign-out { color: var(--chip-req-ink) !important; font-weight: 700; }
@@ -1328,7 +1338,7 @@ a.signin-btn:hover::before { border-color: #fff; background: rgba(255, 255, 255,
 #camera-overlay #scan-hint { padding-left: 14px; padding-right: 14px; }
 #camera-overlay #camera-title { padding-top: 12px; }
 #camera-overlay .camera-actions {
-  padding: 12px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px 14px calc(12px + var(--sab, env(safe-area-inset-bottom, 0px)));
 }
 #camera-overlay .camera-actions { flex: none; }
 #camera-overlay #camera-title, #camera-overlay #camera-guide,
@@ -1388,7 +1398,7 @@ html.native-app main.wrap { padding-top: 14px; }
    clock. Restated here at (0,3,2) rather than by weakening the rule above,
    because every other page genuinely wants the flat 14px. */
 html.native-app.auth-screen main.wrap {
-  padding-top: calc(14px + env(safe-area-inset-top, 0px));
+  padding-top: calc(14px + var(--sat, env(safe-area-inset-top, 0px)));
 }
 
 /* The evidence row (.media-actions) already gives its three controls
@@ -1594,10 +1604,10 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 95;
     display: flex; justify-content: space-around; align-items: flex-end;
     background: var(--card); border-top: 1px solid var(--border);
-    padding: 6px 4px calc(6px + env(safe-area-inset-bottom));
+    padding: 6px 4px calc(6px + var(--sab, env(safe-area-inset-bottom, 0px)));
     box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.07);
   }
-  body.has-tabbar { padding-bottom: calc(66px + env(safe-area-inset-bottom)); }
+  body.has-tabbar { padding-bottom: calc(66px + var(--sab, env(safe-area-inset-bottom, 0px))); }
   /* Keep the ☰ dropdown's scroll area ABOVE the tab bar: without this its tail
      renders behind the bar and the last items (My Profile / Sign out) are
      unreachable even when scrolled to the end. */
@@ -1606,8 +1616,8 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
      edge-to-edge header sits lower by exactly that amount, so leaving it out
      pushed the panel's tail behind the tab bar. */
   body.has-tabbar .menu-panel {
-    max-height: calc(100vh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    max-height: calc(100dvh - 180px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    max-height: calc(100vh - 180px - var(--sat, env(safe-area-inset-top, 0px)) - var(--sab, env(safe-area-inset-bottom, 0px)));
+    max-height: calc(100dvh - 180px - var(--sat, env(safe-area-inset-top, 0px)) - var(--sab, env(safe-area-inset-bottom, 0px)));
   }
   /* Only when the tab bar actually exists (native app) — mobile WEB keeps the
      normal header bell + footer. */
@@ -1618,7 +1628,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
      lands. */
   body.has-tabbar #starter-card, body.has-tabbar #practice-line { display: none !important; }
   body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
-  body.has-tabbar #hk-fab { bottom: max(calc(78px + env(safe-area-inset-bottom)), var(--fab-dock, 0px)) !important; }
+  body.has-tabbar #hk-fab { bottom: max(calc(78px + var(--sab, env(safe-area-inset-bottom, 0px))), var(--fab-dock, 0px)) !important; }
 }
 /* THE BUBBLES STEP ASIDE WHILE SOMEONE TYPES (first-time walkthrough #3). With
    the keyboard up the visible area is a few hundred pixels, and a 56px button
@@ -1653,7 +1663,7 @@ body.hk-typing :is(#hk-fab, #hk-chat-fab) { display: none !important; }
 .rs-panel {
   position: absolute; left: 0; right: 0; bottom: 0;
   background: var(--card); border-radius: 18px 18px 0 0;
-  padding: 8px 16px calc(18px + env(safe-area-inset-bottom));
+  padding: 8px 16px calc(18px + var(--sab, env(safe-area-inset-bottom, 0px)));
   box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.3);
   animation: rs-up 0.18s ease-out;
 }
@@ -2145,7 +2155,7 @@ html.native-app #p-subs .tag {
    and the auth screen hides .gov-header regardless. Its real fix is the
    main.wrap rule above. */
 html.native-app.is-landing .gov-header {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 6px);
+  padding-top: calc(var(--sat, env(safe-area-inset-top, 0px)) + 6px);
 }
 
 /* ============================ SHARE HAWKEYE ==============================
@@ -2502,7 +2512,7 @@ html.native-app .dl-wrap { max-width: none; }
 body.has-tabbar .lang-back {
   align-items: stretch;
   padding-top: calc(var(--hdr-h, 56px) + 14px);
-  padding-bottom: calc(var(--bar-h, 66px) + 14px + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--bar-h, 66px) + 14px + var(--sab, env(safe-area-inset-bottom, 0px)));
 }
 .lang-card {
   background: var(--card, #fff); color: var(--ink, #12211a);
@@ -2590,7 +2600,7 @@ dialog.sheet-modal,
     display: flex; flex-direction: column;
     transition: top .24s cubic-bezier(.4, 0, .2, 1);
   }
-  html.native-app.has-shell .gov-header.hdr-hidden ~ #page-scroll { top: env(safe-area-inset-top, 0px); }
+  html.native-app.has-shell .gov-header.hdr-hidden ~ #page-scroll { top: var(--sat, env(safe-area-inset-top, 0px)); }
   html.native-app.has-shell #page-scroll > main { flex: 1 0 auto; }
   html.native-app.has-shell.modal-open #page-scroll { overflow: hidden; }
   /* Android draws this bar: keep it clear of both ends. (iOS draws its own.) */

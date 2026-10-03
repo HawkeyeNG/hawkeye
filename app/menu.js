@@ -2146,8 +2146,8 @@ document.addEventListener('hawkeye-lang', i18nSweep);
        above the tab bar (95) and below the blocking modals (report sheet 120+). */
     @media (max-width:640px){
       #hk-panel{inset:0;width:100%;max-height:none;border:0;border-radius:0;box-shadow:none;z-index:110}
-      #hk-head{padding-top:calc(11px + env(safe-area-inset-top));font-size:1.05rem}
-      #hk-form{padding-bottom:calc(10px + env(safe-area-inset-bottom))}
+      #hk-head{padding-top:calc(11px + var(--sat, env(safe-area-inset-top, 0px)));font-size:1.05rem}
+      #hk-form{padding-bottom:calc(10px + var(--sab, env(safe-area-inset-bottom, 0px)))}
       body.hk-ask-open{overflow:hidden}
       body.hk-ask-open #hk-fab{display:none}
     }`;

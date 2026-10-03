@@ -21,7 +21,7 @@
        is outside that scope, so it forwards here (script after authgate). -->
   <link rel="manifest" href="room.webmanifest?v=4" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=197" />
+  <link rel="stylesheet" href="styles.css?v=198" />
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -578,7 +578,7 @@ html.scrolling *::-webkit-scrollbar-thumb {
     footer.gov-footer .wrap {
       padding-top: 13px;
       /* The home indicator sits in this strip on an installed iOS console. */
-      padding-bottom: calc(15px + env(safe-area-inset-bottom));
+      padding-bottom: calc(15px + var(--sab, env(safe-area-inset-bottom, 0px)));
     }
     footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
 

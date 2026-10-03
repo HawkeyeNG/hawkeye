@@ -18,7 +18,7 @@
   <link rel="manifest" href="admin.webmanifest?v=3" />
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=197" />
+  <link rel="stylesheet" href="styles.css?v=198" />
   <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <script src="dialog.js?v=1"></script>
@@ -293,7 +293,7 @@
     footer.gov-footer .wrap {
       padding-top: 13px;
       /* The home indicator sits in this strip on an installed iOS console. */
-      padding-bottom: calc(15px + env(safe-area-inset-bottom));
+      padding-bottom: calc(15px + var(--sab, env(safe-area-inset-bottom, 0px)));
     }
     footer.gov-footer .copyright { margin: 0; padding-top: 0; border-top: 0; }
 
@@ -790,7 +790,7 @@
   <!-- Evidence videos in the Incidents queue: the same player as incidents.html
        and review.html (a poster tile that opens our full-screen player, sound
        on). Same ?v= as those pages and sw.js's shell list. -->
-  <script src="video-player.js?v=1"></script>
+  <script src="video-player.js?v=2"></script>
   <script>
   // post.html's script. Wrapped: it declares $, secret, hdr and setStatus at
   // top level, exactly as review.html's does.

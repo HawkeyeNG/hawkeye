@@ -72,7 +72,7 @@
   /* Clear of the tab bar where one exists. On the plain website .tabbar is
      display:none and this resolves to the safe-area inset alone; inside the
      app shell it is the bar's own height plus that inset. */
-  bottom: calc(8px + env(safe-area-inset-bottom));
+  bottom: calc(8px + var(--sab, env(safe-area-inset-bottom, 0px)));
   z-index: 5;
   margin-bottom: 8px;
   padding: 10px 0 2px;
@@ -81,7 +81,7 @@
      the top edge so it does not look like a hard-cut panel. */
   background: linear-gradient(to bottom, transparent 0, var(--bg) 14px, var(--bg) 100%);
 }
-.native-app .race-cta-pinned { bottom: calc(66px + env(safe-area-inset-bottom)); }
+.native-app .race-cta-pinned { bottom: calc(66px + var(--sab, env(safe-area-inset-bottom, 0px))); }
 
 /* A phone in landscape has too little height to give a permanent bar away —
    at that point scrolling to the button is the lesser cost. */

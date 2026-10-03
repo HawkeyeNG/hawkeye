@@ -19,7 +19,7 @@
       document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/240px 240px no-repeat";
   }catch(e){}})();</script>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=195" />
+  <link rel="stylesheet" href="styles.css?v=196" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -29,7 +29,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=124"></script>
+  <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
@@ -42,6 +42,13 @@
     .home-hero .sub { color: rgba(255, 255, 255, 0.75); font-size: 0.9rem; margin: 0; }
     .home-hero .unit-chip { display: inline-flex; align-items: center; gap: 7px; margin-top: 12px; background: rgba(255, 255, 255, 0.12); border: 1px solid rgba(255, 255, 255, 0.25); border-radius: 999px; padding: 6px 14px; font-size: 0.84rem; color: #fff; text-decoration: none; }
     .home-hero .unit-chip:hover { background: rgba(255, 255, 255, 0.2); }
+    /* No signal: the session is kept and Home says Hawkeye could not be
+       reached (design audit X1). Inside the green hero, so it adds no gap to
+       the card grid below (home_spacing_test). */
+    .home-offline { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin: 12px 0 0; padding: 8px 8px 8px 14px; border-radius: 12px; background: rgba(0, 0, 0, 0.28); color: #fff; font-size: 0.88rem; line-height: 1.35; }
+    .home-offline[hidden] { display: none; }
+    .home-offline span { flex: 1 1 180px; }
+    .home-offline button { width: auto; min-height: 44px; margin: 0; padding: 0 18px; background: #fff; color: #00482b; border: 0; border-radius: 999px; box-shadow: none; font-weight: 700; font-size: 0.85rem; cursor: pointer; }
 
     /* ONE NUMBER FOR EVERY VERTICAL GAP ON THIS PAGE.
        The Observer Home defines its own card system, and its spacing used to be
@@ -288,6 +295,7 @@
         <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
         <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
         <a class="unit-chip" id="home-unit-chip" href="map-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
+        <p class="home-offline" id="home-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" data-i18n="common.try-again">Try again</button></p>
       </div>
     </section>
     <main class="wrap">
@@ -640,16 +648,63 @@
       const auth = { authorization: 'Bearer ' + tok };
       /* D6: through native.js's 120 s signed-in cache, which a push or any write
          from a page ends early; a plain fetch if that copy is older. */
-      const aget = (p) => (window.HAWKEYE && window.HAWKEYE.authGet
-        ? window.HAWKEYE.authGet(p).then((x) => (x.status === 200 ? x.body : null))
+      const H = window.HAWKEYE || {};
+      const aget = (p) => (H.authGet
+        ? H.authGet(p).then((x) => (x.status === 200 ? x.body : null))
         : fetch(p, { headers: auth }).then((r) => (r.ok ? r.json() : null)));
-      const me = await aget('/api/observers/me').catch(() => null);
-      if (!me) {
-        // Dead session: show the landing page instead (and drop the token so
-        // the rest of the app agrees we're signed out).
+      /* { status, body, error }; a network failure is status 0. */
+      const getMe = (force) => (H.authGet
+        ? H.authGet('/api/observers/me', { force: !!force })
+        : fetch('/api/observers/me', { headers: auth }).then(async (r) => {
+          const b = await r.json().catch(() => null);
+          return { status: r.status, body: r.ok ? b : null, error: !r.ok && b ? b.error : null };
+        })).catch(() => ({ status: 0, body: null, error: null }));
+      const rejected = (x) => (H.authRejected ? H.authRejected(x.status, x.error) : false);
+      const offline = document.getElementById('home-offline');
+      /* NO SIGNAL IS NOT SIGNED OUT (design audit X1). Only our server refusing
+         the token ends the session; anything else keeps it, paints Home from
+         the last /me this phone saw, and says Hawkeye could not be reached. */
+      const dropSession = () => {
         localStorage.removeItem('hawkeye_token');
         document.documentElement.classList.remove('obs-home');
-        return;
+      };
+      let x = await getMe(false);
+      if (rejected(x)) { dropSession(); return; }
+      let me = x.status === 200 && x.body ? x.body : null;
+      const showOffline = (on) => {
+        if (!offline) return;
+        offline.hidden = !on;
+      };
+      if (!me) {
+        me = H.lastMe ? H.lastMe() : null;
+        showOffline(true);
+        if (offline) {
+          const retry = offline.querySelector('button');
+          let busy = false;
+          const again = async () => {
+            if (busy) return;
+            busy = true;
+            retry.disabled = true;
+            const y = await getMe(true);
+            busy = false;
+            retry.disabled = false;
+            if (rejected(y)) { dropSession(); return; }
+            // Reached: the page reloads once and paints fresh, rather than
+            // re-running every card's fetch by hand from here.
+            if (y.status === 200 && y.body) location.reload();
+          };
+          retry.addEventListener('click', again);
+          window.addEventListener('online', again);
+        }
+        if (!me) {
+          // Nothing kept on this phone yet: keep the session and the generic
+          // Home, never a figure the server did not give.
+          ['ms-reports', 'ms-incidents', 'ms-races'].forEach((id) => { document.getElementById(id).textContent = '–'; });
+          const box = document.getElementById('home-alerts');
+          box.innerHTML = '<p class="home-empty" data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</p>';
+          if (window.HawkeyeI18n) window.HawkeyeI18n.apply(box);
+          return;
+        }
       }
       /**
        * PERSONALISED, SO IT CANNOT LIVE IN THE MARKUP — and the markup version
@@ -658,16 +713,25 @@
        * 'hawkeye-lang' is what keeps the personal text: i18n.js dispatches that
        * event immediately AFTER apply(), so this always runs last.
        */
+      /* THE KEY COMES OFF A NODE THE MOMENT IT HOLDS PERSONAL TEXT (design audit
+         X8). menu.js runs a document-wide apply() of its own WITHOUT firing
+         'hawkeye-lang', so when /me answered first (a fast or failed network)
+         that sweep put "Welcome Back" back over "Welcome back, Observer #7" —
+         4 loads in 10. Unkeyed, no sweep can touch it; paintHome() still
+         repaints it on every language change. Profile does the same (p-id). */
       const tt = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
       const paintHome = () => {
-        document.getElementById('home-greet').textContent =
-          tt('index.welcome-back-observer', 'Welcome back, Observer #{id}').replace('{id}', me.observerId);
+        const greet = document.getElementById('home-greet');
+        greet.removeAttribute('data-i18n');
+        greet.textContent = tt('index.welcome-back-observer', 'Welcome back, Observer #{id}').replace('{id}', me.observerId);
         if (me.unit) {
           const u = me.unit;
           const chip = document.getElementById('home-unit-chip');
+          const sub = document.getElementById('home-sub');
+          chip.removeAttribute('data-i18n-html');
+          sub.removeAttribute('data-i18n');
           chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
-          document.getElementById('home-sub').textContent =
-            tt('index.alerts-are-on-for-your-unit', 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.');
+          sub.textContent = tt('index.alerts-are-on-for-your-unit', 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.');
         }
       };
       paintHome();
@@ -721,9 +785,16 @@
       document.getElementById('ms-incidents').textContent = (me.incidents || []).length;
       document.getElementById('ms-races').textContent = (me.subscriptions || []).length;
 
+      /* An alerts read that fails says so — it used to leave "Loading…" up for
+         good (design audit X8/X9). Keyed, so a language change repaints it. */
+      const alertsFailed = () => {
+        const box = document.getElementById('home-alerts');
+        box.innerHTML = '<p class="home-empty" data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</p>';
+        if (window.HawkeyeI18n) window.HawkeyeI18n.apply(box);
+      };
       aget('/api/notifications').then((d) => {
         const box = document.getElementById('home-alerts');
-        if (!d || !d.items) return;
+        if (!d || !d.items) { alertsFailed(); return; }
         /**
          * UNREAD ONLY, and at most three.
          *
@@ -786,7 +857,7 @@
             if (window.hawkeyeSetUnread) window.hawkeyeSetUnread(Math.max(0, unreadNow - 1));
           } catch { /* a badge must never break a navigation */ }
         }));
-      }).catch(() => {});
+      }).catch(alertsFailed);
 
       fetch('/api/ledger/entries?limit=3&fields=feed').then((r) => r.json()).then((rows) => {
         const last = rows.slice(-3).reverse();

@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=195">
-  <script src="native.js?v=124"></script>
+  <link rel="stylesheet" href="styles.css?v=196">
+  <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
@@ -279,7 +279,9 @@
               ? T('map-unit.fix-updated-progress', 'Your fix was updated ({v0}/{v1} needed to confirm this unit).', { v0: b.fixes, v1: b.needed })
               : T('map-unit.recorded-progress', 'Recorded ({v0}/{v1} needed to confirm this unit).', { v0: b.fixes, v1: b.needed });
           stats();
-        } else if (status === 401) {
+        } else if (window.HAWKEYE && window.HAWKEYE.authRejected
+          ? window.HAWKEYE.authRejected(status, b) : status === 401) {
+          // Only our server refusing the token ends the session (design audit X1).
           localStorage.removeItem('hawkeye_token');
           $('cap-status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=map' });
           $('picker').hidden = true; $('capture').hidden = true; $('need-auth').hidden = false;

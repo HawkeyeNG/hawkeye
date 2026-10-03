@@ -2774,5 +2774,7 @@
   "practice.sample-lga": "Karamar Hukumar Misali",
   "practice.sample-office": "Zaɓen Shugaban Ƙasa 2027",
   "practice.sample-state": "Atisaye",
-  "practice.sample-ward": "Mazaɓar Misali"
+  "practice.sample-ward": "Mazaɓar Misali",
+  "common.cant-reach-hawkeye": "Ba a iya isa Hawkeye ba — duba haɗin intanet ɗinka.",
+  "common.try-again": "Sake gwadawa"
 }

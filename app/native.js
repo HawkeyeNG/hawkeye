@@ -149,10 +149,51 @@
       bust();
       try { document.dispatchEvent(new CustomEvent('hawkeye-push')); } catch (_) { /* ignore */ }
     }
-    /** GET a signed-in endpoint as { status, body }. `force` skips the 120 s. */
+    /**
+     * ONLY OUR SERVER SAYING NO ENDS A SESSION (design audit X1, 2026-10-03).
+     *
+     * Home dropped the token on ANY failed /api/observers/me, so an observer at
+     * a polling unit with one bar of signal was shown the sign-up screen at the
+     * moment they most needed the app. A session ends on exactly one thing: a
+     * 401 whose JSON body names an auth error from backend requireObserver.
+     * Offline, a timeout, a 5xx, a Cloudflare/HTML page, a body that will not
+     * parse — none of those say anything about the token, so it is kept, the
+     * page shows what it last knew, and says it could not reach Hawkeye.
+     * Native does the same (native/src/lib/auth.ts authedGet).
+     * `err` is the body's `error` string, or the parsed body itself.
+     */
+    const AUTH_DEAD = { missing_token: 1, invalid_token: 1, unknown_observer: 1, signed_in_elsewhere: 1, device_mismatch: 1 };
+    function authRejected(status, err) {
+      if (Number(status) !== 401) return false;
+      const e = err && typeof err === 'object' ? err.error : err;
+      return typeof e === 'string' && AUTH_DEAD[e] === 1;
+    }
+    /* The last /api/observers/me this device saw, for the screens that must
+       still say who you are with no signal (Home, Profile). localStorage, not
+       the tab's 120 s copy: the observer who opens the app at the unit has no
+       tab yet. Keyed by the token's print, so another account never reads it,
+       and dropped the moment no token is held. */
+    const ME_KEY = 'hk_me_last';
+    function keepMe(body) {
+      try { localStorage.setItem(ME_KEY, JSON.stringify({ fp: print(token()), at: Date.now(), body })); } catch (_) { /* full or off */ }
+    }
+    function lastMe() {
+      try {
+        const tk = token();
+        if (!tk) { localStorage.removeItem(ME_KEY); return null; }
+        const hit = JSON.parse(localStorage.getItem(ME_KEY) || 'null');
+        return hit && hit.fp === print(tk) && hit.body ? hit.body : null;
+      } catch (_) { return null; }
+    }
+    try { if (!token()) localStorage.removeItem(ME_KEY); } catch (_) { /* storage off */ }
+
+    /** GET a signed-in endpoint as { status, body, error }. `force` skips the
+        120 s. A network failure REJECTS (status 0 never resolves), so a caller
+        can tell "unreachable" from "the server answered". `error` carries a
+        non-2xx body's `error` code for authRejected(). */
     async function authGet(path, opts) {
       const tk = token();
-      if (!tk) return { status: 401, body: null };
+      if (!tk) return { status: 401, body: null, error: 'missing_token' };
       const key = PREFIX + path;
       const force = (opts && opts.force) || (reloaded && !askedThisLoad[path]);
       askedThisLoad[path] = true;
@@ -173,6 +214,11 @@
           const at = Date.now();
           const r = await window.fetch(path, { headers: { authorization: 'Bearer ' + tk } });
           const body = r.ok ? await r.json().catch(() => null) : null;
+          let error = null;
+          if (!r.ok) {
+            try { const eb = await r.json(); error = (eb && typeof eb.error === 'string') ? eb.error : null; } catch (_) { /* HTML or empty: not ours */ }
+          }
+          if (r.status === 200 && body != null && path === '/api/observers/me') keepMe(body);
           // Not kept if a write left this tab in the last 5 s: a keepalive
           // "mark read" sent as the page navigated may not have landed yet, and
           // keeping the answer would hold the old count for 120 s.
@@ -181,7 +227,7 @@
           if (r.status === 200 && body != null && at - wroteAt > 5000) {
             try { ss().setItem(key, JSON.stringify({ fp: print(tk), at, body })); } catch (_) { /* full or off */ }
           }
-          return { status: r.status, body };
+          return { status: r.status, body, error };
         } finally { delete inflight[key]; }
       })();
       return inflight[key];
@@ -213,7 +259,7 @@
     };
     document.addEventListener('visibilitychange', announce);
     Object.assign(window.HAWKEYE, {
-      FRESH_MS, authGet, authBust: bust, notePush, isForeground,
+      FRESH_MS, authGet, authBust: bust, notePush, isForeground, authRejected, keepMe, lastMe,
       setAppActive(a) { if (appActive !== !!a) { appActive = !!a; announce(); } },
     });
   })();

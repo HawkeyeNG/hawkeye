@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=195" />
-  <script src="native.js?v=124"></script>
+  <link rel="stylesheet" href="styles.css?v=196" />
+  <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -148,6 +148,7 @@
     <div id="signed-out" hidden>
       <p data-i18n-html="profile.you-re-not-signed-in-sign-in" class="empty">You're not signed in. <a href="observe.html">Sign in or register</a> to see your profile.</p>
     </div>
+    <div class="hk-offline" id="p-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" id="p-retry" data-i18n="common.try-again">Try again</button></div>
     <div id="profile" hidden>
 
       <div class="phero">
@@ -577,12 +578,31 @@
     let ME = null;
     async function load() {
       if (!token()) { $('signed-out').hidden = false; return; }
+      const H = window.HAWKEYE || {};
       // no-store: coming BACK from choose-unit.html, Chrome answers a history
       // navigation's fetches from the HTTP cache without revalidating, so the
       // row showed the unit that had just been replaced (measured in
       // tests/choose_unit_test.mjs — the server never saw the second request).
-      const { status, body } = await api('/api/observers/me', { cache: 'no-store' });
-      if (status !== 200) { localStorage.removeItem('hawkeye_token'); $('signed-out').hidden = false; return; }
+      let r;
+      try { r = await api('/api/observers/me', { cache: 'no-store' }); } catch (e) { r = { status: 0, body: null }; }
+      /* NO SIGNAL IS NOT SIGNED OUT (design audit X1). Only our server refusing
+         the token ends the session. Offline, a 5xx or an HTML error page keeps
+         it: the profile is painted from the last /me this phone saw, under a
+         "could not reach Hawkeye" line with Try again. */
+      if (H.authRejected && H.authRejected(r.status, r.body)) {
+        localStorage.removeItem('hawkeye_token');
+        $('p-offline').hidden = true; $('profile').hidden = true; $('signed-out').hidden = false;
+        return;
+      }
+      let body = r.status === 200 && r.body && r.body.observerId != null ? r.body : null;
+      if (body) {
+        if (H.keepMe) H.keepMe(body);
+        $('p-offline').hidden = true;
+      } else {
+        body = H.lastMe ? H.lastMe() : null;
+        $('p-offline').hidden = false;
+        if (!body) return;
+      }
       $('profile').hidden = false;
 
       ME = body;
@@ -913,6 +933,14 @@
       } else hkAlert(T('profile.could-not-delete', 'Could not delete — try again.'));
     };
 
+    let retrying = false;
+    const retryLoad = async () => {
+      if (retrying || $('p-offline').hidden) return;
+      retrying = true; $('p-retry').disabled = true;
+      try { await load(); } finally { retrying = false; $('p-retry').disabled = false; }
+    };
+    $('p-retry').addEventListener('click', retryLoad);
+    window.addEventListener('online', retryLoad);
     load();
   </script>
   <script src="device.js"></script>

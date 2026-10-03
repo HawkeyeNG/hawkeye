@@ -43,7 +43,9 @@ const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (o, s = 200) => { res.writeHead(s, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
   if (url === '/api/observers/resume') return mode.resume ? json({ token: TOKEN }) : json({});
-  if (mode.deny && url.startsWith('/api/groups')) return json({ error: 'unauthorized' }, 401);
+  // The code backend requireObserver really sends: only an auth error ends a
+  // session now (design audit X1), so a made-up code would be "not ours".
+  if (mode.deny && url.startsWith('/api/groups')) return json({ error: 'invalid_token' }, 401);
   if (url === '/api/groups') return json({ managing: Object.values(ROOMS).map((g) => ({ id: g.id, name: g.name, kind: g.kind, contest: 'PRES', scope: '', slug: g.slug })), member: [] });
   const m = /^\/api\/groups\/(\d+)$/.exec(url);
   if (m && ROOMS[m[1]]) return json(ROOMS[m[1]]);

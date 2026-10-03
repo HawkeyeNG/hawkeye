@@ -9,8 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=195">
-  <script src="native.js?v=124"></script>
+  <link rel="stylesheet" href="styles.css?v=196">
+  <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -648,7 +648,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           keepCopies();
           shots.sheet = shots.venue = null;
           showCopy(b.entryHash);
-        } else if (r.status === 401) {
+        } else if (window.HAWKEYE && window.HAWKEYE.authRejected
+          ? window.HAWKEYE.authRejected(r.status, b) : r.status === 401) {
+          // Only our server refusing the token ends the session (design audit X1).
           localStorage.removeItem('hawkeye_token');
           $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=observe' });
           $('form').hidden = true; $('need-auth').hidden = false;

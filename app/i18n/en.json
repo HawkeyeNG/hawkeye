@@ -2747,5 +2747,7 @@
   "practice.sample-lga": "Demo LGA",
   "practice.sample-office": "2027 Presidential",
   "practice.sample-state": "Practice",
-  "practice.sample-ward": "Demo Ward"
+  "practice.sample-ward": "Demo Ward",
+  "common.cant-reach-hawkeye": "Could not reach Hawkeye — check your connection.",
+  "common.try-again": "Try again"
 }

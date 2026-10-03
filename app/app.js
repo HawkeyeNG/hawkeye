@@ -3169,15 +3169,18 @@ $('btn-submit').onclick = async () => {
     $('btn-submit').disabled = false;
     return;
   }
-  // ANY 401 (expired, unknown observer after a server reset, device mismatch…)
-  // = dead session. Silently re-mint via resume and retry the same submission
-  // once; only if that fails does the user get sent back to verification.
-  if (status === 401) {
+  // A 401 NAMING AN AUTH ERROR (expired, unknown observer after a server
+  // reset, device mismatch…) = dead session. Silently re-mint via resume and
+  // retry the same submission once; only if that fails does the user get sent
+  // back to verification. Any other 401 (bad_signature) is the report's
+  // problem, not the session's, and is explained below (design audit X1).
+  const authDead = (s, b) => (window.HAWKEYE && window.HAWKEYE.authRejected ? window.HAWKEYE.authRejected(s, b) : s === 401);
+  if (authDead(status, body)) {
     localStorage.removeItem('hawkeye_token');
     $('submit-status').textContent = T('observe.refreshing-your-session', 'Refreshing your session…');
     if (await tryResume()) ({ status, body, retryAfter } = await post());
   }
-  if (status === 401) {
+  if (authDead(status, body)) {
     /* KEEP THE SIGNED REPORT. The report is signed over its exact bytes and
        only the session died, so it goes to the outbox — which holds 401s until
        this device signs in again — exactly as native's submit does. When the

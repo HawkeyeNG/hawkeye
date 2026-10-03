@@ -729,6 +729,20 @@ button.secondary {
 }
 button.secondary:hover { background: var(--tint); filter: none; }
 
+/* "Could not reach Hawkeye — check your connection." + Try again (design audit
+   X1/X9). THE one offline line: a page that could not load says so in this
+   shape, and never shows an empty state or a sign-in screen in its place. */
+.hk-offline {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: 8px 12px; margin: 0 0 16px; padding: 8px 8px 8px 14px;
+  background: var(--card); color: var(--ink);
+  border: 1px solid var(--border); border-left: 4px solid var(--gold); border-radius: 12px;
+  font-size: 0.92rem; line-height: 1.35;
+}
+.hk-offline[hidden] { display: none; }
+.hk-offline > span { flex: 1 1 180px; }
+.hk-offline button { width: auto; min-height: 44px; margin: 0; padding: 0 18px; border-radius: 999px; font-size: 0.88rem; box-shadow: none; }
+
 /* ---------- auth screen (observe.html register step) — APP AND WEB ------------
    Nothing in the product should be reachable before sign-in, and a header + nav
    + footer wrapped around a sign-in form is just clutter on a page with exactly

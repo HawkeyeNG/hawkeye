@@ -21,8 +21,8 @@
        is outside that scope, so it forwards here (script after authgate). -->
   <link rel="manifest" href="room.webmanifest?v=4" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=195" />
-  <script src="native.js?v=124"></script>
+  <link rel="stylesheet" href="styles.css?v=196" />
+  <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
@@ -811,7 +811,9 @@ async function api(path, opts = {}) {
     },
   });
   const body = await res.json().catch(() => ({}));
-  if (res.status === 401) {
+  /* Only our server refusing the token (a 401 naming an auth error) ends the
+     session — design audit X1. */
+  if (window.HAWKEYE && window.HAWKEYE.authRejected ? window.HAWKEYE.authRejected(res.status, body) : res.status === 401) {
     /* The server refused this token (groups routes answer 401 only from the
        auth middleware). Drop it: kept, observe.html would read it as signed in
        and send the manager straight back here, to another 401, in a loop that

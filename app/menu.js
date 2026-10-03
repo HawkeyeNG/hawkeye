@@ -1273,6 +1273,12 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // every page. The crest still carries the brand.
   {
     const bt = document.querySelector('.gov-header .brand-text');
+    // The mark is a link home; where its text is hidden (a narrow signed-out
+    // header, Alerts) it had no name at all (axe link-name). The crest names
+    // it — "Hawkeye" is the brand, not prose — and the page title, when shown,
+    // follows it.
+    const crestImg = document.querySelector('.gov-header a.brand .crest img');
+    if (crestImg && !crestImg.getAttribute('alt')) crestImg.setAttribute('alt', 'Hawkeye');
     if (bt) {
       const page = (location.pathname.replace(/^.*\//, '') || 'index.html');
       const h1 = document.querySelector('main h1');
@@ -1291,6 +1297,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         'candidates.html': ['Presidency 2027', 'nav.presidency-2027'],
         'osun.html': ['Osun 2026', 'nav.osun-2026'],
         'race.html': ['Race', 'nav.race'],
+        // Native's screen title; the page's H1 ("Check a Hawkeye Observer
+        // Certificate") needed three header lines in Igbo (design audit X6).
+        'verify-cert.html': ['Check a Certificate', 'cert.check-title'],
       };
       const entry = TITLES[page];
       const title = (entry && entry[0])

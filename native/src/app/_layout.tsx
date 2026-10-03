@@ -19,6 +19,7 @@ import { captureInstallReferrer } from '@/lib/pending-invite';
 // full-page result sheets).
 import '@/lib/memory';
 import { usePushNotifications } from '@/lib/push';
+import { useFreshUpdates } from '@/lib/fresh-updates';
 import { ThemePrefProvider, themeClass, useThemePref } from '@/lib/theme-pref';
 import { LangProvider, t as i18nT } from '@/lib/i18n';
 
@@ -125,6 +126,9 @@ function RootShell() {
   // it is about, and keeps the unread badge honest. One place, so nothing
   // double-registers.
   usePushNotifications();
+  // A published OTA runs on the next return after a real absence, not only
+  // after two cold starts (lib/fresh-updates.ts).
+  useFreshUpdates();
   useEffect(() => {
     bootstrapAuth();
   }, []);

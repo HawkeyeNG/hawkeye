@@ -104,5 +104,47 @@ check('the paid line starts hidden in the markup (fail closed)', /<p class="hint
 check('it is shown only from the server\'s waPaidOtp', /if \(h && h\.waPaidOtp === true\) WA_PAID = true;/.test(app) && /\$\('wa-paid-line'\)\.hidden = !WA_PAID;/.test(app), true);
 check('the WhatsApp-under-Telegram switch is paid only while WA_PAID, else the free route', /const waSwitch = WA_PAID\s*\?[\s\S]{0,200}switch-wa"[\s\S]{0,200}: WA_INBOUND\s*\?[\s\S]{0,200}switch-wa-free"/.test(app), true);
 
+console.log('\n=== native: the ONLY paid WhatsApp link is the gated one ===');
+{
+  const src = read('native/src/app/sign-in.tsx');
+  const uses = [...src.matchAll(/n\.auth\.wa-fallback-whatsapp/g)].map((m) => m.index);
+  const gate = src.indexOf('{waPaid ? (\n                    <Pressable');
+  check('one use of the paid-link string, inside the waPaid gate', uses.length === 1 && gate > 0 && uses[0] > gate && uses[0] - gate < 400, true);
+}
+
+console.log('\n=== native: a published OTA runs after a real absence (lib/fresh-updates.ts) ===');
+{
+  const { stripTypeScriptTypes } = await import('node:module');
+  const os = await import('node:os');
+  const path = await import('node:path');
+  const { pathToFileURL } = await import('node:url');
+  const ts = read('native/src/lib/fresh-updates.ts');
+  const body = stripTypeScriptTypes(ts.replace(/^import [^;]+;\n/gm, ''), { mode: 'strip' });
+  const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'hk-fresh-')), 'm.mjs');
+  fs.writeFileSync(f, 'const Updates = {}; const AppState = {}; const useEffect = () => {}; const __DEV__ = false;\n' + body);
+  const M = await import(pathToFileURL(f).href);
+  const run = async ({ awayMin, available = true, enabled = true }) => {
+    let t = 0;
+    const calls = [];
+    const api = {
+      isEnabled: enabled,
+      checkForUpdateAsync: async () => { calls.push('check'); return { isAvailable: available }; },
+      fetchUpdateAsync: async () => { calls.push('fetch'); },
+      reloadAsync: async () => { calls.push('reload'); },
+    };
+    const l = M.freshUpdatesListener(api, () => t);
+    l('background');
+    t += awayMin * 60_000;
+    await l('active');
+    return calls;
+  };
+  check('back after 20 min with a newer update: check, fetch, RELOAD', await run({ awayMin: 20 }), ['check', 'fetch', 'reload']);
+  check('CONTROL back after 1 min (mid-task, e.g. sending the WhatsApp code): nothing', await run({ awayMin: 1 }), []);
+  check('CONTROL nothing newer: check only, no reload', await run({ awayMin: 20, available: false }), ['check']);
+  check('CONTROL updates disabled (development): nothing', await run({ awayMin: 20, enabled: false }), []);
+  const layout = read('native/src/app/_layout.tsx');
+  check('mounted in the root layout', /import \{ useFreshUpdates \} from '@\/lib\/fresh-updates';/.test(layout) && /\n  useFreshUpdates\(\);/.test(layout), true);
+}
+
 console.log(`\n${fail ? `${fail} FAILED` : 'ALL PASSED'}`);
 process.exit(fail ? 1 : 0);

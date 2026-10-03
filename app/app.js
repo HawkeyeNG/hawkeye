@@ -644,6 +644,18 @@ const NEXT_DEST = (() => {
   const n = QP.get('next');
   return n && /^[a-z0-9_\-]+\.html(?:\?[^#]*)?$/i.test(n) ? n : null;
 })();
+// THE DESTINATION SURVIVES A SWITCH BETWEEN SIGN-IN AND SIGN-UP. join.html sends
+// a signed-out invitee here with next=join.html?t=…, and most invitees have no
+// account, so they tap "Sign Up" — whose static href dropped next=, and with it
+// the invitation. Delegated, because i18n re-renders both lines' innerHTML.
+if (NEXT_DEST) document.addEventListener('click', (e) => {
+  const a = e.target.closest && e.target.closest('#signup-line a, #signin-line a');
+  if (!a) return;
+  const u = new URL(a.getAttribute('href'), location.href);
+  u.searchParams.set('next', NEXT_DEST);
+  e.preventDefault();
+  location.assign(u.pathname + u.search);
+}, true);
 // The "To Become an Observer, verify your phone below." banner is gone: the
 // heading and lede already say it, and a tinted notice above them made the
 // sign-up screen look cluttered. Kept as a no-op so the intent plumbing (which
@@ -656,6 +668,7 @@ function applyIntentCopy() { /* intentionally empty — see note above */ }
 function applySignInMode() {
   if (!IS_SIGNIN) return;
   authMode = 'password';
+  document.documentElement.classList.remove('pw-reset');
   const title = $('register-title');
   if (title) title.textContent = T('observe.sign-in', 'Sign In');
   // "One number, one observer" is a sign-UP promise; a returning observer has
@@ -973,6 +986,8 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   e.preventDefault();
   const toPw = authMode !== 'password';
   authMode = toPw ? 'password' : 'phone';
+  document.documentElement.classList.toggle('pw-reset', !toPw); // styles.css: un-hides the reset fields
+  if ($('pw-opt')) $('pw-opt').hidden = toPw;               // the new password, chosen up front as on sign-up
   $('pw-signin-wrap').hidden = !toPw;
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
@@ -3151,6 +3166,19 @@ $('btn-submit').onclick = async () => {
   // platform, since IndexedDB is universal; outbox.js's own listeners drive the
   // retry (the Capacitor shell fires those same events). `notBefore` holds the
   // first retry when the server asked for time. False when there is no outbox.
+  /* THE HEADLINE MATCHES WHAT HAPPENED. A report parked in the outbox (offline,
+     5xx, 401) opened under "Report Recorded — on the public ledger now", with
+     the truth further down. The data-i18n key is swapped too, so a language
+     switch repaints the RIGHT sentence instead of restoring the success one. */
+  const resultHeadline = (pending) => {
+    const set = (el, key, en) => { if (el) { el.dataset.i18n = key; el.textContent = T(key, en); } };
+    set($('result-title'), pending ? 'receipt.title-pending' : 'observe.report-recorded',
+      pending ? 'Saved on your phone' : 'Report Recorded');
+    set($('result-lede'), pending ? 'receipt.status-pending' : 'observe.your-report-is-on-the-public',
+      pending ? 'Not yet on the public ledger — it sends when you are back online.'
+        : 'Your report is on the public tamper-evident ledger now — it cannot be edited or withdrawn. Its fingerprint is published to the public Rekor transparency log in the next daily anchor.');
+    if ($('entry-line')) $('entry-line').hidden = !!pending;
+  };
   const park = async (lead, notBefore) => {
     if (!(window.HAWKEYE && window.HawkeyeOutbox)) return false;
     const fields = {};
@@ -3174,6 +3202,7 @@ $('btn-submit').onclick = async () => {
     $('entry-hash').textContent = '';
     $('receipt-wrap').hidden = true;
     showReceipt(receiptData(offlineContest, offlineVotes, ''));
+    resultHeadline(true);
     show('screen-result');
     $('btn-submit').disabled = false;
     return true;
@@ -3278,6 +3307,7 @@ $('btn-submit').onclick = async () => {
       <ul>${votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
     $('receipt-wrap').hidden = true;
     showReceipt(receiptData(name, votes, body.entryHash || ''));
+    resultHeadline(false);
     show('screen-result');
     return;
   }
@@ -3307,6 +3337,7 @@ $('btn-submit').onclick = async () => {
     <ul>${r.votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
   $('receipt-wrap').hidden = true;
   showReceipt(receiptData(contestName, r.votes, body.entryHash));
+  resultHeadline(false);
   show('screen-result');
 };
 

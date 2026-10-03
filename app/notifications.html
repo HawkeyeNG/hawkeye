@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=198" />
+  <link rel="stylesheet" href="styles.css?v=199" />
   <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -446,6 +446,14 @@
       try { if (window.hawkeyeSetUnread) window.hawkeyeSetUnread(n); }
       catch { /* never let a badge failure break the page */ }
     }
+    // STAY IN THE APP. Alert URLs are absolute (https://hawkeye.com.ng/…) because
+    // push and Telegram need them so; inside Lite an absolute link leaves the
+    // bundled app for the system browser, signed out. Same-site → root-relative,
+    // which on the website is the same page.
+    function localUrl(u) {
+      try { const x = new URL(u, location.href); return /(^|\.)hawkeye\.com\.ng$/.test(x.hostname) ? x.pathname + x.search + x.hash : u; }
+      catch { return u; }
+    }
     // Mark ONE alert read, update every badge, and grey the row immediately —
     // the receipt catches up behind the navigation.
     function markOneRead(n) {
@@ -554,7 +562,7 @@
 
       if (!btn.dataset.modal) {
         // Short alert: behave like the link it used to be.
-        if (n.url) location.href = n.url;
+        if (n.url) location.href = localUrl(n.url);
         return;
       }
       $('nm-title').textContent = n.title;
@@ -563,7 +571,7 @@
       $('nm-when').textContent = ago(n.created_at);
       const open = $('nm-open');
       if (n.url) {
-        open.href = n.url;
+        open.href = localUrl(n.url);
         open.hidden = false;
         open.style.display = '';
       } else {

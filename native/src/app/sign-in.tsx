@@ -1069,7 +1069,7 @@ export default function SignIn() {
                 editable={!busy}
               />
               {/* No channel with an organisation code: nothing is sent. */}
-              <View className="flex-row gap-2 pt-3" style={withOrgCode ? { display: 'none' } : undefined}>
+              <View className="flex-row flex-wrap gap-2 pt-3" style={withOrgCode ? { display: 'none' } : undefined}>
                 {CHANNELS.map((c) => (
                   <Pressable
                     key={c.key}
@@ -1077,7 +1077,7 @@ export default function SignIn() {
                       setChannel(c.key);
                       setNeedChoice(false);
                     }}
-                    className={`rounded-full px-4 py-2 ${
+                    className={`rounded-full px-3 py-2 ${
                       channel === c.key ? 'bg-hawk-green' : 'bg-card'
                     }`}
                   >
@@ -1090,24 +1090,26 @@ export default function SignIn() {
                     </Text>
                   </Pressable>
                 ))}
+                {/* SMS LAST, A CHIP LIKE THE OTHERS, LABELLED PAID (owner,
+                    2026-10-03): as a small line apart it did not read as
+                    pickable at all. "Paid" steers people to the two free
+                    routes. Never pre-selected. */}
+                {smsOk ? (
+                  <Pressable
+                    onPress={() => {
+                      setChannel('sms');
+                      setNeedChoice(false);
+                    }}
+                    accessibilityRole="radio"
+                    accessibilityState={{ selected: channel === 'sms' }}
+                    className={`rounded-full px-3 py-2 ${channel === 'sms' ? 'bg-hawk-green' : 'bg-card'}`}
+                  >
+                    <Text className={`text-sm ${channel === 'sms' ? 'font-semibold text-hawk-gold' : 'text-faint'}`}>
+                      {i18nT('auth.sms-paid')}
+                    </Text>
+                  </Pressable>
+                ) : null}
               </View>
-              {/* SMS LAST AND SECONDARY (D2): a small option apart from the two
-                  free routes, labelled as the fallback. Never pre-selected. */}
-              {smsOk && !withOrgCode ? (
-                <Pressable
-                  onPress={() => {
-                    setChannel('sms');
-                    setNeedChoice(false);
-                  }}
-                  accessibilityRole="radio"
-                  accessibilityState={{ selected: channel === 'sms' }}
-                  className={`mt-3 self-start rounded-full px-3 py-1.5 ${channel === 'sms' ? 'bg-hawk-green' : ''}`}
-                >
-                  <Text className={`text-xs ${channel === 'sms' ? 'font-semibold text-hawk-gold' : 'text-muted'}`}>
-                    SMS · {i18nT('auth.sms-fallback')}
-                  </Text>
-                </Pressable>
-              ) : null}
               {/* NO DEFAULT ROUTE (owner, 2026-10-02): Send code stays disabled,
                   and this line says why, until a chip is picked — or an
                   organisation code replaces the code. */}
@@ -1206,7 +1208,7 @@ export default function SignIn() {
               {purpose === 'signup' ? (
                 <Pressable className="mt-4 items-center" onPress={() => router.push('/practice')}>
                   <Text className="text-sm text-muted">
-                    First time? <Text className="font-semibold text-good-ink">{i18nT('n.app.sign-in.try-a-practice-run')}</Text>
+                    {i18nT('n.app.sign-in.first-time')} <Text className="font-semibold text-good-ink">{i18nT('n.app.sign-in.try-a-practice-run')}</Text>
                   </Text>
                 </Pressable>
               ) : null}

@@ -21,7 +21,7 @@
        is outside that scope, so it forwards here (script after authgate). -->
   <link rel="manifest" href="room.webmanifest?v=4" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=198" />
+  <link rel="stylesheet" href="styles.css?v=199" />
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -1517,8 +1517,10 @@ async function doCheckIn(btn) {
       return say(why);
     }
     S.team = null;
-    await load(true);
-    render();
+    /* A refresh failing is NOT a failed check-in: the server already said 200.
+       (This called a load() that does not exist, so every accepted check-in
+       landed in the catch below and read "Could not read your location".) */
+    try { await loadGroup(); } catch (_) { /* the next poll catches up */ }
   } catch (e) {
     btn.disabled = false;
     say(e && e.code === 1

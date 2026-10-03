@@ -80,6 +80,7 @@
   "auth.signed-out-elsewhere-queued": "Signed reports waiting on this phone: {n}. Sign in again here to send them.",
   "auth.signup-lede": "We'll send a code to confirm your number.",
   "auth.sms-fallback": "Only if Telegram and WhatsApp don't work",
+  "auth.sms-paid": "SMS (paid)",
   "auth.wa-body": "Tap the button to open WhatsApp with the message ready, then press Send. It's free. Send it from the WhatsApp on {phone}.",
   "auth.wa-body-2": "Tap the button — WhatsApp opens with the message ready. Press Send: that message is your verification, so no code comes back to type and this screen carries on by itself. It's free. Send it from the WhatsApp on {phone}.",
   "auth.wa-body-3": "Press Send in WhatsApp — this screen continues by itself.",

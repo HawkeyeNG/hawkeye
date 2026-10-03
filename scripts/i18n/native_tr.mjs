@@ -714,6 +714,7 @@ export default {
     "n.app.sign-in.title-your-password": "Kalmar Sirrinka",
     "n.app.sign-in.too-many-code-requests": "Buƙatun lamba sun yi yawa daga wannan hanyar sadarwa — jira ƴan mintuna.",
     "n.app.sign-in.too-many-wrong-codes": "Lambobin da ba daidai ba sun yi yawa — nemi sabuwa.",
+    "n.app.sign-in.first-time": "Karo na farko?",
     "n.app.sign-in.try-a-practice-run": "Gwada atisaye",
     "n.app.sign-in.use-a-different-number": "Yi amfani da wata lamba",
     "n.app.sign-in.use-at-least-8-characters": "Yi amfani da aƙalla haruffa 8.",

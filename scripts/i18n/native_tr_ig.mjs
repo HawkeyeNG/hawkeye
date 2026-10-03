@@ -713,6 +713,7 @@ export default {
   "n.app.sign-in.title-your-password": "Okwuntughe Gị",
   "n.app.sign-in.too-many-code-requests": "Arịrịọ koodu karịrị akarị site na netwọkụ a — chere nkeji ole na ole.",
   "n.app.sign-in.too-many-wrong-codes": "Koodu ezighi ezi karịrị akarị — rịọ nke ọhụrụ.",
+  "n.app.sign-in.first-time": "Nke mbụ?",
   "n.app.sign-in.try-a-practice-run": "Nwaa omume",
   "n.app.sign-in.use-a-different-number": "Jiri nọmba ọzọ",
   "n.app.sign-in.use-at-least-8-characters": "Jiri opekempe mkpụrụedemede 8.",

@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=198" />
+  <link rel="stylesheet" href="styles.css?v=199" />
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -77,8 +77,17 @@ async function api(path, opts = {}) {
     ...opts,
     headers: { 'content-type': 'application/json', authorization: 'Bearer ' + (localStorage.getItem('hawkeye_token') || ''), ...(opts.headers || {}) },
   });
-  if (res.status === 401) { location.replace('observe.html?intent=signin&next=my-groups.html'); throw new Error('signed out'); }
-  return { status: res.status, body: await res.json().catch(() => ({})) };
+  const body = await res.json().catch(() => ({}));
+  /* Only our server refusing the token ends the session, and the refused token
+     is DROPPED (as situation-room.html does): kept, observe.html read it as
+     signed in and sent the observer straight back here, to another 401 — a
+     loop of 8-9 page loads a second that never showed the sign-in form. */
+  if (window.HAWKEYE && window.HAWKEYE.authRejected ? window.HAWKEYE.authRejected(res.status, body) : res.status === 401) {
+    try { localStorage.removeItem('hawkeye_token'); } catch { /* storage blocked */ }
+    location.replace('observe.html?intent=signin&next=my-groups.html');
+    throw new Error('signed out');
+  }
+  return { status: res.status, body };
 }
 
 /* Painted by script, so every string goes through T() and the page REPAINTS on
@@ -97,7 +106,10 @@ document.addEventListener('hawkeye-lang', () => repaint());
 let GROUPS = [];
 
 async function load() {
-  const { body } = await api('/api/groups');
+  const { status, body } = await api('/api/groups');
+  // A 5xx or a proxy's HTML 502 is not "you have no groups": throw to the
+  // failure card below instead of telling a member they belong to nothing.
+  if (status !== 200) throw new Error('groups ' + status);
   GROUPS = (body && body.member) || [];
   repaint = render;
   render();

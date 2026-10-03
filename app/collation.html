@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=198">
+  <link rel="stylesheet" href="styles.css?v=199">
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -403,6 +403,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       setStepDone(3, true, n === 1
         ? T('collation.party-entered', '✔ {v0} party entered', { v0: n })
         : T('collation.parties-entered', '✔ {v0} parties entered', { v0: n }));
+      // Re-gate the button NOW: it reads stepDone[3], and nothing else re-ran
+      // updateSubmit() after this, so "Sign & submit" stayed disabled for good.
+      updateSubmit();
     });
 
     // The scanner warm-up lives in capture.js and is already called above.

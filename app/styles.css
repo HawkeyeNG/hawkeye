@@ -2019,9 +2019,12 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
    never paint for a returning observer. app.js applies the same state. */
 html.intent-signin #starter-card,
 html.intent-signin #signin-line,
-html.intent-signin #pw-opt,
-html.intent-signin #channel-pick { display: none !important; }
-html.intent-signin #pw-signin-wrap { display: block !important; }
+html.intent-signin:not(.pw-reset) #pw-opt,
+html.intent-signin:not(.pw-reset) #channel-pick { display: none !important; }
+html.intent-signin:not(.pw-reset) #pw-signin-wrap { display: block !important; }
+/* "Forgot your password?" (.pw-reset, app.js) hands those three back to their
+   hidden attributes: the route picker and the new-password box ARE the reset.
+   Without this the reset showed neither and could not be finished. */
 /* THE FLEX LAYOUT ONLY WHILE OPEN — and this is not a nicety.
    A <dialog> is display:none until showModal(); an unconditional `display: flex`
    here OVERRODE that, so the dialog rendered inline at the end of the page from

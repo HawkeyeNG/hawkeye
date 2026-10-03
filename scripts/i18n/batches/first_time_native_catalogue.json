@@ -1,10 +1,1 @@
-{
-  "auth.err.current-password-wrong": "Enter your current password — or sign in with a one-time code first to reset it.",
-  "auth.err.too-many-passwords": "Too many wrong passwords. Wait an hour, or sign in with a one-time code instead.",
-  "auth.err.wrong-password": "Wrong password. Forgot it? Sign in with a one-time code to reset it.",
-  "common.2026-inixien-llc-all-rights-reserved": "© 2026 IniXien, LLC. All rights reserved.",
-  "n.app.welcome.disclaimer": "Hawkeye is independent and nonpartisan. It does not declare results — all official results are announced by INEC.",
-  "n.app.welcome.point-photograph": "Photograph the result sheet where it was announced",
-  "n.app.welcome.point-signed": "Signed on your phone, chained on a public ledger",
-  "n.app.welcome.point-verified": "Verified when independent observers agree"
-}
+{ "n.app.sign-in.first-time": "First time?" }

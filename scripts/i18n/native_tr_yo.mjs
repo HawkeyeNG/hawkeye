@@ -713,6 +713,7 @@ export default {
   "n.app.sign-in.title-your-password": "Ọ̀rọ̀ Ìpamọ́ Rẹ",
   "n.app.sign-in.too-many-code-requests": "Ìbéèrè kóòdù ti pọ̀ jù láti nẹ́tíwọ́kì yìí — dúró fún ìṣẹ́jú díẹ̀.",
   "n.app.sign-in.too-many-wrong-codes": "Kóòdù tí kò tọ̀nà ti pọ̀ jù — béèrè fún tuntun.",
+  "n.app.sign-in.first-time": "Ìgbà àkọ́kọ́?",
   "n.app.sign-in.try-a-practice-run": "Gbìyànjú àdánwò",
   "n.app.sign-in.use-a-different-number": "Lo nọ́mbà mìíràn",
   "n.app.sign-in.use-at-least-8-characters": "Lo ó kéré tán àmì-ìkọ 8.",

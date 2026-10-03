@@ -108,3 +108,5 @@ docs/STORE-PROMO-TEXT.md
 tests/ui/audit-report.json
 tests/design-audit/node_modules/
 tests/design-audit/out/
+tests/design-audit/C:*
+tests/design-audit/**/lighthouse.*

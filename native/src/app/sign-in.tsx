@@ -2,14 +2,16 @@ import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   AppState,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   Platform,
   Pressable,
+  ScrollView,
   Text,
   TextInput,
   View,
@@ -171,6 +173,39 @@ export default function SignIn() {
   const [cooldown, setCooldown] = useState(0);
   const otpRef = useRef<TextInput>(null);
   /**
+   * KEYBOARD UP ON A SMALL PHONE (owner, 2026-10-03): the form scrolls, and
+   * when the keyboard opens (or the visible height changes under it) the view
+   * moves so that Send code sits just above the keyboard — but never so far
+   * that the field being typed in leaves the top. 320x568 and 375x667 phones.
+   */
+  const scrollRef = useRef<ScrollView>(null);
+  const contentRef = useRef<View>(null);
+  const sendRef = useRef<View>(null);
+  const viewH = useRef(0);
+  const keepInView = useCallback(() => {
+    const sv = scrollRef.current;
+    const content = contentRef.current;
+    const send = sendRef.current;
+    if (!sv || !content || !send || !viewH.current) return;
+    send.measureLayout(content, (_x, sy, _w, sh) => {
+      const place = (fieldTop: number | null) => {
+        let y = sy + sh + 16 - viewH.current; // Send code's bottom at the visible bottom
+        if (fieldTop !== null) y = Math.min(y, fieldTop - 12); // the field stays in sight
+        sv.scrollTo({ y: Math.max(0, y), animated: true });
+      };
+      const focused = TextInput.State.currentlyFocusedInput?.() as unknown as View | null;
+      if (focused && typeof focused.measureLayout === 'function') {
+        focused.measureLayout(content, (_fx, fy) => place(fy), () => place(null));
+      } else {
+        place(null);
+      }
+    }, () => {});
+  }, []);
+  useEffect(() => {
+    const sub = Keyboard.addListener('keyboardDidShow', () => setTimeout(keepInView, 60));
+    return () => sub.remove();
+  }, [keepInView]);
+  /**
    * The server CREATED this observer on the verify just made (/verify's isNew).
    * Only an explicit `true`: an older server sends nothing, and an existing
    * account signing up again is not a new observer.
@@ -212,8 +247,16 @@ export default function SignIn() {
    * and a 503 says so rather than anything being sent.
    */
   const freeWhatsapp = channel === 'whatsapp' && (!waPaid || (waOk && !waLimited));
-  /** Send code: a full number, and a channel unless an organisation code replaces the code. */
-  const sendBlocked = busy || phone.trim().length < 10 || (!withOrgCode && !channel);
+  /**
+   * Send code needs a full number, and a route unless an organisation code
+   * replaces the code. With no route it LOOKS off (sendLooksOff) but still
+   * takes a tap — which sends nothing and shows the one-line prompt
+   * (owner, 2026-10-03: the prompt only when it is needed, so the form fits
+   * with the keyboard up).
+   */
+  const sendBlocked = busy || phone.trim().length < 10;
+  const sendLooksOff = sendBlocked || (!withOrgCode && !channel);
+  const [needChoice, setNeedChoice] = useState(false);
   useEffect(() => {
     let alive = true;
     pendingInviteCode().then((c) => {
@@ -435,7 +478,11 @@ export default function SignIn() {
       return;
     }
     setInviteBad(false);
-    if (!channel) return; // Send code is disabled until a channel is picked
+    // No route yet: nothing is sent; the one-line prompt appears (needChoice).
+    if (!channel) {
+      setNeedChoice(true);
+      return;
+    }
     setTgLink(null);
     if (freeWhatsapp) {
       void startWa();
@@ -808,7 +855,9 @@ export default function SignIn() {
     purpose === 'signup'
       ? {
           title: i18nT('n.app.sign-in.create-your-account'),
-          body: i18nT('n.app.sign-in.enter-your-phone-number-we-send'),
+          // SHORT (owner, 2026-10-03): the form must fit with the keyboard up;
+          // the password is asked for on its own step.
+          body: i18nT('auth.signup-lede'),
         }
       : purpose === 'reset'
         ? {
@@ -873,7 +922,16 @@ export default function SignIn() {
           </Text>
         </View>
 
-        <View className="px-5 pt-6">
+        <ScrollView
+          ref={scrollRef}
+          keyboardShouldPersistTaps="handled"
+          contentContainerStyle={{ paddingBottom: 24 }}
+          onLayout={(e) => {
+            viewH.current = e.nativeEvent.layout.height;
+            if (Keyboard.isVisible()) keepInView();
+          }}
+        >
+        <View ref={contentRef} collapsable={false} className="px-5 pt-6">
           {step === 'password' ? (
             <>
               <SignedOutElsewhereNote />
@@ -999,7 +1057,10 @@ export default function SignIn() {
                 {CHANNELS.map((c) => (
                   <Pressable
                     key={c.key}
-                    onPress={() => setChannel(c.key)}
+                    onPress={() => {
+                      setChannel(c.key);
+                      setNeedChoice(false);
+                    }}
                     className={`rounded-full px-4 py-2 ${
                       channel === c.key ? 'bg-hawk-green' : 'bg-card'
                     }`}
@@ -1018,7 +1079,10 @@ export default function SignIn() {
                   free routes, labelled as the fallback. Never pre-selected. */}
               {smsOk && !withOrgCode ? (
                 <Pressable
-                  onPress={() => setChannel('sms')}
+                  onPress={() => {
+                    setChannel('sms');
+                    setNeedChoice(false);
+                  }}
                   accessibilityRole="radio"
                   accessibilityState={{ selected: channel === 'sms' }}
                   className={`mt-3 self-start rounded-full px-3 py-1.5 ${channel === 'sms' ? 'bg-hawk-green' : ''}`}
@@ -1031,8 +1095,8 @@ export default function SignIn() {
               {/* NO DEFAULT ROUTE (owner, 2026-10-02): Send code stays disabled,
                   and this line says why, until a chip is picked — or an
                   organisation code replaces the code. */}
-              {!withOrgCode && !channel ? (
-                <Text className="pt-2 text-sm text-muted">{i18nT('auth.choose-route')}</Text>
+              {needChoice && !withOrgCode && !channel ? (
+                <Text className="pt-2 text-sm text-warn-ink" accessibilityRole="alert">{i18nT('auth.choose-route')}</Text>
               ) : null}
               {/* D3: a reset done now, not during the election window (9-17 Jan,
                   when sessions are held open). Shown until 9 Jan 2027. */}
@@ -1045,7 +1109,7 @@ export default function SignIn() {
               {purpose === 'signup' ? (
                 <View className="pt-4">
                   <Text className="pb-1 text-sm font-semibold text-muted">
-                    {authT('n.auth.code-label')}
+                    {i18nT('auth.code-label-short')}
                   </Text>
                   <TextInput
                     className="rounded-2xl bg-card px-4 py-3 text-lg text-ink"
@@ -1059,12 +1123,12 @@ export default function SignIn() {
                       setInviteBad(false);
                     }}
                     editable={!busy}
-                    accessibilityLabel={authT('n.auth.code-label')}
+                    accessibilityLabel={i18nT('auth.code-label-short')}
                   />
                   <Text className="pt-1 text-xs text-muted">
                     {kind === 'invite' ? authT('n.auth.code-kind-invite')
                       : kind === 'org' ? authT('n.auth.code-kind-org')
-                      : authT('n.auth.code-hint')}
+                      : i18nT('auth.code-hint-short')}
                   </Text>
                   {inviteBad ? (
                     <Text className="pt-1 text-sm text-bad-ink" accessibilityRole="alert">
@@ -1076,11 +1140,13 @@ export default function SignIn() {
               {/* Disabled until a channel is picked (an organisation code
                   needs none). It used to fire with no chip, and the server
                   served that as a paid WhatsApp code (2026-10-02). */}
+              <View ref={sendRef} collapsable={false}>
               <Pressable
                 disabled={sendBlocked}
                 onPress={onRequest}
+                accessibilityState={{ disabled: sendLooksOff }}
                 className={`mt-5 items-center rounded-2xl py-4 ${
-                  sendBlocked ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
+                  sendLooksOff ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'
                 }`}
               >
                 {busy ? (
@@ -1094,6 +1160,7 @@ export default function SignIn() {
                   </Text>
                 )}
               </Pressable>
+              </View>
               <Pressable
                 className="mt-4 items-center"
                 onPress={() => {
@@ -1468,6 +1535,7 @@ export default function SignIn() {
             </Pressable>
           ) : null}
         </View>
+        </ScrollView>
       </KeyboardAvoidingView>
       <ConfirmSheet
         visible={orgConfirm}

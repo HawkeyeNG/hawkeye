@@ -30,11 +30,11 @@ const check = (label, got, want) => {
 };
 
 const RULES = {
-  'native Send code is disabled with no channel (unless an organisation code)': (s) =>
-    /const sendBlocked = busy \|\| phone\.trim\(\)\.length < 10 \|\| \(!withOrgCode && !channel\);/.test(s)
-    && /disabled=\{sendBlocked\}\s*\n\s*onPress=\{onRequest\}/.test(s),
+  'native Send code LOOKS off with no channel (unless an organisation code)': (s) =>
+    /const sendLooksOff = sendBlocked \|\| \(!withOrgCode && !channel\);/.test(s)
+    && /disabled=\{sendBlocked\}\s*\n\s*onPress=\{onRequest\}/.test(s) && /sendLooksOff \? 'bg-disabled'/.test(s),
   'onRequest and send() refuse to go without a channel (backstops)': (s) =>
-    /if \(!channel\) return; \/\/ Send code is disabled/.test(s) && /if \(!via\) \{\s*setStep\('request'\);\s*return;\s*\}/.test(s),
+    /if \(!channel\) \{\s*setNeedChoice\(true\);\s*return;\s*\}/.test(s) && /if \(!via\) \{\s*setStep\('request'\);\s*return;\s*\}/.test(s),
   'the wa-send pane offers the paid code only while waPaid': (s) =>
     /\{waPaid \? \(\s*<Pressable[^>]*onPress=\{\(\) => paidCode\('whatsapp'\)\}/.test(s),
   'paidCode() itself refuses WhatsApp without waPaid': (s) =>
@@ -46,10 +46,10 @@ const RULES = {
   'the switches come from the server (api.waRoutes)': (s) =>
     /api\.waRoutes\(\)\.then\(\(r\) => \{[\s\S]{0,120}setWaPaid\(r\?\.paid === true\)/.test(s),
   'no chip picked: a prompt says to choose (no default route)': (s) =>
-    /\{!withOrgCode && !channel \? \(\s*<Text[^>]*>\{i18nT\('auth\.choose-route'\)\}<\/Text>/.test(s),
+    /\{needChoice && !withOrgCode && !channel \? \(\s*<Text[^>]*>\{i18nT\('auth\.choose-route'\)\}<\/Text>/.test(s),
   'D2: SMS is not in the Telegram/WhatsApp row; it sits below, small, labelled as the fallback': (s) =>
     !/key: 'sms'/.test(s.slice(s.indexOf('const CHANNELS'), s.indexOf('const CHANNELS') + 400))
-    && /\{smsOk && !withOrgCode \? \(\s*<Pressable\s*onPress=\{\(\) => setChannel\('sms'\)\}[\s\S]{0,400}text-xs[\s\S]{0,120}SMS · \{i18nT\('auth\.sms-fallback'\)\}/.test(s),
+    && /\{smsOk && !withOrgCode \? \(\s*<Pressable\s*onPress=\{\(\) => \{\s*setChannel\('sms'\);[\s\S]{0,500}text-xs[\s\S]{0,120}SMS · \{i18nT\('auth\.sms-fallback'\)\}/.test(s),
   'D2: a phone that has a passkey leads with it (primary, above the password); otherwise it stays below': (s) =>
     /\{pkUsable && pkHere \? \(\s*<Pressable[\s\S]{0,300}bg-hawk-green/.test(s) && /\{pkUsable && !pkHere \? \(/.test(s)
     && s.indexOf('{pkUsable && pkHere ?') < s.indexOf("n.app.sign-in.your-phone-number-and-password-your"),
@@ -58,8 +58,8 @@ const RULES = {
     && /const NUDGE_RESETS = Date\.now\(\) < Date\.parse\('2027-01-09T00:00:00\+01:00'\);/.test(s),
 };
 const MUTANTS = {
-  'native Send code is disabled with no channel (unless an organisation code)': (s) => s.replace('|| (!withOrgCode && !channel);', ';'),
-  'onRequest and send() refuse to go without a channel (backstops)': (s) => s.replace("if (!channel) return; // Send code is disabled", '// gone'),
+  'native Send code LOOKS off with no channel (unless an organisation code)': (s) => s.replace('const sendLooksOff = sendBlocked || (!withOrgCode && !channel);', 'const sendLooksOff = sendBlocked;'),
+  'onRequest and send() refuse to go without a channel (backstops)': (s) => s.replace('      setNeedChoice(true);\n      return;\n', '      setNeedChoice(true);\n'),
   'the wa-send pane offers the paid code only while waPaid': (s) => s.replace('{waPaid ? (\n                    <Pressable', '{true ? (\n                    <Pressable'),
   'paidCode() itself refuses WhatsApp without waPaid': (s) => s.replace("if (via === 'whatsapp' && !waPaid) return;", ''),
   'a 503 from /wa-start falls back to the paid code only while waPaid': (s) => s.replace('if (waPaid) {\n          paidCode', 'if (true) {\n          paidCode'),

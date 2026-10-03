@@ -990,12 +990,47 @@ function syncChannelGate() {
   if (!btn) return;
   // No picker on screen (password sign-in sends no code, or an organisation
   // code replaces it) => nothing to gate.
-  if (!pick || pick.hidden) { btn.disabled = false; if (need) need.hidden = true; return; }
-  // NO DEFAULT ROUTE: disabled, with a one-line prompt, until one is picked.
+  if (!pick || pick.hidden) { btn.disabled = false; btn.removeAttribute('aria-disabled'); if (need) need.hidden = true; return; }
+  // NO DEFAULT ROUTE: Request OTP looks off until one is picked. It still takes
+  // a tap, which sends nothing and shows the one-line prompt (btn-auth below) —
+  // the prompt only when it is needed, so the form fits with the keyboard up.
   const none = !document.querySelector('input[name="otp-channel"]:checked');
-  btn.disabled = none;
-  if (need) need.hidden = !none;
+  btn.disabled = false;
+  btn.setAttribute('aria-disabled', String(none));
+  if (need && !none) need.hidden = true;
 }
+/* KEYBOARD UP ON A SMALL PHONE (owner, 2026-10-03): when the on-screen keyboard
+   shrinks the visible area while a field of the sign-in form has focus, scroll
+   just enough that Request OTP sits above the keyboard — never so far that the
+   focused field leaves the top. 320x568 and 375x667. */
+function keepAuthInView() {
+  const vv = window.visualViewport;
+  const btn = document.getElementById('btn-auth');
+  const card = document.getElementById('auth-card');
+  const field = document.activeElement;
+  if (!vv || !btn || !card) return;
+  // Room to scroll INTO: with the keypad up the page needs as much space below
+  // the form as the keypad covers, or the end of the page stops the scroll.
+  const keypad = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+  card.style.marginBottom = keypad > 80 && field && card.contains(field) ? `${keypad}px` : '';
+  if (!field || !card.contains(field) || btn.hidden) return;
+  const visibleBottom = vv.offsetTop + vv.height;
+  const over = btn.getBoundingClientRect().bottom + 12 - visibleBottom;
+  if (over <= 0) return;
+  const room = field.getBoundingClientRect().top - vv.offsetTop - 12;
+  const by = Math.min(over, Math.max(0, room));
+  if (by <= 0) return;
+  const scroller = document.getElementById('page-scroll');
+  if (scroller && scroller.scrollHeight > scroller.clientHeight) scroller.scrollBy(0, by);
+  else window.scrollBy(0, by);
+}
+if (window.visualViewport) window.visualViewport.addEventListener('resize', () => setTimeout(keepAuthInView, 50));
+document.addEventListener('focusin', (e) => { if (e.target && e.target.closest && e.target.closest('#auth-card')) setTimeout(keepAuthInView, 350); });
+// Leaving the form gives the room back.
+document.addEventListener('focusout', () => setTimeout(() => {
+  const card = document.getElementById('auth-card');
+  if (card && !card.contains(document.activeElement)) card.style.marginBottom = '';
+}, 300));
 // First paint too: the prompt belongs on the form before anything is touched.
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => syncChannelGate(), { once: true });
 else syncChannelGate();
@@ -1125,7 +1160,11 @@ $('btn-auth').onclick = async () => {
     const phone = input.value.trim();
     if (orgCodeTyped()) { await orgSignUp(phone); return; }
     const channel = pickedChannel();
-    if (!channel) return void hkAlert(T('auth.choose-route', 'Choose how to verify your number first.'));
+    if (!channel) {
+      // Nothing is sent: the prompt shows under the routes.
+      if ($('channel-need')) $('channel-need').hidden = false;
+      return;
+    }
     if (!inviteFieldOk()) return;
     // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
     // the code. Tried whenever paid codes are off too (the server decides: 503

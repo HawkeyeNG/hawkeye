@@ -2754,5 +2754,8 @@
   "situation-room.no-rooms-hint": "Láti bẹ̀rẹ̀ ìpolongo tuntun, tẹ Yàrá tuntun ní òkè ojú-ìwé.",
   "auth.choose-route": "Kọ́kọ́ yan bí o ṣe fẹ́ fìdí nọ́mbà rẹ múlẹ̀.",
   "auth.reset-before-9-jan": "Ṣe àtúntò èyíkéyìí ṣáájú 9 Oṣù Kínní. Láti 9 sí 17 Oṣù Kínní, o máa wà nínú àkọọ́lẹ̀ rẹ láìsí kóòdù.",
-  "auth.sms-fallback": "Kìkì bí Telegram àti WhatsApp kò bá ṣiṣẹ́"
+  "auth.sms-fallback": "Kìkì bí Telegram àti WhatsApp kò bá ṣiṣẹ́",
+  "auth.code-hint-short": "Láti ọ̀dọ̀ ọ̀rẹ́ tàbí ẹgbẹ́ rẹ.",
+  "auth.code-label-short": "Kóòdù ìpè tàbí ORG (àṣàyàn)",
+  "auth.signup-lede": "A ó fi kóòdù ránṣẹ́ láti fìdí nọ́mbà rẹ múlẹ̀."
 }

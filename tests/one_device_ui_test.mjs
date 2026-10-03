@@ -270,7 +270,7 @@ try {
       fields: [...document.querySelectorAll('#screen-register input[type="text"]')].filter((i) => !i.closest('[hidden]')).map((i) => i.id),
       label: document.querySelector('label[for="ref-input"]').textContent.trim(),
     }));
-    check('sign-up shows ONE optional code field', vis, { fields: ['ref-input'], label: 'Invite or organisation code (optional)' });
+    check('sign-up shows ONE optional code field', vis, { fields: ['ref-input'], label: 'Invite or ORG code (optional)' });
     check('empty: the hint, the channel picker, "Request OTP"', await kindLine(p), { hint: true, invite: false, org: false, picker: true, button: 'Request OTP' });
     await p.fill('#ref-input', 'h7k-mn3');
     check('a six-character code reads as an invite; the OTP path stays', await kindLine(p), { hint: false, invite: true, org: false, picker: true, button: 'Request OTP' });

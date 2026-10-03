@@ -1,6 +1,9 @@
 {
   "auth.choose-route": "Buru ụzọ họrọ otu ị ga-esi kwado nọmba gị.",
+  "auth.code-hint-short": "Site n'aka enyi ma ọ bụ otu gị.",
+  "auth.code-label-short": "Koodu òkù ma ọ bụ ORG (nhọrọ)",
   "auth.reset-before-9-jan": "Mee mgbanwe ọ bụla tupu 9 Jenụwarị. Site na 9 ruo 17 Jenụwarị ị ga-anọgide n'ime, na-enweghị mkpa koodu.",
+  "auth.signup-lede": "Anyị ga-ezite koodu iji kwado nọmba gị.",
   "auth.sms-fallback": "Naanị ma Telegram na WhatsApp arụghị ọrụ",
   "auth.wa-too-many-free": "Mgbalị karịrị akarị maka nọmba a. Chere otu awa, ma ọ bụ jiri Telegram kama.",
   "auth.wa-unavailable": "Ịbanye site na WhatsApp adịghị ugbu a. Jiri Telegram kama.",

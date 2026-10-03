@@ -2728,5 +2728,8 @@
   "situation-room.no-rooms-hint": "To start a new campaign, click New room in the header above.",
   "auth.choose-route": "Choose how to verify your number first.",
   "auth.reset-before-9-jan": "Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.",
-  "auth.sms-fallback": "Only if Telegram and WhatsApp don't work"
+  "auth.sms-fallback": "Only if Telegram and WhatsApp don't work",
+  "auth.code-hint-short": "From a friend or your group.",
+  "auth.code-label-short": "Invite or ORG code (optional)",
+  "auth.signup-lede": "We'll send a code to confirm your number."
 }

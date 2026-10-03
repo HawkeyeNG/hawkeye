@@ -2754,5 +2754,8 @@
   "situation-room.no-rooms-hint": "Iji malite mkpọsa ọhụrụ, pịa Ọnụ ụlọ ọhụrụ n’isi peeji a.",
   "auth.choose-route": "Buru ụzọ họrọ otu ị ga-esi kwado nọmba gị.",
   "auth.reset-before-9-jan": "Mee mgbanwe ọ bụla tupu 9 Jenụwarị. Site na 9 ruo 17 Jenụwarị ị ga-anọgide n'ime, na-enweghị mkpa koodu.",
-  "auth.sms-fallback": "Naanị ma Telegram na WhatsApp arụghị ọrụ"
+  "auth.sms-fallback": "Naanị ma Telegram na WhatsApp arụghị ọrụ",
+  "auth.code-hint-short": "Site n'aka enyi ma ọ bụ otu gị.",
+  "auth.code-label-short": "Koodu òkù ma ọ bụ ORG (nhọrọ)",
+  "auth.signup-lede": "Anyị ga-ezite koodu iji kwado nọmba gị."
 }

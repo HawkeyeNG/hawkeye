@@ -2755,5 +2755,8 @@
   "situation-room.no-rooms-hint": "Don fara sabon kamfen, danna Sabon ɗaki a saman shafin.",
   "auth.choose-route": "Da farko zaɓi yadda za ka tabbatar da lambarka.",
   "auth.reset-before-9-jan": "Yi duk wani sake saiti kafin 9 ga Janairu. Daga 9 zuwa 17 ga Janairu za ka ci gaba da kasancewa a ciki, ba tare da buƙatar lamba ba.",
-  "auth.sms-fallback": "Sai idan Telegram da WhatsApp ba su yi aiki ba"
+  "auth.sms-fallback": "Sai idan Telegram da WhatsApp ba su yi aiki ba",
+  "auth.code-hint-short": "Daga aboki ko ƙungiyarka.",
+  "auth.code-label-short": "Lambar gayyata ko ORG (na zaɓi)",
+  "auth.signup-lede": "Za mu aiko da lamba don tabbatar da lambarka."
 }

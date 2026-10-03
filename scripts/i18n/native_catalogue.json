@@ -1,6 +1,9 @@
 {
   "auth.choose-route": "Choose how to verify your number first.",
+  "auth.code-hint-short": "From a friend or your group.",
+  "auth.code-label-short": "Invite or ORG code (optional)",
   "auth.reset-before-9-jan": "Do any reset before 9 January. From 9 to 17 January you stay signed in, with no code needed.",
+  "auth.signup-lede": "We'll send a code to confirm your number.",
   "auth.sms-fallback": "Only if Telegram and WhatsApp don't work",
   "auth.wa-too-many-free": "Too many tries for this number. Wait an hour, or use Telegram instead.",
   "auth.wa-unavailable": "WhatsApp sign-in is not available right now. Use Telegram instead.",

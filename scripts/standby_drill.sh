@@ -39,6 +39,14 @@ back() {
 trap back EXIT
 
 say "pre-check"
+# WAIT FOR THE NETWORK. The 3 Oct 03:00 run woke the laptop and found WSL's DNS
+# not up yet ("Temporary failure in name resolution"), so it aborted. Give it
+# up to 15 minutes before giving up (still aborts safely, nothing flipped).
+for i in $(seq 1 30); do
+  getent hosts api.cloudflare.com >/dev/null 2>&1 && curl -s -o /dev/null --max-time 15 https://hawkeye.com.ng/api/health && break
+  [ "$i" = 30 ] && { say "network never came up — drill aborted, nothing flipped"; exit 1; }
+  sleep 30
+done
 scripts/standby_failover.sh status || { say "status failed — drill aborted, nothing flipped"; exit 1; }
 pre="$(health | host_of)"
 [ -n "$pre" ] && [ "$pre" != "oci-standby" ] || { say "primary not answering normally (host=$pre) — drill aborted"; exit 1; }

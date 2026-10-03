@@ -2775,5 +2775,12 @@
   "practice.sample-state": "Omume",
   "practice.sample-ward": "Ward Ihe Atụ",
   "common.cant-reach-hawkeye": "Enweghị ike iru Hawkeye — lelee njikọ gị.",
-  "common.try-again": "Nwaa ọzọ"
+  "common.try-again": "Nwaa ọzọ",
+  "menu.preferences": "Nhọrọ",
+  "observe.create-your-account": "Mepee Akaụntụ Gị",
+  "observe.send-code": "Zipu koodu",
+  "races.chip-all": "Niile",
+  "races.chip-completed": "Nke gwụchara",
+  "races.chip-ongoing": "Na-aga n'ihu",
+  "races.chip-upcoming": "Nke na-abịa"
 }

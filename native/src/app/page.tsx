@@ -131,10 +131,13 @@ export default function StaticPage() {
           screen's own richer variant of it. */}
       <View className="border-b border-line bg-surface px-4 pb-2 pt-2">
         <View className="flex-row items-center">
+          {/* 44pt target around the 30pt mark: 7pt padding a side, given back by
+              negative margins (right margin = the old mr-1 less 7), so the mark
+              and the title stay exactly where they were. Same rule as
+              ScreenHeader. */}
           <Pressable
             onPress={() => router.navigate('/(tabs)' as never)}
-            hitSlop={8}
-            className="mr-1"
+            style={{ padding: 7, marginVertical: -7, marginLeft: -7, marginRight: -3 }}
             accessibilityRole="button"
             accessibilityLabel={i18nT('nav.home')}
           >
@@ -146,11 +149,15 @@ export default function StaticPage() {
           {/* text-lg, up from the text-base it wore as a fade-in compact title:
               it is the page's only title now and has to carry that weight. Not
               ScreenHeader's text-xl, because this header also holds share and
-              close buttons and a row of jump chips. */}
+              close buttons and a row of jump chips.
+              TWO LINES, NOT AN ELLIPSIS: the Igbo titles of How, Guide and About
+              were cut off on one line. This row has no fixed height, and two
+              22pt lines (44) only just pass the 36pt buttons beside them; a
+              one-line title leaves the row exactly as tall as it was. */}
           <Text
-            numberOfLines={1}
+            numberOfLines={2}
             maxFontSizeMultiplier={1.2}
-            className="flex-1 px-3 text-lg font-bold text-ink"
+            className="flex-1 px-3 text-lg font-bold leading-[22px] text-ink"
           >
             {title}
           </Text>

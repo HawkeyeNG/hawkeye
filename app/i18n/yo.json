@@ -2775,5 +2775,12 @@
   "practice.sample-state": "Àdánwò",
   "practice.sample-ward": "Wọ́ọ̀dù Àpẹẹrẹ",
   "common.cant-reach-hawkeye": "A kò lè dé Hawkeye — ṣàyẹ̀wò ìsopọ̀ rẹ.",
-  "common.try-again": "Tún gbìyànjú"
+  "common.try-again": "Tún gbìyànjú",
+  "menu.preferences": "Àwọn Àṣàyàn",
+  "observe.create-your-account": "Ṣí Àkàǹtì Rẹ",
+  "observe.send-code": "Fi kóòdù ránṣẹ́",
+  "races.chip-all": "Gbogbo",
+  "races.chip-completed": "Tí ó parí",
+  "races.chip-ongoing": "Ń lọ lọ́wọ́",
+  "races.chip-upcoming": "Tí ń bọ̀"
 }

@@ -58,10 +58,10 @@
   // corner, one of them a bot and one a person, is a guessing game.
   const st = document.createElement('style');
   st.textContent = (noFab ? '' : '#hk-fab,#hk-panel{display:none!important}')
-    + '#hk-chat-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}'
+    + '#hk-chat-fab{position:fixed;right:18px;bottom:max(18px,var(--fab-dock,0px));transition:bottom .18s ease;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}'
     + '#hk-chat-fab:hover{filter:brightness(1.08)}#hk-chat-fab:focus-visible{outline:3px solid var(--gold,#f5b301);outline-offset:2px}'
     // Above the app's tab bar, exactly where #hk-fab sits (styles.css).
-    + 'body.has-tabbar #hk-chat-fab{bottom:calc(78px + env(safe-area-inset-bottom))}'
+    + 'body.has-tabbar #hk-chat-fab{bottom:max(calc(78px + env(safe-area-inset-bottom)),var(--fab-dock,0px))}'
     // On a phone Intercom's messenger is full-screen from y=0. Lite draws under
     // the status bar (viewport-fit=cover), so its header spilled under the clock
     // and notch, and its composer under the home indicator. Inset it by the safe
@@ -76,7 +76,7 @@
   fab.setAttribute('data-i18n-attr', 'aria-label:common.chat-with-us');
   fab.setAttribute('aria-label', tr('common.chat-with-us', 'Chat with us'));
   fab.innerHTML = '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.4 8.4 0 0 1-8.5 8.4 9 9 0 0 1-3.8-.8L3 21l1.9-4.6A8.2 8.2 0 0 1 4 11.5 8.4 8.4 0 0 1 12.5 3 8.4 8.4 0 0 1 21 11.5z"/></svg>';
-  if (!noFab) document.body.appendChild(fab);
+  if (!noFab) { document.body.appendChild(fab); document.body.classList.add('has-fab'); }
   let open = false;
 
   let loading = null;

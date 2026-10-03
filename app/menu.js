@@ -147,6 +147,32 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   const panel = document.getElementById('menu-panel');
   const btn = document.querySelector('.menu-btn');
 
+  /* BACK CLOSES THE PHONE MENU (design audit W1). On a phone the ☰ menu is a
+     full-screen sheet, and Android's Back left the PAGE instead of closing it.
+     Opening it pushes one history entry; Back pops it and closes the sheet;
+     closing it any other way (☰/×, Escape, a tap outside) takes that entry
+     back off so the history stays as it was. */
+  if (panel) {
+    const phone = window.matchMedia('(max-width: 640px)');
+    let pushed = false;
+    new MutationObserver(() => {
+      if (!panel.hidden && phone.matches && !pushed) {
+        try { history.pushState({ hkMenu: 1 }, ''); pushed = true; } catch (e) { /* sandboxed: Back just leaves */ }
+      } else if (panel.hidden && pushed) {
+        pushed = false;
+        if (history.state && history.state.hkMenu) history.back();
+      }
+    }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+    addEventListener('popstate', () => {
+      if (!pushed) return;
+      pushed = false;
+      if (!panel.hidden) {
+        panel.hidden = true;
+        if (btn) btn.setAttribute('aria-expanded', 'false');
+      }
+    });
+  }
+
   // Desktop: a horizontal quick-nav of primary links (the ☰ still holds the full
   // list). Built from the panel so page HTML needs no changes. CSS shows it ≥900px.
   //
@@ -698,6 +724,47 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     themeToggle.parentNode.insertBefore(lb, themeToggle);
   }
 
+  /**
+   * PREFERENCES MOVE INTO THE MENU ON A NARROW PHONE (design audit X6).
+   *
+   * At 360px the website header held the mark, the page title, Sign in or the
+   * bell, the language code, the theme toggle and ☰ — so the title was cut to
+   * "Leaderb…" on 26 of 44 pages. Below 400px styles.css hides the language and
+   * theme buttons from the header and this row shows at the top of the menu
+   * instead, as native keeps them under More → Preferences. The buttons here
+   * press the (hidden) header controls, so there is one implementation of each.
+   * Website only: the app shell's header already carries fewer controls.
+   */
+  if (panel && !SHELL && themeToggle && !panel.querySelector('.menu-prefs')) {
+    const box = document.createElement('div');
+    box.className = 'menu-prefs';
+    const head = document.createElement('div');
+    head.className = 'menu-group';
+    i18nSet(head, 'menu.preferences', 'Preferences');
+    const row = document.createElement('div');
+    row.className = 'menu-pref-row';
+    const langB = document.createElement('button');
+    langB.type = 'button';
+    langB.className = 'menu-pref';
+    const themeB = document.createElement('button');
+    themeB.type = 'button';
+    themeB.className = 'menu-pref';
+    const paintPrefs = () => {
+      const code = ((window.HawkeyeI18n && window.HawkeyeI18n.current) || 'en').toUpperCase();
+      langB.textContent = i18nT('lang.current', 'Language') + ': ' + code;
+      themeB.textContent = (document.documentElement.dataset.theme || 'dark') === 'dark'
+        ? i18nT('nav.switch-to-light-mode', 'Switch to light mode')
+        : i18nT('nav.switch-to-dark-mode', 'Switch to dark mode');
+    };
+    langB.addEventListener('click', () => { const h = document.querySelector('.gov-header .lang-btn:not(.auth-lang)'); if (h) h.click(); setTimeout(paintPrefs, 0); });
+    themeB.addEventListener('click', () => { themeToggle.click(); paintPrefs(); });
+    document.addEventListener('hawkeye-lang', paintPrefs);
+    paintPrefs();
+    row.append(langB, themeB);
+    box.append(head, row);
+    panel.insertBefore(box, panel.firstChild);
+  }
+
   /* THE THEME TOGGLE IS NOT IN THE MENU. It used to add a row here on shell
      pages whose header has no toggle, but the row rendered as unstyled text
      that was invisible against the dark panel, and a second control for a
@@ -918,7 +985,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // The full-screen phone menu starts right under the status bar (styles.css),
     // so nothing here measures the header; opening it just un-hides the header.
     if (panel) new MutationObserver(() => {
-      if (!panel.hidden) show();
+      // Re-measured on open: the website's sheet now starts under the header
+      // row (styles.css), whose height changes when a long title wraps.
+      if (!panel.hidden) { show(); publishChromeVars(); }
     }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
   })();
 
@@ -1088,6 +1157,13 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     };
     const more = bar.querySelector('.gov-disc-more');
     more.onclick = () => openDisc();
+    // THE WHOLE BAR IS THE TARGET (design audit X7): "Details ›" alone was a
+    // 50x15 tap. A link inside the notice (INEC's site) still goes where it says.
+    bar.classList.add('is-tappable');
+    bar.addEventListener('click', (e) => {
+      if (e.target.closest('a') || e.target.closest('.gov-disc-more')) return;
+      openDisc();
+    });
     // A <span role="button"> gets no key handling for free, unlike the <button>
     // it replaced. Enter and Space are what a button responds to.
     more.onkeydown = (e) => {
@@ -1756,8 +1832,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     if (!document.getElementById('social-row-css')) {
       const st = document.createElement('style');
       st.id = 'social-row-css';
-      st.textContent = '.gov-footer .social-row{display:flex;gap:12px;justify-content:center;margin:0 0 14px}'
-        + '.gov-footer .social-row a{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;border-radius:50%;border:1px solid var(--border,#dde4de);color:var(--muted,#5b6b62);margin:0;transition:color .15s,border-color .15s}'
+      // 44px circles (were 38: under a thumb's 44, design audit X7); the gap
+      // shrinks by the same 6px so the row is as wide as before.
+      st.textContent = '.gov-footer .social-row{display:flex;gap:6px;justify-content:center;margin:0 0 14px}'
+        + '.gov-footer .social-row a{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:50%;border:1px solid var(--border,#dde4de);color:var(--muted,#5b6b62);margin:0;transition:color .15s,border-color .15s}'
         + '.gov-footer .social-row a:hover{color:var(--green,#004225);border-color:var(--green,#004225)}';
       document.head.appendChild(st);
     }
@@ -2019,11 +2097,15 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // The website keeps its placement.
   if (window.HAWKEYE && window.HAWKEYE.native
     && /\/(practice|collation|incidents|certificate|verify-cert)\.html$/.test(location.pathname)) return;
+  // NOT ON PROFILE, anywhere (design audit X2): a column of settings rows, where
+  // the bubble's corner landed on the "Save report media" switch and, at the
+  // end, on Delete My Account. Native hides it there too (ask-fab.tsx HIDDEN).
+  if (/\/profile\.html$/.test(location.pathname)) return;
   fetch('/api/assistant/health').then((r) => r.json()).then((h) => { if (h && h.enabled) mount(); }).catch(() => {});
 
   function mount() {
     const css = `
-    #hk-fab{position:fixed;right:18px;bottom:18px;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
+    #hk-fab{position:fixed;right:18px;bottom:max(18px,var(--fab-dock,0px));transition:bottom .18s ease;z-index:98;width:56px;height:56px;margin:0;padding:0;border-radius:50%;border:none;cursor:pointer;background:var(--green,#004225);color:#fff;font-size:22px;box-shadow:0 8px 24px rgba(0,0,0,.25);display:flex;align-items:center;justify-content:center}
     /* z-index 110, NOT 1200. At 1200 this button floated above EVERY modal in
        the app — the report sheet (120), the tour (130), the refusal modal (140)
        and the menu panel (80). With the tour open it was the only thing on
@@ -2074,6 +2156,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far"'
       + ' data-i18n-attr="placeholder:assistant.placeholder" /><button data-i18n="assistant.ask">Ask</button></form>';
     document.body.append(fab, panel);
+    // The page reserves the bubble's height at its end (styles.css body.has-fab),
+    // so the last button or footer link can scroll clear of it (audit X2).
+    document.body.classList.add('has-fab');
     // Mounted AFTER the page was translated (it waits on /api/assistant/health),
     // so its data-i18n labels — title, note, placeholder, Ask — stayed English
     // in Hausa until a language change. Translate them now.
@@ -2323,6 +2408,39 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       return true;
     } catch (e) { return false; }
   };
+})();
+
+/**
+ * THE CHAT BUBBLES DOCK ABOVE A PINNED ACTION BAR (design audit X2).
+ *
+ * The bubble sits 18px from the bottom-right corner; a race page pins its own
+ * "Report from your unit / Live results" bar to the bottom of the screen
+ * (race.css .race-cta-pinned, sticky), so the bubble covered the right-hand
+ * button for as long as the bar was stuck. While such a bar (or anything marked
+ * [data-fab-dock]) sits at the foot of the screen, --fab-dock lifts both
+ * bubbles to clear it; #hk-fab / #hk-chat-fab use max(their own bottom, it).
+ */
+(function fabDock() {
+  const root = document.documentElement;
+  let last = '', queued = false;
+  const measure = () => {
+    queued = false;
+    const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+    let need = 0;
+    document.querySelectorAll('.race-cta-pinned, [data-fab-dock]').forEach((el) => {
+      if (!el.getClientRects().length) return;
+      const r = el.getBoundingClientRect();
+      // Only a bar that is actually down at the foot of the screen.
+      if (r.height && r.top < vh && r.bottom > vh - 140) need = Math.max(need, Math.round(vh - r.top + 10));
+    });
+    const v = need ? need + 'px' : '';
+    if (v !== last) { last = v; if (v) root.style.setProperty('--fab-dock', v); else root.style.removeProperty('--fab-dock'); }
+  };
+  const later = () => { if (!queued) { queued = true; requestAnimationFrame(measure); } };
+  addEventListener('scroll', later, { passive: true, capture: true });   // capture: Lite's pane scroll does not bubble
+  addEventListener('resize', later);
+  if (window.MutationObserver) new MutationObserver(later).observe(document.documentElement, { childList: true, subtree: true });
+  later();
 })();
 
 /**

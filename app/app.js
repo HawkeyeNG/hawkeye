@@ -784,7 +784,7 @@ function syncOrgMode() {
   if (IS_SIGNIN || authMode !== 'phone' || !$('ref-input')) return;
   const on = orgCodeTyped();
   if ($('channel-pick')) $('channel-pick').hidden = on;   // nothing is sent with a code
-  $('btn-auth').textContent = on ? T('auth.org-create-account', 'Create account') : T('observe.request-otp', 'Request OTP');
+  $('btn-auth').textContent = on ? T('auth.org-create-account', 'Create account') : T('observe.send-code', 'Send Code');
   syncChannelGate();
 }
 const ORG_ERRORS = {
@@ -795,12 +795,42 @@ const ORG_ERRORS = {
   org_code_number_taken: ['auth.org-code-number-taken', 'An organisation code can only create a new account, and this code is now used up. If this number already has an account, sign in with a one-time code. If you deleted your account, signing in that way restores it.'],
   too_many_requests: ['auth.org-code-too-many', 'Too many attempts from this network. Wait an hour and try again.'],
 };
+/**
+ * SIGN-UP AND SIGN-IN ERRORS SIT UNDER THE FIELD (design audit X4).
+ *
+ * A mistyped number brought up a blocking dialog with OK, hiding the form the
+ * observer then had to correct. Native says it in a line below the form; here
+ * the line moves to just under the field it is about (the number, the code or
+ * the password), the field is marked invalid and focused, and typing clears it.
+ * hkAlert stays the fallback for a page without the line.
+ */
+function authErr(msg, field) {
+  const p = $('auth-err');
+  if (!p) return void hkAlert(msg);
+  const at = field || $('auth-input');
+  if (at && at.parentNode && p.previousElementSibling !== at) at.insertAdjacentElement('afterend', p);
+  p.textContent = msg;
+  p.hidden = false;
+  document.querySelectorAll('#auth-card [aria-invalid="true"]').forEach((el) => el.removeAttribute('aria-invalid'));
+  if (at) {
+    at.setAttribute('aria-invalid', 'true');
+    at.setAttribute('aria-describedby', 'auth-err');
+    try { at.focus(); } catch (e) { /* not focusable */ }
+  }
+}
+function clearAuthErr() {
+  const p = $('auth-err');
+  if (p && !p.hidden) { p.hidden = true; p.textContent = ''; }
+  document.querySelectorAll('#auth-card [aria-invalid="true"]').forEach((el) => el.removeAttribute('aria-invalid'));
+}
+['auth-input', 'pw-opt-input', 'pw-signin-input'].forEach((id) => { const el = $(id); if (el) el.addEventListener('input', clearAuthErr); });
+
 async function orgSignUp(phone) {
   const code = typedOrgCode($('ref-input').value);
   if (!code) { if ($('ref-err')) $('ref-err').hidden = false; $('ref-input').focus(); return; }
-  if (!phone) return void hkAlert(T('auth.enter-your-phone-number', 'Enter your phone number.'));
+  if (!phone) return void authErr(T('auth.enter-your-phone-number', 'Enter your phone number.'));
   const newPw = $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (newPw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
+  if (newPw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
   // No code comes back to prove the number, so the number is the one thing to
   // get right: the code is tied to it for good. Native's sheet uses the same
   // two answers (native sign-in.tsx, n.auth.org-confirm-yes / -no).
@@ -817,7 +847,7 @@ async function orgSignUp(phone) {
   });
   if (status !== 200) {
     const m = ORG_ERRORS[body && body.error];
-    return void hkAlert(m ? T(m[0], m[1]) : explain(body || {}));
+    return void authErr(m ? T(m[0], m[1]) : explain(body || {}));
   }
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
@@ -892,6 +922,7 @@ function afterVerified(isNew) {
 }
 
 function resetAuthPane() {
+  clearAuthErr();
   // Leaving a WhatsApp send-us-the-code wait: that code stops working.
   waStop(true);
   showWaPane(false);
@@ -904,7 +935,7 @@ function resetAuthPane() {
   input.inputMode = 'tel';
   // The OTP step retitles this to "Enter OTP"; a new number wants its own label back.
   if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.nigerian-mobile-number', 'Nigerian Mobile Number');
-  $('btn-auth').textContent = T('observe.request-otp', 'Request OTP');
+  $('btn-auth').textContent = T('observe.send-code', 'Send Code');
   $('otp-hint').textContent = '';
   $('auth-reset').hidden = true;
   if ($('otp-resend')) $('otp-resend').hidden = true;
@@ -946,7 +977,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   if (!toPw) $('pw-signin-input').value = '';
   if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
   syncChannelGate();
-  $('btn-auth').textContent = toPw ? T('observe.sign-in', 'Sign In') : T('observe.request-otp', 'Request OTP');
+  $('btn-auth').textContent = toPw ? T('observe.sign-in', 'Sign In') : T('observe.send-code', 'Send Code');
   $('pw-link').textContent = toPw
     ? T('observe.forgot-your-password', 'Forgot your password?')
     : T('observe.sign-in-with-password-instead', 'Sign in with your password instead');
@@ -1191,12 +1222,12 @@ async function switchToFreeWa() {
   if (pw.length < 8) {
     if ($('pw-opt')) $('pw-opt').hidden = false;
     if ($('pw-opt-input')) $('pw-opt-input').focus();
-    return void hkAlert(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'));
+    return void authErr(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'), $('pw-opt-input'));
   }
   try {
-    if (!(await startWaSend(pendingPhone, pw))) hkAlert(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
+    if (!(await startWaSend(pendingPhone, pw))) authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
   } catch {
-    hkAlert(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
+    authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
   }
 }
 
@@ -1247,18 +1278,18 @@ $('btn-auth').onclick = async () => {
         // sign-in, because the sign-in completes by itself when the message lands.
         $('pw-opt').hidden = false;
         $('pw-opt-input').focus();
-        return void hkAlert(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'));
+        return void authErr(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'), $('pw-opt-input'));
       }
-      if (pw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
+      if (pw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
       if (await startWaSend(phone, pw)) return;
-      if (!WA_PAID) return void hkAlert(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
+      if (!WA_PAID) return void authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
     }
     const { status, body } = await api('/api/observers/register', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ phone, channel, lang: chosenLang() }),
     });
-    if (status !== 200) return void hkAlert(explain(body));
+    if (status !== 200) return void authErr(explain(body));
     enterOtpMode(phone, channel, body);
     return;
   }
@@ -1268,12 +1299,12 @@ $('btn-auth').onclick = async () => {
   // (authMode 'password') sets nothing; it uses the existing password.
   const settingPw = authMode !== 'password';
   const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (settingPw && newPw.length < 8) return void hkAlert(T('auth.password-too-short', 'Your password must be at least 8 characters.'));
+  if (settingPw && newPw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
   if (authMode !== 'password' && !inviteFieldOk()) return;
 
   if (authMode === 'password') {
-    if (!input.value.trim()) return void hkAlert(T('auth.enter-your-phone-number', 'Enter your phone number.'));
-    if (!$('pw-signin-input').value) return void hkAlert(T('auth.enter-your-password', 'Enter your password.'));
+    if (!input.value.trim()) return void authErr(T('auth.enter-your-phone-number', 'Enter your phone number.'));
+    if (!$('pw-signin-input').value) return void authErr(T('auth.enter-your-password', 'Enter your password.'), $('pw-signin-input'));
   }
 
   const pair = await ensureKeys();
@@ -1292,7 +1323,7 @@ $('btn-auth').onclick = async () => {
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   });
-  if (status !== 200) return void hkAlert(authMode === 'password' ? explainLogin(body) : explain(body));
+  if (status !== 200) return void authErr(authMode === 'password' ? explainLogin(body) : explain(body));
   localStorage.setItem('hawkeye_token', body.token);
   clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
@@ -1314,7 +1345,7 @@ $('btn-auth').onclick = async () => {
   offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
 
   } catch {
-    hkAlert(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
+    authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
   } finally {
     $('btn-auth').disabled = false;
   }
@@ -1406,12 +1437,12 @@ async function startWaSend(phone, newPw) {
   $('otp-hint').textContent = '';
   if (status === 503) { WA_INBOUND = false; return false; }
   if (status === 429) {
-    hkAlert(WA_PAID
+    authErr(WA_PAID
       ? T('auth.wa-too-many', 'Too many tries for this number. Wait an hour, or get a code on WhatsApp instead.')
       : T('auth.wa-too-many-free', 'Too many tries for this number. Wait an hour, or use Telegram instead.'));
     return true;
   }
-  if (status !== 200) { hkAlert(explain(body)); return true; }
+  if (status !== 200) { authErr(explain(body)); return true; }
   pendingPhone = phone;
   pendingChannel = 'whatsapp';
   authMode = 'wa';
@@ -1514,7 +1545,7 @@ async function waFallback(channel) {
     if (status !== 200) {
       $('otp-hint').textContent = '';
       resetAuthPane();
-      return void hkAlert(explain(body));
+      return void authErr(explain(body));
     }
     enterOtpMode(phone, channel, body);
   } catch {
@@ -3432,7 +3463,7 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
             ? T('observe.sign-in', 'Sign In')
             : orgCodeTyped()
               ? T('auth.org-create-account', 'Create account')
-              : T('observe.request-otp', 'Request OTP');
+              : T('observe.send-code', 'Send Code');
       }
       // Waiting on a WhatsApp code: the mode painters above re-showed the
       // sign-up fields, so hide them again and repaint the panel's own lines.

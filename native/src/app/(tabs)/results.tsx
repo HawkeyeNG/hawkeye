@@ -1458,7 +1458,7 @@ export default function Results() {
                   : i18nT('n.app.tabs.results.choose-an-election-type')}
           </Text>
           {nothingChosen ? null : (
-            <Text className="text-xs font-bold text-hawk-leaf">{choosing ? i18nT('n.common.cancel') : i18nT('n.common.change')}</Text>
+            <Text className="text-xs font-bold text-good-ink">{choosing ? i18nT('n.common.cancel') : i18nT('n.common.change')}</Text>
           )}
         </Pressable>
         {/* Deliberately no longer opens with `contest.election` ("Osun State

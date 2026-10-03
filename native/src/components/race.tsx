@@ -68,6 +68,34 @@ export function PartyMark({
   );
 }
 
+/**
+ * A party code in INK beside a small dot of the party's colour.
+ *
+ * PARTY COLOURS ARE NEVER TEXT COLOURS. Several brand colours are near-black or
+ * deep blue — AA #3e2723, APM #283593, NNPP #1565c0 — and as text on the dark
+ * card they were unreadable (design audit Oct 2026, X5). The dot keeps the
+ * colour identity; the letters stay readable in both themes. Where a party
+ * EMBLEM (PartyMark) sits directly beside the code, the emblem is the marker
+ * and the code is plain ink with no second dot.
+ */
+export function PartyCode({
+  party,
+  label,
+  textClassName = 'text-[11px] font-semibold',
+}: {
+  party: string;
+  /** What to print, when it is not the bare code (partyName, "APC · inc"). */
+  label?: string;
+  textClassName?: string;
+}) {
+  return (
+    <View className="flex-row items-center">
+      <View className="h-2 w-2 rounded-full" style={{ backgroundColor: partyColor(party) }} />
+      <Text className={`pl-1 text-ink ${textClassName}`}>{label ?? party}</Text>
+    </View>
+  );
+}
+
 function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, string> }) {
   return (
     <View
@@ -94,9 +122,7 @@ function CandidateCard({ c, logos }: { c: Candidate; logos: Record<string, strin
         <View className="flex-1 pl-3">
           <View className="flex-row items-center">
             <PartyMark party={c.party} logos={logos} size={14} />
-            <Text className="pl-1 text-[11px] font-bold" style={{ color: partyColor(c.party) }}>
-              {c.party}
-            </Text>
+            <Text className="pl-1 text-[11px] font-bold text-ink">{c.party}</Text>
             {c.incumbent ? (
               <View className="ml-2 rounded-full bg-surface px-2 py-0.5">
                 <Text className="text-[9px] font-bold text-good-ink">{i18nT('race.incumbent').toUpperCase()}</Text>
@@ -405,10 +431,10 @@ export function RaceView({
                     <Text className="text-sm text-ink">{c.name}</Text>
                     {c.meta ? <Text className="text-[11px] text-muted">{c.meta}</Text> : null}
                   </View>
-                  <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
-                    {c.party}
-                    {!c.meta && c.incumbent ? ' · inc' : ''}
-                  </Text>
+                  <PartyCode
+                    party={c.party}
+                    label={`${c.party}${!c.meta && c.incumbent ? ' · inc' : ''}`}
+                  />
                   {/* Only when this party has votes. A "0" against a name reads
                       as "nobody voted for them", which is a different and
                       wrong claim while reports are still arriving. */}
@@ -451,10 +477,7 @@ export function RaceView({
               >
                 <PartyMark party={c.party} logos={logos} />
                 <Text className="flex-1 pl-3 text-sm text-ink">{c.name}</Text>
-                <Text className="text-[11px] font-semibold" style={{ color: partyColor(c.party) }}>
-                  {c.party}
-                  {c.incumbent ? ' · inc' : ''}
-                </Text>
+                <PartyCode party={c.party} label={`${c.party}${c.incumbent ? ' · inc' : ''}`} />
               </View>
             ))}
           </View>
@@ -479,9 +502,7 @@ export function RaceView({
                   <Text className="text-sm text-ink">{m.name}</Text>
                   {m.meta ? <Text className="text-[11px] text-muted">{m.meta}</Text> : null}
                 </View>
-                <Text className="text-[11px] font-semibold" style={{ color: partyColor(m.party) }}>
-                  {m.party}
-                </Text>
+                <PartyCode party={m.party} />
               </View>
             ))}
           </View>
@@ -523,9 +544,7 @@ export function RaceView({
               </Text>
               <View className="flex-row items-center" style={{ width: 120 }}>
                 <PartyMark party={c.party} logos={logos} size={14} />
-                <Text className="pl-1 text-xs font-bold" style={{ color: partyColor(c.party) }}>
-                  {c.party}
-                </Text>
+                <Text className="pl-1 text-xs font-bold text-ink">{c.party}</Text>
               </View>
               {[c.home, c.bids, c.status].map((v, j) => (
                 <Text key={j} className="pr-2 text-xs text-muted" style={{ width: 120 }}>

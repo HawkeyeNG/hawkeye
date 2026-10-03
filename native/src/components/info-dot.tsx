@@ -54,9 +54,11 @@ export function InfoDot({
         accessibilityRole="button"
         accessibilityLabel={title ? i18nT('n.components.info-dot.more-information', { v0: title }) : 'More information'}
         // Padding rather than size: keeps the tap target honest without pushing
-        // the line it sits on around.
-        hitSlop={10}
-        className="px-1"
+        // the line it sits on around. 12pt a side makes the box 44x44 around
+        // the 20pt dot; the negative margins hand all but the old px-1 back, so
+        // its footprint in the row is still 28x20 (design audit Oct 2026, X7 —
+        // hitSlop alone measured 28x20).
+        style={{ padding: 12, marginHorizontal: -8, marginVertical: -12 }}
       >
         <View
           className="h-5 w-5 items-center justify-center rounded-full border"

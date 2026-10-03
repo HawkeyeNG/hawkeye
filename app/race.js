@@ -485,7 +485,14 @@
   function mountRace(main, race, LOGOS, opts) {
     opts = opts || {};
     LOGOS = LOGOS || {};
-    if (!race) { main.innerHTML = '<p class="race-absence">' + T('race.race-data-unavailable', 'Race data unavailable.') + '</p>'; return; }
+    if (!race) {
+      // A way out, not a dead end (design audit X9): most often this is a page
+      // that could not fetch its data, and a reload is the fix.
+      main.innerHTML = '<div class="hk-offline" role="status"><span>' + T('race.race-data-unavailable', 'Race data unavailable.')
+        + '</span><button type="button">' + T('common.try-again', 'Try again') + '</button></div>';
+      main.querySelector('button').onclick = () => location.reload();
+      return;
+    }
 
     /**
      * NOTHING FROM THE DATA GOES INSIDE AN INLINE HANDLER.
@@ -769,7 +776,7 @@
     parts.push(`<div class="race-compare"><table><thead>
       <tr><th>${T('race.candidate', 'Candidate')}</th><th>${T('race.party', 'Party')}</th><th>${T('race.home-base', 'Home base')}</th><th>${T('race.bid', 'Bid')}</th><th>${T('race.status', 'Status')}</th></tr></thead><tbody>${
       race.candidates.map((c) => `<tr><td><strong>${esc(c.name)}</strong></td>
-        <td>${flagInline(c.party)}<span style="font-weight:700;color:${color(c.party)}">${esc(c.party)}</span></td>
+        <td>${flagInline(c.party) || `<span class="pdot" style="background:${color(c.party)}"></span>`}<span style="font-weight:700">${esc(c.party)}</span></td>
         <td>${esc(c.home || '—')}</td><td>${esc(c.bids || '—')}</td><td>${esc(c.status || '—')}</td></tr>`).join('')}</tbody></table></div>`);
     }
 

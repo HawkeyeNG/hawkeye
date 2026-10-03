@@ -1313,7 +1313,7 @@ export default function ReportIncident() {
             <View key={s} className="mr-1 flex-1">
               <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
               <Text
-                className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}
+                className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-good-ink' : 'text-faint'}`}
               >
                 {i === 0 ? i18nT('n.step.what-happened') : i18nT('n.step.where')}
               </Text>
@@ -1699,14 +1699,14 @@ export default function ReportIncident() {
                     onPress={() => setCamera(true)}
                   >
                     <Feather name="camera" size={20} color={BRAND.leaf} />
-                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">{i18nT('n.app.report.incident.camera')}</Text>
+                    <Text className="pt-1 text-[10px] font-semibold text-good-ink">{i18nT('n.app.report.incident.camera')}</Text>
                   </Pressable>
                   <Pressable
                     className="mb-2 h-[76px] w-[76px] items-center justify-center rounded-xl border-2 border-dashed border-hawk-leaf bg-card"
                     onPress={pickFromLibrary}
                   >
                     <Feather name="image" size={20} color={BRAND.leaf} />
-                    <Text className="pt-1 text-[10px] font-semibold text-hawk-leaf">{i18nT('n.app.report.incident.upload')}</Text>
+                    <Text className="pt-1 text-[10px] font-semibold text-good-ink">{i18nT('n.app.report.incident.upload')}</Text>
                   </Pressable>
                 </>
               ) : null}

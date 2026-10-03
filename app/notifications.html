@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=196" />
+  <link rel="stylesheet" href="styles.css?v=197" />
   <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -39,18 +39,23 @@
      * its leftmost member may carry the auto margin, so the language button
      * (a .theme-btn) gives its own up while the actions are showing.
      */
-    .hdr-actions { display: flex; align-items: center; gap: 8px; margin: 0 10px 0 auto; flex: none; }
+    /* gap 0 + margin 2: each action is a 44px box drawn at 36 (inset 4), so the
+       drawn squares keep the 8px between them and the 10px before the next control. */
+    .hdr-actions { display: flex; align-items: center; gap: 0; margin: 0 2px 0 auto; flex: none; }
     .hdr-actions[hidden] { display: none; }
     .hdr-actions:not([hidden]) ~ button.theme-btn { margin-left: 0; }
     /* Lite: nothing follows (the tab bar replaces the ☰), so no trailing gap. */
     body.has-tabbar .hdr-actions { margin-right: 0; }
     .gov-header button.hdr-act {
-      width: 36px; height: 36px; padding: 0; margin: 0; flex: none;
+      position: relative; width: 44px; height: 44px; padding: 0; margin: 0; flex: none;
       display: inline-flex; align-items: center; justify-content: center;
-      background: none; border: 1.5px solid var(--header-ctl-border); border-radius: 9px;
+      background: none; border: 0; border-radius: 9px;
       color: var(--header-ink); box-shadow: none; cursor: pointer; line-height: 1;
     }
-    .gov-header button.hdr-act:hover:not(:disabled) { background: var(--header-ctl-hover); border-color: var(--header-ink); filter: none; }
+    /* 44 to touch, 36 drawn (audit X7): the square is the ::before. */
+    .gov-header button.hdr-act::before { content: ''; position: absolute; inset: 4px; border: 1.5px solid var(--header-ctl-border); border-radius: 9px; pointer-events: none; }
+    .gov-header button.hdr-act:hover:not(:disabled) { background: none; filter: none; }
+    .gov-header button.hdr-act:hover:not(:disabled)::before { background: var(--header-ctl-hover); border-color: var(--header-ink); }
     .gov-header button.hdr-act:disabled { opacity: 0.38; cursor: default; }
     .gov-header button.hdr-act svg { width: 20px; height: 20px; display: block; }
     /* The refresh reports what it is doing: a re-fetch that returns nothing new
@@ -187,7 +192,7 @@
       <button data-i18n="notifications.enable-notifications" id="push-enable" style="width:auto;display:inline-block">Enable notifications</button>
       <span id="push-status" class="hint" style="margin-left:10px"></span>
     </div>
-    <div id="list"><p data-i18n="index.loading" class="empty">Loading…</p></div>
+    <div id="list"><div class="hk-skel-page" role="status" aria-busy="true"><span class="sr-only" data-i18n="index.loading">Loading…</span><span class="hk-skel line"></span><span class="hk-skel line short"></span><span class="hk-skel line"></span><span class="hk-skel line short"></span></div></div>
   </main>
 
   <!-- Full text of a long alert. Same back/card treatment as the profile
@@ -574,7 +579,7 @@
   </script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=192"></script>
+  <script src="menu.js?v=193"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

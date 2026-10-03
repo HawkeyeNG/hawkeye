@@ -57,6 +57,16 @@
   --surface: #ffffff;
   --text-danger: #b91c1c;
   --text-warn: #b45309;
+  /* STATUS CHIPS, BOTH THEMES (design audit X5). A chip drawn in a brand green
+     (#004225 / #008751) or the danger red read fine on white and vanished on the
+     dark card — DECLARED RESULT 1.39:1, REQUIRED 3.34:1. Every chip reads these
+     instead of a raw colour, and dark mode flips them below:
+     ok = declared / following / done, open = "open now", req = required. */
+  --chip-ok-ink: #0a6b40;  --chip-ok-bg: #e3f6ec;  --chip-ok-line: #0a6b40;
+  --chip-open-ink: #7a4f00; --chip-open-bg: #fef3dc;
+  --chip-req-ink: #c0301a;
+  /* Text on a gold fill (the accent CTA): ink, never white (1.85:1). */
+  --on-accent: #00251a;
   /* "only light", not "light": plain `light` still lets a user agent apply its
      OWN automatic dark treatment (Chrome's "auto dark mode for web contents",
      Android WebView algorithmic darkening), which repainted the site to match
@@ -70,6 +80,7 @@
   /* Header DEFAULT = the green gov bar (public website in both themes, and the
      app in dark mode). The APP in light mode overrides these to white, below. */
   --header-bg: rgba(0, 37, 26, 0.94);
+  --header-solid: #00251a;   /* the same bar, opaque: behind the open phone menu */
   --header-ink: #ffffff;
   --header-sub: #9fbfae;
   --header-line: rgba(255, 255, 255, 0.09);
@@ -98,6 +109,9 @@
   --disabled: #303e36;
   --caution: #6b5200;
   --caution-ink: #fae014;
+  --chip-ok-ink: #7fe0a8;  --chip-ok-bg: rgba(127, 224, 168, 0.12);  --chip-ok-line: rgba(127, 224, 168, 0.55);
+  --chip-open-ink: #f5b301; --chip-open-bg: rgba(245, 179, 1, 0.12);
+  --chip-req-ink: #ff6b57;
   color-scheme: only dark;   /* see the "only light" note above */
 }
 /* DOUBLE-TAP ZOOM OFF IN THE APP SHELL. PINCH ZOOM STAYS.
@@ -119,6 +133,7 @@ html.native-app, html.native-app body { touch-action: manipulation; }
    keeps the green header in both themes. native.js adds .native-app app-side only. */
 html.native-app:not([data-theme="dark"]) {
   --header-bg: rgba(255, 255, 255, 0.9);
+  --header-solid: #ffffff;
   --header-ink: #0b2c1e;
   --header-sub: #5f7a6d;
   --header-line: rgba(0, 0, 0, 0.1);
@@ -171,6 +186,11 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 }
+/* EVERY LINK HAS A COLOUR (design audit W2). Eight pages had links with no rule
+   at all, so they fell back to the browser's #0000EE / visited purple — on dark
+   green, unreadable. Any class rule still wins (it is more specific); this only
+   catches the anchors nothing styled. */
+a { color: var(--link); text-underline-offset: 2px; }
 h1, h2, h3 { font-family: var(--display); line-height: 1.2; letter-spacing: -0.01em; }
 h1 { font-weight: 700; }
 h2, h3 { font-weight: 600; }
@@ -241,14 +261,40 @@ main.wrap { max-width: 840px; }
 @media (max-width: 390px) { .brand-row:has(> a.signin-btn) .brand-text:not(.is-page) { display: none; } }
 .brand-text strong { font-family: var(--display); font-size: 1.08rem; letter-spacing: 0.07em; }
 .brand-text span { font-size: 0.68rem; color: var(--header-sub); letter-spacing: 0.03em; }
+/* A PAGE NAME WRAPS TO A SECOND LINE, NEVER "Leaderb…" (design audit X6: cut
+   on 26 of 44 pages at 360px in English, 29 in Hausa). Two lines at most. */
+.gov-header .brand-text.is-page strong {
+  white-space: normal; overflow-wrap: break-word; line-height: 1.15;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+a.brand { min-height: 44px; }   /* a 44px target, like the controls beside it */
+/* ...and below 400px the WEBSITE header hands its language and theme buttons to
+   the ☰ menu's Preferences row (menu.js), as native keeps them under More →
+   Preferences — on page screens only: Home/landing keep them, their title is
+   the wordmark and there is room. */
+.menu-prefs { display: none; }
+@media (max-width: 399px) {
+  html:not(.native-app) .gov-header .brand-row:has(.brand-text.is-page) > button.theme-btn:not(.close-btn) { display: none; }
+  html:not(.native-app) .gov-header .brand-row:has(.brand-text.is-page) .menu-prefs { display: block; }
+  .gov-header .brand-text.is-page strong { font-size: 0.95rem; }
+}
+.menu-pref-row { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px 12px; }
+.menu-panel button.menu-pref {
+  display: inline-flex; align-items: center; width: auto; min-height: 44px; margin: 0; padding: 0 14px;
+  background: var(--tint); color: var(--ink); border: 1px solid var(--border); border-radius: 999px;
+  box-shadow: none; font-size: 0.9rem; font-weight: 600;
+}
+.menu-panel button.menu-pref:hover { filter: none; border-color: var(--link); }
 .gov-header nav a { color: var(--header-ink); font-weight: 700; text-decoration: none; border-bottom: 2px solid transparent; }
 .gov-header nav a:hover { border-bottom-color: var(--accent); }
 /* Header controls were hardcoded white for the old always-green bar; retint them
    from the --header-* tokens so they stay legible on the light header too. */
+/* The drawn square is each control's ::before (44px hit box, see "header
+   controls" below), so the tokens colour that, not the box. */
 .gov-header button.menu-btn, .gov-header button.theme-btn,
-.gov-header a.bell-btn, .gov-header a.signin-btn { color: var(--header-ink); border-color: var(--header-ctl-border); }
-.gov-header button.menu-btn:hover, .gov-header button.theme-btn:hover,
-.gov-header a.bell-btn:hover, .gov-header a.signin-btn:hover { background: var(--header-ctl-hover); border-color: var(--header-ink); }
+.gov-header a.bell-btn, .gov-header a.signin-btn { color: var(--header-ink); }
+.gov-header :is(button.menu-btn, button.theme-btn, a.bell-btn, a.signin-btn)::before { border-color: var(--header-ctl-border); }
+.gov-header :is(button.menu-btn, button.theme-btn, a.bell-btn, a.signin-btn):hover::before { background: var(--header-ctl-hover); border-color: var(--header-ink); }
 .phase-banner { background: var(--amber); border-bottom: 1px solid #f1e3ae; font-size: 0.84rem; color: #5c4d0a; }
 .phase-banner .wrap { padding-top: 7px; padding-bottom: 7px; }
 
@@ -449,8 +495,8 @@ main.wrap { max-width: 840px; }
 .lcard .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .lcard .hash { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 0.66rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 8px; }
 .lcard .chip { flex: none; font-size: 0.64rem; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
-.chip.ok { background: #e3f6ec; color: #0a6b40; }
-.chip.wait { background: #fdf3d7; color: #6b5500; }
+.chip.ok { background: var(--chip-ok-bg); color: var(--chip-ok-ink); }
+.chip.wait { background: var(--chip-open-bg); color: var(--chip-open-ink); }
 .lcard .votes { display: flex; gap: 14px; margin-top: 9px; font-weight: 700; }
 .lcard .votes span i { font-style: normal; font-size: 0.64rem; color: var(--muted); display: block; font-weight: 500; }
 .lcard:nth-child(1) { top: 0; left: 0; transform: rotate(-2deg); }
@@ -576,7 +622,7 @@ code { word-break: break-all; font-size: 0.72rem; background: var(--code-bg); bo
    wrapping ~70px early and the title broke across two lines miles from the
    padlock. Locked and plain-closed steps get a narrow gutter; only the states
    that render words get the wide one. */
-.step-card > summary { position: relative; padding-right: 30px; }
+.step-card > summary { position: relative; padding-right: 30px; min-height: 44px; }   /* a 44px row (audit X7) */
 .step-card.done:not([open]) > summary,
 .step-card[open]:not(.locked) > summary { padding-right: 92px; }
 .step-card:not(.locked) > summary::after {
@@ -776,7 +822,7 @@ button.secondary:hover { background: var(--tint); filter: none; }
    the header's .lang-btn (it wears that class too, so it reads and behaves as
    the same control), drawn for the page background instead of the green bar. */
 .auth-top button.auth-lang {
-  width: auto; min-width: 44px; height: 38px; margin: 0; padding: 0 10px;
+  width: auto; min-width: 44px; height: 44px; margin: 0; padding: 0 10px;
   background: var(--card); color: var(--ink);
   border: 1px solid var(--border); border-radius: 9px; box-shadow: none;
   font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; cursor: pointer;
@@ -899,82 +945,63 @@ a.brand { text-decoration: none; color: inherit; }
 .gov-footer .wrap { text-align: center; }
 .gov-footer nav { justify-content: center; }
 
-/* --- top hamburger menu --- */
-button.menu-btn {
-  display: inline-block;
-  width: auto;
-  margin: 0;
-  padding: 8px 12px;
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 8px;
-  color: #fff;
-  font-size: 1.25rem;
-  line-height: 1;
-  cursor: pointer;
-  box-shadow: none;
-}
-button.menu-btn:hover { background: rgba(255, 255, 255, 0.12); filter: none; }
-button.theme-btn {
-  background: none; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff;
-  border-radius: 9px; width: 36px; height: 36px; padding: 0;
-  line-height: 1; cursor: pointer; margin: 0 10px 0 auto; box-shadow: none;
+/* --- header controls: 44px TO TOUCH, 36px TO SEE (design audit X7) -----------
+   The bell, language, theme, close and ☰ buttons were 36x36 (☰ 44x38) — under
+   the 44px a thumb needs. Each control is now a 44x44 box and the bordered
+   square you SEE is its ::before, inset 4px, so the header looks exactly as it
+   did. The 10px between two 36px squares becomes 2px between two 44px boxes:
+   the same 10px between what is drawn. Hover and the open-menu state paint the
+   drawn square, not the hit box. */
+button.menu-btn, button.theme-btn, a.bell-btn {
+  position: relative; flex: none;
   display: inline-flex; align-items: center; justify-content: center;
+  width: 44px; height: 44px; padding: 0; margin: 0;
+  background: none; border: 0; border-radius: 9px; box-shadow: none;
+  color: #fff; line-height: 1; cursor: pointer; text-decoration: none;
 }
-button.theme-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); filter: none; }
+:is(button.menu-btn, button.theme-btn, a.bell-btn)::before {
+  content: ''; position: absolute; inset: 4px; pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.35); border-radius: 9px;
+  transition: background .12s ease, border-color .12s ease;
+}
+:is(button.menu-btn, button.theme-btn, a.bell-btn):hover { background: none; filter: none; }
+:is(button.menu-btn, button.theme-btn, a.bell-btn):hover::before { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
+button.menu-btn { font-size: 1.25rem; }
+/* The open sheet's way out is the same button, drawn as a × (audit W1). */
+button.menu-btn[aria-expanded="true"] { font-size: 0; }
+button.menu-btn[aria-expanded="true"]::after { content: '\00d7'; font-size: 1.7rem; line-height: 1; }
+button.theme-btn { margin: 0 2px 0 auto; }
+a.bell-btn { margin: 0 2px 0 auto; font-size: 1.05rem; }
 /* The language button wears .theme-btn for the box and adds only what a
-   two-letter code needs: it cannot be a 36px square because "PCM" is three
-   characters, so the width goes auto with the square as a floor. */
+   two-letter code needs: it cannot be a square because "PCM" is three
+   characters, so the width goes auto with the 44px box as a floor (drawn: the
+   code plus 9px each side, as before). */
 button.lang-btn {
-  width: auto; min-width: 36px; padding: 0 9px;
+  width: auto; min-width: 44px; padding: 0 13px;
   font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em;
 }
-/* ONE FLEX PUSH, the same rule the bell and Sign in already need. The group is
-   [bell|Sign in][lang][theme][menu] and only its leftmost member may carry the
-   auto margin. The existing `a.bell-btn + button.theme-btn` and
-   `a.signin-btn + button.theme-btn` rules already neutralise THIS button when
-   it follows one of those (it is a button.theme-btn too); this is the pair they
-   cannot see — theme following lang. */
-button.lang-btn + button.theme-btn { margin-left: 0; }
-/* The bell is an <a>, so it was inheriting the UA's default link blue
-   (rgb(0,0,238)) on a dark green header — effectively invisible. Match the
-   theme button: white, same 36px bordered box, same hover. */
-a.bell-btn {
-  background: none; border: 1.5px solid rgba(255, 255, 255, 0.35); color: #fff;
-  border-radius: 9px; width: 36px; height: 36px; padding: 0;
-  line-height: 1; margin: 0 10px 0 0; box-shadow: none;
-  display: inline-flex; align-items: center; justify-content: center;
-  position: relative; text-decoration: none; flex: none;
-}
-a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
-/* Returning-observer sign-in in the header — takes the bell's slot while signed
-   out (a notifications bell is meaningless before there's an account). */
-a.signin-btn {
-  border: 1.5px solid rgba(255, 255, 255, 0.45); color: #fff; background: none;
-  border-radius: 9px; padding: 8px 14px;
-  /* margin-left:auto, the same push the bell carries. This button "takes the
-     bell's slot while signed out" per the note above, but it did NOT take the
-     bell's auto margin — so on a phone the push fell through to .theme-btn and
-     Sign in stayed welded to the wordmark: .brand ended at x=153 and this
-     started at x=153, no gap at all, with 41px of nothing after it. Now the
-     three controls travel right together as one group. */
-  margin: 0 10px 0 auto;
-  font-weight: 700; font-size: 0.85rem; text-decoration: none; white-space: nowrap; flex: none;
-}
-/* One flex push only — the same rule the bell needs, for the same reason. */
+/* ONE FLEX PUSH. The group is [bell|Sign in][lang][theme][menu] and only its
+   leftmost member may carry the auto margin; these neutralise it on the ones
+   that follow. */
+button.lang-btn + button.theme-btn,
+a.bell-btn + button.theme-btn,
 a.signin-btn + button.theme-btn { margin-left: 0; }
-a.signin-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
-@media (max-width: 420px) { a.signin-btn { padding: 8px 11px; font-size: 0.8rem; } }
-a.bell-btn {
-  position: relative; display: inline-flex; align-items: center; justify-content: center;
-  width: 36px; height: 36px; margin: 0 10px 0 auto; border-radius: 9px;
-  border: 1.5px solid rgba(255, 255, 255, 0.35); text-decoration: none; font-size: 1.05rem;
+/* Returning-observer sign-in in the header — takes the bell's slot while signed
+   out (a notifications bell is meaningless before there's an account), and its
+   auto margin. 44px tall to touch, the drawn pill inset 3px as before. */
+a.signin-btn {
+  position: relative; flex: none; display: inline-flex; align-items: center;
+  min-height: 44px; padding: 0 14px; margin: 0 2px 0 auto;
+  border: 0; background: none; color: #fff;
+  font-weight: 700; font-size: 0.85rem; text-decoration: none; white-space: nowrap;
 }
-a.bell-btn:hover { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
-/* One flex push only: when the bell is present it takes the auto margin, so
-   bell↔theme↔menu gaps are all equal (10px). On desktop the quick-nav's own
-   auto margin does the pushing instead. */
-a.bell-btn + button.theme-btn { margin-left: 0; }
+a.signin-btn::before {
+  content: ''; position: absolute; inset: 3px 0; pointer-events: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.45); border-radius: 9px;
+  transition: background .12s ease, border-color .12s ease;
+}
+a.signin-btn:hover::before { border-color: #fff; background: rgba(255, 255, 255, 0.12); }
+@media (max-width: 420px) { a.signin-btn { padding: 0 11px; font-size: 0.8rem; } }
 @media (min-width: 900px) {
   a.bell-btn, button.theme-btn { margin-left: 0; }
 }
@@ -999,8 +1026,10 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
      list is cut off (auto let the WebView hide it until a scroll started). */
   overflow-y: scroll;
   min-width: 254px;
-  background: #fff; /* always light — links are pinned dark, so keep it legible in dark mode too */
-  border: 1px solid #e3e8e4;
+  /* THE THEME'S CARD, not #fff (design audit W1): at night in dark mode the white
+     sheet flashed the whole screen. Its links, labels and rules are tokens too. */
+  background: var(--card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
   padding: 4px 0;
@@ -1027,6 +1056,11 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     max-height: none !important; min-width: 0; border: 0; border-radius: 0; box-shadow: none;
     padding: 8px 0 calc(8px + env(safe-area-inset-bottom));
   }
+  /* THE WEBSITE KEEPS ITS HEADER ROW ABOVE THE SHEET (design audit W1): the
+     sheet covered it, so the ☰ that closes it was underneath with no visible
+     way out. Now the row stays, and ☰ is drawn as × while open. Lite (tab bar)
+     keeps the full-height sheet: its header has no ☰ and More toggles it. */
+  body:not(.has-tabbar) .menu-panel { top: var(--hdr-h, 60px); border-top: 1px solid var(--header-line); }
   .menu-panel a { padding-top: 14px; padding-bottom: 14px; }
   /* While the menu is open the header is PINNED to the top of the screen: after
      a scroll it had slid away (or scrolled out with the page), leaving the page
@@ -1037,6 +1071,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     position: fixed; top: 0; left: 0; right: 0;
     -webkit-backdrop-filter: none; backdrop-filter: none; transform: none !important;
     will-change: auto; /* will-change: transform ALSO makes a containing block */
+    background: var(--header-solid);   /* opaque: with the blur gone, the page showed through */
     /* No slide-in: menu.js measures the header's bottom right after open, and
        mid-slide that read ~0, so the menu started under the status bar. */
     transition: none;
@@ -1049,7 +1084,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
     height: env(safe-area-inset-top, 0px); background: #00251a;
   }
 }
-.menu-panel .sign-out { color: var(--danger) !important; font-weight: 700; }
+.menu-panel .sign-out { color: var(--chip-req-ink) !important; font-weight: 700; }
 /* Keep the scrollbar VISIBLE rather than overlay-hidden, so a cut-off list is
    obvious at a glance (the menu holds up to ~19 items). */
 .menu-panel { scrollbar-width: thin; scrollbar-color: rgba(0, 0, 0, 0.3) transparent; }
@@ -1071,7 +1106,7 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   /* Fade to the PANEL's own colour, which is fixed white in both themes (see
      .menu-panel `background:#fff`). It used var(--card) — dark in dark mode — so
      the cue rendered as a black bar over the white panel. Always #fff. */
-  background: linear-gradient(to top, #fff 12%, rgba(255, 255, 255, 0) 100%);
+  background: linear-gradient(to top, var(--card) 12%, transparent 100%);
 }
 .menu-panel.is-scrollable:not(.at-end) .menu-fade { display: block; }
 /* The fade div is the panel's last child, so :last-child no longer matches the
@@ -1096,8 +1131,8 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: #5b6b62;
-  border-top: 1px solid #eef2ef;
+  color: var(--muted);
+  border-top: 1px solid var(--line);
 }
 .menu-group:first-child { border-top: none; }
 /* Report / Races accordion: a link-styled header that collapses its sub-links.
@@ -1105,8 +1140,8 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .menu-acc {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
   padding: 12px 16px;
-  color: #111 !important; font-weight: 700; font-size: 0.95rem;
-  border-bottom: 1px solid #eef2ef;
+  color: var(--ink) !important; font-weight: 700; font-size: 0.95rem;
+  border-bottom: 1px solid var(--line);
   cursor: pointer; user-select: none;
 }
 /* The header text sits in a <span> (menu.js) — pin the weight there too so nothing
@@ -1128,14 +1163,14 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
 .menu-panel a {
   display: block;
   padding: 12px 16px;
-  color: #111 !important;
+  color: var(--ink) !important;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
-  border-bottom: 1px solid #eef2ef;
+  border-bottom: 1px solid var(--line);
 }
 .menu-panel a:last-child { border-bottom: none; }
-.menu-panel a:hover { background: #eef5f0; }
+.menu-panel a:hover { background: var(--tint); }
 /* `display: block` above OUTRANKS the user agent's `[hidden] { display: none }`,
    so a row hidden from JS would stay on screen -- the scoped-display trap this
    codebase has hit before. Today only "Take the tour" is ever hidden this way
@@ -1228,8 +1263,9 @@ a.bell-btn + button.theme-btn { margin-left: 0; }
   font-weight: 700;
   padding: 3px 10px;
   border-radius: 999px;
-  color: var(--danger);
-  border: 1px solid var(--danger);
+  /* --chip-req-ink, not --danger: #d4351c on the dark card was 3.34:1. */
+  color: var(--chip-req-ink);
+  border: 1px solid var(--chip-req-ink);
   text-transform: uppercase;
   letter-spacing: 0.04em;
 }
@@ -1456,7 +1492,9 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
   font-size: 0.84rem;
 }
 .gov-footer .wrap { padding-top: 26px; padding-bottom: 30px; }
-.gov-footer nav { display: flex; flex-wrap: wrap; gap: 18px; margin-bottom: 12px; }
+.gov-footer nav { display: flex; flex-wrap: wrap; gap: 0 18px; margin-bottom: 12px; }
+/* Each footer link is a 44px row to touch (was 21px tall, design audit X7). */
+.gov-footer nav a { display: inline-flex; align-items: center; min-height: 44px; }
 .gov-footer a { color: #cfe2d6; font-weight: 600; text-decoration: none; }
 .gov-footer a:hover { color: #fff; text-decoration: underline; }
 /* Ownership line: quieter than the INEC disclaimer above it, and set off by a
@@ -1580,7 +1618,7 @@ details.fold p { margin: 0 0 14px; color: var(--muted); font-size: 0.9rem; }
      lands. */
   body.has-tabbar #starter-card, body.has-tabbar #practice-line { display: none !important; }
   body.has-tabbar .gov-footer { display: none; }     /* footer links live in "More" */
-  body.has-tabbar #hk-fab { bottom: calc(78px + env(safe-area-inset-bottom)) !important; }
+  body.has-tabbar #hk-fab { bottom: max(calc(78px + env(safe-area-inset-bottom)), var(--fab-dock, 0px)) !important; }
 }
 /* THE BUBBLES STEP ASIDE WHILE SOMEONE TYPES (first-time walkthrough #3). With
    the keyboard up the visible area is a few hundred pixels, and a 56px button
@@ -1910,20 +1948,33 @@ body.has-tabbar #mark-all { width: 100%; margin-top: 10px; }
 .gov-disc-more {
   display: inline; cursor: pointer;
   font-weight: 700; color: var(--link); text-decoration: underline; white-space: nowrap;
+  /* Inline padding grows the tap box (now 44px tall) without moving a line;
+     the side margins hand the side padding back. The whole bar opens the
+     details too (menu.js .is-tappable). */
+  padding: 15px 8px; margin: 0 -8px;
 }
+.gov-disclaimer.is-tappable { cursor: pointer; }
 .gov-disc-more:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 3px; }
-/* The ⓘ that replaces a paragraph. Sized to sit on a heading's baseline and to
-   stay a 24px tap target without pushing the line height around. */
+/* The ⓘ that replaces a paragraph. A 44px box to touch (it was 20, design
+   audit X7) that LOOKS 20px: the circle is the ::before, and negative margins
+   give the box back to the line, so it still sits on a heading's baseline
+   without pushing the line height around. */
 .info-i {
   display: inline-flex; align-items: center; justify-content: center;
-  width: 20px; height: 20px; padding: 0; margin: 0 0 0 6px; flex: none;
-  border: 1.5px solid var(--link); border-radius: 50%; background: none;
+  width: 44px; height: 44px; padding: 0; margin: -12px -12px -12px -6px; flex: none;
+  border: 0; border-radius: 50%; background: none;
   color: var(--link); font: 700 0.72rem/1 Georgia, 'Times New Roman', serif;
   cursor: pointer; vertical-align: middle; box-shadow: none;
 }
-.info-i::before { content: 'i'; }
-.info-i:hover { background: var(--tint); }
-.info-i:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; }
+.info-i::before {
+  content: 'i'; display: inline-flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; box-sizing: border-box;
+  border: 1.5px solid var(--link); border-radius: 50%;
+}
+.info-i:hover { background: none; filter: none; }
+.info-i:hover::before { background: var(--tint); }
+.info-i:focus-visible { outline: none; }
+.info-i:focus-visible::before { outline: 2px solid var(--link); outline-offset: 2px; }
 .info-modal h2[hidden] { display: none; }
 /* The dialog sets its body with textContent, so a dot that folds in several
    topics (docket, ledger) needs its blank lines to survive as paragraph breaks. */
@@ -2578,3 +2629,57 @@ html.scrolling *::-webkit-scrollbar-thumb {
   * { scrollbar-color: auto; }
   ::-webkit-scrollbar-thumb { background: initial; }
 }
+
+/* ---------- design audit 2026-10: shared pieces ---------- */
+
+/* A party is named in ink beside a dot of its colour — never in coloured text,
+   which on the dark card fell to 3:1 (APC) and below (design audit X5). */
+.pdot {
+  display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+  margin: 0 5px 0 0; vertical-align: 1px; flex: none;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+/* THE CHAT BUBBLE NEVER SITS ON THE LAST CONTROL (design audit X2). A page with
+   a bubble reserves its height at the very end — the footer on the website, the
+   page itself in Lite (no footer there) — so the last button, "Delete My
+   Account", or the last footer link can always be scrolled clear of it. Where a
+   pinned action bar exists, menu.js fabDock() lifts the bubble above it. */
+body.has-fab .gov-footer .wrap { padding-bottom: 96px; }
+html.native-app body.has-fab main,
+body.has-fab:not(:has(.gov-footer)) main { padding-bottom: 96px; }
+
+/* RESERVE THE PAGE BEFORE ITS DATA LANDS (design audit W3). Races, Results,
+   Practice and the race pages paint their lists after a fetch; with nothing
+   reserved, the footer sat in the first screen and was shoved off it when the
+   list arrived — layout shift 0.80 on Races, 0.46 on Practice. A main that is at
+   least a screen tall keeps the footer below the fold from the first paint, so
+   the arriving content grows into space no one is looking at yet. */
+main.page-fill { min-height: 100vh; min-height: 100dvh; }
+
+/* Check boxes and radios live in a 44px row: the box is 13px, the row is the
+   target (design audit X7). */
+label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { min-height: 44px; }
+
+/* LOADING LOOKS LIKE THE PAGE ARRIVING, NOT A BLANK (design audit X9). Grey
+   blocks where the content will be, the same height it will take; the words
+   "Loading…" stay for screen readers only. Still under reduced motion. */
+.sr-only { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.hk-skel-page { padding-top: 8px; }
+.hk-skel {
+  display: block; border-radius: 10px;
+  background: linear-gradient(90deg, var(--tint) 25%, var(--line) 50%, var(--tint) 75%);
+  background-size: 200% 100%; animation: hk-skel 1.4s ease-in-out infinite;
+}
+.hk-skel.title { height: 28px; width: 62%; margin: 18px 0 14px; }
+.hk-skel.line { height: 14px; width: 88%; margin: 10px 0; }
+.hk-skel.line.short { width: 54%; }
+.hk-skel.card { height: 128px; margin: 16px 0; border-radius: var(--radius); }
+.hk-skel.card.tall { height: 220px; }
+@keyframes hk-skel { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .hk-skel { animation: none; } }
+
+/* A form's error line, under the field it is about (design audit X4). */
+.field-err { margin: 6px 0 0; color: var(--chip-req-ink); font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
+.field-err[hidden] { display: none; }
+input[aria-invalid="true"] { border-color: var(--chip-req-ink) !important; }

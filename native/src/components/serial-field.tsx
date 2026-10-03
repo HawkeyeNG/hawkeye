@@ -62,7 +62,7 @@ export function SerialField({
         <Text className="flex-1 text-sm font-bold text-ink">{label}</Text>
         {fromSheet ? (
           <View className="rounded-full bg-surface px-2 py-0.5">
-            <Text className="text-[9px] font-bold text-hawk-leaf">{i18nT('n.app.report.result.from-sheet')}</Text>
+            <Text className="text-[9px] font-bold text-good-ink">{i18nT('n.app.report.result.from-sheet')}</Text>
           </View>
         ) : null}
       </View>

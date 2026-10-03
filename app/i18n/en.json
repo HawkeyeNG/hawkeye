@@ -2749,5 +2749,12 @@
   "practice.sample-state": "Practice",
   "practice.sample-ward": "Demo Ward",
   "common.cant-reach-hawkeye": "Could not reach Hawkeye — check your connection.",
-  "common.try-again": "Try again"
+  "common.try-again": "Try again",
+  "menu.preferences": "Preferences",
+  "observe.create-your-account": "Create Your Account",
+  "observe.send-code": "Send Code",
+  "races.chip-all": "All",
+  "races.chip-completed": "Completed",
+  "races.chip-ongoing": "Ongoing",
+  "races.chip-upcoming": "Upcoming"
 }

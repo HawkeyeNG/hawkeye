@@ -33,6 +33,17 @@ const ICON_SIZE = 23; // .tabbar .tab svg { width: 23px; height: 23px }
 const LABEL_FONT_SIZE = 11; // .tab { font-size: 0.64rem } ≈ 10.2px, rounded up for RN
 const LABEL_LINE_HEIGHT = 14;
 const LABEL_GAP = 3; // .tab { gap: 3px }
+/**
+ * Lets the label run 4px into each side of the tab's own 5px padding.
+ *
+ * react-navigation pads every tab item by 5 on all sides and draws the label
+ * single-line, so on a 360pt phone a label gets ~62pt. Hausa "Sakamako"
+ * (Results) needed about 2pt more and lost its last letter (design audit Oct
+ * 2026, X6). A negative margin widens only the space the label MAY use — it is
+ * still centred and still its own width — so the English, Igbo and Yoruba
+ * labels, which already fitted, render exactly as before.
+ */
+const LABEL_BLEED = -4;
 /** Baked into react-navigation's `tabVerticalUiKit` item style — not ours to set. */
 const ITEM_PADDING_V = 5;
 const BAR_PADDING_TOP = 4; // + ITEM_PADDING_V = 9, matching the web's 6 + 3
@@ -175,6 +186,7 @@ export default function TabsLayout() {
             lineHeight: LABEL_LINE_HEIGHT,
             fontWeight: '600',
             marginTop: LABEL_GAP,
+            marginHorizontal: LABEL_BLEED,
           },
           /**
            * THE ALERTS COUNT, SIZED AGAINST THE ICON RATHER THAN LEFT AT THE
@@ -226,6 +238,7 @@ export default function TabsLayout() {
               lineHeight: LABEL_LINE_HEIGHT,
               fontWeight: '700',
               marginTop: LABEL_GAP,
+              marginHorizontal: LABEL_BLEED,
               // Same theme-aware green as the active tab: this label sits on the
               // BAR, not on the CTA circle, so the fixed brand green made it a
               // ~1.4:1 smudge in dark mode — the least legible label of the five.

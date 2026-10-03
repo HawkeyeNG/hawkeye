@@ -3,15 +3,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
 import { router, useGlobalSearchParams, usePathname } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { Keyboard, Platform, StyleSheet, Text, useWindowDimensions } from 'react-native';
+import { Keyboard, Platform, StyleSheet, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, {
-  FadeIn,
-  FadeOut,
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { scheduleOnRN } from 'react-native-worklets';
 
@@ -51,8 +45,12 @@ type Pos = { side: 'left' | 'right'; y: number };
  * chrome-free, and every capture surface (the three report flows, practice) is a
  * full-screen camera whose own controls must not compete with anything. Mirrors
  * the web's placement rule in app/menu.js.
+ *
+ * /profile too (design audit Oct 2026, X2): it is a column of settings rows, and
+ * the bubble's resting spot landed on the "Save report media" switch. A results
+ * assistant has nothing to offer on a settings screen.
  */
-const HIDDEN = new Set(['/assistant', '/chat', '/welcome', '/sign-in', '/practice']);
+const HIDDEN = new Set(['/assistant', '/chat', '/welcome', '/sign-in', '/practice', '/profile']);
 
 const clampUi = (v: number, lo: number, hi: number) => {
   'worklet';
@@ -147,8 +145,15 @@ export function AskFab() {
   const bounds = useBounds();
   const typing = useTyping();
   const [pos, setPos] = useState<Pos | null>(null);
-  const [hint, setHint] = useState(false);
 
+  /**
+   * NO FIRST-RUN LABEL. There used to be an "Ask Hawkeye" pill beside the bubble
+   * for five seconds on first launch, and it landed on whatever list row sat at
+   * that height — the "Save report media" switch on Profile, candidate rows on a
+   * race page. House rule: a label never sits over content. The bubble's chat
+   * glyph and its accessibilityLabel/Hint carry what it is (design audit
+   * Oct 2026, X2).
+   */
   useEffect(() => {
     let live = true;
     (async () => {
@@ -160,8 +165,6 @@ export function AskFab() {
         saved = null;
       }
       if (!live) return;
-      // Nobody has moved it yet, so nobody has been told what it is.
-      if (!saved) setHint(true);
       setPos(saved ?? { side: 'right', y: bounds.restY });
     })();
     return () => {
@@ -171,12 +174,6 @@ export function AskFab() {
     // size change is absorbed by the clamp inside the bubble's animated style.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  useEffect(() => {
-    if (!hint) return;
-    const t = setTimeout(() => setHint(false), 5000);
-    return () => clearTimeout(t);
-  }, [hint]);
 
   /**
    * Kept in React state as well as on disk: the bubble unmounts on the hidden
@@ -199,31 +196,13 @@ export function AskFab() {
     // (react-native-screens) rather than above ordinary sibling views, and that is
     // not a case it reliably covers.
     //
-    // Nothing needed the wrapper anyway: both children are position:'absolute', so
-    // they lay out against the root GestureHandlerRootView — the same full-screen
-    // coordinate space the overlay was providing — and the bubble's drag comes from
-    // shared values, not from any parent's bounds. With the wrapper gone the only
-    // touchable surface is the 56pt bubble itself, so this class of bug cannot
+    // Nothing needed the wrapper anyway: the bubble is position:'absolute', so it
+    // lays out against the root GestureHandlerRootView — the same full-screen
+    // coordinate space the overlay was providing — and its drag comes from shared
+    // values, not from any parent's bounds. With the wrapper gone the only
+    // touchable surface is the 52pt bubble itself, so this class of bug cannot
     // return; there is no longer a screen-sized view to misconfigure.
-    <>
-      {hint ? (
-        <Animated.View
-          pointerEvents="none"
-          entering={FadeIn.delay(500)}
-          exiting={FadeOut}
-          // Positioned against the screen, not the bubble: a child hanging outside
-          // its parent's bounds is clipped on Android. The hint only ever shows at
-          // the untouched default spot, so those coordinates are known.
-          style={[styles.hint, { right: EDGE + SIZE + 8, top: bounds.restY + 13 }]}
-          className="rounded-full border border-line bg-card px-2.5 py-1"
-        >
-          <Text className="text-xs font-semibold text-ink">
-            {i18nT(onChatPage ? 'common.chat-with-us' : 'nav.ask-hawkeye')}
-          </Text>
-        </Animated.View>
-      ) : null}
-      <Bubble start={pos} bounds={bounds} onSettle={settle} chat={onChatPage} />
-    </>
+    <Bubble start={pos} bounds={bounds} onSettle={settle} chat={onChatPage} />
   );
 }
 /**
@@ -319,9 +298,8 @@ function Bubble({
 }
 
 const styles = StyleSheet.create({
-  // zIndex/elevation live on the two absolute children now that the wrapping
-  // layer is gone — they are what has to sit above the screen and the tab bar.
-  hint: { position: 'absolute', zIndex: 40, elevation: 8 },
+  // zIndex/elevation live on the bubble itself now that the wrapping layer is
+  // gone — it is what has to sit above the screen and the tab bar.
   fab: {
     position: 'absolute',
     zIndex: 40,

@@ -549,7 +549,7 @@ const NearbyRow = ({
             onPress={() => router.push('/map-unit')}
           >
             <Feather name="map-pin" size={13} color={BRAND.leaf} />
-            <Text className="pl-1.5 text-xs font-bold text-hawk-leaf">
+            <Text className="pl-1.5 text-xs font-bold text-good-ink">
               {i18nT('n.app.report.result.map-this-unit-one-gps-fix')}
             </Text>
           </Pressable>
@@ -1809,7 +1809,7 @@ export default function ReportResult() {
             return (
               <View key={s.key} className="mr-1 flex-1">
                 <View className={`h-1.5 rounded-full ${on ? 'bg-hawk-leaf' : 'bg-card'}`} />
-                <Text className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-hawk-leaf' : 'text-faint'}`}>
+                <Text className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-good-ink' : 'text-faint'}`}>
                   {i18nT(s.label)}
                 </Text>
               </View>
@@ -2197,7 +2197,7 @@ export default function ReportResult() {
                   setStep('contest');
                 }}
               >
-                <Text className="text-sm font-semibold text-hawk-leaf">
+                <Text className="text-sm font-semibold text-good-ink">
                   {i18nT('n.app.report.result.browse-all-races-instead')}
                 </Text>
               </Pressable>
@@ -2292,7 +2292,7 @@ export default function ReportResult() {
                     className="mr-2.5 items-center justify-center rounded-md bg-surface"
                     style={{ width: 30, height: 30 }}
                   >
-                    <Text className="text-[10px] font-bold text-hawk-leaf">{p.code.slice(0, 3)}</Text>
+                    <Text className="text-[10px] font-bold text-good-ink">{p.code.slice(0, 3)}</Text>
                   </View>
                 )}
                 <View className="flex-1 pr-2">
@@ -2301,7 +2301,7 @@ export default function ReportResult() {
                 </View>
                 {readCodes.includes(p.code) ? (
                   <View className="mr-2 rounded-full bg-surface px-2 py-0.5">
-                    <Text className="text-[9px] font-bold text-hawk-leaf">{i18nT('n.app.report.result.from-sheet')}</Text>
+                    <Text className="text-[9px] font-bold text-good-ink">{i18nT('n.app.report.result.from-sheet')}</Text>
                   </View>
                 ) : null}
                 <TextInput
@@ -2352,7 +2352,7 @@ export default function ReportResult() {
                   .join(' · ')}
               </Text>
               {contest ? (
-                <Text className="pt-1 text-xs font-bold text-hawk-leaf">{contest.election}</Text>
+                <Text className="pt-1 text-xs font-bold text-good-ink">{contest.election}</Text>
               ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">
@@ -2372,7 +2372,7 @@ export default function ReportResult() {
                       <Text className="text-xs font-semibold text-muted">
                         {i === 0 ? 'Result sheet' : 'Venue'}
                       </Text>
-                      <Text className="text-xs font-bold text-hawk-leaf">{i18nT('n.app.report.collation.retake')}</Text>
+                      <Text className="text-xs font-bold text-good-ink">{i18nT('n.app.report.collation.retake')}</Text>
                     </View>
                   </Pressable>
                 ) : null,
@@ -2425,7 +2425,7 @@ export default function ReportResult() {
               )}
             </Pressable>
             <Pressable className="mt-3 items-center" onPress={() => setStep('votes')} disabled={busy}>
-              <Text className="text-sm font-semibold text-hawk-leaf">{i18nT('n.app.practice.back-to-votes')}</Text>
+              <Text className="text-sm font-semibold text-good-ink">{i18nT('n.app.practice.back-to-votes')}</Text>
             </Pressable>
           </View>
         ) : null}
@@ -2529,7 +2529,7 @@ export default function ReportResult() {
                       // Same contrast fault as the amber above, same fix:
                       // red-700 is a fixed #b91c1c and lands ~3.4:1 on the dark
                       // card. text-bad-ink/text-warn-ink follow the theme.
-                      className={`text-sm font-bold ${receipt.result.status === 'disputed' ? 'text-bad-ink' : receipt.result.status === 'pending' ? 'text-warn-ink' : 'text-hawk-leaf'}`}
+                      className={`text-sm font-bold ${receipt.result.status === 'disputed' ? 'text-bad-ink' : receipt.result.status === 'pending' ? 'text-warn-ink' : 'text-good-ink'}`}
                     >
                       {receipt.result.status.toUpperCase()}
                     </Text>
@@ -2601,7 +2601,7 @@ export default function ReportResult() {
             {/* replace, not push: the finished report flow should not sit under
                 the log the observer went to check. */}
             <Pressable className="items-center pb-3" onPress={() => router.replace('/reports-log')}>
-              <Text className="text-sm font-semibold text-hawk-leaf">
+              <Text className="text-sm font-semibold text-good-ink">
                 {/* A queued report has no ledger entry to look for yet, so it is
                     not sent looking for one. */}
                 {queued ? i18nT('n.app.report.result.see-the-public-log') : i18nT('n.app.report.result.find-your-report-in-the-public')}

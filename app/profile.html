@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=196" />
+  <link rel="stylesheet" href="styles.css?v=197" />
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -24,7 +24,7 @@
     .item:last-child { border-bottom: none; }
     .item .sub { color: var(--muted); font-size: 0.8rem; }
     .tag { display: inline-block; font-size: 0.72rem; border: 1px solid var(--border); border-radius: 999px; padding: 2px 9px; margin: 0 4px 4px 0; }
-    .tag.ok { color: var(--green); border-color: var(--green); }
+    .tag.ok { color: var(--chip-ok-ink); background: var(--chip-ok-bg); border-color: var(--chip-ok-line); }
     .empty { color: var(--muted); font-size: 0.88rem; }
     .danger { border-color: #b3341f55; }
     .danger button { background: #B3341F; }
@@ -89,7 +89,7 @@
        several lines rather than truncating — a half-shown error is no use. */
     #push-detail { display: block; margin-top: 3px; font-size: 0.72rem; line-height: 1.45;
                    color: var(--muted); white-space: normal; word-break: break-word; }
-    .signout { width: auto; padding: 8px 16px; }
+    .signout { width: auto; padding: 8px 16px; min-height: 44px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
     .phero-av { flex: none; width: 46px; height: 46px; border-radius: 50%; background: rgba(245, 179, 1, 0.18); color: #f5b301; display: flex; align-items: center; justify-content: center; }
@@ -148,6 +148,9 @@
     <div id="signed-out" hidden>
       <p data-i18n-html="profile.you-re-not-signed-in-sign-in" class="empty">You're not signed in. <a href="observe.html">Sign in or register</a> to see your profile.</p>
     </div>
+    <!-- While /me is on its way: the shape of the profile, not a blank page
+         (design audit X9). Hidden the moment there is an answer. -->
+    <div class="hk-skel-page" id="p-loading" role="status" aria-busy="true" hidden><span class="sr-only" data-i18n="index.loading">Loading…</span><span class="hk-skel card"></span><span class="hk-skel line short"></span><span class="hk-skel card tall"></span><span class="hk-skel card"></span></div>
     <div class="hk-offline" id="p-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" id="p-retry" data-i18n="common.try-again">Try again</button></div>
     <div id="profile" hidden>
 
@@ -584,7 +587,9 @@
       // row showed the unit that had just been replaced (measured in
       // tests/choose_unit_test.mjs — the server never saw the second request).
       let r;
+      if ($('profile').hidden) $('p-loading').hidden = false;
       try { r = await api('/api/observers/me', { cache: 'no-store' }); } catch (e) { r = { status: 0, body: null }; }
+      $('p-loading').hidden = true;
       /* NO SIGNAL IS NOT SIGNED OUT (design audit X1). Only our server refusing
          the token ends the session. Offline, a 5xx or an HTML error page keeps
          it: the profile is painted from the last /me this phone saw, under a
@@ -950,7 +955,7 @@
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=192"></script>
+  <script src="menu.js?v=193"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

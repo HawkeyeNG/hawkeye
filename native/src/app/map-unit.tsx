@@ -1299,7 +1299,7 @@ export default function MapUnit() {
               <Feather name="star" size={18} color={isSaved ? BRAND.gold : BRAND.leaf} />
             )}
             <View className="flex-1 pl-2">
-              <Text className="text-sm font-bold text-hawk-leaf">
+              <Text className="text-sm font-bold text-good-ink">
                 {isSaved ? i18nT('n.app.map-unit.saved-as-your-polling-unit-tap') : i18nT('n.app.map-unit.save-as-my-polling-unit')}
               </Text>
               <Text className="text-xs text-muted">

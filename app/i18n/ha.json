@@ -2776,5 +2776,12 @@
   "practice.sample-state": "Atisaye",
   "practice.sample-ward": "Mazaɓar Misali",
   "common.cant-reach-hawkeye": "Ba a iya isa Hawkeye ba — duba haɗin intanet ɗinka.",
-  "common.try-again": "Sake gwadawa"
+  "common.try-again": "Sake gwadawa",
+  "menu.preferences": "Zaɓuɓɓuka",
+  "observe.create-your-account": "Buɗe Asusunka",
+  "observe.send-code": "Aika lamba",
+  "races.chip-all": "Duka",
+  "races.chip-completed": "Wanda ya kammala",
+  "races.chip-ongoing": "Ana gudanarwa",
+  "races.chip-upcoming": "Mai zuwa"
 }

@@ -271,9 +271,9 @@ try {
       label: document.querySelector('label[for="ref-input"]').textContent.trim(),
     }));
     check('sign-up shows ONE optional code field', vis, { fields: ['ref-input'], label: 'Invite or ORG code (optional)' });
-    check('empty: the hint, the channel picker, "Request OTP"', await kindLine(p), { hint: true, invite: false, org: false, picker: true, button: 'Request OTP' });
+    check('empty: the hint, the channel picker, "Request OTP"', await kindLine(p), { hint: true, invite: false, org: false, picker: true, button: 'Send Code' });
     await p.fill('#ref-input', 'h7k-mn3');
-    check('a six-character code reads as an invite; the OTP path stays', await kindLine(p), { hint: false, invite: true, org: false, picker: true, button: 'Request OTP' });
+    check('a six-character code reads as an invite; the OTP path stays', await kindLine(p), { hint: false, invite: true, org: false, picker: true, button: 'Send Code' });
     await p.fill('#ref-input', 'org-ab');
     check('the ORG prefix switches to the organisation path at once (no flip mid-typing)', await kindLine(p), (v) => !v.invite && !v.org && !v.picker && v.button === 'Create account');
     await p.fill('#auth-input', '08031234567');
@@ -326,16 +326,16 @@ try {
     await p.fill('#auth-input', '08031234567');
     await p.fill('#pw-opt-input', 'a good password');
     await p.fill('#ref-input', 'ORG-ABCD-EFGH-JKMN');
-    // Two in-page dialogs in turn: the number confirmation, then the refusal.
+    // The number confirmation is a dialog; the refusal is the form's error line
+    // under the field (design audit X4: errors never come as a dialog).
     const msgs = [];
     await p.click('#btn-auth');
-    for (let i = 0; i < 2; i++) {
-      await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 8000 }).catch(() => {});
-      msgs.push(await p.$eval('.hk-dlg .hk-dlg-msg', (e) => e.textContent).catch(() => ''));
-      await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
-      await p.waitForTimeout(300);
-    }
-    await p.waitForTimeout(500);
+    await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 8000 }).catch(() => {});
+    msgs.push(await p.$eval('.hk-dlg .hk-dlg-msg', (e) => e.textContent).catch(() => ''));
+    await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
+    await p.waitForTimeout(800);
+    msgs.push(await p.$eval('#auth-err:not([hidden])', (e) => e.textContent).catch(() => ''));
+    await p.waitForTimeout(300);
     check('an existing number: the conditional wording, no token stored', [msgs[1] || '', await p.evaluate(() => localStorage.getItem('hawkeye_token'))],
       (v) => /can only create a new account/.test(v[0]) && /If you deleted your account/.test(v[0]) && v[1] === null);
     await ctx.close();

@@ -8,7 +8,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=196" />
+  <link rel="stylesheet" href="styles.css?v=197" />
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -30,8 +30,8 @@
 .mg .acts { display: flex; gap: 8px; margin-top: 13px; flex-wrap: wrap; }
 .mg .g.ask { border-left: 3px solid var(--accent); }
 .mg .g.ask .fine { font-size: 0.82rem; color: var(--muted); line-height: 1.45; margin: 8px 0 0; }
-.mg .btn.go { background: var(--accent); color: #fff; border-color: var(--accent); text-decoration: none; display: inline-block; font-weight: 600; }
-.mg .btn { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; font: inherit; font-size: 0.82rem; cursor: pointer; }
+.mg .btn.go { background: var(--accent); color: var(--on-accent); border-color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; font-weight: 600; }
+.mg .btn { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 14px; min-height: 44px; font: inherit; font-size: 0.82rem; cursor: pointer; }   /* 44px: was 34 (audit X7) */
 .mg .btn:hover { border-color: var(--accent); }
 .mg .btn.warn:hover { border-color: #c4463a; color: #c4463a; }
 .mg .declined { color: var(--muted); font-size: 0.8rem; margin-top: 9px; }
@@ -52,7 +52,7 @@
     </div>
   </header>
 
-  <main class="mg" id="mg"><p class="lede" data-i18n="index.loading">Loading…</p></main>
+  <main class="mg" id="mg"><div class="hk-skel-page" role="status" aria-busy="true"><span class="sr-only" data-i18n="index.loading">Loading…</span><span class="hk-skel card"></span><span class="hk-skel card"></span></div></main>
 
 <script src="/i18n.js?v=10"></script>
 <script>
@@ -147,7 +147,7 @@ function card(g) {
      read-only for the people on the roster, which is the screen they most need
      — it is where they can see whether the campaign they joined is actually
      covering the race. */
-  const title = `<a href="/room/${esc(g.slug || '')}" style="color:var(--accent)">${esc(g.name)}</a>`;
+  const title = `<a href="/room/${esc(g.slug || '')}" style="color:var(--link)">${esc(g.name)}</a>`;
   return `<div class="g">
     <h2>${title}</h2>
     <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope_label || g.scope) : ''}</div>
@@ -242,7 +242,11 @@ async function act(b) {
 })();
 
 load().catch(() => {
-  repaint = () => { $('mg').innerHTML = `<p class="none">${T('my-groups.load-failed', 'Could not load your groups. Check your connection and try again.')}</p>`; };
+  // A way back in (design audit X9): the same offline card as every page.
+  repaint = () => {
+    $('mg').innerHTML = `<div class="hk-offline" role="status"><span>${T('my-groups.load-failed', 'Could not load your groups. Check your connection and try again.')}</span><button type="button" id="mg-retry">${T('common.try-again', 'Try again')}</button></div>`;
+    $('mg-retry').onclick = () => location.reload();
+  };
   repaint();
 });
 </script>

@@ -1,0 +1,37 @@
+{
+  "menu.preferences": {
+    "ha": "Zaɓuɓɓuka",
+    "ig": "Nhọrọ",
+    "yo": "Àwọn Àṣàyàn"
+  },
+  "observe.create-your-account": {
+    "ha": "Buɗe Asusunka",
+    "ig": "Mepee Akaụntụ Gị",
+    "yo": "Ṣí Àkàǹtì Rẹ"
+  },
+  "observe.send-code": {
+    "ha": "Aika lamba",
+    "ig": "Zipu koodu",
+    "yo": "Fi kóòdù ránṣẹ́"
+  },
+  "races.chip-all": {
+    "ha": "Duka",
+    "ig": "Niile",
+    "yo": "Gbogbo"
+  },
+  "races.chip-completed": {
+    "ha": "Wanda ya kammala",
+    "ig": "Nke gwụchara",
+    "yo": "Tí ó parí"
+  },
+  "races.chip-ongoing": {
+    "ha": "Ana gudanarwa",
+    "ig": "Na-aga n'ihu",
+    "yo": "Ń lọ lọ́wọ́"
+  },
+  "races.chip-upcoming": {
+    "ha": "Mai zuwa",
+    "ig": "Nke na-abịa",
+    "yo": "Tí ń bọ̀"
+  }
+}

@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=196">
+  <link rel="stylesheet" href="styles.css?v=197">
   <script src="native.js?v=125"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -57,7 +57,7 @@
     .rc-states summary { cursor: pointer; font-size: 0.85rem; font-weight: 600; color: var(--link); padding: 6px 0; }
     .rc-sub { font-size: 0.75rem; color: var(--muted); margin: 8px 0 4px; }
     .rc-grid { display: flex; flex-wrap: wrap; gap: 7px; }
-    .rc-grid a { font-size: 0.82rem; padding: 6px 12px; border-radius: 999px; text-decoration: none;
+    .rc-grid a { display: inline-flex; align-items: center; min-height: 44px; font-size: 0.82rem; padding: 6px 12px; border-radius: 999px; text-decoration: none;
       background: var(--tint); color: var(--link); border: 1px solid var(--border); }
   </style>
   <meta property="og:type" content="website">
@@ -94,7 +94,7 @@
       </nav>
     </div>
   </header>
-<main class="wrap">
+<main class="wrap page-fill">
     <h1 data-i18n="races.races">Races</h1>
     <p class="lede"><span data-i18n="races.pick-a-race-to-follow-report-on">Pick a race to follow, report on, or verify.</span><button class="info-i" data-i18n-info-title="info.how-races-are-grouped.title" data-info-title="How races are grouped" data-i18n-info="info.how-races-are-grouped.body" data-info="Ongoing is an election being reported today. Upcoming is one whose polling day is still ahead. Completed is one whose polling day has passed — its page stays up, because the record is the point. Candidate lists appear on each race's page as INEC publishes them, roughly 28 days out." data-info-links="INEC — the official electoral commission|https://www.inecnigeria.org
 INEC IReV — official result sheets|https://www.inecelectionresults.ng"></button></p>
@@ -188,6 +188,34 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       return `${where}${c.name} (${year})`;
     };
 
+    const GROUPS = [
+      ['ongoing', 'Being reported now', 'No election is being reported today. The next one is listed under Upcoming.'],
+      ['upcoming', 'Upcoming', 'Nothing scheduled.'],
+      ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
+    ];
+    /* THE FILTER ROW IS THERE FROM THE FIRST PAINT (design audit W3). It used to
+       be written only once the races arrived, so the chips appeared above the
+       list and pushed everything down by a row or two — most of Races' 0.80
+       layout shift. Painted now without counts, then again with them. */
+    const paintChips = (counts) => {
+      const n = (k) => (counts ? ' ' + counts[k] : '');
+      const CHIPS = [['all', 'All'], ['ongoing', 'Ongoing'], ['upcoming', 'Upcoming'], ['completed', 'Completed']];
+      const box = document.getElementById('rc-filter');
+      const was = (box.querySelector('input:checked') || {}).value || 'all';
+      // Keyed, so the chips read in the page's language (and repaint with it).
+      box.innerHTML = CHIPS.map(([k, label]) => `
+        <input type="radio" name="rc-status" id="rc-${k}" value="${k}"${k === was ? ' checked' : ''}>
+        <label for="rc-${k}"><span data-i18n="races.chip-${k}">${esc(label)}</span>${n(k)}</label>`).join('');
+      if (window.HawkeyeI18n) window.HawkeyeI18n.apply(box);
+    };
+    paintChips(null);
+    document.getElementById('rc-filter').addEventListener('change', (e) => {
+      const want = e.target.value;
+      for (const s of document.querySelectorAll('.rc-group')) {
+        s.hidden = want !== 'all' && s.dataset.status !== want;
+      }
+    });
+
     (async () => {
       const [contests, political] = await Promise.all([
         fetch('/api/contests').then((r) => r.json()).catch(() => []),
@@ -241,11 +269,6 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         });
       }
 
-      const GROUPS = [
-        ['ongoing', 'Being reported now', 'No election is being reported today. The next one is listed under Upcoming.'],
-        ['upcoming', 'Upcoming', 'Nothing scheduled.'],
-        ['completed', 'Completed', 'No election has been reported through Hawkeye yet.'],
-      ];
 
       /**
        * The state-assembly expander.
@@ -301,16 +324,11 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
 
       // Filter chips, counted from what is actually on the page.
       const counts = Object.fromEntries(GROUPS.map(([k]) => [k, items.filter((i) => i.status === k).length]));
-      const CHIPS = [['all', 'All', items.length], ...GROUPS.map(([k, t]) => [k, t === 'Being reported now' ? 'Ongoing' : t, counts[k]])];
-      document.getElementById('rc-filter').innerHTML = CHIPS.map(([k, label, n], i) => `
-        <input type="radio" name="rc-status" id="rc-${k}" value="${k}"${i === 0 ? ' checked' : ''}>
-        <label for="rc-${k}">${esc(label)} ${n}</label>`).join('');
-      document.getElementById('rc-filter').addEventListener('change', (e) => {
-        const want = e.target.value;
-        for (const s of document.querySelectorAll('.rc-group')) {
-          s.hidden = want !== 'all' && s.dataset.status !== want;
-        }
-      });
+      counts.all = items.length;
+      paintChips(counts);
+      // A chip picked while the list was loading still applies.
+      const picked = (document.querySelector('#rc-filter input:checked') || {}).value || 'all';
+      for (const s of document.querySelectorAll('.rc-group')) s.hidden = picked !== 'all' && s.dataset.status !== picked;
 
       document.getElementById('races').addEventListener('click', (e) => {
         const b = e.target.closest('button.race-item');
@@ -330,7 +348,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=192"></script>
+  <script src="menu.js?v=193"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

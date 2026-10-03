@@ -5,7 +5,7 @@ import { ActivityIndicator, Animated, Pressable, Text, View } from 'react-native
 
 import { InfoDot } from '@/components/info-dot';
 import { GovDisclaimer } from '@/components/gov-disclaimer';
-import { PartyMark } from '@/components/race';
+import { PartyCode, PartyMark } from '@/components/race';
 import { ScreenHeader } from '@/components/screen-header';
 import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { useUi } from '@/lib/theme';
@@ -197,11 +197,11 @@ export default function PoliticalData() {
                 <PartyMark party={d.president.party} logos={logos} size={26} />
                 <View className="flex-1 pl-3">
                   <Text className="text-sm font-bold text-ink">{d.president.name}</Text>
+                  {/* Ink, not the party's colour — see PartyCode. The emblem
+                      leading this card is the marker, so no dot. */}
                   <Text className="text-xs text-muted">
                     {i18nT('political.governing-party')}
-                    <Text style={{ color: partyColor(d.president.party) }}>
-                      {partyName(d.president.party)}
-                    </Text>
+                    <Text className="font-semibold text-ink">{partyName(d.president.party)}</Text>
                   </Text>
                 </View>
               </View>
@@ -321,13 +321,15 @@ export default function PoliticalData() {
                                   const top = ranked[0];
                                   return (
                                     <View key={st} className="border-t border-line py-2">
-                                      <View className="flex-row items-baseline">
+                                      <View className="flex-row items-center">
                                         <Text className="flex-1 text-xs font-semibold text-ink">{st}</Text>
                                         {top ? (
-                                          <Text className="shrink-0 text-[11px] text-muted">
-                                            <Text style={{ color: partyColor(top[0]) }}>{top[0]}</Text>{' '}
-                                            {top[1]}/{a.seats}
-                                          </Text>
+                                          <View className="shrink-0 flex-row items-center">
+                                            <PartyCode party={top[0]} textClassName="text-[11px]" />
+                                            <Text className="pl-1 text-[11px] text-muted">
+                                              {top[1]}/{a.seats}
+                                            </Text>
+                                          </View>
                                         ) : null}
                                       </View>
                                       <View className="mt-1 h-1.5 flex-row overflow-hidden rounded-full bg-card">
@@ -403,12 +405,10 @@ export default function PoliticalData() {
                                 ) : null}
                               </View>
                               {governorParty(d.governors, pickedState) ? (
-                                <Text
-                                  className="text-xs font-bold"
-                                  style={{ color: partyColor(governorParty(d.governors, pickedState)!) }}
-                                >
-                                  {governorParty(d.governors, pickedState)}
-                                </Text>
+                                <PartyCode
+                                  party={governorParty(d.governors, pickedState)!}
+                                  textClassName="text-xs font-bold"
+                                />
                               ) : (
                                 <Text className="text-xs text-muted">{i18nT('n.app.political.no-governor')}</Text>
                               )}
@@ -431,10 +431,7 @@ export default function PoliticalData() {
                             <View key={party} className="mb-2 rounded-2xl bg-card px-4 py-3">
                               <View className="flex-row items-center">
                                 <PartyMark party={party} logos={logos} size={20} />
-                                <Text
-                                  className="flex-1 pl-2 text-sm font-bold"
-                                  style={{ color: partyColor(party) }}
-                                >
+                                <Text className="flex-1 pl-2 text-sm font-bold text-ink">
                                   {partyName(party)}
                                 </Text>
                                 {/* Was `{n} ` + 'state'/'states' — a sentence built by

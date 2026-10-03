@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=196">
+  <link rel="stylesheet" href="styles.css?v=197">
   <script src="native.js?v=125"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
@@ -30,7 +30,10 @@
     .slot-head .slot-status { grid-column: 2; grid-row: 1; }
     .slot-head small { grid-column: 1 / -1; grid-row: 2; }
     /* Step cards — mirrors observe.html. Locked steps cannot be opened. */
-    .step-card.locked { opacity: 0.5; }
+    /* Locked = muted and dashed, not 50% opacity: faded green headings read 2.35:1 (audit W8/X5). */
+    .step-card.locked { border-style: dashed; }
+    .step-card.locked > summary, .step-card.locked > summary h2 { color: var(--muted); }
+    .step-card.locked .step-no { filter: grayscale(1); }
     .step-card.locked > summary { pointer-events: none; cursor: default; }
     .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
     /* ::after affordance lives in styles.css now (see observe.html note) — a
@@ -252,7 +255,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=192"></script>
+  <script src="menu.js?v=193"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Resolve through the runtime once it has loaded, else the English argument

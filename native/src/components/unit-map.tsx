@@ -498,7 +498,7 @@ function Placeholder({
           onPress={onRetry}
           className="mt-3 rounded-full bg-surface px-4 py-2 active:opacity-70"
         >
-          <Text className="text-xs font-bold text-hawk-leaf">{i18nT('n.app.docket.retry')}</Text>
+          <Text className="text-xs font-bold text-good-ink">{i18nT('n.app.docket.retry')}</Text>
         </Pressable>
       ) : null}
     </View>

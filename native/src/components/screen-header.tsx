@@ -1,7 +1,7 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
-import { type ReactNode } from 'react';
-import { Animated, Image, Pressable, Text, View } from 'react-native';
+import { type ReactNode, useState } from 'react';
+import { Animated, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTopInset } from '@/lib/safe-area';
 
 import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
@@ -56,6 +56,18 @@ export function ScreenHeader({
   // still zero, so the row never paints over the clock on a first mount.
   const topInset = useTopInset();
   const rightKind = right ?? (onClose ? 'close' : 'none');
+  /**
+   * A TITLE THAT WRAPS, NOT ONE THAT ELLIPSISES. The Igbo titles of How, Guide,
+   * About and Ready were cut off with "…" on one line (design audit Oct 2026,
+   * X6). Two lines are allowed; once the title has actually wrapped it steps
+   * down to 18/22, so two lines (44pt) sit inside the fixed 52pt row. Remembered
+   * per title, so a title that fits on one line at the smaller size cannot flip
+   * back to 20pt, wrap again and loop. A one-line title stays at 20pt. The 24pt
+   * line height on the first pass keeps even an unmeasured two-line title
+   * (wherever onTextLayout does not fire) at 48pt, inside the row.
+   */
+  const [wrapped, setWrapped] = useState<string | null>(null);
+  const twoLines = wrapped === title;
   return (
     <>
       {/* The pinned strip. Never translates, so there is always something opaque
@@ -88,10 +100,13 @@ export function ScreenHeader({
           className="flex-row items-center border-b border-line px-4"
           style={{ height: HEADER_CONTENT_H }}
         >
+          {/* 44pt TARGETS, SAME PICTURE. The mark is 32pt and the close glyph
+              24pt; padding grows each Pressable's own box to 44 and an equal
+              negative margin gives the space back, so nothing on screen moves
+              (hitSlop alone left the measured boxes at 32x32 and 24x26). */}
           <Pressable
             onPress={onHome ?? (() => router.navigate('/(tabs)' as never))}
-            hitSlop={8}
-            className="mr-3"
+            style={styles.home}
             accessibilityRole="button"
             accessibilityLabel={i18nT('nav.home')}
           >
@@ -106,14 +121,24 @@ export function ScreenHeader({
               style={{ width: 32, height: 32 }}
             />
           </Pressable>
-          <Text className="flex-1 text-xl font-bold text-ink" numberOfLines={1}>
+          <Text
+            className={`flex-1 font-bold text-ink ${twoLines ? 'text-lg' : 'text-xl'}`}
+            style={{ lineHeight: twoLines ? 22 : 24 }}
+            numberOfLines={2}
+            // Two 22pt lines at 1.15x still fit the 52pt row; past that the row
+            // would clip them. A one-line title keeps the reader's full scale.
+            maxFontSizeMultiplier={twoLines ? 1.15 : undefined}
+            onTextLayout={(e) => {
+              if (!twoLines && e.nativeEvent.lines.length > 1) setWrapped(title);
+            }}
+          >
             {title}
           </Text>
           {rightSlot ? <View className="mr-2">{rightSlot}</View> : null}
           {rightKind === 'close' ? (
             <Pressable
               onPress={onClose ?? (() => router.back())}
-              hitSlop={10}
+              style={styles.action}
               accessibilityRole="button"
               accessibilityLabel={i18nT('common.close')}
             >
@@ -122,7 +147,7 @@ export function ScreenHeader({
           ) : rightKind === 'menu' ? (
             <Pressable
               onPress={() => router.navigate('/(tabs)/more' as never)}
-              hitSlop={10}
+              style={styles.action}
               accessibilityRole="button"
               accessibilityLabel={i18nT('common.menu')}
             >
@@ -134,3 +159,12 @@ export function ScreenHeader({
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  /** 32pt mark + 6pt padding a side = 44. The right margin is the old mr-3 (12)
+   *  less the 6 the padding added, so the title starts where it always did. */
+  home: { padding: 6, marginVertical: -6, marginLeft: -6, marginRight: 6 },
+  /** 24pt glyph + 10pt padding a side = 44 wide (46 tall with the icon font's
+   *  line box); the negative margin keeps its footprint at 24. */
+  action: { padding: 10, margin: -10 },
+});

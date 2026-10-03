@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Hawkeye: Party onboarding guide</title>
+<meta name="author" content="Hawkeye">
+<meta name="description" content="How a political party's situation-room managers and polling agents get started on Hawkeye.">
+<style>
+/*FONTS*/
+/*
+  PARTY ONBOARDING GUIDE, A4. Rendered by render_party_onboarding.mjs, which
+  swaps in the fonts, the crest and the QR, then gates every page on overflow.
+
+  A FIELD GUIDE, NOT A BROCHURE. White paper (it gets printed in party offices),
+  the brand ground only in the opening band, numbered steps because they ARE a
+  sequence, and every UI label in bold exactly as the screen spells it, so a
+  reader can match the page to the screen. Every step was checked against the
+  code on 2026-10-01 (app/observe.html + app.js, app/situation-room.html,
+  backend routes/groups.js, services/orgCodes.js, services/roomLabels.js).
+
+  PARTY-NEUTRAL: no party names, colours or emblems anywhere. One text for
+  every party.
+*/
+:root {
+  --ground:#05271a; --deep:#031a11; --green:#2ee08a; --mint:#9ff5c6; --gold:#ffcc70;
+  --ink:#0f2219; --muted:#4a5d53; --line:#d5e2da; --tint:#eef7f2; --gink:#0a6e40; --goldink:#7a4f00;
+  --goldtint:#fff6e3;
+}
+@page { size: A4; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { font-family: Inter, 'Segoe UI', system-ui, sans-serif; color: var(--ink); background: #fff;
+  font-size: 9.3pt; line-height: 1.42; font-feature-settings: 'tnum' 1; }
+.page { width: 210mm; height: 297mm; padding: 12mm 14mm 9mm; position: relative; overflow: hidden;
+  display: flex; flex-direction: column; break-after: page; page-break-after: always; }
+.page:last-child { break-after: auto; page-break-after: auto; }
+.body { flex: 1; display: flex; flex-direction: column; gap: 4.2mm; min-height: 0; }
+/* NOTHING SHRINKS. A flex child allowed to shrink absorbs an overflow silently
+   (the first render squashed the dates strip to half a line and the gate saw
+   "11px spare"); fixed heights make an overflow show up as an overflow. */
+.body > * { flex-shrink: 0; }
+b, strong { font-weight: 700; }
+.ui { font-weight: 700; color: var(--ink); }
+.mono, code { font-family: 'JetBrains Mono', ui-monospace, Menlo, monospace; font-size: .92em; }
+code { background: var(--tint); border: 1px solid var(--line); border-radius: 1.2mm; padding: 0 1.1mm; white-space: nowrap; }
+
+/* running header + footer */
+.run { display: flex; align-items: center; gap: 2.6mm; padding-bottom: 2.6mm; margin-bottom: 4.4mm;
+  border-bottom: 1.4px solid var(--ground); }
+.run img { width: 7.5mm; height: 7.5mm; }
+.run b { font-family: 'Bricolage Grotesque', Inter, sans-serif; letter-spacing: .14em; font-size: 10pt; }
+.run span { color: var(--muted); font-size: 8.4pt; }
+.run .sp { flex: 1; }
+.pf { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--line);
+  padding-top: 2.2mm; margin-top: 3mm; font-size: 7.6pt; color: var(--muted); }
+.pf .mono { color: var(--ink); }
+
+/* section heads */
+h2 { font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 15.5pt; line-height: 1.12;
+  display: flex; align-items: center; gap: 2.6mm; color: var(--ground); }
+h2 .n { flex: none; width: 8mm; height: 8mm; border-radius: 2mm; background: var(--ground); color: var(--green);
+  font-family: 'JetBrains Mono', monospace; font-size: 11pt; display: grid; place-items: center; }
+h2 .who { margin-left: auto; font-family: 'JetBrains Mono', monospace; font-size: 7.4pt; font-weight: 700;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--goldink); background: var(--goldtint);
+  border: 1px solid #f0d9a8; border-radius: 10mm; padding: .8mm 2.6mm; }
+.intro { color: var(--muted); margin-top: -1.6mm; }
+h3 { font-size: 10pt; font-weight: 700; color: var(--ground); margin-bottom: 1.4mm; }
+
+/* numbered steps */
+ol.steps { list-style: none; display: flex; flex-direction: column; gap: 2.1mm; }
+ol.steps > li { display: grid; grid-template-columns: 7mm 1fr; gap: 2.6mm; align-items: start; }
+ol.steps > li > .k { width: 6.4mm; height: 6.4mm; border-radius: 50%; border: 1.5px solid var(--ground);
+  font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 8.6pt; display: grid; place-items: center;
+  color: var(--ground); margin-top: .2mm; }
+ol.steps > li > div > b:first-child { color: var(--ground); }
+ol.steps .alt { display: block; margin-top: .9mm; padding-left: 2.6mm; border-left: 2px solid var(--line); color: var(--ink); }
+ol.steps.tight { gap: 1.5mm; }
+
+.box { border: 1px solid var(--line); border-radius: 2.4mm; padding: 3.2mm 3.8mm; background: #fff; }
+.box.tint { background: var(--tint); border-color: #cfe6d9; }
+.box.gold { background: var(--goldtint); border-color: #f0d9a8; }
+.box.dark { background: var(--ground); color: #fff; border-color: var(--ground); }
+.box.dark h3 { color: var(--green); }
+ul.dots { list-style: none; display: flex; flex-direction: column; gap: 1.3mm; }
+ul.dots li { padding-left: 3.6mm; position: relative; }
+ul.dots li::before { content: ''; position: absolute; left: 0; top: 1.75mm; width: 1.5mm; height: 1.5mm;
+  border-radius: 50%; background: var(--gink); }
+.box.dark ul.dots li::before { background: var(--green); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+.cols.c3 { grid-template-columns: 1fr 1fr 1fr; gap: 3mm; }
+.cols.w { grid-template-columns: 1.32fr 1fr; }
+
+/* page 1 hero */
+.hero { background: radial-gradient(120mm 70mm at 10% 0%, #0f4d33 0%, transparent 70%), var(--ground);
+  color: #fff; border-radius: 3.4mm; padding: 6mm 7.5mm 5.6mm; display: grid;
+  grid-template-columns: 1fr 41mm; gap: 7mm; align-items: center; }
+.brand { display: flex; align-items: center; gap: 3mm; }
+.brand img { width: 12mm; height: 12mm; }
+.brand b { font-family: 'Bricolage Grotesque', Inter, sans-serif; font-size: 15pt; letter-spacing: .16em; display: block; line-height: 1; }
+.brand span { font-size: 7.4pt; letter-spacing: .14em; text-transform: uppercase; color: var(--mint); }
+.kick { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 8.2pt; letter-spacing: .14em;
+  margin-top: 4.4mm; font-weight: 700; }
+h1 { font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 700; font-size: 25pt; line-height: 1.04;
+  margin-top: 1.6mm; letter-spacing: -.01em; }
+h1 em { font-style: normal; color: var(--green); }
+.lede { color: var(--mint); font-size: 10.4pt; line-height: 1.38; margin-top: 2.6mm; }
+.qrcard { background: #fff; color: var(--ink); border-radius: 2.6mm; padding: 3mm 3mm 2.6mm; text-align: center; }
+.qrcard svg { width: 35mm; height: 35mm; display: block; margin: 0 auto; }
+.qrcard b { display: block; font-size: 8.6pt; margin-top: 1.8mm; }
+.qrcard .mono { display: block; font-size: 7.6pt; color: var(--gink); font-weight: 700; }
+.boundary { font-size: 8.6pt; color: var(--muted); border-left: 3px solid var(--gold); padding: .4mm 0 .4mm 3mm; }
+
+.dates { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 2.4mm; overflow: hidden; }
+.dates > div { padding: 2.4mm 3mm; border-left: 1px solid var(--line); }
+.dates > div:first-child { border-left: 0; }
+.dates .d { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 9.2pt; color: var(--ground); }
+.dates .t { font-size: 8.2pt; color: var(--muted); line-height: 1.3; margin-top: .4mm; }
+.dates .hot { background: var(--tint); }
+.dates .hot .d { color: var(--gink); }
+
+.map { display: flex; align-items: center; gap: 2.4mm; font-size: 8.6pt; color: var(--muted); }
+.map .lbl { font-family: 'JetBrains Mono', monospace; font-size: 7.4pt; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ground); }
+.map .chip { border: 1px solid var(--line); border-radius: 10mm; padding: .7mm 2.8mm; color: var(--ink); }
+.map .chip b { color: var(--ground); }
+
+.app h3 { margin-bottom: .8mm; }
+.app p { font-size: 8.8pt; }
+.app .where { margin-top: 1.6mm; font-size: 8.2pt; color: var(--muted); }
+.app .where b { color: var(--ink); }
+
+/* roles table */
+table.roles { width: 100%; border-collapse: collapse; font-size: 8.8pt; }
+table.roles th { text-align: left; font-size: 7.4pt; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  font-weight: 700; padding: 0 2.4mm 1.4mm; border-bottom: 1.4px solid var(--ground); }
+table.roles td { padding: 1.9mm 2.4mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.roles td:first-child { font-weight: 700; color: var(--ground); white-space: nowrap; }
+table.roles tr:last-child td { border-bottom: 0; }
+
+/* codes */
+.codeline { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 12pt; letter-spacing: .06em;
+  color: var(--ground); background: var(--tint); border: 1px dashed #9cc9ae; border-radius: 2mm; padding: 1.6mm 3mm;
+  display: inline-block; white-space: nowrap; flex: none; }
+.facts { display: grid; grid-template-columns: 1fr 1fr; gap: 2.4mm; }
+.facts > div { border: 1px solid var(--line); border-radius: 2.2mm; padding: 2.4mm 3mm; font-size: 8.8pt; }
+.facts > div b:first-child { display: block; color: var(--ground); font-size: 9.2pt; margin-bottom: .4mm; }
+.pill { display: inline-block; font-size: 7.8pt; font-weight: 700; border-radius: 10mm; padding: .1mm 2mm; border: 1px solid; white-space: nowrap; }
+.pill.ok { color: var(--gink); border-color: #9cc9ae; background: var(--tint); }
+.pill.used { color: #3b4a43; border-color: #c9d3ce; background: #f3f5f4; }
+.pill.off { color: #8a2b2b; border-color: #e4b9b9; background: #fbf0f0; }
+.pill.wait { color: var(--goldink); border-color: #f0d9a8; background: var(--goldtint); }
+
+/* checklist */
+.check { list-style: none; display: flex; flex-direction: column; gap: 1.5mm; }
+.check li { display: grid; grid-template-columns: 4.6mm 1fr; gap: 2.2mm; align-items: start; font-size: 9pt; }
+.check li::before { content: ''; width: 3.8mm; height: 3.8mm; border: 1.4px solid var(--ground); border-radius: .8mm; margin-top: .3mm; background: #fff; }
+.contact { display: flex; align-items: center; gap: 5mm; }
+#p4 .body { gap: 3.6mm; }
+.contact .big { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 10.4pt; color: #fff; }
+.contact .sub { color: var(--mint); font-size: 8.6pt; }
+</style></head>
+<body>
+
+<!-- ============================================================ PAGE 1 -->
+<section class="page" id="p1">
+  <div class="body">
+    <div class="hero">
+      <div>
+        <div class="brand"><img src="__LOGO__" alt=""><div><b>HAWKEYE</b><span>Independent election results monitor</span></div></div>
+        <p class="kick">PARTY ONBOARDING GUIDE · 2027 ELECTIONS</p>
+        <h1>Get your party's agents <em>reporting</em> on Hawkeye</h1>
+        <p class="lede">The exact steps for situation-room managers and polling agents. Free, and the same for every registered party.</p>
+      </div>
+      <div class="qrcard">__QR__<b>Scan to get the app</b><span class="mono">hawkeye.com.ng/download</span></div>
+    </div>
+
+    <p class="boundary">Hawkeye is independent. It is not INEC, not a government body, and not affiliated with any party. It declares no results: official results are INEC's alone.</p>
+
+    <div class="dates">
+      <div class="hot"><p class="d">Sat 12 Dec 2026</p><p class="t">National Practice Day<br>08:00 to 18:00</p></div>
+      <div class="hot"><p class="d">Sat 9 Jan 2027</p><p class="t">National Practice Day<br>08:00 to 18:00</p></div>
+      <div><p class="d">Sat 16 Jan 2027</p><p class="t">Presidential and National Assembly elections</p></div>
+      <div><p class="d">Sat 6 Feb 2027</p><p class="t">Governorship and State Assembly elections</p></div>
+    </div>
+
+    <div class="map">
+      <span class="lbl">Who reads what</span>
+      <span class="chip"><b>Leadership:</b> sections 1 to 4</span>
+      <span class="chip"><b>Agents:</b> sections 1, 2 and 5</span>
+      <span class="chip"><b>Everyone:</b> the checklist on page 4</span>
+    </div>
+
+    <h2><span class="n">1</span>Get Hawkeye<span class="who">Everyone</span></h2>
+    <div class="cols c3">
+      <div class="box app"><h3>Hawkeye</h3><p>The full app. Keeps the polling-unit list on the phone for when there is no network.</p>
+        <p class="where">App Store and Google Play<br>Search <b>Hawkeye Election Monitor</b></p></div>
+      <div class="box app"><h3>Hawkeye Lite</h3><p>7.9 MB, with the same reporting. For phones short on space or data.</p>
+        <p class="where">App Store and Google Play<br>Search <b>Hawkeye Lite</b></p></div>
+      <div class="box app"><h3>On the web</h3><p>Any browser, no install. The Situation Room runs here, on a computer.</p>
+        <p class="where">Open <b>hawkeye.com.ng</b></p></div>
+    </div>
+    <p class="intro" style="margin-top:-1.4mm">One link for all three: <b class="mono">hawkeye.com.ng/download</b>. They share one account and send to the same public record.</p>
+
+    <h2><span class="n">2</span>Sign up, free, with a phone number<span class="who">Everyone</span></h2>
+    <div class="cols w">
+      <ol class="steps">
+        <li><span class="k">1</span><div>Open Hawkeye and tap <span class="ui">Become an observer</span>.</div></li>
+        <li><span class="k">2</span><div>Enter your Nigerian mobile number.</div></li>
+        <li><span class="k">3</span><div><b>Have an ORG code from your party?</b> Type it in <span class="ui">Invite or organisation code (optional)</span>. The button becomes <span class="ui">Create account</span> and no one-time code is sent. Check the number, then tap <span class="ui">Yes, create my account</span>.
+          <span class="alt"><b>No code?</b> Leave the box empty. Prove your number by Telegram, WhatsApp or SMS, as the screen shows.</span></div></li>
+        <li><span class="k">4</span><div>Create a password of at least 8 characters.</div></li>
+        <li><span class="k">5</span><div>Save your polling unit when the app asks.</div></li>
+      </ol>
+      <div class="box tint">
+        <h3>Good to know</h3>
+        <ul class="dots">
+          <li>A code only creates a <b>new</b> account. If your number already has one, sign in instead: typing a code would use it up.</li>
+          <li>No code box? Update the app, or sign up at <b>hawkeye.com.ng</b>, then sign in on the app.</li>
+          <li>Passkeys are optional. Hawkeye may later offer fingerprint, face or screen lock in place of a code or password.</li>
+          <li>One phone and one computer can be signed in at once. Signing in on a second phone signs the first one out.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer class="pf"><span>Independent · Not affiliated with INEC or any political party · hawkeye.com.ng</span><span class="mono">1 / 4</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 2 -->
+<section class="page" id="p2">
+  <header class="run"><img src="__LOGO__" alt=""><b>HAWKEYE</b><span>Party onboarding guide</span><span class="sp"></span><span>For party leadership</span></header>
+  <div class="body">
+    <h2><span class="n">3</span>Set up your Situation Room<span class="who">Party leadership</span></h2>
+    <p class="intro">A private dashboard for your party in one race: which polling units your agents have reported, where coverage is thin, and who has yet to file. It runs in a browser on a computer.</p>
+
+    <ol class="steps">
+      <li><span class="k">1</span><div><b>Email Hawkeye your contacts.</b> Write to <b class="mono">osaretin@hawkeye.com.ng</b> with: the race and area you will cover; one person to receive your organisation codes; and up to 10 room coordinators. For each coordinator, send the <span class="ui">Observer #</span> shown on their <span class="ui">My Profile</span> page, or the ORG code they signed up with.</div></li>
+      <li><span class="k">2</span><div><b>Sign up</b> (section 2). Then, on a computer, open <b class="mono">hawkeye.com.ng/situation-room.html</b> and sign in.</div></li>
+      <li><span class="k">3</span><div><b>Create the room.</b> Fill in <span class="ui">Campaign or organisation</span> (the room's name), <span class="ui">Type</span>: <span class="ui">Campaign</span>, <span class="ui">Party</span>: your party (required), and <span class="ui">Which election</span> (then the state or seat, if asked). Click <span class="ui">Create situation room</span>. A room's name may name only its own party.</div></li>
+      <li><span class="k">4</span><div><b>Wait for verification.</b> Hawkeye checks every party's room the same way, and approves at most one room per party for each race and area. Until then a banner says the label is being verified, invite links do not work, and you can set the room up meanwhile. You are notified when it is verified. A room created by a coordinator named in step 1 is approved at once.</div></li>
+      <li><span class="k">5</span><div><b>Install it on the computer.</b> In Chrome or Edge, click <span class="ui">Install</span> in the room's header bar. It opens in its own window and stays signed in.</div></li>
+      <li><span class="k">6</span><div><b>Invite your people.</b> Click <span class="ui">Invite observers</span>, then <span class="ui">Copy</span> the link (<code>hawkeye.com.ng/join/…</code>). Send it in your party's own groups. Each person signs in and taps <span class="ui">Join</span>. A link lasts 30 days. <span class="ui">Revoke</span> a link that leaks, and <span class="ui">Create another link</span> at any time.</div></li>
+      <li><span class="k">7</span><div><b>Give access.</b> In the <span class="ui">Team</span> tab, find the person and click <span class="ui">Give access</span>. Choose a <span class="ui">Role</span> and, for a coordinator, the <span class="ui">Area</span>, then <span class="ui">Confirm</span>. A person must join (step 6) before they can be given access.</div></li>
+      <li><span class="k">8</span><div><b>Confirm units.</b> An agent's saved polling unit arrives as a proposal. Click <span class="ui">Confirm</span>, or <span class="ui">Change unit</span>. An agent can decline a unit, and can always report from where they actually are.</div></li>
+    </ol>
+
+    <div class="box">
+      <h3>Who can do what in your room</h3>
+      <table class="roles">
+        <thead><tr><th>Role</th><th>Who</th><th>What they can do</th></tr></thead>
+        <tbody>
+          <tr><td>Owner</td><td>Whoever created the room</td><td>Everything. The only one who appoints managers, renames or deletes the room.</td></tr>
+          <tr><td>Manager</td><td>Appointed by the owner</td><td>The whole race, and everyone in it. Appoints coordinators.</td></tr>
+          <tr><td>Coordinator</td><td>One zone, state, local government or ward</td><td>Manages only the people in their area, and sees the whole race's totals. Appoints coordinators below their own level.</td></tr>
+          <tr><td>Member</td><td>Anyone who joined by link</td><td>Reads the room: their own row and the room's totals. Changes nothing.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="box dark">
+      <h3>Your room is yours alone</h3>
+      <ul class="dots">
+        <li>Other parties and the public never see your roster or your room.</li>
+        <li>No early figures: results reach your room on the same public feed, at the same moment as everyone else.</li>
+        <li>Unit by unit, a room sees only its own agents. Reports from anyone else count in the area totals.</li>
+      </ul>
+    </div>
+  </div>
+  <footer class="pf"><span>Independent · Not affiliated with INEC or any political party · hawkeye.com.ng</span><span class="mono">2 / 4</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 3 -->
+<section class="page" id="p3">
+  <header class="run"><img src="__LOGO__" alt=""><b>HAWKEYE</b><span>Party onboarding guide</span><span class="sp"></span><span>Codes and election day</span></header>
+  <div class="body">
+    <h2><span class="n">4</span>Organisation codes<span class="who">Party leadership</span></h2>
+    <div style="display:flex;align-items:center;gap:4mm">
+      <span class="codeline">ORG-XXXX-XXXX-XXXX</span>
+      <p class="intro" style="margin:0">An organisation code lets an agent sign up without waiting for a one-time code. The agent types it in step 3 of section 2.</p>
+    </div>
+    <div class="facts">
+      <div><b>Each code signs up one agent.</b>It works once, and is tied to that phone number for good.</div>
+      <div><b>Hawkeye issues them.</b>In batches, as a CSV file, to the one contact your party names.</div>
+      <div><b>The same limit for every party.</b>One code per polling unit in your race and area, counted from INEC's register.</div>
+      <div><b>A code does not add anyone to your room.</b>Send your invite link as well. Agents tap it and join.</div>
+      <div><b>Hand them out one at a time, privately.</b>Never post the list in a group. A leaked code can be withdrawn.</div>
+      <div><b>New accounts only.</b>An agent who already has a Hawkeye account needs no code: they sign in and tap your link.</div>
+    </div>
+
+    <div class="box tint">
+      <h3>The Codes tab in your room</h3>
+      <p style="margin-bottom:1.8mm">Shown to the room's owner, or to a coordinator Hawkeye named for your party, once the room is verified.</p>
+      <ol class="steps tight">
+        <li><span class="k">1</span><div><b>Check.</b> Paste codes, or click <span class="ui">Upload CSV</span> with the file you were given, then <span class="ui">Check</span>. Each code shows <span class="pill ok">Unused</span> <span class="pill used">Used</span> (the day only) <span class="pill off">Withdrawn</span> or <span class="pill wait">Not one of yours</span>.</div></li>
+        <li><span class="k">2</span><div><b>Withdraw.</b> Tick unused codes, or <span class="ui">Select all unused</span>. Click <span class="ui">Withdraw selected</span> and confirm. They stop working at once. Accounts already made with your codes are not affected.</div></li>
+        <li><span class="k">3</span><div><b>Undo.</b> Click <span class="ui">Undo</span> straight after, or <span class="ui">Restore</span> on a withdrawn code. Only codes your room withdrew can be restored, and only while your code limit has room.</div></li>
+        <li><span class="k">4</span><div><b>Download</b> the results, or <span class="ui">Download unused codes only</span> to keep handing them out.</div></li>
+      </ol>
+      <p style="margin-top:2mm;color:var(--muted);font-size:8.5pt">The checker never says who used a code. Only the codes are sent to Hawkeye; the rest of your file stays on your computer.</p>
+    </div>
+
+    <h2><span class="n">5</span>Election day<span class="who">Polling agents</span></h2>
+    <div class="cols">
+      <div class="box gold">
+        <h3>Before the day</h3>
+        <ul class="dots">
+          <li>Sign up and save your polling unit (section 2).</li>
+          <li>Tap your party's invite link and <span class="ui">Join</span>. The room then appears in <span class="ui">My Groups</span>.</li>
+          <li>Open <span class="ui">Ready for election day</span> in the menu. Fix each row until it shows <span class="ui">Ready</span>.</li>
+          <li>Practise on 12 December or 9 January: run the practice election (Party A to F). Nothing you enter is published.</li>
+          <li>Update the app before each Practice Day.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>On the day</h3>
+        <ol class="steps tight">
+          <li><span class="k">1</span><div><b>Arrive</b> at your assigned polling unit. In <span class="ui">My Groups</span>, tap <span class="ui">I'm at my unit</span>. On the web or Lite, tap it in your party's room.</div></li>
+          <li><span class="k">2</span><div><b>Stay for the count</b> until the result is announced and posted.</div></li>
+          <li><span class="k">3</span><div><b>Photograph</b> the result sheet (EC8A) and the polling venue, live in the app.</div></li>
+          <li><span class="k">4</span><div><b>Check</b> the unit and the election. Enter the counts exactly as written on the sheet.</div></li>
+          <li><span class="k">5</span><div><b>Send.</b> No signal? The report waits on the phone and sends itself when signal returns.</div></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <footer class="pf"><span>Independent · Not affiliated with INEC or any political party · hawkeye.com.ng</span><span class="mono">3 / 4</span></footer>
+</section>
+
+<!-- ============================================================ PAGE 4 -->
+<section class="page" id="p4">
+  <header class="run"><img src="__LOGO__" alt=""><b>HAWKEYE</b><span>Party onboarding guide</span><span class="sp"></span><span>Checklist and terms</span></header>
+  <div class="body">
+    <div class="cols">
+      <div class="box">
+        <h3>Stay safe</h3>
+        <ul class="dots">
+          <li>Report after the count, from where you feel safe.</li>
+          <li>Follow officials' instructions. Never argue over a result.</li>
+          <li>No figure is worth anyone's safety.</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>One agent, one phone, one account</h3>
+        <p>In each election, a phone's reports count for the first account that reports from it. Reports from a second account on that phone are kept but not counted. Each agent should use their own phone.</p>
+      </div>
+    </div>
+
+    <div class="box tint">
+      <h3>What your room sees on the day</h3>
+      <div class="cols" style="gap:3mm 6mm">
+        <ul class="dots">
+          <li><span class="ui">Overview</span>: units reported, how many of your agents have reported, a coverage map, where you are thinnest, and reports as they arrive.</li>
+          <li><span class="ui">Party totals</span>: the same figures the public board shows.</li>
+        </ul>
+        <ul class="dots">
+          <li><span class="ui">Coverage</span>: local government, ward and unit, each marked <span class="ui">On their unit</span>, <span class="ui">Filed elsewhere</span> or <span class="ui">Yet to report</span>.</li>
+          <li><span class="ui">Team</span>: who has checked in, their assigned unit, and where they reported from. A different unit is a discrepancy to explain, not a verdict.</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2><span class="n">✓</span>Before Practice Day, 12 December 2026</h2>
+    <div class="cols">
+      <div class="box">
+        <h3>Party leadership</h3>
+        <ul class="check">
+          <li>Race, area and contacts emailed to Hawkeye</li>
+          <li>Situation Room created and verified</li>
+          <li>Room installed on the coordinator's computer</li>
+          <li>Managers and coordinators given access</li>
+          <li>Codes received; one per agent, given privately</li>
+          <li>Invite link sent in the party's own groups</li>
+          <li>Agents' units confirmed in the Team tab</li>
+        </ul>
+      </div>
+      <div class="box">
+        <h3>Every polling agent</h3>
+        <ul class="check">
+          <li>Hawkeye or Lite installed and up to date</li>
+          <li>Signed up, password set, polling unit saved</li>
+          <li>Joined the party's room: it shows in My Groups</li>
+          <li>Ready for election day: every row Ready</li>
+          <li>Practice run done on 12 Dec or 9 Jan</li>
+          <li>Knows to stay for the count on 16 January</li>
+        </ul>
+      </div>
+    </div>
+
+    <h2><span class="n">§</span>The same terms for every party</h2>
+    <div class="cols">
+      <ul class="dots">
+        <li><b>Identical terms.</b> Free for every registered party: the same code limit, the same room check, and one approved room per party per race and area. This guide is the same for every party.</li>
+        <li><b>Independent.</b> Hawkeye is not INEC and not affiliated with any party. It declares no results. Official results are INEC's alone.</li>
+        <li><b>Never sold.</b> A party's room data is never sold and never shared with another party.</li>
+      </ul>
+      <ul class="dots">
+        <li><b>Public and anonymous.</b> The counts and the result-sheet photo are published under an anonymous observer ID, never a name or number. The venue photo is not shown publicly.</li>
+        <li><b>The agent decides.</b> Joining lets the room see the reports an agent files from then on. Agents can leave at any time in My Groups.</li>
+        <li><b>Codes stay internal.</b> Which party issued a code is never shown publicly and never affects how a result is checked or counted.</li>
+      </ul>
+    </div>
+
+    <div class="box dark contact">
+      <div style="flex:1">
+        <h3 style="margin-bottom:.6mm">Questions, codes and room verification</h3>
+        <p class="sub">Osaretin Osagie · +234 907 872 7777 · hawkeye.com.ng</p>
+      </div>
+      <p class="big">osaretin@hawkeye.com.ng</p>
+    </div>
+  </div>
+  <footer class="pf"><span>Independent · Not affiliated with INEC or any political party · hawkeye.com.ng</span><span class="mono">4 / 4</span></footer>
+</section>
+
+</body></html>

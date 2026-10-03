@@ -1,0 +1,10 @@
+{
+  "name": "hawkeye-design-audit",
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "lighthouse": "^13.5.0",
+    "playwright-core": "^1.63.0"
+  }
+}

@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,800&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root { --ground:#05271a; --deep:#031a11; --green:#2ee08a; --mint:#9ff5c6; --gold:#ffcc70; --white:#ffffff; }
+  * { box-sizing: border-box; margin: 0; }
+  body { width: 1080px; height: 1080px; background: var(--ground); color: var(--white);
+    font-family: Inter, 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column;
+    position: relative; overflow: hidden; }
+  /* the flag, as three soft vertical bands behind everything */
+  .flag { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 1fr 1fr; opacity: .07; }
+  .flag i:nth-child(1), .flag i:nth-child(3) { background: #008751; }
+  .flag i:nth-child(2) { background: #fff; }
+  .glow { position: absolute; inset: -20%; background: radial-gradient(closest-side, rgba(46,224,138,.18), transparent 70%); }
+  .card { position: relative; flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 72px 80px 64px; }
+  .brand { display: flex; align-items: center; gap: 16px; font-weight: 700; letter-spacing: .14em; font-size: 26px; }
+  .brand img { width: 64px; height: 64px; border-radius: 14px; }
+  .mid { text-align: center; }
+  .num { font-family: 'Bricolage Grotesque', Inter, sans-serif; font-weight: 800; font-size: 400px; line-height: .86;
+    letter-spacing: -0.04em; background: linear-gradient(90deg, var(--green) 0 33.4%, var(--white) 33.4% 66.6%, var(--green) 66.6% 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .dates { font-family: 'JetBrains Mono', ui-monospace, monospace; color: var(--gold); font-size: 26px; letter-spacing: .08em; margin-top: 18px; }
+  h1 { font-size: 68px; font-weight: 700; line-height: 1.08; margin-top: 30px; text-wrap: balance; }
+  .line { color: var(--mint); font-size: 30px; line-height: 1.35; margin: 22px auto 0; max-width: 820px; text-wrap: balance; }
+  .foot { display: flex; justify-content: space-between; align-items: center; border-top: 2px solid rgba(159,245,198,.25);
+    padding-top: 26px; font-size: 24px; color: var(--mint); }
+  .foot b { color: var(--white); font-weight: 600; }
+</style></head>
+<body>
+  <div class="flag"><i></i><i></i><i></i></div>
+  <div class="glow"></div>
+  <div class="card">
+    <div class="brand"><img src="LOGO" alt=""> HAWKEYE</div>
+    <div class="mid">
+      <div class="num">66</div>
+      <div class="dates">1 OCTOBER 1960 · 1 OCTOBER 2026</div>
+      <h1>Happy Independence Day, Nigeria</h1>
+      <p class="line">Sixty-six years on, the choice is still ours to make, and every vote still deserves to be counted in the open.</p>
+    </div>
+    <div class="foot"><b>hawkeye.com.ng</b><span>Presidential election · 16 January 2027</span></div>
+  </div>
+</body></html>

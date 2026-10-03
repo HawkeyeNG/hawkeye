@@ -106,3 +106,5 @@ docs/PLAY-STORE-LISTING.md
 docs/PLAY-GROWTH.md
 docs/STORE-PROMO-TEXT.md
 tests/ui/audit-report.json
+tests/design-audit/node_modules/
+tests/design-audit/out/

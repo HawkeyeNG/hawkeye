@@ -450,9 +450,18 @@ async function switchLang(page, P, target) {
       await page.waitForFunction((c) => window.HawkeyeI18n && window.HawkeyeI18n.current === c, target, { timeout: 30000 }).catch(() => {});
     }
   }
+  /* SWITCHED = PAINTED, not "current changed". i18n.js sets `current` at once
+     and repaints only when the bundle has arrived (fetch, cache:'no-cache'), and
+     apply() sets <html lang> last. Waiting on `current` alone screenshotted a
+     page still in English whenever the bundle was slow — on Slow 4G, or a cold
+     edge right after a deploy purged it — and counted the whole page as
+     untranslated. The time a reader waits for the bundle is part of the switch. */
+  await page.waitForFunction(() => window.HawkeyeI18n && document.documentElement.lang === window.HawkeyeI18n.current,
+    null, { timeout: 30000 }).catch(() => {});
   await sleep(600);
   const got = await currentLang(page);
-  return { ok: got === target, got, ms: Date.now() - t0 };
+  const painted = await page.evaluate(() => document.documentElement.lang).catch(() => '?');
+  return { ok: got === target && painted === target, got, painted, ms: Date.now() - t0 };
 }
 
 /** The per-page language pass: EN baseline, then HA, IG, YO — untranslated text, layout, shots. */

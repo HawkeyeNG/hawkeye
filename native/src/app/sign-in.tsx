@@ -1394,7 +1394,7 @@ export default function SignIn() {
                     accessibilityState={{ selected: channel === 'sms' }}
                     className={`rounded-full px-3 py-2 ${channel === 'sms' ? 'bg-hawk-green' : 'bg-card'}`}
                   >
-                    <Text className={`text-sm ${channel === 'sms' ? 'font-semibold text-hawk-gold' : 'text-faint'}`}>
+                    <Text className={`text-sm font-semibold ${channel === 'sms' ? 'text-hawk-gold' : 'text-muted'}`}>
                       {smsShort ? i18nT('observe.sms') : i18nT('auth.sms-paid')}
                     </Text>
                   </Pressable>

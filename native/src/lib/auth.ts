@@ -694,6 +694,8 @@ export function renewSession(): Promise<boolean> {
   return renewing;
 }
 
+const RESUME_WAIT_MS = 1200;
+
 /** App-start session restore: stored token first, then silent device resume. */
 export async function bootstrapAuth(): Promise<void> {
   try {
@@ -713,21 +715,31 @@ export async function bootstrapAuth(): Promise<void> {
       set({ status: 'signedOut', observerId: null, token: null });
       return;
     }
-    const id = await getIdentity();
-    const r = await post<{ ok: boolean; observerId?: number; token?: string; signedInElsewhere?: boolean }>('/api/observers/resume', {
-      deviceId: id.deviceId,
-      publicKeyJwk: id.publicKeyJwk,
-    });
-    if (r.ok && r.token && r.observerId) {
-      await SecureStore.setItemAsync(K_TOKEN, r.token);
-      await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
-      await clearSignedOutElsewhere();
-      set({ status: 'signedIn', observerId: r.observerId, token: r.token });
-      return;
-    }
-    // The outbox and submit re-mint through here (submit.ts remintSession), so
-    // a report parked on a 401 is explained the same way as everything else.
-    if (r.signedInElsewhere) await markSignedOutElsewhere();
+    // THE SPLASH DOES NOT WAIT ON THE NETWORK FOR LONG. The splash is held until
+    // auth leaves 'loading', and a signed-out start used to wait for this whole
+    // round trip — 2.5-5 s on a cold start (owner's video, 2026-10-04). After
+    // RESUME_WAIT_MS the signed-out UI shows; a resume that lands later still
+    // signs in (welcome.tsx moves a signed-in reader to the tabs).
+    const resume = (async () => {
+      const id = await getIdentity();
+      const r = await post<{ ok: boolean; observerId?: number; token?: string; signedInElsewhere?: boolean }>('/api/observers/resume', {
+        deviceId: id.deviceId,
+        publicKeyJwk: id.publicKeyJwk,
+      });
+      if (r.ok && r.token && r.observerId) {
+        await SecureStore.setItemAsync(K_TOKEN, r.token);
+        await SecureStore.setItemAsync(K_OBSERVER, String(r.observerId));
+        await clearSignedOutElsewhere();
+        set({ status: 'signedIn', observerId: r.observerId, token: r.token });
+        return true;
+      }
+      // The outbox and submit re-mint through here (submit.ts remintSession), so
+      // a report parked on a 401 is explained the same way as everything else.
+      if (r.signedInElsewhere) await markSignedOutElsewhere();
+      return false;
+    })().catch(() => false);
+    const done = await Promise.race([resume, new Promise<'late'>((ok) => setTimeout(() => ok('late'), RESUME_WAIT_MS))]);
+    if (done === true) return;
   } catch {
     // network down — signed-out UI still works
   }

@@ -82,10 +82,10 @@
   --sr-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 }
 :root[data-theme="dark"] .sr { --ok: #3ecf80; --off: #6fa4ff; --wait: #e0a341; }
-/* BUTTONS IN THE APPS' LEMON GREEN (owner, 2026-10-04): the apps' good-ink
-   (native theme goodInk dark, #6edba0) — on the card colour the old buttons read
-   as part of the panel. Dark ink on it in both themes (contrast ~10:1). */
-:root { --sr-btn-bg: #6edba0; --sr-btn-line: #5cc98e; --sr-btn-ink: #06231a; }
+/* EVERY ROOM BUTTON IN HAWKEYE YELLOW (owner, 2026-10-04 — the room had no
+   yellow buttons, so all of them take it; briefly the apps' lemon green). On
+   the card colour the old buttons read as part of the panel. Dark ink on gold. */
+:root { --sr-btn-bg: var(--gold); --sr-btn-line: var(--gold); --sr-btn-ink: #06231a; }
 
 .sr { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
 /* A DASHBOARD SHOULD USE THE MONITOR IT IS GIVEN. 1180px is right for an
@@ -275,7 +275,7 @@
   background: var(--sr-btn-bg); color: var(--sr-btn-ink); border: 1px solid var(--sr-btn-line);
   border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 0.85rem; cursor: pointer;
 }
-.sr-btn:hover { border-color: var(--accent); }
+.sr-btn:hover { filter: brightness(1.07); } /* gold on gold: the border no longer shows a hover */
 .sr-btn.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
 .sr-btn.mini { padding: 3px 9px; font-size: 0.76rem; }
 .sr-btn:disabled, .sr-btn[disabled] { opacity: 0.45; cursor: not-allowed; }

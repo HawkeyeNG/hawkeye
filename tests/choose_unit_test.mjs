@@ -64,6 +64,8 @@ console.log('\n=== native: the chooser is its own route, and sign-up lands on it
   const page = exists ? fs.readFileSync(route, 'utf8') : '';
   check('it renders the shared chooser', /<ChooseUnitScreen/.test(page), true);
   check('onboarding leaves by REPLACE to the tabs', /router\.replace\('\/\(tabs\)'\)/.test(page), true);
+  // ONB-11: or to My Groups when /api/groups says the account is already in one.
+  check('or to My Groups when already in a group', /\/api\/groups[\s\S]*router\.replace\(yes \? \('\/my-groups' as never\) : '\/\(tabs\)'\)/.test(page), true);
   check('and it tells Profile what was saved', /emitMyUnitSaved\(/.test(page), true);
   const layout = fs.readFileSync(`${ROOT}/native/src/app/_layout.tsx`, 'utf8');
   check('the stack registers it', /name="choose-unit"/.test(layout), true);
@@ -133,6 +135,7 @@ const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 
 const posts = [];
 let meHits = 0;
 let nearHits = 0;
+let GROUPS = { member: [], managing: [] };
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (v, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
@@ -147,6 +150,8 @@ const server = http.createServer((req, res) => {
     req.on('data', (c) => { b += c; });
     return req.on('end', () => { posts.push(b); json({ ok: true }); });
   }
+  // ONB-11: an org sign-up is already in a room; `GROUPS` is what /api/groups says.
+  if (url === '/api/groups') return json(GROUPS);
   if (url === '/api/register/search') {
     return json({ truncated: false, units: [{ pu_code: '37-06-01-105', name: 'No 20 Ogbomosho Street', ward: 'City Centre', lga: 'Municipal', state: 'FCT' }] });
   }
@@ -326,6 +331,84 @@ console.log('\n=== web: the sign-up step ===');
   check('by replace — history did not grow', out.len, s.len);
   check('no page error', errs.slice(0, 2), []);
   await ctx.close();
+}
+
+/**
+ * ALREADY IN A ROOM: THE END OF SIGN-UP IS MY GROUPS (flow walkthrough ONB-11).
+ *
+ * An organisation-code sign-up is put in the issuer's room by the server, and
+ * Home has no rooms card — so the room was never opened or named. The control
+ * is the block above: the same Skip with no membership still goes Home.
+ */
+console.log('\n=== web: the sign-up step, already in a group ===');
+{
+  for (const [label, act] of [['Skip', 'skip'], ['Save', 'save']]) {
+    GROUPS = { member: [{ id: 3, name: 'Lagos Watch', slug: 'lagos-watch', member_state: '' }], managing: [] };
+    const ctx = await b.newContext(ctxOpts);
+    await signedIn(ctx);
+    const p = await ctx.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(String(e)));
+    await p.goto(`${base}/observe.html`, { waitUntil: 'domcontentloaded' });
+    await p.goto(`${base}/choose-unit.html?onboard=1`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(900);
+    const len = await p.evaluate(() => history.length);
+    if (act === 'save') {
+      // The "bring a second observer" offer is once per device; mark it shown
+      // so Save leaves at once, as it does for everyone after the first time.
+      await p.evaluate(() => localStorage.setItem('hawkeye_invite2_offered', '1'));
+      await p.fill('#pus-q', 'ogbomosho');
+      await p.waitForSelector('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+      await p.click('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+      await p.waitForTimeout(200);
+    }
+    await Promise.all([p.waitForURL(/my-groups\.html/, { timeout: 6000 }).catch(() => {}),
+      p.click(act === 'save' ? '#btn-unit-save' : '#cu-skip')]);
+    await p.waitForTimeout(300);
+    const out = await p.evaluate(() => ({ path: location.pathname, len: history.length }));
+    check(`${label} with a membership lands on My Groups`, out.path, '/my-groups.html');
+    check('by replace — history did not grow', out.len, len);
+    check('no page error', errs.slice(0, 2), []);
+    await ctx.close();
+  }
+  GROUPS = { member: [], managing: [] };
+}
+
+/**
+ * FROM HOME, BACK TO HOME. Home's "Choose your polling unit" card and unit
+ * chip open this page; leaving it landed on Profile, a page the reader never
+ * visited. Close goes BACK (history does not grow); Save replaces with a fresh
+ * Home, because a restored one would still be asking for a unit. The Profile
+ * run above is the control that the referrer rule still routes Profile home.
+ */
+console.log('\n=== web: opened from Home, it returns to Home ===');
+{
+  for (const act of ['close', 'save']) {
+    const ctx = await b.newContext(ctxOpts);
+    await signedIn(ctx);
+    const p = await ctx.newPage();
+    const errs = [];
+    p.on('pageerror', (e) => errs.push(String(e)));
+    await p.goto(`${base}/index.html`, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(400);
+    // A real navigation from Home, so the referrer is Home's.
+    await Promise.all([p.waitForURL(/choose-unit\.html/), p.evaluate(() => { location.href = 'choose-unit.html'; })]);
+    await p.waitForTimeout(900);
+    if (act === 'save') {
+      await p.evaluate(() => localStorage.setItem('hawkeye_invite2_offered', '1'));
+      await p.fill('#pus-q', 'ogbomosho');
+      await p.waitForSelector('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+      await p.click('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+      await p.waitForTimeout(200);
+    }
+    await Promise.all([p.waitForURL(/index\.html/, { timeout: 6000 }).catch(() => {}),
+      p.click(act === 'save' ? '#btn-unit-save' : '#cu-close')]);
+    await p.waitForTimeout(400);
+    const out = await p.evaluate(() => location.pathname);
+    check(`${act === 'save' ? 'Save' : 'Close'} from Home returns to Home, not Profile`, out, '/index.html');
+    check('no page error', errs.slice(0, 2), []);
+    await ctx.close();
+  }
 }
 
 await b.close();

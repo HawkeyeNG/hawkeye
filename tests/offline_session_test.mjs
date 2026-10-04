@@ -237,8 +237,13 @@ for (const lite of [false, true]) {
   await r.pg.close();
   mode = '401invalid';
   r = await open(ctx, 'profile.html');
-  p = await prof(r.pg);
-  check(`${S} profile CONTROL 401 invalid_token: signed out`, [p.token, p.signedOut, p.profile], [false, true, false]);
+  // A refused token is signed out AND sent to sign-in, which brings the reader
+  // back to Profile afterwards (ONB-08) — never the in-place line whose link
+  // opened sign-up.
+  await r.pg.waitForURL(/observe\.html/, { timeout: 8000 }).catch(() => {});
+  check(`${S} profile CONTROL 401 invalid_token: signed out, to sign-in with next=profile.html`,
+    [await r.pg.evaluate(() => !!localStorage.getItem('hawkeye_token')), new URL(r.pg.url()).pathname + new URL(r.pg.url()).search],
+    [false, '/observe.html?intent=signin&next=profile.html']);
   await ctx.close();
 
   console.log(`\n===== ${S}: Alerts =====`);

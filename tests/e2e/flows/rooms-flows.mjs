@@ -681,14 +681,16 @@ async function typedCode(H, surface, lang) {
       await H.gotoWeb(page, '/observe.html?intent=observe', lang);
       await page.waitForSelector('#auth-input', { state: 'visible', timeout: 12000 }).catch(() => {});
       await H.sleep(800);
-      const f1 = await R.step(page, 'sign-up', { screen: 'observe.html (sign-up)', asked: 'phone, channel (Telegram/WhatsApp/SMS), optional password, invite or organisation code' });
+      const f1 = await R.step(page, 'sign-up', { screen: 'observe.html (sign-up)', asked: 'phone, route (WhatsApp/Telegram/Call/SMS), invite or organisation code; the password after the proof' });
       await page.fill('#ref-input', CODE).catch(() => {});
       await H.sleep(500);
       const btn = (await page.locator('#btn-auth').innerText().catch(() => '')).trim();
       const pick = await page.locator('#channel-pick').isVisible().catch(() => null);
       const kind = await page.locator('#ref-kind-org').isVisible().catch(() => null);
-      const f2 = await R.step(page, 'org-code-typed', { screen: 'observe.html (sign-up, organisation code)', note: `button="${btn}", channel picker visible=${pick}, "organisation code" line=${kind}`, asked: 'phone + password; then "This code will be tied to {phone} for good" confirm' });
-      const pwVisible = await page.locator('#pw-opt-input').isVisible().catch(() => false);
+      const f2 = await R.step(page, 'org-code-typed', { screen: 'observe.html (sign-up, organisation code)', note: `button="${btn}", channel picker visible=${pick}, "organisation code" line=${kind}`, asked: 'phone; then "This code will be tied to {phone} for good" confirm; then the password (new + repeat)' });
+      // ANY visible password box on the code form (the up-front #pw-opt-input
+      // is gone; a by-id look-up would now be a detector that cannot fire).
+      const pwVisible = (await page.locator('#auth-card input[type="password"]:visible').count().catch(() => 0)) > 0;
       if (H.check(`1:org-code-password-first:${surface}`, { flagged: pwVisible && kind, detail: `password field on the code form: ${pwVisible}`, evidence: [f2] })) {
         H.finding({ ...ORG_CODE_ORDER, surfaces: [surface], evidence: [H.ev(f2)] });
       }

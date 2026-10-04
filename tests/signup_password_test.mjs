@@ -128,5 +128,30 @@ check('the client sends the intent only on sign-up',
 check('and the pane knows whether a code was spent',
   /existsAfterOtp/.test(signin), true);
 
+/* THE WEB AND LITE TOO (flow walkthrough ONB-03): they asked the password up
+   front, beside the number, and again beside the code. Now every proof — a
+   code, the WhatsApp message, the missed call, an organisation code — ends on
+   the same "Create your password" step (new + repeat) that native has.
+   Behaviour is driven in a browser by the flow walkers (tests/e2e/flows). */
+console.log('\n=== the web ends sign-up on the password step too ===');
+const appJs = fs.readFileSync('/home/elrio/hawkeye/app/app.js', 'utf8');
+const observeHtml = fs.readFileSync('/home/elrio/hawkeye/app/observe.html', 'utf8');
+const fnBody = (src, name) => { const at = src.indexOf(`function ${name}(`); return at < 0 ? '' : src.slice(at, at + 2600); };
+const webEndsOnPassword = (js, html) => /showSetPassword\(\);\s*\}/.test(fnBody(js, 'adoptProof'))
+  && /adoptProof\(body\);/.test(fnBody(js, 'verifyCode'))
+  && /adoptProof\(body\);/.test(fnBody(js, 'waFinish'))
+  && /adoptProof\(r\.body\);/.test(fnBody(js, 'callPoll'))
+  && /adoptProof\(body, \{ org: true \}\);/.test(fnBody(js, 'orgSignUp'))
+  && /<div id="pw-set" hidden>[\s\S]{0,900}id="pw-set-input"[\s\S]{0,400}id="pw-set-input2"/.test(html)
+  && !/id="pw-opt-input"/.test(html);
+check('web: every proof ends on "Create your password" (new + repeat); none is asked up front', webEndsOnPassword(appJs, observeHtml), true);
+check('CONTROL the old up-front box is caught',
+  webEndsOnPassword(appJs, observeHtml.replace('<div id="pw-set" hidden>', '<div id="pw-opt"><input id="pw-opt-input" /></div><div id="pw-set" hidden>')), false);
+check('CONTROL a proof that skips the step is caught (WhatsApp, organisation code)', [
+  webEndsOnPassword(appJs.replace('  adoptProof(body);\n}\n/* Leave the free route', '  afterVerified(true);\n}\n/* Leave the free route'), observeHtml),
+  webEndsOnPassword(appJs.replace('adoptProof(body, { org: true });', 'afterVerified(true);'), observeHtml)], [false, false]);
+check('web sign-up asks the server to refuse a registered number before a code (intent signup)',
+  /intent: authPurpose === 'signup' \? 'signup' : undefined/.test(appJs), true);
+
 console.log(fail ? `\n${fail} check(s) failed` : '\nall passed');
 process.exit(fail ? 1 : 0);

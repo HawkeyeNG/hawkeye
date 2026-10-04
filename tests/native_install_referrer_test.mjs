@@ -400,9 +400,9 @@ try {
     await p.click('#btn-auth');
     return waitPost('/api/observers/register', from);
   }
+  // The code alone: the password is its own step AFTER /verify (ONB-03).
   async function verify(p) {
     await p.fill('#auth-input', '123456');
-    await p.fill('#pw-opt-input', 'correct horse 8');
     const from = posts.length;
     await p.click('#btn-auth');
     return waitPost('/api/observers/verify', from);
@@ -411,7 +411,8 @@ try {
   {
     const { ctx, p, errors } = await signup();
     check('no code: the field is visible, and empty', [await visible(p, 'ref-input'), await p.inputValue('#ref-input')], [true, '']);
-    check('labelled "Invite or organisation code (optional)"', await p.evaluate(() => document.querySelector('label[for="ref-input"]').textContent.trim()), 'Invite or organisation code (optional)');
+    // Shortened so the form fits with the keyboard up (owner, 2026-10-03: auth.code-label-short).
+    check('labelled "Invite or ORG code (optional)"', await p.evaluate(() => document.querySelector('label[for="ref-input"]').textContent.trim()), 'Invite or ORG code (optional)');
     check('no "Have an invite code?" link to find first', await p.evaluate(() => !!document.getElementById('ref-toggle')), false);
     /* CONTROL for visible(): the same field inside a [hidden] box reads hidden. */
     await p.evaluate(() => { document.getElementById('ref-opt').hidden = true; });
@@ -479,11 +480,12 @@ console.log('\n=== native sources ===');
     /takeInviteUnit\(\)[\s\S]{0,200}\/choose-unit\?onboard=1&unit=\$\{encodeURIComponent\(unit\)\}/.test(signIn), true);
   /* ALWAYS SHOWN on the create-account path: the sign-up branch renders the
      field directly, with no open/closed state in front of it. */
-  const alwaysShown = (src) => /\{purpose === 'signup' \? \(\s*<View className="pt-4">\s*<Text[^>]*>\s*\{authT\('n\.auth\.code-label'\)\}/.test(src)
+  // The label is the web's shared short key since the keyboard-fit pass (2026-10-03).
+  const alwaysShown = (src) => /\{purpose === 'signup' \? \(\s*<View className="pt-4">\s*<Text[^>]*>\s*\{i18nT\('auth\.code-label-short'\)\}/.test(src)
     && !/inviteOpen|have-an-invite-code/.test(src);
   check('the invite field is on the create-account path only, always shown', alwaysShown(signIn), true);
   check('CONTROL the old collapsed form fails that check',
-    alwaysShown("{purpose === 'signup' ? (\n  inviteOpen ? (\n  <View className=\"pt-4\">\n <Text className=\"x\">\n{authT('n.auth.code-label')}"), false);
+    alwaysShown("{purpose === 'signup' ? (\n  inviteOpen ? (\n  <View className=\"pt-4\">\n <Text className=\"x\">\n{i18nT('auth.code-label-short')}"), false);
 
   const open = read('native/src/app/open.tsx');
   const inviteBranch = open.slice(open.indexOf("=== 'invite'"), open.indexOf('const path = TARGETS'));
@@ -520,7 +522,13 @@ console.log('\n=== native sources ===');
 // ================================================================== 5. i18n
 console.log('\n=== every new string, in four languages ===');
 {
-  const WEB = { ...JSON.parse(read('scripts/i18n/batches/native108_web.json')), ...JSON.parse(read('scripts/i18n/batches/auth_web.json')) };
+  /* The keyboard-fit pass (owner, 2026-10-03) shortened the label and the hint
+     into new keys, in the catalogue + tr batch pair: folded into the same
+     { en, ha, ig, yo } shape the older batches use. */
+  const FIT_CAT = JSON.parse(read('scripts/i18n/batches/fit_keyboard_web_catalogue.json'));
+  const FIT_TR = JSON.parse(read('scripts/i18n/batches/fit_keyboard_web_tr.json'));
+  const FIT = Object.fromEntries(Object.entries(FIT_CAT).map(([k, en]) => [k, { en, ...(FIT_TR[k] || {}) }]));
+  const WEB = { ...JSON.parse(read('scripts/i18n/batches/native108_web.json')), ...JSON.parse(read('scripts/i18n/batches/auth_web.json')), ...FIT };
   const NATIVE = { ...JSON.parse(read('scripts/i18n/batches/native108_native.json')), ...JSON.parse(read('scripts/i18n/batches/auth_native.json')) };
   const isNFC = (s) => s === s.normalize('NFC');
   const complete = (entry) => ['en', 'ha', 'ig', 'yo'].every((l) => typeof entry?.[l] === 'string' && entry[l].trim() && isNFC(entry[l]))
@@ -534,7 +542,7 @@ console.log('\n=== every new string, in four languages ===');
   const invite = read('app/invite.html');
   const webUses = [
     // The one code field (invite or organisation): scripts/i18n/batches/auth_web.json.
-    ['auth.code-label', observe], ['auth.code-hint', observe], ['auth.code-kind-invite', observe],
+    ['auth.code-label-short', observe], ['auth.code-hint-short', observe], ['auth.code-kind-invite', observe],
     ['auth.code-kind-org', observe], ['auth.code-invalid', observe], ['invite.open-in-app', invite],
   ];
   /* "Have an invite code?" went with the collapsed field (always shown now),
@@ -563,10 +571,15 @@ console.log('\n=== every new string, in four languages ===');
   // Native: every new key sign-in.tsx asks for.
   const signIn = read('native/src/app/sign-in.tsx');
   const nativeUses = [...new Set([...signIn.matchAll(/authT\('(n\.auth\.code-[a-z-]+)'\)/g)].map((m) => m[1]))];
-  check('native: the five code-field keys used', nativeUses.sort(), ['n.auth.code-hint', 'n.auth.code-invalid', 'n.auth.code-kind-invite', 'n.auth.code-kind-org', 'n.auth.code-label']);
+  // The label and the hint are the WEB's own short keys (shared, so identical
+  // by construction); the kind lines and the error keep their n.auth twins.
+  const sharedUses = [...new Set([...signIn.matchAll(/i18nT\('(auth\.code-[a-z-]+)'\)/g)].map((m) => m[1]))];
+  check('native: the five code-field keys used', [nativeUses.sort(), sharedUses.sort()],
+    [['n.auth.code-invalid', 'n.auth.code-kind-invite', 'n.auth.code-kind-org'], ['auth.code-hint-short', 'auth.code-label-short']]);
   for (const k of nativeUses) check(`native ${k}: in the batch, complete`, complete(NATIVE[k]), true);
+  for (const k of sharedUses) check(`native shares web ${k}: in the batch, complete`, complete(WEB[k]), true);
   check('native and web say the same thing in every language',
-    ['code-label', 'code-hint', 'code-kind-invite', 'code-kind-org', 'code-invalid'].every((s) =>
+    ['code-kind-invite', 'code-kind-org', 'code-invalid'].every((s) =>
       JSON.stringify(NATIVE[`n.auth.${s}`]) === JSON.stringify(WEB[`auth.${s}`])), true);
   check('CONTROL that comparison can fail', JSON.stringify(NATIVE['n.auth.code-label']) === JSON.stringify(WEB['auth.code-hint']), false);
 }

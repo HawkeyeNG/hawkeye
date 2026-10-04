@@ -113,14 +113,20 @@ async function gaps(width, { lite = true, sabotage = '' } = {}) {
     // Listing the four cards individually removes both possibilities rather
     // than correcting them: every edge compared below is a border a reader can
     // actually see, and no gap on the page is inside anything.
-    const blocks = [
-      document.querySelector('.home-hero'),
-      ...document.querySelectorAll('.qa'),
-      ...document.querySelectorAll('.home-card'),
-      // A card that is not rendered (the Practice Day card hides itself when
-      // there is no day to show) has no border anyone sees; its 0x0 rect at the
-      // top of the page would otherwise read as a gap of hundreds of pixels.
-    ].filter((el) => el && el.getClientRects().length > 0);
+    //
+    // ONE SELECTOR, SO DOCUMENT ORDER (flow walkthrough FA-HOME-1). This was
+    // hero, then every .qa, then every .home-card — three lists glued
+    // together, which was document order only while the actions sat directly
+    // under the hero. They are fifth now (.home-cols: elections, alerts,
+    // ACTIONS, activity, ledger, chat), and the glued list measured the hero
+    // against the first action card 160px further down. The cards INSIDE the
+    // green hero (the next step, Practice Day, the nudge) are part of the hero,
+    // not the column, so only .home-cols's own cards are listed.
+    const blocks = [...document.querySelectorAll('.home-hero, .home-cols > .home-card, .home-cols .qa')]
+      // A card that is not rendered (Upcoming Elections hides itself until
+      // there is an election to show) has no border anyone sees; its 0x0 rect
+      // would otherwise read as a gap of hundreds of pixels.
+      .filter((el) => el && el.getClientRects().length > 0);
     const rects = blocks.map((el) => {
       const r = el.getBoundingClientRect();
       return { label: el.className, top: r.top, bottom: r.bottom };
@@ -169,14 +175,15 @@ console.log('\n=== CONTROL: the hero measurement can fail ===');
 
 console.log('\n=== CONTROL: padding INSIDE the transparent grid is caught too ===');
 {
-  // The grid paints nothing, so this pushes the first card 6px further from the
-  // hero while leaving .qa-grid's own box exactly where it was. Measuring the
+  // The grid paints nothing, so this pushes the first action card 6px further
+  // from the card above it (Latest Alerts, since FA-HOME-1 moved the actions
+  // down) while leaving .qa-grid's own box exactly where it was. Measuring the
   // box would report 20 and pass; measuring the card reports 26 and fails.
   // Without this control the test has a hole exactly the width of the bug it
   // was written to catch.
   const r = await gaps(390, { lite: true, sabotage: '.qa-grid { padding-top: 6px !important; }' });
   console.log(`      sabotaged gaps: ${r.gaps.join(', ')}`);
-  check('padding inside the grid moves the first card away from the hero', r.hero, HOME_GAP + 6);
+  check('padding inside the grid moves the first action card away from the card above', r.gaps.includes(HOME_GAP + 6), true);
   check('and the every-gap-identical assertion rejects that too', allIdentical(r.gaps), false);
 }
 
@@ -207,7 +214,9 @@ console.log('\n=== no card spaces itself — there is one mechanism, not three =
   // fix missed because it is not in the stylesheet.
   check('no inline margin on a home card', /class="home-card"[^>]*style="[^"]*margin/.test(home), false);
   check('the gap comes from one token', /--home-gap:\s*20px/.test(html));
-  check('and the stacked column uses it', /\.home-stack \{[^}]*gap: var\(--home-gap\)/.test(html));
+  // .home-cols since FA-HOME-1 (it was .home-stack, one column of cards under
+  // the action grid; now the grid is one item of it).
+  check('and the stacked column uses it', /\.home-cols \{[^}]*gap: var\(--home-gap\)/.test(html));
   // CONTROL: prove the regex above can actually catch the thing it is looking
   // for, rather than passing because it never matches anything.
   check('the inline-margin detector works', /class="home-card"[^>]*style="[^"]*margin/.test(

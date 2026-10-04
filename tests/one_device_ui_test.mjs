@@ -4,7 +4,9 @@
  * and org_codes_test.mjs; this asks what the READER sees and what the phone
  * keeps.
  *
- *   1. Channel order: Telegram, WhatsApp, SMS — web markup and native chips.
+ *   1. Channel order: sign-up WhatsApp, Telegram, Call, SMS; the sign-in
+ *      reset Telegram, WhatsApp, SMS — web markup + CSS, native chips, and
+ *      (section 3) as rendered. No default route anywhere.
  *   2. The web outbox, flushed against a 401 signed_in_elsewhere: the signed
  *      report is KEPT (shipped app/outbox.js in a sandbox). Native: the same
  *      rule, read from outbox.ts, and the auth.ts funnel that explains it.
@@ -36,24 +38,49 @@ const check = (label, got, want) => {
 };
 
 /* ---------------------------------------------------------------- 1. order */
-console.log('=== D2: Telegram first, WhatsApp second, SMS last ===');
+/* SIGN-UP's LINE-UP (owner, 2026-10-04): WhatsApp, Telegram, Call (the free
+   missed call), SMS last — one line at 360 px. The sign-in page's reset and
+   no-password rescue keep Telegram, WhatsApp, SMS (no Call: it only ever
+   creates an account). On the web the markup is in the reset's order plus
+   Call, and sign-up's CSS lifts WhatsApp to the front (`order: -1`, scoped
+   to sign-up); section 3 also checks the order as RENDERED. */
+console.log('=== D2: the route order, sign-up and the reset ===');
 const observeHtml = fs.readFileSync(`${APP}/observe.html`, 'utf8');
 const webOrder = (html) => [...html.matchAll(/name="otp-channel" value="(\w+)"/g)].map((m) => m[1]);
-check('web sign-up/sign-in radios', webOrder(observeHtml), ['telegram', 'whatsapp', 'sms']);
-check('CONTROL the reader sees a swapped order', webOrder(observeHtml.replace('value="telegram"', 'value="TMP"').replace('value="whatsapp"', 'value="telegram"').replace('value="TMP"', 'value="whatsapp"')),
+const waFirstOnSignup = (html) => /html:not\(\.intent-signin\) #otp-wa-opt \{ order: -1; \}/.test(html);
+const webSignupOrder = (html) => (waFirstOnSignup(html)
+  ? ['whatsapp', ...webOrder(html).filter((v) => v !== 'whatsapp')] : webOrder(html));
+const webResetOrder = (html) => webOrder(html).filter((v) => v !== 'call');
+check('web sign-up routes: WhatsApp, Telegram, Call, SMS', webSignupOrder(observeHtml), ['whatsapp', 'telegram', 'call', 'sms']);
+check('web reset routes: Telegram, WhatsApp, SMS', webResetOrder(observeHtml), ['telegram', 'whatsapp', 'sms']);
+check('CONTROL the sign-up rule dropped -> Telegram leads again (caught)',
+  webSignupOrder(observeHtml.replace('#otp-wa-opt { order: -1; }', '#otp-wa-opt { }')), ['telegram', 'whatsapp', 'call', 'sms']);
+check('CONTROL the reader sees a swapped order', webResetOrder(observeHtml.replace('value="telegram"', 'value="TMP"').replace('value="whatsapp"', 'value="telegram"').replace('value="TMP"', 'value="whatsapp"')),
   (o) => JSON.stringify(o) !== JSON.stringify(['telegram', 'whatsapp', 'sms']));
 const signIn = fs.readFileSync(`${H}/native/src/app/sign-in.tsx`, 'utf8');
-const nativeOrder = (src) => {
-  const block = src.match(/const CHANNELS[^=]*=\s*\[([\s\S]*?)\];/);
-  return block ? [...block[1].matchAll(/key: '(\w+)'/g)].map((m) => m[1]) : null;
+/* Native builds the row per errand: `purpose === 'signup' ? [sign-up chips]
+   : [reset chips]`, from WA_CHIP / TG_CHIP and Call's own entry. */
+const nativeOrders = (src) => {
+  const at = src.indexOf('const CHANNELS');
+  if (at < 0) return null;
+  const decl = src.slice(at, src.indexOf('];', at) + 2);
+  const m = /purpose === 'signup'\s*\?\s*([\s\S]*?)\n\s*:\s*([\s\S]*?);$/.exec(decl);
+  if (!m) return null;
+  const toks = (s) => [...s.matchAll(/\b(WA_CHIP|TG_CHIP)\b|key: '(\w+)'/g)].map((x) => (x[1] === 'WA_CHIP' ? 'whatsapp' : x[1] === 'TG_CHIP' ? 'telegram' : x[2]));
+  return { signup: toks(m[1]), reset: toks(m[2]) };
 };
-// The chip row holds the two free routes; SMS (D2, 2026-10-02) is a smaller
-// option rendered AFTER that row, labelled as the fallback.
-check('native sign-in chips: Telegram, WhatsApp in the row; SMS after it', [nativeOrder(signIn),
-  signIn.indexOf("setChannel('sms')") > signIn.indexOf('CHANNELS.map(')], [['telegram', 'whatsapp'], true]);
-check('CONTROL the pre-change native order is caught',
-  nativeOrder("const CHANNELS: X = [\n { key: 'whatsapp', label: 'WhatsApp' },\n { key: 'telegram', label: 'Telegram' },\n ...(smsOk ? [{ key: 'sms' as Channel, label: 'SMS' }] : []),\n];"),
-  ['whatsapp', 'telegram', 'sms']);
+// SMS is its own chip rendered AFTER the row's chips, so it is last everywhere.
+check('native: sign-up WhatsApp, Telegram, Call; reset Telegram, WhatsApp; SMS after them', [nativeOrders(signIn),
+  /const WA_CHIP = waNone \? \[\] : \[\{ key: 'whatsapp'/.test(signIn) && /const TG_CHIP = \[\{ key: 'telegram'/.test(signIn),
+  signIn.indexOf("setChannel('sms')") > signIn.indexOf('CHANNELS.map(')],
+  [{ signup: ['whatsapp', 'telegram', 'call'], reset: ['telegram', 'whatsapp'] }, true, true]);
+check('CONTROL a swapped sign-up order is caught',
+  nativeOrders(signIn.replace("? [...WA_CHIP, ...TG_CHIP,", "? [...TG_CHIP, ...WA_CHIP,")).signup, ['telegram', 'whatsapp', 'call']);
+check('CONTROL the pre-change single list is not taken for the new one',
+  nativeOrders("const CHANNELS: X = [\n { key: 'telegram', label: 'Telegram' },\n { key: 'whatsapp', label: 'WhatsApp' },\n];"), null);
+// NO DEFAULT ROUTE: nothing is picked until the reader picks it.
+check('no default route: web radios start unchecked, native starts with null',
+  [/name="otp-channel"[^>]*\bchecked\b/.test(observeHtml), /useState<Channel \| null>\(null\)/.test(signIn)], [false, true]);
 
 /* ------------------------------------------------------- 2. outbox on 401 */
 console.log('\n=== the web outbox keeps a signed report on 401 signed_in_elsewhere ===');
@@ -220,11 +247,16 @@ try {
     await ctx.close();
   }
   {
+    // Any refused token now goes to sign-in and back (ONB-08) — but only the
+    // displaced one is told "another device".
     api = { '/api/observers/me': () => [401, { error: 'invalid_token' }] };
     const { ctx, p } = await page({ token: liveToken, url: '/profile.html' });
+    await p.waitForURL(/observe\.html/, { timeout: 15000 }).catch(() => {});
     await p.waitForTimeout(1500);
     const flag = await p.evaluate(() => localStorage.getItem('hawkeye_signed_out_elsewhere'));
-    check('CONTROL any other 401 does not claim "another device"', [new URL(p.url()).pathname, flag], ['/profile.html', null]);
+    const n = await noteOf(p);
+    check('CONTROL any other 401 does not claim "another device"', [new URL(p.url()).pathname + new URL(p.url()).search, flag, n && n.shown],
+      ['/observe.html?intent=signin&next=profile.html', null, false]);
     await ctx.close();
   }
 
@@ -277,9 +309,10 @@ try {
     await p.fill('#ref-input', 'org-ab');
     check('the ORG prefix switches to the organisation path at once (no flip mid-typing)', await kindLine(p), (v) => !v.invite && !v.org && !v.picker && v.button === 'Create account');
     await p.fill('#auth-input', '08031234567');
-    await p.fill('#pw-opt-input', 'a good password');
     await p.fill('#ref-input', 'org abcd efgh jkmn');
     check('a whole ORG- code is named as one', await kindLine(p), { hint: false, invite: false, org: true, picker: false, button: 'Create account' });
+    // R-ORG-CODE-ORDER: no password on this form — it comes after the account.
+    check('no password field before the account', await p.locator('#auth-card input[type="password"]:visible').count(), 0);
     // The confirmation is Hawkeye's own dialog (app/dialog.js), not window.confirm.
     await p.click('#btn-auth');
     await p.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 8000 }).catch(() => {});
@@ -287,6 +320,14 @@ try {
     check('the confirmation names the answers, not OK/Cancel',
       await p.$$eval('.hk-dlg button', (bs) => bs.map((b) => b.textContent)).catch(() => []), ['Change number', 'Yes, create my account']);
     await p.click('.hk-dlg .hk-dlg-ok').catch(() => {});
+    // THEN "Create your password", typed twice (ONB-03): the same step as a code sign-up.
+    await p.waitForSelector('#pw-set:not([hidden])', { timeout: 8000 }).catch(() => {});
+    check('after the account: "Create Your Password", new + repeat, nothing set yet',
+      [await p.evaluate(() => document.getElementById('pw-set-title').textContent), await p.locator('#auth-card input[type="password"]:visible').count(),
+        calls.filter((c) => c.url === '/api/observers/set-password').length], ['Create Your Password', 2, 0]);
+    await p.fill('#pw-set-input', 'a good password');
+    await p.fill('#pw-set-input2', 'a good password');
+    await p.click('#btn-auth');
     await p.waitForURL(/choose-unit\.html\?onboard=1/, { timeout: 15000 }).catch(() => {});
     check('the number is confirmed before the code is spent', confirmText, (t) => t.includes('08031234567') && /tied to/.test(t));
     const org = calls.find((c) => c.url === '/api/observers/org-signup');
@@ -324,7 +365,6 @@ try {
     await p.waitForSelector('#ref-opt', { state: 'attached' });
     await p.waitForTimeout(800);
     await p.fill('#auth-input', '08031234567');
-    await p.fill('#pw-opt-input', 'a good password');
     await p.fill('#ref-input', 'ORG-ABCD-EFGH-JKMN');
     // The number confirmation is a dialog; the refusal is the form's error line
     // under the field (design audit X4: errors never come as a dialog).
@@ -345,6 +385,28 @@ try {
     const { ctx, p } = await page({ url: '/observe.html?intent=signin' });
     await p.waitForTimeout(1200);
     check('CONTROL sign-in shows no code field (codes only create accounts)', await p.evaluate(() => document.getElementById('ref-opt').hidden), true);
+    await ctx.close();
+  }
+
+  console.log('\n=== the routes AS RENDERED: sign-up WhatsApp, Telegram, Call, SMS; the reset its own ===');
+  {
+    const shown = (p) => p.evaluate(() => [...document.querySelectorAll('#channel-pick > label')]
+      .filter((l) => !l.hidden && l.getBoundingClientRect().width > 0)
+      .map((l) => ({ t: l.innerText.trim(), x: Math.round(l.getBoundingClientRect().left), y: Math.round(l.getBoundingClientRect().top) }))
+      .sort((a, c) => a.y - c.y || a.x - c.x).map((l) => l.t));
+    api = { '/api/health': () => [200, { ok: true, waInbound: true, waPaidOtp: false, smsOtp: true, callVerify: true }] };
+    let { ctx, p } = await page({ url: '/observe.html?intent=observe' });
+    await p.waitForFunction(() => !document.getElementById('otp-call-opt').hidden && !document.getElementById('otp-sms-opt').hidden, null, { timeout: 8000 }).catch(() => {});
+    check('sign-up, rendered: WhatsApp, Telegram, Call, SMS — none picked', [await shown(p), await p.evaluate(() => !!document.querySelector('input[name="otp-channel"]:checked'))],
+      (v) => JSON.stringify(v[0].slice(0, 3)) === JSON.stringify(['WhatsApp', 'Telegram', 'Call']) && /^SMS/.test(v[0][3] || '') && v[0].length === 4 && v[1] === false);
+    await p.addStyleTag({ content: '#otp-wa-opt { order: 0 !important; }' });
+    check('CONTROL without the sign-up rule the measure sees Telegram lead', (await shown(p))[0], 'Telegram');
+    await ctx.close();
+    ({ ctx, p } = await page({ url: '/observe.html?intent=signin' }));
+    await p.waitForTimeout(800);
+    await p.click('#pw-link');
+    await p.waitForFunction(() => !document.getElementById('otp-sms-opt').hidden, null, { timeout: 8000 }).catch(() => {});
+    check('the reset, rendered: Telegram, WhatsApp, SMS (paid) — no Call', await shown(p), ['Telegram', 'WhatsApp', 'SMS (paid)']);
     await ctx.close();
   }
 

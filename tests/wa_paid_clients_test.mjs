@@ -47,9 +47,18 @@ const RULES = {
     /api\.waRoutes\(\)\.then\(\(r\) => \{[\s\S]{0,120}setWaPaid\(r\?\.paid === true\)/.test(s),
   'no chip picked: a prompt says to choose (no default route)': (s) =>
     /\{needChoice && !withOrgCode && !channel \? \(\s*<Text[^>]*>\{i18nT\('auth\.choose-route'\)\}<\/Text>/.test(s),
-  'D2: SMS is not in the Telegram/WhatsApp row; it sits below, small, labelled as the fallback': (s) =>
-    !/key: 'sms'/.test(s.slice(s.indexOf('const CHANNELS'), s.indexOf('const CHANNELS') + 400))
-    && /\{smsOk && !withOrgCode \? \(\s*<Pressable\s*onPress=\{\(\) => \{\s*setChannel\('sms'\);[\s\S]{0,500}text-xs[\s\S]{0,120}SMS · \{i18nT\('auth\.sms-fallback'\)\}/.test(s),
+  /* SIGN-UP's LINE-UP (owner, 2026-10-04): WhatsApp, Telegram, Call — then SMS,
+     its own chip after the row, so LAST; "SMS (paid)" while the four fit one
+     line, plain "SMS" once measured wrapped. Never pre-selected. */
+  'D2: sign-up WhatsApp, Telegram, Call; SMS its own chip, last, "(paid)" while one line fits; no default': (s) => {
+    const at = s.indexOf('const CHANNELS');
+    const decl = at < 0 ? '' : s.slice(at, s.indexOf('];', at) + 2);
+    return !!decl && !/key: 'sms'/.test(decl)
+      && /purpose === 'signup'\s*\?\s*\[\.\.\.WA_CHIP, \.\.\.TG_CHIP, \.\.\.\(callRoute \? \[\{ key: 'call'/.test(decl)
+      && /\{smsOk \? \(\s*<Pressable\s*onPress=\{\(\) => \{\s*setChannel\('sms'\);[\s\S]{0,700}\{smsShort \? i18nT\('observe\.sms'\) : i18nT\('auth\.sms-paid'\)\}/.test(s)
+      && s.indexOf("setChannel('sms')") > s.indexOf('CHANNELS.map(')
+      && /useState<Channel \| null>\(null\)/.test(s);
+  },
   'D2: a phone that has a passkey leads with it (primary, above the password); otherwise it stays below': (s) =>
     /\{pkUsable && pkHere \? \(\s*<Pressable[\s\S]{0,300}bg-hawk-green/.test(s) && /\{pkUsable && !pkHere \? \(/.test(s)
     && s.indexOf('{pkUsable && pkHere ?') < s.indexOf("n.app.sign-in.your-phone-number-and-password-your"),
@@ -66,8 +75,9 @@ const MUTANTS = {
   'with paid codes off the WhatsApp choice is always the free route': (s) => s.replace('(!waPaid || (waOk && !waLimited))', 'waOk && !waLimited'),
   'the switches come from the server (api.waRoutes)': (s) => s.replace('setWaPaid(r?.paid === true)', 'setWaPaid(true)'),
   'no chip picked: a prompt says to choose (no default route)': (s) => s.replace("{i18nT('auth.choose-route')}", '{null}'),
-  'D2: SMS is not in the Telegram/WhatsApp row; it sits below, small, labelled as the fallback': (s) =>
-    s.replace("{ key: 'telegram', label: 'Telegram' },", "{ key: 'telegram', label: 'Telegram' },\n    { key: 'sms', label: 'SMS' },"),
+  // SMS back in the row, in front of Call — the old door.
+  'D2: sign-up WhatsApp, Telegram, Call; SMS its own chip, last, "(paid)" while one line fits; no default': (s) =>
+    s.replace('? [...WA_CHIP, ...TG_CHIP, ...(callRoute', "? [...WA_CHIP, ...TG_CHIP, { key: 'sms' as Channel, label: 'SMS' }, ...(callRoute"),
   'D2: a phone that has a passkey leads with it (primary, above the password); otherwise it stays below': (s) => s.replace('{pkUsable && pkHere ? (', '{false ? ('),
   'D3: a reset nudges "before 9 January" until then': (s) => s.replace("{i18nT('auth.reset-before-9-jan')}", '{null}'),
 };
@@ -78,6 +88,16 @@ for (const [label, rule] of Object.entries(RULES)) {
   check(label, rule(signIn), true);
   const mutated = MUTANTS[label](signIn);
   check(`  CONTROL mutant re-opens it -> the check fails`, mutated !== signIn && !rule(mutated), true);
+}
+{
+  // The line-up rule's other doors: a default pick, Telegram leading sign-up,
+  // and a fixed "SMS (paid)" that cannot step down when the line wraps.
+  const rule = RULES['D2: sign-up WhatsApp, Telegram, Call; SMS its own chip, last, "(paid)" while one line fits; no default'];
+  for (const [what, m] of [
+    ['a default route', signIn.replace('useState<Channel | null>(null)', "useState<Channel | null>('whatsapp')")],
+    ['Telegram first on sign-up', signIn.replace('? [...WA_CHIP, ...TG_CHIP,', '? [...TG_CHIP, ...WA_CHIP,')],
+    ['"(paid)" always', signIn.replace("{smsShort ? i18nT('observe.sms') : i18nT('auth.sms-paid')}", "{i18nT('auth.sms-paid')}")],
+  ]) check(`  CONTROL ${what} -> the check fails`, m !== signIn && !rule(m), true);
 }
 
 console.log('\n=== native Profile password reset ===');

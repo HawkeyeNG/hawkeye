@@ -65,10 +65,23 @@ const walk = (d, out = []) => {
   return out;
 };
 const COVERED = /(my-groups|captain(-guide)?|situation-room|join)\.html|\/room\/|\/join\//;
-const backendUrls = [...new Set(walk(`${ROOT}/backend/src`)
-  .flatMap((f) => [...read(f).matchAll(/url:\s*[`'"](https:\/\/hawkeye\.com\.ng\/[^`'"]*)[`'"]/g)].map((m) => m[1])))]
+/* An alert's url is not always one literal any more: the made-manager alert
+   addresses the ROOM — `url: g.slug ? 'https://hawkeye.com.ng/room/' + slug
+   : '…/situation-room.html'` (routes/groups.js), and the room-label alerts
+   build `const url = '…/room/' + slug` (services/roomLabels.js). So read the
+   whole url expression — its first line plus the lines that continue it
+   (? : +) — and take every hawkeye.com.ng literal in it; a literal that ends
+   in /room/ gets a sample slug, as the code appends the room's. */
+const urlLiterals = (s) => [...s.matchAll(/\b(?:url\s*:|const url\s*=)([^\n]*(?:\n\s*[?:+][^\n]*)*)/g)]
+  .flatMap((m) => [...m[1].matchAll(/[`'"](https:\/\/hawkeye\.com\.ng\/[^`'"]*)[`'"]/g)].map((x) => x[1]))
+  .map((u) => (u.endsWith('/room/') ? u + 'sample-room' : u));
+const backendUrls = [...new Set(walk(`${ROOT}/backend/src`).flatMap((f) => urlLiterals(read(f))))]
   .filter((u) => COVERED.test(u));
-check('CONTROL found the backend\'s group and captain alert urls', backendUrls.length >= 3, true);
+check('CONTROL found the backend\'s group and captain alert urls, the room address among them',
+  [backendUrls.length >= 3, backendUrls.some((u) => /\/room\/sample-room$/.test(u))], [true, true]);
+check('CONTROL the url reader takes a ternary\'s both arms and a built room address',
+  urlLiterals("url: g.slug\n      ? 'https://hawkeye.com.ng/room/' + s\n      : 'https://hawkeye.com.ng/situation-room.html',\n  });\nconst x = 'https://hawkeye.com.ng/results.html';"),
+  ['https://hawkeye.com.ng/room/sample-room', 'https://hawkeye.com.ng/situation-room.html']);
 console.log(`        ${backendUrls.join('  ')}`);
 const routesAll = (fn) => backendUrls.every((u) => { const r = fn(u); return typeof r === 'string' && r.startsWith('/'); });
 check('every one resolves to a native route', backendUrls.map((u) => [u, W.webPageRoute(u)]), (rows) => rows.every(([, r]) => typeof r === 'string' && r.startsWith('/')));

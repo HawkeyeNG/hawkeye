@@ -58,7 +58,15 @@ check('native says exactly the same', nativePlural, webPlural);
 // And the sentence around the word: web builds 'all ' + word + ' races' and
 // 'this race'; native must carry the same English templates.
 check('native wraps it the same way', [NATIVE_EN['n.components.follow-race.all-races'], NATIVE_EN['n.components.follow-race.this-race']], ['all {v0} races', 'this race']);
-check('web wraps it that way too', /'all ' \+ \(CONTEST_PLURAL\[contest\] \|\| contest\) \+ ' races'/.test(fs.readFileSync(`${APP}/follow.js`, 'utf8')), true);
+// Keyed since FA-FOLLOW-5 (follow.js looks every word up when it paints): the
+// English templates are the T() fallbacks, the same strings native carries.
+{
+  const fjs = fs.readFileSync(`${APP}/follow.js`, 'utf8');
+  check('web wraps it that way too', [
+    /T\('follow\.all-races', 'all \{v0\} races'/.test(fjs),
+    /T\('follow\.this-race', 'this race'\)/.test(fjs),
+  ], [true, true]);
+}
 // PRES is absent from both on purpose — it is one national race, so an empty
 // region there IS the single race and "all Presidential races" would be a lie.
 check('neither claims a plural for the presidency', [webPlural.PRES, nativePlural.PRES], [undefined, undefined]);
@@ -154,7 +162,11 @@ console.log('\n=== signed out ===');
   await p.goto(`${base}/race.html?contest=GOV&state=Kano`, { waitUntil: 'domcontentloaded' });
   await p.waitForSelector('#race-follow-btn', { timeout: 10000 });
   await p.click('#race-follow-btn');
-  check('says how to become able to follow', await p.$eval('#race-follow-msg', (e) => e.textContent), (t) => /verify your phone/i.test(t));
+  // SIGN IN, not "verify your phone" (FA-FOLLOW-1): verifying is the sign-UP
+  // step, and the link brings the reader straight back to this race (?next=).
+  check('says how to become able to follow', await p.$eval('#race-follow-msg', (e) => e.textContent), (t) => /sign in first/i.test(t));
+  check('and links sign-in back to this race', await p.$eval('#race-follow-msg a', (a) => a.getAttribute('href')),
+    (h) => /^observe\.html\?intent=signin&next=race\.html%3Fcontest%3DGOV%26state%3DKano$/.test(h));
   check('and sends nothing', posted.length, 0);
   await p.close();
 }

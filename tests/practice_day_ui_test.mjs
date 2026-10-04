@@ -57,7 +57,11 @@ const server = http.createServer((req, res) => {
     if (state === 'error') return json({ error: 'practice_days_unavailable' }, 500);
     return json(STATES[state]);
   }
-  if (url === '/api/observers/me') return json({ observerId: 7, reports: [], collation: [], incidents: [], subscriptions: [] });
+  // A SAVED UNIT, so Home's next step ("Choose your polling unit", #home-next)
+  // does not take the hero slot — since flow walkthrough FA-HOME-1 it outranks
+  // the Practice Day card (tests/practice_nudge_ui_test.mjs holds the control).
+  if (url === '/api/observers/me') return json({ observerId: 7, reports: [], collation: [], incidents: [], subscriptions: [],
+    unit: { pu_code: '24-16-05-007', name: '17, Oziegbe St.', ward: 'Aguda', lga: 'Surulere', state: 'Lagos' } });
   if (url === '/api/notifications') return json({ items: [] });
   if (url === '/api/mapping/stats') return json({ total: 0, verified: 0, crowdMapped: 0 });
   if (url.startsWith('/api/')) return json([]);
@@ -141,12 +145,15 @@ check('after: results title, the shared count, and the next day', c.text,
   (t) => t.startsWith('Practice Day results') && t.includes('1,234 observers practised on Saturday, 12 December.') && t.includes('Next Practice Day: Saturday, 9 January'));
 check('after: links to the results page for THAT day', c.links, ['practice-day.html?day=2026-12-12']);
 check('after: no errors', r.errs, []);
-// The card takes the stack's own gap, like every other home card (home_spacing_test's rule).
+// IN THE HERO NOW (flow walkthrough FA-HOME-1 — .home-stack is gone): the card
+// sits above the greeting, and ends exactly its own bottom margin above it, so
+// the hidden next-step and nudge cards beside it take no space.
 const gaps = await r.pg.evaluate(() => {
-  const cards = [...document.querySelectorAll('.home-stack > .home-card')].filter((el) => el.getClientRects().length);
-  return cards.slice(1).map((el, i) => Math.round(el.getBoundingClientRect().top - cards[i].getBoundingClientRect().bottom));
+  const vis = [...document.querySelectorAll('.home-hero .home-card')].filter((el) => el.getClientRects().length);
+  const greet = document.getElementById('home-greet').getBoundingClientRect().top;
+  return vis.map((el) => [el.id, Math.round(greet - el.getBoundingClientRect().bottom), Math.round(parseFloat(getComputedStyle(el).marginBottom))]);
 });
-check('visible card: the gap below it equals the gap between the other cards', gaps, (g) => g.length >= 2 && new Set(g).size === 1);
+check('visible card: the only card in the hero, one margin above the greeting', gaps, (g) => g.length === 1 && g[0][0] === 'pday-card' && g[0][1] === g[0][2] && g[0][2] > 0);
 if (process.env.PDAY_SHOTS) await r.pg.screenshot({ path: `${process.env.PDAY_SHOTS}/home-after.png`, fullPage: false });
 await r.ctx.close();
 

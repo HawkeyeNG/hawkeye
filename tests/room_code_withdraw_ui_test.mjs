@@ -118,7 +118,11 @@ async function open(lang = 'en') {
     } catch (e) { /* private mode */ }
   }, lang);
   await p.goto(`${base}/situation-room.html?tab=codes`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#cc-text', { timeout: 10000 }).catch(() => {});
+  /* The paste/upload checker sits under "Check other codes" now (the room's own
+     batches come first on the tab), closed until asked for. */
+  await p.waitForSelector('#cc-other summary', { timeout: 10000 }).catch(() => {});
+  if (!(await p.evaluate(() => !!(document.getElementById('cc-other') || {}).open))) await p.click('#cc-other summary').catch(() => {});
+  await p.waitForSelector('#cc-text', { state: 'visible', timeout: 10000 }).catch(() => {});
   return { ctx, p };
 }
 async function paste(p, codes) {

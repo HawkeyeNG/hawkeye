@@ -99,8 +99,17 @@ const isTitleCase = (label) => {
    exactly the English of a profile.* key; any other Title-Case button still
    fails. */
 const WEB_EN = JSON.parse(fs.readFileSync(`${ROOT}/app/i18n/en.json`, 'utf8'));
-const PROFILE_LABELS = new Set(Object.entries(WEB_EN)
-  .filter(([k, v]) => k.startsWith('profile.') && typeof v === 'string').map(([, v]) => v.trim()));
+/* …AND THE SIGN-UP BUTTON THAT SAYS WHAT NATIVE'S DOES. Design audit X4 made
+   the web's sign-up title and button the same words as native's ("one title
+   and one button with native", tests/design_audit_fixes_test.mjs), and
+   native's "Send Code" IS Profile wording (n.app.profile.send-code, the same
+   97454bd call). So native's Profile labels are exempt on the same terms —
+   the English of a profile key, nothing else. */
+const NATIVE_EN_LABELS = JSON.parse(fs.readFileSync(`${ROOT}/native/src/lib/i18n/en.json`, 'utf8'));
+const PROFILE_LABELS = new Set([
+  ...Object.entries(WEB_EN).filter(([k, v]) => k.startsWith('profile.') && typeof v === 'string'),
+  ...Object.entries(NATIVE_EN_LABELS).filter(([k, v]) => k.startsWith('n.app.profile.') && typeof v === 'string'),
+].map(([, v]) => v.trim()));
 const flagged = (label) => isTitleCase(label) && !PROFILE_LABELS.has(label);
 const offenders = [];
 for (const name of fs.readdirSync(`${ROOT}/app`)) {
@@ -146,8 +155,9 @@ const followPairs = [...FOLLOW_RAW.matchAll(
 )].map((m) => [NATIVE_EN[m[1]], NATIVE_EN[m[2]]]);
 check('native says Unfollow once subscribed',
   followPairs.some(([on, off]) => on === 'Unfollow {v0}' && off === 'Follow {v0}'), true);
+// Keyed since FA-FOLLOW-5: the English is the T() fallback.
 check('web says Unfollow once subscribed',
-  /followed \? '🔕 Unfollow ' : '🔔 Follow '/.test(FOLLOW_JS), true);
+  /followed\s*\?\s*'🔕 ' \+ T\('follow\.unfollow', 'Unfollow \{v0\}'[\s\S]{0,60}:\s*'🔔 ' \+ T\('follow\.follow', 'Follow \{v0\}'/.test(FOLLOW_JS), true);
 check('native no longer says Following in the label',
   followPairs.map(([on]) => /^Following\b/.test(on ?? '')),
   (got) => got.length > 0 && got.every((x) => !x));
@@ -180,6 +190,8 @@ check('a Profile label is Title Case and exempt (97454bd)',
   [true, true, false]);
 check('the exemption is Profile wording only, not Title Case in general',
   flagged('Save This Report'), true);
+check('sign-up\'s "Send Code" is native\'s Profile label, so exempt; one word off is not',
+  [NATIVE_EN_LABELS['n.app.profile.send-code'], flagged('Send Code'), flagged('Send Another Code')], ['Send Code', false, true]);
 
 console.log(fail ? `\n${fail} FAILED` : '\nAll passed');
 process.exit(fail ? 1 : 0);

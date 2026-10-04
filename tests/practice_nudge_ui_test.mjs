@@ -42,6 +42,7 @@ const PDAYS = {
 let pday = 'before';
 let nudge = 'show';        // show | hide | error
 let observerId = 7;
+let meUnit = true;
 let nudgeHits = 0;
 
 const merged = (lang) => {
@@ -60,7 +61,11 @@ const server = http.createServer((req, res) => {
     return json({ show: nudge === 'show', practised: nudge !== 'show', practiceOpen: true, practiceDay: null });
   }
   if (url === '/api/practice-days') return json(PDAYS[pday]);
-  if (url === '/api/observers/me') return json({ observerId, reports: [], collation: [], incidents: [], subscriptions: [] });
+  // A SAVED UNIT, so Home's next step ("Choose your polling unit", #home-next)
+  // does not take the hero slot: since flow walkthrough FA-HOME-1 it outranks
+  // every practice card. `meUnit = false` is the control for that rule.
+  if (url === '/api/observers/me') return json({ observerId, reports: [], collation: [], incidents: [], subscriptions: [],
+    ...(meUnit ? { unit: { pu_code: '24-16-05-007', name: '17, Oziegbe St.', ward: 'Aguda', lga: 'Surulere', state: 'Lagos' } } : {}) });
   if (url === '/api/notifications') return json({ items: [] });
   if (url === '/api/mapping/stats') return json({ total: 0, verified: 0, crowdMapped: 0 });
   if (url.startsWith('/api/')) return json([]);
@@ -135,11 +140,18 @@ check('show: the button opens the practice flow', c.links, ['practice.html']);
 check('show: the × has an accessible name', c.dismissLabel, 'Dismiss');
 check('show: the × is small, unshadowed, with a 44px tap target (not the global full-width button)', c.dismissBox, [28, 28, 'none', 44]);
 check('AT MOST ONE: Practice Day card steps aside while the nudge shows', [c.pday, c.visiblePracticeCards], [false, 1]);
-const gaps = await r.pg.evaluate(() => {
-  const cs = [...document.querySelectorAll('.home-stack > .home-card')].filter((el) => el.getClientRects().length);
-  return cs.slice(1).map((el, i) => Math.round(el.getBoundingClientRect().top - cs[i].getBoundingClientRect().bottom));
+/* IN THE HERO NOW, NOT A COLUMN (flow walkthrough FA-HOME-1 — .home-stack is
+   gone). The practice cards sit at the top of the green hero, above the
+   greeting, so "no double gap from the hidden card" is: the one visible card
+   ends exactly its own bottom margin above the greeting — a hidden sibling
+   between them takes no space. */
+const heroGap = (pg) => pg.evaluate(() => {
+  const vis = [...document.querySelectorAll('.home-hero .home-card')].filter((el) => el.getClientRects().length);
+  const greet = document.getElementById('home-greet').getBoundingClientRect().top;
+  return vis.map((el) => [Math.round(greet - el.getBoundingClientRect().bottom), Math.round(parseFloat(getComputedStyle(el).marginBottom))]);
 });
-check('the nudge takes the stack\'s own gap (no double gap from the hidden card)', gaps, (g) => g.length >= 2 && new Set(g).size === 1);
+const gaps = await heroGap(r.pg);
+check('the nudge ends one margin above the greeting (no double gap from the hidden card)', gaps, (g) => g.length === 1 && g[0][0] === g[0][1] && g[0][1] > 0);
 check('show: no errors', r.errs, []);
 await r.pg.evaluate(() => console.error('control-error'));
 await r.pg.waitForTimeout(50);
@@ -183,6 +195,17 @@ pday = 'none'; nudge = 'show';
 r = await open(); c = await cards(r.pg);
 check('CONTROL show:true with no Practice Day: nudge visible, nothing else', [c.nudge, c.pday, c.visiblePracticeCards], [true, false, 1]);
 await r.ctx.close();
+// The next step outranks it: with no saved unit, "Choose your polling unit"
+// holds the hero and the nudge steps aside (index.html, FA-HOME-1).
+meUnit = false;
+r = await open();
+await r.pg.waitForFunction(() => !document.getElementById('home-next').hidden, null, { timeout: 5000 }).catch(() => {});
+c = await cards(r.pg);
+const next = await r.pg.evaluate(() => document.getElementById('home-next').getClientRects().length > 0);
+check('CONTROL no saved unit: the next step shows and the nudge steps aside', [next, c.nudge, c.visiblePracticeCards], [true, false, 0]);
+check('and the hero still holds exactly one card', (await heroGap(r.pg)).length, 1);
+await r.ctx.close();
+meUnit = true;
 
 /* ---------- 4. signed out: no card, no call ---------- */
 nudgeHits = 0;

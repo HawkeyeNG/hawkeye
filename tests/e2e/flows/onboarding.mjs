@@ -347,6 +347,21 @@ const errLine = async (page) => page.evaluate(() => {
 const tokenOf = async (page, surface) => page.evaluate((s) => {
   try { return localStorage.getItem(s === 'native' ? 'hawkeye.auth.token' : 'hawkeye_token'); } catch { return null; }
 }, surface).catch(() => null);
+/* Web: how many password boxes the auth card shows (any of them — the up-front
+   #pw-opt-input is gone, and a by-id look-up would be a check that cannot fire). */
+const visPw = (page) => page.locator('#auth-card input[type="password"]:visible').count().catch(() => 0);
+const onCodeStep = (page) => page.locator('#otp-resend').isVisible().catch(() => false);
+/** Web: the password step that follows every proof (ONB-03) — new + repeat, then on. */
+async function webSetPassword(page, R) {
+  await page.waitForSelector('#pw-set:not([hidden])', { timeout: 15000 }).catch(() => {});
+  const shown = await page.locator('#pw-set').isVisible().catch(() => false);
+  if (shown) {
+    await page.fill('#pw-set-input', PW); if (R) R.tap();
+    await page.fill('#pw-set-input2', PW); if (R) R.tap();
+    await page.click('#btn-auth', FORCE); if (R) R.tap();
+  }
+  return shown;
+}
 
 /* ------------------------------------------------------------ fixtures */
 const OK_REG = { status: 200, json: { ok: true, viaTelegram: true } };
@@ -393,7 +408,7 @@ async function signupWeb(surface, lang) {
     await page.waitForSelector('#otp-sms-opt:not([hidden])', { timeout: 6000 }).catch(() => {});
     s = await R.step(page, 'sign-up form');
     ck('signupAsked', s.asked, s.png);
-    ck('pwOnFirstScreen', await page.locator('#pw-opt-input').isVisible().catch(() => false), s.png);
+    ck('pwOnFirstScreen', (await visPw(page)) > 0, s.png);
     ck('smsOffered', await page.locator('#otp-sms-opt').isVisible().catch(() => false), s.png);
 
     // 3. Send with nothing chosen: nothing may be sent.
@@ -439,7 +454,7 @@ async function signupWeb(surface, lang) {
     ck('codeAsked', s.asked, s.png);
     const regBody = calls.filter((c) => c.p === '/api/observers/register' && !c.real).pop()?.body;
     ck('registerBody', regBody, s.png);
-    ck('pwOnCodeScreen', await page.locator('#pw-opt-input').isVisible().catch(() => false), s.png);
+    ck('pwOnCodeScreen', (await visPw(page)) > 0, s.png);
     // Resend: is there a timer / cooldown?
     const resend = page.locator('#otp-resend');
     ck('resendVisible', await resend.isVisible().catch(() => false), s.png);
@@ -450,7 +465,9 @@ async function signupWeb(surface, lang) {
       s = await R.step(page, 'resend tapped twice');
       ck('resendNoCooldown', calls.filter((c) => c.p === '/api/observers/register').length - n0, s.png);
     }
-    // 7. Verify with a code but no password: is the password checked before the code?
+    // 7. Verify with the code alone: is anything (a password) checked before the code?
+    //    The first answer is a refusal, so the flow stays on the code step.
+    A['POST /api/observers/verify'] = E(400, 'otp_incorrect');
     await page.fill('#auth-input', '123456'); R.tap();
     const v0 = calls.filter((c) => c.p === '/api/observers/verify').length;
     await page.click('#btn-auth', FORCE); R.tap();
@@ -458,7 +475,6 @@ async function signupWeb(surface, lang) {
     s = await R.step(page, 'verify without a password');
     ck('pwCheckedBeforeCode', { verifyCalled: calls.filter((c) => c.p === '/api/observers/verify').length > v0, msg: await errLine(page) }, s.png);
     // 8. Wrong / expired / too many.
-    await page.fill('#pw-opt-input', PW); R.tap();
     for (const [name, ans] of (full ? [['wrongCode', E(400, 'otp_incorrect')], ['expired', E(400, 'otp_expired')], ['tooManyCodes', E(429, 'too_many_attempts')], ['verifyOffline', { abort: true }]] : [['wrongCode', E(400, 'otp_incorrect')]])) {
       A['POST /api/observers/verify'] = ans;
       await page.fill('#auth-input', '123456'); R.tap();
@@ -466,7 +482,7 @@ async function signupWeb(surface, lang) {
       await sleep(1400);
       s = await R.step(page, `verify: ${name}`);
       ck(`${name}Msg`, await errLine(page), s.png);
-      ck(`${name}PwKept`, (await page.inputValue('#pw-opt-input').catch(() => '')).length > 0, s.png);
+      ck(`${name}StaysOnCode`, await onCodeStep(page), s.png);
     }
     // 9. Keyboard up on the code screen.
     await page.focus('#auth-input').catch(() => {});
@@ -481,17 +497,20 @@ async function signupWeb(surface, lang) {
       await page.reload({ waitUntil: 'load' }).catch(() => {});
       await webAuthReady(page);
       s = await R.step(page, 'reload on the code screen');
-      ck('reloadAtCode', { mode: await page.locator('#auth-reset').isVisible().catch(() => false) ? 'code' : 'phone entry', number: await page.inputValue('#auth-input').catch(() => ''), pw: (await page.inputValue('#pw-opt-input').catch(() => '')).length }, s.png);
-      // back to the code screen
-      await page.fill('#auth-input', FX_PHONE);
-      await page.check('input[name=otp-channel][value=telegram]', { force: true });
-      await page.click('#btn-auth', FORCE);
-      await sleep(1500);
+      // A code in flight survives a reload (ONB-15): the number is in the "sent to" line.
+      ck('reloadAtCode', { mode: await onCodeStep(page) ? 'code' : 'phone entry', number: await page.inputValue('#auth-input').catch(() => ''), sentTo: (await page.locator('#otp-hint').innerText().catch(() => '')).trim() }, s.png);
+      // back to the code screen (only if the reload lost it)
+      if (!(await onCodeStep(page))) {
+        await page.fill('#auth-input', FX_PHONE);
+        await page.check('input[name=otp-channel][value=telegram]', { force: true });
+        await page.click('#btn-auth', FORCE);
+        await sleep(1500);
+      }
       // 11. "Use a different number".
       await page.click('#auth-reset').catch(() => {});
       await sleep(700);
       s = await R.step(page, 'use a different number');
-      ck('changeNumberKeeps', { number: await page.inputValue('#auth-input').catch(() => ''), route: await page.locator('input[name=otp-channel]:checked').count(), pw: (await page.inputValue('#pw-opt-input').catch(() => '')).length }, s.png);
+      ck('changeNumberKeeps', { number: await page.inputValue('#auth-input').catch(() => ''), route: await page.locator('input[name=otp-channel]:checked').count() }, s.png);
       // 12. Browser Back from the code screen.
       await page.fill('#auth-input', FX_PHONE);
       await page.check('input[name=otp-channel][value=telegram]', { force: true });
@@ -503,17 +522,23 @@ async function signupWeb(surface, lang) {
       ck('backAtCode', page.url(), s.png);
       await go(page, url(surface, 'observe.html?intent=observe'));
       await webAuthReady(page);
-      await page.fill('#auth-input', FX_PHONE);
-      await page.check('input[name=otp-channel][value=telegram]', { force: true });
-      await page.click('#btn-auth', FORCE);
-      await sleep(1500);
+      if (!(await onCodeStep(page))) {
+        await page.fill('#auth-input', FX_PHONE);
+        await page.check('input[name=otp-channel][value=telegram]', { force: true });
+        await page.click('#btn-auth', FORCE);
+        await sleep(1500);
+      }
     }
-    // 13. Correct code -> account.
+    // 13. Correct code -> THEN "Create your password" (new + repeat) -> account.
     A['POST /api/observers/verify'] = OK_VERIFY_NEW;
     A['POST /api/observers/set-password'] = OK;
-    await page.fill('#pw-opt-input', PW); R.tap();
     await page.fill('#auth-input', '123456'); R.tap();
     await page.click('#btn-auth', FORCE); R.tap();
+    await page.waitForSelector('#pw-set:not([hidden])', { timeout: 15000 }).catch(() => {});
+    s = await R.step(page, 'password step after the code');
+    ck('pwStepAsked', s.asked, s.png);
+    ck('pwStepFields', await visPw(page), s.png);
+    await webSetPassword(page, R);
     await page.waitForURL(/choose-unit|observe\.html.*|index\.html/, { timeout: 15000 }).catch(() => {});
     await sleep(2500);
     s = await R.step(page, 'after verify (arrival)');
@@ -534,13 +559,10 @@ async function signupWeb(surface, lang) {
     await W.page.fill('#auth-input', BAD_NUMBER); RW.tap();
     await W.page.check('input[name=otp-channel][value=whatsapp]', { force: true }); RW.tap();
     await W.page.click('#btn-auth', FORCE); RW.tap();
-    await sleep(1500);
-    let s = await RW.step(W.page, 'WhatsApp, no password yet');
-    ckw('waNeedsPwFirst', { msg: await errLine(W.page), started: W.calls.some((c) => c.p === '/api/observers/wa-start') }, s.png);
-    await W.page.fill('#pw-opt-input', PW); RW.tap();
-    await W.page.click('#btn-auth', FORCE); RW.tap();
     await sleep(2500);
-    s = await RW.step(W.page, 'WhatsApp, bad number (real refusal)');
+    // No password is asked before the code (ONB-03): /wa-start runs on the first tap.
+    let s = await RW.step(W.page, 'WhatsApp, bad number (real refusal)');
+    ckw('waNeedsPwFirst', { msg: await errLine(W.page), started: W.calls.some((c) => c.p === '/api/observers/wa-start') }, s.png);
     ckw('waRealStatus', W.calls.filter((c) => c.real).map((c) => c.status), s.png);
     ckw('waBadMsg', await errLine(W.page), s.png);
     W.A['POST /api/observers/wa-start'] = WA_START;
@@ -553,6 +575,11 @@ async function signupWeb(surface, lang) {
     await sleep(800);
     s = await RW.step(W.page, 'send us this code (waiting)');
     ckw('waAsked', s.asked, s.png);
+    // The message lands -> THEN the password step, as after a code.
+    await W.page.waitForSelector('#pw-set:not([hidden])', { timeout: 25000 }).catch(() => {});
+    s = await RW.step(W.page, 'password step after the WhatsApp proof');
+    ckw('waPwStepAsked', s.asked, s.png);
+    await webSetPassword(W.page, RW);
     await W.page.waitForURL(/choose-unit/, { timeout: 25000 }).catch(() => {});
     await sleep(2000);
     s = await RW.step(W.page, 'after WhatsApp proof (arrival)');
@@ -573,7 +600,6 @@ async function signupWeb(surface, lang) {
       await webAuthReady(Q.page);
       await Q.page.fill('#auth-input', FX_PHONE); RQ.tap();
       await Q.page.check('input[name=otp-channel][value=telegram]', { force: true }); RQ.tap();
-      await Q.page.fill('#pw-opt-input', PW); RQ.tap();
       await Q.page.click('#btn-auth', FORCE); RQ.tap();
       await sleep(1500);
       await RQ.step(Q.page, 'code screen (number already registered)');
@@ -842,9 +868,10 @@ async function orgWeb(surface, lang) {
     ck('orgAsked', s.asked, s.png);
     await page.click('#btn-auth', FORCE); R.tap();
     await sleep(900);
+    // No password first (R-ORG-CODE-ORDER): the tap goes straight to "is this your number?".
     s = await R.step(page, 'create account, no password yet');
     ck('orgPwFirst', { msg: await errLine(page), dialog: await page.locator('.hk-dlg').isVisible().catch(() => false) }, s.png);
-    await page.fill('#pw-opt-input', PW); R.tap();
+    if (await page.locator('.hk-dlg .hk-dlg-cancel').isVisible().catch(() => false)) { await page.click('.hk-dlg .hk-dlg-cancel').catch(() => {}); R.tap(); await sleep(500); }
     const errs = full ? [['orgInvalid', E(400, 'org_code_invalid')], ['orgUsed', E(409, 'org_code_used')], ['orgTaken', E(409, 'org_code_number_taken')], ['orgRevoked', E(410, 'org_code_revoked')], ['org429', E(429, 'too_many_requests')], ['orgOffline', { abort: true }]] : [['orgInvalid', E(400, 'org_code_invalid')]];
     for (const [name, ans] of errs) {
       A['POST /api/observers/org-signup'] = ans;
@@ -855,7 +882,7 @@ async function orgWeb(surface, lang) {
       await sleep(1500);
       s = await R.step(page, `org sign-up: ${name}`);
       ck(`${name}Msg`, await errLine(page), s.png);
-      ck(`${name}Kept`, { code: await page.inputValue('#ref-input').catch(() => ''), pw: (await page.inputValue('#pw-opt-input').catch(() => '')).length }, s.png);
+      ck(`${name}Kept`, { code: await page.inputValue('#ref-input').catch(() => ''), number: await page.inputValue('#auth-input').catch(() => '') }, s.png);
     }
     // Success: account, the room joined server-side (fixtures say so from here on).
     A['POST /api/observers/org-signup'] = { status: 200, json: { ok: true, observerId: 7, token: FAKE_TOKEN, isNew: true, needsUnit: true, hasPassword: false } };
@@ -866,19 +893,26 @@ async function orgWeb(surface, lang) {
     await page.click('#btn-auth', FORCE); R.tap();
     await page.waitForSelector('.hk-dlg .hk-dlg-ok', { timeout: 6000 }).catch(() => {});
     await page.click('.hk-dlg .hk-dlg-ok').catch(() => {}); R.tap();
-    await page.waitForURL(/choose-unit/, { timeout: 15000 }).catch(() => {});
+    // The account first, THEN "Create your password" (new + repeat), as after a code.
+    await page.waitForSelector('#pw-set:not([hidden])', { timeout: 15000 }).catch(() => {});
+    s = await R.step(page, 'password step after the account');
+    ck('orgPwStepAsked', s.asked, s.png);
+    await webSetPassword(page, R);
+    // The room the code joined (ONB-11): My Groups when the server says so, else the unit chooser.
+    await page.waitForURL(/choose-unit|my-groups/, { timeout: 15000 }).catch(() => {});
     await sleep(2500);
     s = await R.step(page, 'after org sign-up (arrival)');
     ck('orgArrival', page.url().replace(SITE, ''), s.png);
     ck('orgSetPw', calls.some((c) => c.p === '/api/observers/set-password'), s.png);
-    // Skip the unit -> Home: is the room anywhere?
-    const skip = page.locator('#cu-skip');
-    if (await skip.isVisible().catch(() => false)) { await skip.click(); R.tap(); }
-    await page.waitForURL(/index\.html|\/$/, { timeout: 15000 }).catch(() => {});
-    await sleep(4000);
-    s = await R.step(page, 'home after skipping the unit');
-    const home = await vtext(page);
-    ck('orgRoomOnHome', home.includes(ORG_ROOM.name), s.png);
+    if (/choose-unit/.test(page.url())) {
+      // Skip the unit -> Home: is the room anywhere?
+      const skip = page.locator('#cu-skip');
+      if (await skip.isVisible().catch(() => false)) { await skip.click(); R.tap(); }
+      await page.waitForURL(/index\.html|\/$/, { timeout: 15000 }).catch(() => {});
+      await sleep(4000);
+      s = await R.step(page, 'home after skipping the unit');
+      ck('orgRoomOnHome', (await vtext(page)).includes(ORG_ROOM.name), s.png);
+    }
     await go(page, url(surface, 'my-groups.html'));
     await sleep(3000);
     s = await R.step(page, 'my groups');
@@ -965,7 +999,11 @@ async function signinWeb(surface, lang) {
       await sleep(1500);
       await page.locator('a[href="observe.html?intent=signin"]:visible').first().click().catch(() => {}); R.tap();
     } else {
-      await go(page, url(surface, 'index.html'));   // Lite: the gate opens on sign-in
+      // Lite: a FIRST launch opens on sign-up now (ONB-05), one tap from sign-in.
+      await go(page, url(surface, 'index.html'));
+      await webAuthReady(page);
+      ck('liteFirstLaunchIntent', new URL(page.url()).searchParams.get('intent'));
+      if (!/intent=signin/.test(page.url())) { await page.locator('#signin-line a').click().catch(() => {}); R.tap(); }
     }
     await webAuthReady(page);
     await sleep(1500);   // passkey support is decided after /api/health
@@ -990,6 +1028,15 @@ async function signinWeb(surface, lang) {
       s = await R.step(page, `sign in: ${name}`);
       ck(`${name}Msg`, await errLine(page), s.png);
       ck(`${name}Kept`, { phone: await page.inputValue('#auth-input').catch(() => ''), pw: (await page.inputValue('#pw-signin-input').catch(() => '')).length }, s.png);
+      if (name === 'pwUnavailable') {
+        // An account from before passwords: straight into the code route, number kept (ONB-12) — then back.
+        ck('pwUnavailableRoutes', { routes: await page.locator('#channel-pick').isVisible().catch(() => false), why: await page.locator('#auth-why').isVisible().catch(() => false), number: await page.inputValue('#auth-input').catch(() => '') }, s.png);
+        if (await page.locator('#channel-pick').isVisible().catch(() => false)) {
+          await page.click('#pw-link').catch(() => {}); R.tap();
+          await sleep(500);
+          await page.fill('#pw-signin-input', 'wrong-password').catch(() => {}); R.tap();
+        }
+      }
     }
     // Keyboard up on the password field.
     if (full) {
@@ -1037,7 +1084,8 @@ async function signinWeb(surface, lang) {
       return {
         pickerHiddenAttr: p.hidden, pickerDisplay: getComputedStyle(p).display,
         pwSigninHiddenAttr: w.hidden, pwSigninDisplay: getComputedStyle(w).display,
-        pwOptHiddenAttr: document.getElementById('pw-opt').hidden, pwOptDisplay: getComputedStyle(document.getElementById('pw-opt')).display,
+        // The new password is its own step AFTER the code now (ONB-03).
+        pwSetShown: !document.getElementById('pw-set').hidden,
         htmlIntentSignin: document.documentElement.classList.contains('intent-signin'),
         button: document.getElementById('btn-auth').textContent.trim(),
       };
@@ -1062,10 +1110,10 @@ async function signinWeb(surface, lang) {
     await F.page.fill('#auth-input', '123456'); RF.tap();
     await F.page.click('#btn-auth', FORCE); RF.tap();
     await sleep(1200);
-    s = await RF.step(F.page, 'forgot password: verify (new password field not on screen)');
+    s = await RF.step(F.page, 'forgot password: after the code (choose a new password)');
     ckf('forgotVerifyMsg', { msg: await errLine(F.page), verifyCalled: F.calls.some((c) => c.p === '/api/observers/verify') }, s.png);
-    await F.page.evaluate((pw) => { document.getElementById('pw-opt-input').value = pw; }, PW);
-    await F.page.click('#btn-auth', FORCE); RF.tap();
+    ckf('forgotPwStep', { shown: await F.page.locator('#pw-set').isVisible().catch(() => false), title: (await F.page.locator('#pw-set-title').innerText().catch(() => '')).trim(), boxes: await visPw(F.page) }, s.png);
+    await webSetPassword(F.page, RF);
     await sleep(2500);
     if (await F.page.locator('#pk-offer').isVisible().catch(() => false)) { await F.page.click('#pk-offer-no').catch(() => {}); RF.tap(); }
     await F.page.waitForURL(/index\.html|hawkeye\.com\.ng\/?$/, { timeout: 12000 }).catch(() => {});
@@ -1318,11 +1366,11 @@ async function firstrunWeb(surface, lang) {
     await webAuthReady(page);
     await page.fill('#auth-input', FX_PHONE);
     await page.check('input[name=otp-channel][value=telegram]', { force: true });
-    await page.fill('#pw-opt-input', PW);
     await page.click('#btn-auth', FORCE);
     await sleep(1500);
     await page.fill('#auth-input', '123456');
     await page.click('#btn-auth', FORCE);
+    await webSetPassword(page);   // the password step after the code (ONB-03)
     await page.waitForURL(/choose-unit/, { timeout: 15000 }).catch(() => {});
     await sleep(3000);
     let s = await R.step(page, 'choose your polling unit (onboarding)');

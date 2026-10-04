@@ -61,15 +61,37 @@ async function run(withPhoto) {
   p.on('pageerror', (e) => errs.push(String(e)));
   p.on('dialog', (d) => d.accept());
   await p.goto(`${base}/practice.html`, { waitUntil: 'networkidle' });
-  await p.waitForSelector('#vote-inputs input', { timeout: 10000 });
+  /* THE REAL FIVE STEPS (flow walkthrough REP-PRAC-01): capture, which polling
+     unit, which election, counts + Verify counts, sign — each locked until
+     the one before it is done, exactly as observe.html. */
+  await p.waitForSelector('#btn-skip-sheet', { timeout: 10000 });
+  const locks = () => p.evaluate(() => ({
+    locked: ['photo-fold', 'unit-fold', 'race-fold', 'counts-fold'].map((id) => document.getElementById(id).classList.contains('locked')),
+    submit: document.getElementById('btn-submit').disabled,
+  }));
+  const start = await locks();
   if (withPhoto) {
     await p.evaluate((src) => { const i = document.getElementById('preview-sheet'); i.src = src; i.hidden = false; }, PHOTO);
   }
+  // 1. capture (both slots: a sample here)
   await p.click('#btn-skip-sheet');
   await p.click('#btn-skip-venue');
+  const afterPhotos = await locks();
+  // 2. which polling unit: the practice unit
+  await p.waitForSelector('#btn-prac-unit', { state: 'visible', timeout: 5000 });
+  await p.click('#btn-prac-unit');
+  // 3. which election
+  await p.waitForSelector('#sel-contest', { state: 'visible', timeout: 5000 });
+  await p.selectOption('#sel-contest', 'PRES');
+  // 4. counts, then Verify counts
+  await p.waitForSelector('#vote-inputs input', { state: 'visible', timeout: 10000 });
   const inputs = await p.$$('#vote-inputs input');
   await inputs[0].fill('212');
   if (inputs[1]) await inputs[1].fill('87');
+  const beforeVerify = await locks();
+  await p.click('#btn-verify-counts');
+  const ready = await locks();
+  // 5. sign & submit
   await p.click('#btn-submit');
   await p.waitForSelector('#done:not([hidden])', { timeout: 10000 });
   const out = await p.evaluate(() => ({
@@ -83,11 +105,18 @@ async function run(withPhoto) {
     chip: document.querySelector('.prac-preview-chip').textContent,
   }));
   out.errs = errs;
+  out.steps = { start, afterPhotos, beforeVerify, ready };
   await p.close();
   return out;
 }
 
 const a = await run(true);
+// The locks walk forward one step at a time; sign stays off until all four are done.
+check('five steps, locked in order: only capture open at the start, sign off',
+  a.steps.start, { locked: [false, true, true, true], submit: true });
+check('capture done -> the unit step opens, the rest stay locked', a.steps.afterPhotos, { locked: [false, false, true, true], submit: true });
+check('CONTROL counts typed but not verified: sign still off', a.steps.beforeVerify, { locked: [false, false, false, false], submit: true });
+check('Verify counts -> sign is on', a.steps.ready.submit, false);
 check('with a photo: the preview card is on screen', a.previewVisible, true);
 check('with a photo: it shows THIS unit and marks it PRACTICE', [a.name, a.meta.startsWith('[PRACTICE] 99-01-01-001')], ['Sample Practice School', true]);
 check('with a photo: the vote line reads like the real log', a.votes, (v) => /212/.test(v) && /87/.test(v));
@@ -100,6 +129,8 @@ check('with a sample: no thumbnail, and the note explains why', [nb.thumbs.lengt
 
 // ON THE WIRE. Control first: the capture must have seen the counts it sent.
 check('CONTROL: the submit bodies were captured and carry the counts', bodies.filter((x) => x.url === '/api/practice/submit').map((x) => /212/.test(x.body)), [true, true]);
+check('each run sent the unit and the race the steps chose', bodies.filter((x) => x.url === '/api/practice/submit').map((x) => { const j = JSON.parse(x.body); return [j.puCode, j.contest]; }),
+  [['99-01-01-001', 'PRES'], ['99-01-01-001', 'PRES']]);
 check('nothing the page sent contains an image or a multipart upload',
   bodies.map((x) => ({ url: x.url, multipart: /multipart/i.test(x.type), image: /data:image|image\/jpeg|\/9j\//.test(x.body) })),
   (list) => list.length > 0 && list.every((x) => !x.multipart && !x.image));

@@ -4,8 +4,9 @@
  * The server's rules are backend/tests/org_code_check_test.mjs. This asks what
  * the party's coordinator actually gets, against a stub server:
  *
- *   1. the Codes tab exists only when the server says so (org_code_check), and
- *      ?tab=codes cannot open it otherwise;
+ *   1. with org_code_check the Codes tab lists the room's own batches FIRST and
+ *      keeps this checker under "Check other codes"; without it a manager gets
+ *      the tab MUTED, saying why, and a plain member gets no tab at all;
  *   2. pasted text with codes in any case and spacing, duplicates and a
  *      look-alike: only distinct VALID codes are sent, squashed; the look-alike
  *      is shown "not valid" and never sent;
@@ -36,6 +37,7 @@ const GROUP = {
   managers: [{ observer_id: 1, role: 'owner', scope_kind: '', scope_value: '' }],
 };
 let FLAG = true;
+let ROLE = null;               // null = GROUP.me (the owner); 'member' = a plain member of the roster
 let MODE = 'ok';               // 'ok' | 'rate' | 'forbid'
 const STATUS = {
   ORGABCDEFGHJKMN: { status: 'unused' },
@@ -52,7 +54,12 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     const json = (o, status = 200) => { res.writeHead(status, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
     if (url === '/api/groups') return json({ managing: [{ id: 7, name: GROUP.name, kind: 'campaign', contest: 'PRES', scope: '', slug: GROUP.slug }], member: [] });
-    if (url === '/api/groups/7') return json({ ...GROUP, org_code_check: FLAG });
+    if (url === '/api/groups/7') return json({ ...GROUP, org_code_check: FLAG, ...(ROLE ? { me: { role: ROLE, scope_kind: '', scope_value: '' } } : {}) });
+    // The room's own batches (Hawkeye-generated): listed FIRST on the Codes tab.
+    if (url === '/api/groups/7/org-codes/batches') {
+      return json({ version: 'v1', batches: [{ id: 3, label: 'Lagos agents', createdAt: Date.parse('2026-09-30T09:00:00Z'), size: 2, unused: 1, used: 1, withdrawn: 0,
+        codes: [{ code: 'ORG-ABCD-EFGH-JKMN', status: 'unused' }, { code: 'ORG-2345-6789-ABCD', status: 'used', usedOn: '2026-09-28' }] }] });
+    }
     if (url === '/api/groups/7/org-codes/check') {
       const body = JSON.parse(data || '{}');
       calls.push(body.codes);
@@ -102,24 +109,47 @@ async function open(lang = 'en', tab = 'codes') {
   return { ctx, p };
 }
 const text = (p, sel) => p.evaluate((s) => (document.querySelector(s) || {}).textContent || '', sel);
-const heads = (p) => p.evaluate(() => [...document.querySelectorAll('#sr-body .sr-head')].map((h) => h.querySelector('span').textContent + '=' + h.querySelector('b').textContent));
+// The CHECKER's own counts: the batches above it carry heads of their own.
+const heads = (p) => p.evaluate(() => [...document.querySelectorAll('#cc-checker .sr-head')].map((h) => h.querySelector('span').textContent + '=' + h.querySelector('b').textContent));
 async function download(p, sel) {
   const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 8000 }).catch(() => null), p.click(sel)]);
   return dl ? { name: dl.suggestedFilename(), body: fs.readFileSync(await dl.path(), 'utf8') } : null;
 }
 
 try {
-  console.log('=== 1. the tab only when the server says so ===');
+  /* A MANAGER ALWAYS GETS THE TAB (2026-10-04): with org_code_check it lists
+     the room's own batches first and keeps the paste/upload checker under
+     "Check other codes"; without it the tab is there, muted, saying why —
+     no checker that would only be refused. A plain member gets no tab. */
+  console.log('=== 1. the tab: muted with the reason when the server says no; batches first when it says yes ===');
   FLAG = false;
   let { ctx, p } = await open('en', 'codes');
-  check('no org_code_check: no Codes tab, and ?tab=codes lands on Overview',
+  check('no org_code_check, the owner: a MUTED Codes tab that opens on why, and no checker',
+    await p.evaluate(() => [!!document.querySelector('[data-tab="codes"][data-muted]'), (document.querySelector('.sr-tabs [aria-selected="true"]') || {}).dataset?.tab || null,
+      (document.getElementById('cc-why-not') || {}).textContent || '', !!document.getElementById('cc-text')]),
+    (v) => v[0] === true && v[1] === 'codes' && /Organisation codes are not set up for ADC yet\./.test(v[2]) && v[3] === false);
+  await ctx.close();
+  ROLE = 'member';
+  ({ ctx, p } = await open('en', 'codes'));
+  check('CONTROL a plain member: no Codes tab at all, and ?tab=codes lands on Overview',
     await p.evaluate(() => [!!document.querySelector('[data-tab="codes"]'), (document.querySelector('.sr-tabs [aria-selected="true"]') || {}).dataset?.tab || null]),
     [false, 'overview']);
   await ctx.close();
+  ROLE = null;
   FLAG = true;
   ({ ctx, p } = await open('en', 'codes'));
-  check('CONTROL: with it, the Codes tab opens on the checker',
-    await p.evaluate(() => [!!document.querySelector('[data-tab="codes"][aria-selected="true"]'), !!document.getElementById('cc-text')]), [true, true]);
+  await p.waitForSelector('[data-batch="3"]', { timeout: 8000 }).catch(() => {});
+  check('with it: the Codes tab opens on the room\'s own batches FIRST, the checker below under "Check other codes" (closed)',
+    await p.evaluate(() => {
+      const bt = document.getElementById('cc-batches');
+      const other = document.getElementById('cc-other');
+      return [!!document.querySelector('[data-tab="codes"][aria-selected="true"]'), !document.querySelector('[data-tab="codes"]').hasAttribute('data-muted'),
+        !!bt && !!other && !!(bt.compareDocumentPosition(other) & Node.DOCUMENT_POSITION_FOLLOWING),
+        (document.querySelector('[data-batch="3"] summary b') || {}).textContent || '', other && other.querySelector('summary').textContent.trim(), other && other.open,
+        !!document.querySelector('#cc-other #cc-text')];
+    }), [true, true, true, 'Lagos agents', 'Check other codes', false, true]);
+  // The checker is one tap away.
+  await p.click('#cc-other summary');
 
   console.log('\n=== 2. pasted, messy ===');
   await p.fill('#cc-text', 'org-abcd efgh jkmn\nand again: ORG ABCD-EFGH-JKMN\nfoo ORG-2345-6789-ABCD, ORG-OOOO-1111-IIII\nORGANISATION CODES');
@@ -192,14 +222,19 @@ try {
   console.log('\n=== 5. in Hausa ===');
   ({ ctx, p } = await open('ha', 'codes'));
   await p.waitForFunction(() => /Lambobi/.test((document.querySelector('[data-tab="codes"]') || {}).textContent || ''), null, { timeout: 8000 }).catch(() => {});
+  await p.waitForSelector('#cc-other summary', { timeout: 8000 }).catch(() => {});
+  await p.click('#cc-other summary');
   await p.fill('#cc-text', 'ORG-ABCD-EFGH-JKMN ORG-OOOO-1111-IIII');
   await p.click('#cc-check');
   await p.waitForSelector('#cc-table', { timeout: 8000 }).catch(() => {});
   const ha = await text(p, '#sr-body');
-  const EN = ['Check your organisation codes', 'Type or paste', 'Upload CSV', 'Download results', 'Download unused', 'Unused', 'Withdrawn', 'Not one of yours', 'Not a valid code', 'Results for', 'Status'];
+  // The tab as it is now: the batches' title, the checker under "Check other codes".
+  const EN = ['Your organisation codes', 'Check other codes', 'Type or paste', 'Upload CSV', 'Download codes CSV', 'Download unused', 'Unused', 'Withdrawn', 'Not one of yours', 'Not a valid code', 'Results for', 'Status'];
   check('the tab and everything on it in Hausa: no English left', [await text(p, '[data-tab="codes"]'), EN.filter((w) => ha.includes(w))], ['Lambobi', []]);
   await ctx.close();
   ({ ctx, p } = await open('en', 'codes'));
+  await p.waitForSelector('#cc-other summary', { timeout: 8000 }).catch(() => {});
+  await p.click('#cc-other summary');
   await p.fill('#cc-text', 'ORG-ABCD-EFGH-JKMN ORG-OOOO-1111-IIII');
   await p.click('#cc-check');
   await p.waitForSelector('#cc-table', { timeout: 8000 }).catch(() => {});

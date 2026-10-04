@@ -803,6 +803,7 @@
   "incidents.you-already-have-n-videos": "You already have {v0}. Add the rest as photos, or file a second report — every report is reviewed separately, so nothing is lost by splitting them.",
   "index.35-mb-android-will-ask-you": "36 MB. Android will ask you to allow installs from your browser — that prompt is normal for any app installed outside the Play Store, and it only applies to this one install. The file is served from hawkeye.com.ng itself; do not install a Hawkeye APK from anywhere else.",
   "index.add": "Add",
+  "index.alerts-on-short": "Alerts are on for your unit",
   "index.all-alerts": "All Alerts →",
   "index.all-races": "All Races →",
   "index.all-reports": "All Reports →",

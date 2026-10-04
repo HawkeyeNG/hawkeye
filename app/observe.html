@@ -170,7 +170,8 @@
       border: 1px solid var(--border); border-radius: 999px; background: var(--card);
       white-space: nowrap; font-size: 0.88rem; color: var(--ink) !important;
     }
-    html:not(.intent-signin) #otp-wa-opt { order: -1; }
+    /* WhatsApp first everywhere (owner, 2026-10-04): it is FIRST IN THE MARKUP,
+       so the sign-in/reset list (a plain block, no flex) follows it too. */
     /* The radio covers its chip, invisible: a tap (or a test's click) lands on
        the radio itself, and the keyboard and screen readers still use it. */
     html:not(.intent-signin) #channel-pick > label > input {
@@ -326,15 +327,15 @@
         <p id="otp-phone" class="hint" hidden></p>
         <fieldset id="channel-pick" style="border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin:10px 0">
           <legend data-i18n="observe.get-your-code-by" style="font-size:.85rem;font-weight:700;padding:0 6px">Get Your Code By</legend>
-          <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
-            <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
-            <span data-i18n="observe.telegram">Telegram</span>
-          </label>
           <!-- Hidden (app.js paintWaRoutes) only once /api/health has answered
                that the server runs neither WhatsApp route. -->
           <label id="otp-wa-opt" style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="whatsapp" style="width:auto;margin:0" />
             <span data-i18n="observe.whatsapp">WhatsApp</span>
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
+            <input type="radio" name="otp-channel" value="telegram" style="width:auto;margin:0" />
+            <span data-i18n="observe.telegram">Telegram</span>
           </label>
           <!-- On sign-up the four sit on ONE line as chips, in the owner's order
                WhatsApp, Telegram, Call, SMS (CSS order puts WhatsApp first);

@@ -40,23 +40,18 @@ const check = (label, got, want) => {
 /* ---------------------------------------------------------------- 1. order */
 /* SIGN-UP's LINE-UP (owner, 2026-10-04): WhatsApp, Telegram, Call (the free
    missed call), SMS last — one line at 360 px. The sign-in page's reset and
-   no-password rescue keep Telegram, WhatsApp, SMS (no Call: it only ever
-   creates an account). On the web the markup is in the reset's order plus
-   Call, and sign-up's CSS lifts WhatsApp to the front (`order: -1`, scoped
-   to sign-up); section 3 also checks the order as RENDERED. */
+   no-password rescue: WhatsApp, Telegram, SMS (no Call: it only ever creates
+   an account) — WhatsApp first everywhere since 2026-10-04, so on the web it
+   is first IN THE MARKUP; section 3 also checks the order as RENDERED. */
 console.log('=== D2: the route order, sign-up and the reset ===');
 const observeHtml = fs.readFileSync(`${APP}/observe.html`, 'utf8');
 const webOrder = (html) => [...html.matchAll(/name="otp-channel" value="(\w+)"/g)].map((m) => m[1]);
-const waFirstOnSignup = (html) => /html:not\(\.intent-signin\) #otp-wa-opt \{ order: -1; \}/.test(html);
-const webSignupOrder = (html) => (waFirstOnSignup(html)
-  ? ['whatsapp', ...webOrder(html).filter((v) => v !== 'whatsapp')] : webOrder(html));
+const webSignupOrder = (html) => webOrder(html);
 const webResetOrder = (html) => webOrder(html).filter((v) => v !== 'call');
 check('web sign-up routes: WhatsApp, Telegram, Call, SMS', webSignupOrder(observeHtml), ['whatsapp', 'telegram', 'call', 'sms']);
-check('web reset routes: Telegram, WhatsApp, SMS', webResetOrder(observeHtml), ['telegram', 'whatsapp', 'sms']);
-check('CONTROL the sign-up rule dropped -> Telegram leads again (caught)',
-  webSignupOrder(observeHtml.replace('#otp-wa-opt { order: -1; }', '#otp-wa-opt { }')), ['telegram', 'whatsapp', 'call', 'sms']);
+check('web reset routes: WhatsApp, Telegram, SMS', webResetOrder(observeHtml), ['whatsapp', 'telegram', 'sms']);
 check('CONTROL the reader sees a swapped order', webResetOrder(observeHtml.replace('value="telegram"', 'value="TMP"').replace('value="whatsapp"', 'value="telegram"').replace('value="TMP"', 'value="whatsapp"')),
-  (o) => JSON.stringify(o) !== JSON.stringify(['telegram', 'whatsapp', 'sms']));
+  (o) => JSON.stringify(o) !== JSON.stringify(['whatsapp', 'telegram', 'sms']));
 const signIn = fs.readFileSync(`${H}/native/src/app/sign-in.tsx`, 'utf8');
 /* Native builds the row per errand: `purpose === 'signup' ? [sign-up chips]
    : [reset chips]`, from WA_CHIP / TG_CHIP and Call's own entry. */
@@ -70,10 +65,10 @@ const nativeOrders = (src) => {
   return { signup: toks(m[1]), reset: toks(m[2]) };
 };
 // SMS is its own chip rendered AFTER the row's chips, so it is last everywhere.
-check('native: sign-up WhatsApp, Telegram, Call; reset Telegram, WhatsApp; SMS after them', [nativeOrders(signIn),
+check('native: sign-up WhatsApp, Telegram, Call; reset WhatsApp, Telegram; SMS after them', [nativeOrders(signIn),
   /const WA_CHIP = waNone \? \[\] : \[\{ key: 'whatsapp'/.test(signIn) && /const TG_CHIP = \[\{ key: 'telegram'/.test(signIn),
   signIn.indexOf("setChannel('sms')") > signIn.indexOf('CHANNELS.map(')],
-  [{ signup: ['whatsapp', 'telegram', 'call'], reset: ['telegram', 'whatsapp'] }, true, true]);
+  [{ signup: ['whatsapp', 'telegram', 'call'], reset: ['whatsapp', 'telegram'] }, true, true]);
 check('CONTROL a swapped sign-up order is caught',
   nativeOrders(signIn.replace("? [...WA_CHIP, ...TG_CHIP,", "? [...TG_CHIP, ...WA_CHIP,")).signup, ['telegram', 'whatsapp', 'call']);
 check('CONTROL the pre-change single list is not taken for the new one',
@@ -399,14 +394,15 @@ try {
     await p.waitForFunction(() => !document.getElementById('otp-call-opt').hidden && !document.getElementById('otp-sms-opt').hidden, null, { timeout: 8000 }).catch(() => {});
     check('sign-up, rendered: WhatsApp, Telegram, Call, SMS — none picked', [await shown(p), await p.evaluate(() => !!document.querySelector('input[name="otp-channel"]:checked'))],
       (v) => JSON.stringify(v[0].slice(0, 3)) === JSON.stringify(['WhatsApp', 'Telegram', 'Call']) && /^SMS/.test(v[0][3] || '') && v[0].length === 4 && v[1] === false);
-    await p.addStyleTag({ content: '#otp-wa-opt { order: 0 !important; }' });
-    check('CONTROL without the sign-up rule the measure sees Telegram lead', (await shown(p))[0], 'Telegram');
+    // CONTROL: put Telegram's chip first in the DOM — the measure must see it lead.
+    await p.evaluate(() => { const box = document.getElementById('channel-pick'); const tg = box.querySelector('input[value="telegram"]').closest('label'); box.insertBefore(tg, document.getElementById('otp-wa-opt')); });
+    check('CONTROL with Telegram moved first, the measure sees Telegram lead', (await shown(p))[0], 'Telegram');
     await ctx.close();
     ({ ctx, p } = await page({ url: '/observe.html?intent=signin' }));
     await p.waitForTimeout(800);
     await p.click('#pw-link');
     await p.waitForFunction(() => !document.getElementById('otp-sms-opt').hidden, null, { timeout: 8000 }).catch(() => {});
-    check('the reset, rendered: Telegram, WhatsApp, SMS (paid) — no Call', await shown(p), ['Telegram', 'WhatsApp', 'SMS (paid)']);
+    check('the reset, rendered: WhatsApp, Telegram, SMS (paid) — no Call', await shown(p), ['WhatsApp', 'Telegram', 'SMS (paid)']);
     await ctx.close();
   }
 

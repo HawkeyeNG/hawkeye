@@ -384,7 +384,7 @@ function Greeting({ me }: { me: Me | null | undefined }) {
         {me ? i18nT('index.welcome-back-observer', { id: me.observerId }) : i18nT('index.welcome-back')}
       </Text>
       <Text className="pt-1 text-sm leading-5 text-muted">
-        {u ? i18nT('index.alerts-are-on-for-your-unit') : i18nT('index.your-polling-unit-is-your-post')}
+        {u ? i18nT('index.alerts-on-short') : i18nT('index.your-polling-unit-is-your-post')}
       </Text>
       <Pressable
         onPress={() => router.push({ pathname: '/choose-unit', params: u ? { current: u.pu_code } : {} } as never)}
@@ -846,13 +846,14 @@ export default function Home() {
         </View>
       ) : null}
 
-      {/* 1 — at most one card. The nudge only shows when the server says no
+      {/* 1 */}
+      {signedIn ? <Greeting me={me} /> : null}
+
+      {/* 2 — at most one card, UNDER the greeting (owner, 2026-10-04: leading
+          with it looked odd). The nudge only shows when the server says no
           Practice Day is near, so on and around its day that card wins.
           PracticeDayCard renders nothing when there is no day to show. */}
       {nextStep ?? (practiceNudge ? <PracticeNudgeCard onDismiss={dismissPracticeNudge} /> : <PracticeDayCard />)}
-
-      {/* 2 */}
-      {signedIn ? <Greeting me={me} /> : null}
 
       {/* 3 */}
 

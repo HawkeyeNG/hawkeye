@@ -146,14 +146,17 @@ check('after: results title, the shared count, and the next day', c.text,
 check('after: links to the results page for THAT day', c.links, ['practice-day.html?day=2026-12-12']);
 check('after: no errors', r.errs, []);
 // IN THE HERO NOW (flow walkthrough FA-HOME-1 — .home-stack is gone): the card
-// sits above the greeting, and ends exactly its own bottom margin above it, so
-// the hidden next-step and nudge cards beside it take no space.
+// sits under the greeting and unit chip (2026-10-04), one top margin below the
+// chip, so the hidden next-step and nudge cards beside it take no space.
 const gaps = await r.pg.evaluate(() => {
+  // UNDER THE GREETING since 2026-10-04: the card starts one top margin below
+  // the unit chip (the hero's last visible line above it). A hidden sibling takes
+  // no space, so the gap is the margin plus at most the chip's line-box slack.
   const vis = [...document.querySelectorAll('.home-hero .home-card')].filter((el) => el.getClientRects().length);
-  const greet = document.getElementById('home-greet').getBoundingClientRect().top;
-  return vis.map((el) => [el.id, Math.round(greet - el.getBoundingClientRect().bottom), Math.round(parseFloat(getComputedStyle(el).marginBottom))]);
+  const chip = document.getElementById('home-unit-chip').getBoundingClientRect().bottom;
+  return vis.map((el) => [el.id, Math.round(el.getBoundingClientRect().top - chip), Math.round(parseFloat(getComputedStyle(el).marginTop))]);
 });
-check('visible card: the only card in the hero, one margin above the greeting', gaps, (g) => g.length === 1 && g[0][0] === 'pday-card' && g[0][1] === g[0][2] && g[0][2] > 0);
+check('visible card: the only card in the hero, one margin below the unit chip', gaps, (g) => g.length === 1 && g[0][0] === 'pday-card' && g[0][2] > 0 && g[0][1] >= g[0][2] && g[0][1] <= g[0][2] + 8);
 if (process.env.PDAY_SHOTS) await r.pg.screenshot({ path: `${process.env.PDAY_SHOTS}/home-after.png`, fullPage: false });
 await r.ctx.close();
 

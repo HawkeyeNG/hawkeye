@@ -146,12 +146,15 @@ check('AT MOST ONE: Practice Day card steps aside while the nudge shows', [c.pda
    ends exactly its own bottom margin above the greeting — a hidden sibling
    between them takes no space. */
 const heroGap = (pg) => pg.evaluate(() => {
+  // UNDER THE GREETING since 2026-10-04: the card starts one top margin below
+  // the unit chip (the hero's last visible line above it). A hidden sibling takes
+  // no space, so the gap is the margin plus at most the chip's line-box slack.
   const vis = [...document.querySelectorAll('.home-hero .home-card')].filter((el) => el.getClientRects().length);
-  const greet = document.getElementById('home-greet').getBoundingClientRect().top;
-  return vis.map((el) => [Math.round(greet - el.getBoundingClientRect().bottom), Math.round(parseFloat(getComputedStyle(el).marginBottom))]);
+  const chip = document.getElementById('home-unit-chip').getBoundingClientRect().bottom;
+  return vis.map((el) => [el.id, Math.round(el.getBoundingClientRect().top - chip), Math.round(parseFloat(getComputedStyle(el).marginTop))]);
 });
 const gaps = await heroGap(r.pg);
-check('the nudge ends one margin above the greeting (no double gap from the hidden card)', gaps, (g) => g.length === 1 && g[0][0] === g[0][1] && g[0][1] > 0);
+check('the nudge starts one margin below the unit chip (no double gap from the hidden card)', gaps, (g) => g.length === 1 && g[0][2] > 0 && g[0][1] >= g[0][2] && g[0][1] <= g[0][2] + 8);
 check('show: no errors', r.errs, []);
 await r.pg.evaluate(() => console.error('control-error'));
 await r.pg.waitForTimeout(50);

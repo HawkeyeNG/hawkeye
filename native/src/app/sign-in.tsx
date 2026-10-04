@@ -1140,7 +1140,7 @@ export default function SignIn() {
   const TG_CHIP = [{ key: 'telegram' as Channel, label: 'Telegram' }];
   const CHANNELS: { key: Channel; label: string }[] = purpose === 'signup'
     ? [...WA_CHIP, ...TG_CHIP, ...(callRoute ? [{ key: 'call' as Channel, label: i18nT('auth.call-chip') }] : [])]
-    : [...TG_CHIP, ...WA_CHIP];
+    : [...WA_CHIP, ...TG_CHIP]; // same order as sign-up (owner, 2026-10-04)
 
   const requestCopy =
     purpose === 'signup'

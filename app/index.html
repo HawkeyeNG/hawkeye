@@ -130,12 +130,12 @@
       .home-cols { grid-template-columns: 1fr 1fr; align-items: start; }
       .home-cols > .qa-grid, .home-cols > .home-chat { grid-column: 1 / -1; }
     }
-    /* 1. THE NEXT STEP sits at the top of the green hero, above the greeting —
-       it is the one thing on the page a new observer must do, so it leads.
+    /* 2. THE NEXT STEP sits in the green hero UNDER the greeting and unit chip
+       (it led the hero until 2026-10-04; the owner found that order odd).
        At most one card shows: report now / choose your unit (#home-next) beat
        the practice nudge, which beats the Practice Day card (.pday-yield). The
        hero's white text must not leak into a card that paints its own. */
-    .home-hero .home-card { color: var(--ink); margin: 0 0 18px; }
+    .home-hero .home-card { color: var(--ink); margin: 18px 0 0; }
     .home-hero .home-card[hidden] { display: none; }
     .home-hero .home-card a:not(.btn-accent) { color: var(--link); }
     /* (0,2,0): .home-card's own border, declared further down, must not win. */
@@ -329,7 +329,16 @@
   <div class="home-obs">
     <section class="home-hero">
       <div class="wrap">
-        <!-- 1. THE NEXT STEP — at most one of these three shows (see the CSS).
+        <!-- 1. GREETING + UNIT -->
+        <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
+        <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
+        <!-- CHOOSE, not map: choose-unit.html is the page that saves "my unit"
+             (Profile's row opens it too); Map a Polling Unit is a surveying job
+             and stays on the My Polling Unit action below. -->
+        <a class="unit-chip" id="home-unit-chip" href="choose-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
+        <p class="home-offline" id="home-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" data-i18n="common.try-again">Try again</button></p>
+        <!-- 2. THE NEXT STEP, under the greeting (owner, 2026-10-04: leading with it
+             looked odd) — at most one of these three shows (see the CSS).
              #home-next: "Report now" while polls are open, else "Choose your
              polling unit" until one is saved; painted below from /api/contests
              and /me. -->
@@ -340,14 +349,6 @@
         <!-- "Try a practice run": painted below from /api/practice/nudge; hidden
              unless the server says show and the observer has not dismissed it. -->
         <div class="home-card pday-card pnudge-card" id="pnudge-card" hidden></div>
-        <!-- 2. GREETING + UNIT -->
-        <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
-        <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
-        <!-- CHOOSE, not map: choose-unit.html is the page that saves "my unit"
-             (Profile's row opens it too); Map a Polling Unit is a surveying job
-             and stays on the My Polling Unit action below. -->
-        <a class="unit-chip" id="home-unit-chip" href="choose-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
-        <p class="home-offline" id="home-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" data-i18n="common.try-again">Try again</button></p>
       </div>
     </section>
     <main class="wrap">
@@ -813,7 +814,7 @@
           chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
           // The chooser marks the saved one when it knows it (Profile's row does the same).
           chip.setAttribute('href', 'choose-unit.html?current=' + encodeURIComponent(u.pu_code || ''));
-          sub.textContent = tt('index.alerts-are-on-for-your-unit', 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.');
+          sub.textContent = tt('index.alerts-on-short', 'Alerts are on for your unit');
         }
       };
       paintHome();

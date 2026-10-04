@@ -2962,5 +2962,6 @@
   "situation-room.codes-refresh-failed": "Enweghị ike imelite ugbu a. Nke a bụ ndepụta nke {v0}.",
   "situation-room.codes-updated": "E meliteere {v0}",
   "situation-room.codes-col-batch": "Ngwugwu",
-  "results.following-subject": "Ị na-eso {v0}."
+  "results.following-subject": "Ị na-eso {v0}.",
+  "index.alerts-on-short": "Ọkwa gbanyere maka ngalaba gị"
 }

@@ -82,6 +82,10 @@
   --sr-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
 }
 :root[data-theme="dark"] .sr { --ok: #3ecf80; --off: #6fa4ff; --wait: #e0a341; }
+/* BUTTONS IN THE APPS' LEMON GREEN (owner, 2026-10-04): the apps' good-ink
+   (native theme goodInk dark, #6edba0) — on the card colour the old buttons read
+   as part of the panel. Dark ink on it in both themes (contrast ~10:1). */
+:root { --sr-btn-bg: #6edba0; --sr-btn-line: #5cc98e; --sr-btn-ink: #06231a; }
 
 .sr { max-width: 1180px; margin: 0 auto; padding: 0 16px 64px; }
 /* A DASHBOARD SHOULD USE THE MONITOR IT IS GIVEN. 1180px is right for an
@@ -120,10 +124,10 @@
 .sr-hdr-actions { display: flex; gap: 8px; margin-left: auto; flex-wrap: wrap; align-items: center; }
 .sr-hdr-actions button {
   display: inline-block; width: auto; margin: 0; box-shadow: none;
-  background: rgba(255, 255, 255, 0.10); color: #eaf5ee; border: 1px solid rgba(255, 255, 255, 0.22);
+  background: var(--sr-btn-bg); color: var(--sr-btn-ink); border: 1px solid var(--sr-btn-line); font-weight: 600;
   border-radius: 8px; padding: 6px 11px; font: inherit; font-size: 0.8rem; cursor: pointer;
 }
-.sr-hdr-actions button:hover { filter: none; border-color: var(--accent); color: #fff; }
+.sr-hdr-actions button:hover { filter: none; border-color: var(--accent); color: var(--sr-btn-ink); }
 .sr-hdr-actions button:active { transform: none; }
 .sr-hdr-actions button[disabled] { opacity: 0.4; cursor: not-allowed; }
 /* `display: inline-block` above is an AUTHOR rule and beats the user agent's
@@ -256,7 +260,9 @@
    than in English — "Import roster (CSV)" is "Shigo da jeri (CSV)" — and a
    nowrap row squeezed them past the card edge on a narrow window. */
 .sr-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 0 0 10px; }
-.sr-tools .sr-sel { flex: 1 1 auto; min-width: 0; text-overflow: ellipsis; }
+.sr-tools .sr-sel { flex: 0 1 auto; width: auto; max-width: min(340px, 100%); min-width: 0; text-overflow: ellipsis; }
+/* ^ NOT full width (the site's select { width: 100% } and flex-grow put "Export
+   CSV" on a line of its own — fixed once before and lost; owner, 2026-10-04). */
 .sr-tools .sr-btn { flex: none; }
 /* The spacer rule below is scoped to .sr-bar, so inside .sr-tools it was an
    inert div and the download button sat hard against the left edge. */
@@ -266,12 +272,13 @@
   border-radius: 8px; padding: 7px 10px; font: inherit; font-size: 0.85rem;
 }
 .sr-btn {
-  background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  background: var(--sr-btn-bg); color: var(--sr-btn-ink); border: 1px solid var(--sr-btn-line);
   border-radius: 8px; padding: 7px 12px; font: inherit; font-size: 0.85rem; cursor: pointer;
 }
 .sr-btn:hover { border-color: var(--accent); }
 .sr-btn.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
 .sr-btn.mini { padding: 3px 9px; font-size: 0.76rem; }
+.sr-btn:disabled, .sr-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
 .sr-acts { display: flex; gap: 6px; justify-content: flex-end; }
 
 /* --- tabs --- */

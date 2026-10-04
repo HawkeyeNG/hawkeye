@@ -750,9 +750,9 @@ export function CaptureCamera({
   /** Why the observer is looking at a plain camera on a step that wanted a scan. */
   const scanNote =
     scanState === 'unavailable'
-      ? 'This build has no document scanner, so the sheet will be a plain photo. Fill the frame and keep it flat.'
+      ? i18nT('n.components.capture-camera.no-document-scanner')
       : scanState === 'failed'
-        ? 'The scanner could not start — Google Play services downloads it the first time it runs, so it needs a connection once. Taking a plain photo instead.'
+        ? i18nT('n.components.capture-camera.scanner-could-not-start')
         : null;
 
 

@@ -1304,10 +1304,10 @@ export default function MapUnit() {
               </Text>
               <Text className="text-xs text-muted">
                 {isSaved
-                  ? 'You are alerted for every result report and approved incident here.'
+                  ? i18nT('n.app.map-unit.you-are-alerted-here')
                   : saved
                     ? i18nT('n.app.map-unit.alerts-you-to-every-result-and', { v0: saved.name ?? saved.pu_code })
-                    : 'Alerts you to every result report and approved incident at this unit.'}
+                    : i18nT('n.app.map-unit.alerts-you-at-this-unit')}
               </Text>
             </View>
           </Pressable>

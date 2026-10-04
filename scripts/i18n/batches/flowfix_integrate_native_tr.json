@@ -1,0 +1,15 @@
+{
+  "profile.none-saved": { "ha": "Babu wanda aka ajiye", "ig": "Ọ dịghị nke echekwara", "yo": "Kò sí èyí tí a fi pamọ́" },
+  "n.lib.races.seat-pres": { "ha": "Shugaban Ƙasa", "ig": "Onye isi ala", "yo": "Ààrẹ" },
+  "n.lib.races.seat-gov": { "ha": "Gwamna", "ig": "Gọvanọ", "yo": "Gómìnà" },
+  "n.lib.races.seat-sen": { "ha": "Sanata", "ig": "Sineto", "yo": "Sẹ́nétọ̀" },
+  "n.lib.races.seat-rep": { "ha": "Ɗan Majalisar Wakilai", "ig": "Onye nnọchiteanya (Reps)", "yo": "Aṣojú (Reps)" },
+  "n.lib.races.seat-sha": { "ha": "Ɗan Majalisar Jiha", "ig": "Onye omeiwu steeti", "yo": "Aṣòfin Ìpínlẹ̀" },
+  "n.components.contest-picker.seats-nationwide": { "ha": "{v0} · {v1} a faɗin ƙasa", "ig": "{v0} · {v1} n'ofe mba", "yo": "{v0} · {v1} jákèjádò orílẹ̀-èdè" },
+  "n.components.contest-picker.n-open": { "ha": "{v0} a buɗe", "ig": "{v0} mepere emepe", "yo": "{v0} ṣí sílẹ̀" },
+  "n.app.map-unit.you-are-alerted-here": { "ha": "Ana sanar da kai kowane rahoton sakamako da kowane lamari da aka amince da shi a nan.", "ig": "A na-eziga gị ọkwa maka akụkọ nsonaazụ ọ bụla na ihe merenụ a kwadoro ebe a.", "yo": "A ń kìlọ̀ fún ọ nípa gbogbo ìjábọ̀ àbájáde àti iṣẹlẹ tí a gbà níbí." },
+  "n.app.map-unit.alerts-you-at-this-unit": { "ha": "Yana sanar da kai kowane rahoton sakamako da kowane lamari da aka amince da shi a wannan rumfa.", "ig": "Ọ na-eziga gị ọkwa maka akụkọ nsonaazụ ọ bụla na ihe merenụ a kwadoro na ngalaba a.", "yo": "Ó ń kìlọ̀ fún ọ nípa gbogbo ìjábọ̀ àbájáde àti iṣẹlẹ tí a gbà ní ẹ̀ka yìí." },
+  "n.components.capture-camera.no-document-scanner": { "ha": "Wannan sigar manhajar ba ta da na'urar duba takarda, don haka takardar za ta zama hoto na yau da kullum. Cika firam ɗin kuma ka riƙe ta a shimfiɗe.", "ig": "Ụdị ngwa a enweghị ihe nyocha akwụkwọ, ya mere mpempe akwụkwọ ahụ ga-abụ foto nkịtị. Mejupụta okpokolo ahụ ma dobe ya n'ala larịị.", "yo": "Ẹ̀dà yìí kò ní ẹ̀rọ ìyàwòrán ìwé, nítorí náà fọ́tò lásán ni ìwé náà yóò jẹ́. Jẹ́ kí ó kún férémù, kí o sì tẹ́ ẹ pẹrẹsẹ." },
+  "n.components.capture-camera.scanner-could-not-start": { "ha": "Na'urar duba takarda ba ta fara ba — Google Play services na sauke ta a karon farko da ta fara aiki, don haka tana buƙatar intanet sau ɗaya. Za a ɗauki hoto na yau da kullum maimakon haka.", "ig": "Ihe nyocha ahụ enweghị ike ịmalite — Google Play services na-ebudata ya oge mbụ ọ na-arụ ọrụ, ya mere ọ chọrọ njikọ otu ugboro. A na-ese foto nkịtị kama.", "yo": "Ẹ̀rọ ìyàwòrán náà kò lè bẹ̀rẹ̀ — Google Play services máa ń gbà á sílẹ̀ nígbà àkọ́kọ́ tí ó bá ṣiṣẹ́, nítorí náà ó nílò ìsopọ̀ lẹ́ẹ̀kan. A ó ya fọ́tò lásán dípò rẹ̀." },
+  "n.lib.location.location-is-turned-off": { "ha": "An kashe Wuri a wannan wayar — kunna Location a saitin wayarka, sannan ka sake gwadawa", "ig": "Agbanyụrụ Ebe na ekwentị a — gbanye Location na ntọala ekwentị gị, wee nwaa ọzọ", "yo": "A ti pa Ibùdó lórí fóònù yìí — tan Location nínú ètò fóònù rẹ, lẹ́yìn náà tún gbìyànjú" }
+}

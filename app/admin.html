@@ -19,7 +19,7 @@
   <meta name="apple-mobile-web-app-title" content="Hawkeye Admin" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <script src="dialog.js?v=1"></script>
   <style>
@@ -329,7 +329,7 @@
     .cap-adm-compose button, .cap-adm-item .cap-adm-msg { width: auto; margin: 6px 8px 0 0; }
     .cap-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -481,9 +481,11 @@
       <!-- ORGANISATION CODES (owner decision D4; routes/orgCodes.js). Inside
            Reach beside captain applications: both are how people arrive through
            an organisation. Single-use codes that replace the sign-up OTP, issued
-           in batches to a party or civic partner on identical terms. The CSV is
-           the ONLY copy of a batch's codes — the server keeps hashes. Loads on
-           first open. -->
+           in batches to a party or civic partner on identical terms. The CSV
+           downloads once, at issue. From now on the server also keeps each new
+           batch's codes SEALED (services/orgCodes.js) so the issuer's approved
+           rooms list them in their Codes tab; batches issued earlier exist only
+           in their CSV. Loads on first open. -->
       <details id="org-wrap" style="margin-top:10px">
         <summary data-i18n="orgcode.admin.title" style="cursor:pointer;font-weight:700">Organisation codes</summary>
         <p class="hint" id="org-adm-intro"></p>
@@ -2843,11 +2845,15 @@
     }
 
     function batchRow(b, issuer) {
-      const line = fill(T('orgcode.admin.batch', 'Batch {id} · {size} codes · {date}'), { id: b.id, size: b.size, date: day(b.createdAt) })
+      const line = (b.label ? b.label + ' — ' : '')
+        + fill(T('orgcode.admin.batch', 'Batch {id} · {size} codes · {date}'), { id: b.id, size: b.size, date: day(b.createdAt) })
         + ' — ' + fill(T('orgcode.admin.batch-usage', '{created} accounts · {unused} unused'), { created: b.created, unused: b.unused })
         + (b.refused ? ' · ' + fill(T('orgcode.admin.refused', '{n} spent on numbers that already had an account'), { n: b.refused }) : '')
         // Unused codes a party's or organisation's own room withdrew one at a time.
-        + (b.withdrawn ? ' · ' + fill(T('orgcode.admin.withdrawn-by-rooms', '{n} withdrawn by rooms'), { n: b.withdrawn }) : '');
+        + (b.withdrawn ? ' · ' + fill(T('orgcode.admin.withdrawn-by-rooms', '{n} withdrawn by rooms'), { n: b.withdrawn }) : '')
+        /* English, like the other owner-only additions: whether the issuer's
+           rooms can list this batch (kept sealed) or only check it by upload. */
+        + (b.listed ? ' · listed in its rooms' : ' · not listed in rooms (issued before codes were kept; the CSV is the only copy)');
       const action = b.revokedAt
         ? '<span class="meta">' + esc(fill(T('orgcode.admin.revoked', 'Withdrawn {date}'), { date: day(b.revokedAt) })) + '</span>'
         : '<button type="button" class="secondary" style="width:auto;margin:0 0 0 8px" data-revoke="' + b.id + '">' + esc(T('orgcode.admin.revoke', 'Withdraw batch')) + '</button>';
@@ -3031,6 +3037,9 @@
         + '<div class="row" style="gap:8px;align-items:center;flex-wrap:wrap">'
         + '<label for="org-adm-size-' + i.id + '" style="margin:0">' + esc(T('orgcode.admin.size-label', 'Codes in the next batch')) + '</label>'
         + '<input id="org-adm-size-' + i.id + '" type="number" min="1" max="' + data.batchMax + '" value="' + Math.min(100, data.batchMax) + '" style="width:110px;margin:0" />'
+        // The batch's name in the issuer's rooms (optional; "Batch <id>" without one).
+        + '<label for="org-adm-label-' + i.id + '" style="margin:0">Batch name</label>'
+        + '<input id="org-adm-label-' + i.id + '" type="text" maxlength="60" placeholder="e.g. Lagos wards, March" autocomplete="off" style="width:200px;margin:0" />'
         + '<button type="button" style="width:auto;margin:0" data-issue="' + i.id + '">' + esc(T('orgcode.admin.issue', 'Issue batch')) + '</button>'
         + '</div>'
         + (i.batches.length ? '<ul class="cap-adm-list">' + i.batches.map((b) => batchRow(b, i)).join('') + '</ul>' : '')
@@ -3100,8 +3109,9 @@
       return fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
     };
 
-    /* The download is built HERE from the one response that carried the codes.
-       Nothing is written to storage: close the tab and only the CSV remains. */
+    /* The download is built HERE from the one admin response that carried the
+       codes. Nothing is written to this browser's storage; the server keeps
+       them sealed for the issuer's rooms only (it never sends them here again). */
     function downloadCsv(batchId) {
       const f = fresh[batchId];
       if (!f) return;
@@ -3203,14 +3213,17 @@
       if (issue) {
         const id = Number(issue.getAttribute('data-issue'));
         const size = Number((document.getElementById('org-adm-size-' + id) || {}).value);
+        const label = ((document.getElementById('org-adm-label-' + id) || {}).value || '').trim();
         const issuer = (data.issuers.find((i) => i.id === id) || {}).name || 'organisation';
         issue.disabled = true;
         try {
-          const r = await post('/api/admin/org-codes/issuers/' + id + '/batches', { size });
+          const r = await post('/api/admin/org-codes/issuers/' + id + '/batches', { size, label });
           if (r.status === 200 && r.body && Array.isArray(r.body.codes)) {
             fresh[r.body.batch.id] = { codes: r.body.codes, issuer, issued: new Date(r.body.batch.createdAt).toISOString().slice(0, 10) };
             downloadCsv(r.body.batch.id);
-            msg = { ok: true, text: fill(T('orgcode.admin.issued', 'Batch {id} issued. The CSV has downloaded: it is the only copy of these codes.'), { id: r.body.batch.id }) };
+            /* No longer "the only copy": the codes are kept sealed for the
+               issuer's rooms. English, like the other owner-only lines. */
+            msg = { ok: true, text: 'Batch ' + r.body.batch.id + ' issued. The CSV has downloaded, and the codes now appear, with their status, in the Codes tab of this organisation’s approved rooms.' };
             await load();
           } else msg = { ok: false, text: failText(r.body, r.status) };
         } catch (er) {

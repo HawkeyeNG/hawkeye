@@ -2,17 +2,19 @@ import 'react-native-gesture-handler';
 // First, so a crash anywhere below is reported (scrubbed on the phone; see lib/monitor.ts).
 import { Sentry } from '@/lib/monitor';
 import '../global.css';
-import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
+import {
+  DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useGlobalSearchParams, usePathname, useSegments,
+} from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import { AskFab } from '@/components/ask-fab';
-import { bootstrapAuth, useAuth } from '@/lib/auth';
+import { bootstrapAuth, noteReturnAfterSignIn, useAuth } from '@/lib/auth';
 import { captureInstallReferrer } from '@/lib/pending-invite';
 // Side-effect import: registers the background bitmap-cache purge. See lib/memory.ts
 // for why (Play's Feb 2027 bitmap-memory threshold, and a camera app full of
@@ -24,6 +26,24 @@ import { ThemePrefProvider, themeClass, useThemePref } from '@/lib/theme-pref';
 import { LangProvider, t as i18nT } from '@/lib/i18n';
 
 SplashScreen.preventAutoHideAsync();
+
+/**
+ * Where a signed-out bounce should bring the reader back to (ONB-09): the path
+ * they were on plus its query, minus the params the path already carries (a
+ * dynamic segment's value is a param too). Null for Home itself — that is
+ * where a sign-in lands anyway. sign-in.tsx safeNext() checks it again.
+ */
+function returnPath(pathname: string, params: Record<string, string | string[] | undefined>): string | null {
+  if (!pathname || pathname === '/' || !pathname.startsWith('/')) return null;
+  const segs = new Set(pathname.split('/').map((s) => {
+    try { return decodeURIComponent(s); } catch { return s; }
+  }));
+  const q = Object.entries(params)
+    .filter((e): e is [string, string] => typeof e[1] === 'string' && !segs.has(e[1]))
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+    .join('&');
+  return q ? `${pathname}?${q}` : pathname;
+}
 
 /**
  * expo-router renders this instead of unmounting the app when a screen throws.
@@ -194,6 +214,14 @@ function RootShell() {
   // Device-verify: no flash, no loop, correct bounce.
   const auth = useAuth();
   const segments = useSegments();
+  const pathname = usePathname();
+  const params = useGlobalSearchParams();
+  // Updated after every commit, never during render; declared ABOVE the bounce
+  // below, so in the same commit it has already run when the bounce reads it.
+  const here = useRef({ pathname, params });
+  useEffect(() => {
+    here.current = { pathname, params };
+  });
   // Where the reader is decides whether a waiting OTA may reload now (lib/fresh-updates.ts).
   useEffect(() => { noteRoute(segments); }, [segments]);
 
@@ -249,6 +277,12 @@ function RootShell() {
     } catch {
       /* nothing to dismiss, or the navigator is not ready — replace anyway */
     }
+    // THE SCREEN THEY WERE ON IS NOTED (ONB-09): a finished sign-in returns
+    // there instead of Home — My Groups, Profile, or the deep link a cold start
+    // opened (lib/auth.ts noteReturnAfterSignIn; sign-in.tsx reads it). Read
+    // through a ref, so the effect still runs only when auth or the route
+    // changes.
+    noteReturnAfterSignIn(returnPath(here.current.pathname, here.current.params));
     router.replace('/welcome');
   }, [auth.status, segments]);
 

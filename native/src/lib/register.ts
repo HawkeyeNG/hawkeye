@@ -257,6 +257,99 @@ export function warmRegister(stateName?: string | null): void {
     .catch(() => null);
 }
 
+/* ------------------------------------------------ the state we search in */
+
+/**
+ * THE STATE WHOSE PACK ANSWERS OFFLINE — remembered across sessions.
+ *
+ * Flow walkthrough REP-UNIT-02: localSearch() only ever answered when a caller
+ * passed `state`, and no caller did, so with no signal every search went to a
+ * server that was not there ("Could not search just now"), at the unit, the one
+ * place search has to work. Now the state of the last unit chosen ANYWHERE is
+ * remembered here (and the report flow seeds it from the observer's saved
+ * unit), so that state's ~32 KB pack is on the phone and answers offline. Twin
+ * of app/pu-search.js rememberState() — same key name.
+ */
+const K_LAST_STATE = 'hk_reg_state';
+let lastState: string | null = null;
+let lastStateRead: Promise<string | null> | null = null;
+
+/** The remembered state, or null. Reads storage once per session. */
+export function rememberedState(): Promise<string | null> {
+  if (lastState) return Promise.resolve(lastState);
+  if (!lastStateRead) {
+    lastStateRead = AsyncStorage.getItem(K_LAST_STATE)
+      .then((v) => {
+        if (!lastState && v) lastState = v;
+        return lastState;
+      })
+      .catch(() => lastState);
+  }
+  return lastStateRead;
+}
+
+/** The remembered state as known RIGHT NOW (null until rememberedState() has read it). */
+export function rememberedStateNow(): string | null {
+  return lastState;
+}
+
+/**
+ * Remember `stateName` and start pulling its pack. Called when a unit is chosen
+ * — by any picker — so the next search, here or anywhere, can answer offline.
+ * `ifUnset` is the saved-unit seed: a state the observer actually picked later
+ * outranks the one their profile happens to hold.
+ */
+export async function rememberState(stateName?: string | null, opts: { ifUnset?: boolean } = {}): Promise<void> {
+  if (!stateName) return;
+  if (opts.ifUnset && (await rememberedState())) {
+    warmRegister(lastState);
+    return;
+  }
+  lastState = stateName;
+  AsyncStorage.setItem(K_LAST_STATE, stateName).catch(() => {});
+  warmRegister(stateName);
+}
+
+/**
+ * Is `stateName`'s pack on this phone (in storage, not necessarily decoded)?
+ * The difference between "search will work offline" and "it cannot".
+ */
+export async function statePackHeld(stateName?: string | null): Promise<boolean> {
+  if (!stateName) return false;
+  try {
+    const ix = await loadIndex();
+    const code = ix ? stateCodeOf(ix, stateName) : null;
+    if (!code) return false;
+    if (loaded[code]) return true;
+    return !!(await AsyncStorage.getItem(KEY(`state:${code}:sha`)));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Load `stateName`'s pack if it is ON THE PHONE, and say whether it is now
+ * searchable. Never waits on the network for it: a pack that is not stored is
+ * pulled in the background for next time and this answers false at once.
+ */
+export async function ensureStateHeld(stateName?: string | null): Promise<boolean> {
+  if (!stateName) return false;
+  try {
+    const ix = await loadIndex();
+    const code = ix ? stateCodeOf(ix, stateName) : null;
+    if (!code) return false;
+    if (loaded[code]) return true;
+    if (!(await AsyncStorage.getItem(KEY(`state:${code}:sha`)))) {
+      loadState(code).catch(() => null); // pull it for next time
+      return false;
+    }
+    await loadState(code); // storage read + decode: milliseconds, no network
+    return !!loaded[code];
+  } catch {
+    return false;
+  }
+}
+
 /** True once `stateName` can be searched without waiting on anything. */
 export function registerReady(stateName?: string | null): boolean {
   if (!indexPack || !stateName) return false;
@@ -301,4 +394,20 @@ export function unitsOffline(state: string, lga: string, ward: string): Register
     return null;
   }
   return unitsOf(p, lga, ward);
+}
+
+/**
+ * unitsOffline(), but WAITING for a pack that is stored on the phone and simply
+ * not decoded yet.
+ *
+ * Flow walkthrough REP-OFF-02: the first offline ward pick listed 0 units and
+ * only a second pick listed 62 — the pack was on the phone, but unitsOffline()
+ * fired its load and answered null at once, so the request fell through to a
+ * network that was not there. A stored pack is a storage read away, so it is
+ * worth the wait; one that is not stored is not, and still falls through.
+ */
+export async function unitsOfflineHeld(state: string, lga: string, ward: string): Promise<RegisterRow[] | null> {
+  const now = unitsOffline(state, lga, ward);
+  if (now) return now;
+  return (await ensureStateHeld(state)) ? unitsOffline(state, lga, ward) : null;
 }

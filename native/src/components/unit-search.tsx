@@ -4,7 +4,13 @@ import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-nativ
 
 import { RegisterTierBadge } from '@/components/unit-map';
 import { BRAND } from '@/lib/api';
-import { localSearch, warmRegister } from '@/lib/register';
+import {
+  ensureStateHeld,
+  localSearch,
+  rememberedState,
+  rememberState,
+  warmRegister,
+} from '@/lib/register';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -23,6 +29,9 @@ import { t as i18nT } from '@/lib/i18n';
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
+
+/** How long a search may wait on the server before the phone's own pack answers. */
+const SEARCH_TIMEOUT_MS = 8_000;
 
 /** Only the fields this component itself renders; callers keep their own types.
  *  The coordinate columns are here because the row states whether the unit's
@@ -84,11 +93,46 @@ export function UnitSearch<T extends Row>({
   // Monotonic request id: a slow earlier response must never overwrite a newer one.
   const seq = useRef(0);
 
+  /**
+   * THE STATE TO SEARCH OFFLINE when the host names none: the state of the last
+   * unit chosen anywhere, or the observer's saved unit (lib/register.ts
+   * rememberState). Flow walkthrough REP-UNIT-02: no host ever passed `state`,
+   * so the packs never answered and every offline search failed.
+   *
+   * It is a FALLBACK, not a filter. A host-given `state` still narrows the
+   * server query and answers from the pack first, as before; a remembered one
+   * never narrows anything online — an observer saved in Lagos who reports in
+   * Ogun must still find their Ogun unit by name — and is read only when the
+   * server cannot be reached.
+   */
+  const [remembered, setRemembered] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true;
+    rememberedState().then((s) => { if (live) setRemembered(s); });
+    return () => { live = false; };
+  }, []);
+  const offlineState = state ?? remembered;
+
   // Pull the packs as soon as the box exists, not on the first keystroke:
   // someone opening this is about to search, and there are a few seconds of
   // tapping first — enough for a ~32 KB state pack on most links. The index
   // (~56 KB) comes either way, since it is what makes browse work offline.
-  useEffect(() => { warmRegister(state); }, [state]);
+  useEffect(() => { warmRegister(offlineState); }, [offlineState]);
+
+  const say = (units: T[], truncated: boolean, term: string, server: boolean) => {
+    setRows(units);
+    setNote(
+      units.length === 0
+        ? i18nT('n.components.unit-search.no-unit-matches-try-fewer-letters', { v0: term })
+        : truncated
+          ? server
+            ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow-2', { v0: units.length })
+            : i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow', { v0: units.length })
+          : units.length === 1
+            ? i18nT('n.components.unit-search.one-match')
+            : i18nT('n.components.unit-search.n-matches', { v0: units.length }),
+    );
+  };
 
   useEffect(() => {
     const term = q.trim();
@@ -97,20 +141,14 @@ export function UnitSearch<T extends Row>({
       setNote(term ? i18nT('n.components.unit-search.keep-typing-at-least-3') : '');
       return;
     }
-    // OFFLINE FIRST. If this state's pack is decoded, answer from it and do not
-    // touch the network at all — instant, and it still works at a polling unit
-    // with no signal. Any state can be held now, not just the election one; a
-    // state whose pack is not on the device falls through to the server.
-    const local = localSearch(term, { state, lga });
+    // OFFLINE FIRST for a state the HOST named. If its pack is decoded, answer
+    // from it and do not touch the network at all — instant, and it still
+    // works at a polling unit with no signal.
+    const local = state ? localSearch(term, { state, lga }) : null;
     if (local && local.units.length) {
       seq.current += 1; // supersede any request still in flight
       setBusy(false);
-      setRows(local.units as T[]);
-      setNote(local.truncated
-        ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow', { v0: local.units.length })
-        : local.units.length === 1
-          ? i18nT('n.components.unit-search.one-match')
-          : i18nT('n.components.unit-search.n-matches', { v0: local.units.length }));
+      say(local.units as T[], local.truncated, term, false);
       return;
     }
 
@@ -122,27 +160,43 @@ export function UnitSearch<T extends Row>({
         const p = new URLSearchParams({ q: term });
         if (state) p.set('state', state);
         if (lga) p.set('lga', lga);
-        const r = await fetch(`${BASE}/api/register/search?${p}`).then((x) => x.json());
+        /* A DEADLINE. React Native's fetch never times out by itself, and a
+           phone with bars but no data (election morning, one mast) would sit on
+           a spinner instead of reaching the offline answer below. */
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), SEARCH_TIMEOUT_MS);
+        let r: { units?: T[]; truncated?: boolean };
+        try {
+          r = await fetch(`${BASE}/api/register/search?${p}`, { signal: ctl.signal }).then((x) => x.json());
+        } finally {
+          clearTimeout(timer);
+        }
         if (mine !== seq.current) return;
-        const units: T[] = r.units ?? [];
-        setRows(units);
-        setNote(
-          units.length === 0
-            ? i18nT('n.components.unit-search.no-unit-matches-try-fewer-letters', { v0: term })
-            : r.truncated
-              ? i18nT('n.components.unit-search.first-matches-keep-typing-to-narrow-2', { v0: units.length })
-              : units.length === 1
-                ? i18nT('n.components.unit-search.one-match')
-                : i18nT('n.components.unit-search.n-matches', { v0: units.length }),
-        );
+        say(r.units ?? [], !!r.truncated, term, true);
       } catch {
-        if (mine === seq.current) { setRows(null); setNote(i18nT('n.components.unit-search.could-not-search-just-now-check')); }
+        if (mine !== seq.current) return;
+        /* The server could not be reached: answer from the remembered state's
+           pack if it is on this phone (a storage read, no network), and say
+           plainly which of the two things is missing when it is not. */
+        const held = await ensureStateHeld(offlineState);
+        if (mine !== seq.current) return;
+        const off = held ? localSearch(term, { state: offlineState, lga }) : null;
+        if (off) {
+          say(off.units as T[], off.truncated, term, false);
+        } else {
+          setRows(null);
+          setNote(
+            offlineState
+              ? i18nT('n.components.unit-search.offline-no-pack', { v0: offlineState })
+              : i18nT('n.components.unit-search.offline-browse'),
+          );
+        }
       } finally {
         if (mine === seq.current) setBusy(false);
       }
     }, 280);
     return () => clearTimeout(t);
-  }, [q, state, lga]);
+  }, [q, state, lga, offlineState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <View className="mt-4">
@@ -172,7 +226,11 @@ export function UnitSearch<T extends Row>({
         return (
         <Pressable
           key={u.pu_code}
-          onPress={() => onSelect(u)}
+          onPress={() => {
+            // The next search — here or on any picker — can answer offline.
+            void rememberState(u.state);
+            onSelect(u);
+          }}
           className={`mt-2 flex-row items-center rounded-2xl px-4 py-3 active:opacity-70 ${
             sel ? 'bg-hawk-green' : 'bg-card'
           }`}

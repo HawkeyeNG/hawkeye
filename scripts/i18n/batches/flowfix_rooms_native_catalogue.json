@@ -1,0 +1,23 @@
+{
+  "n.app.my-groups.check-in-offline": "Could not reach Hawkeye — check your connection and try again.",
+  "join.not-recognised-title": "We do not recognise that invitation",
+  "join.not-recognised-body": "The link may have been mistyped, or the group may have been deleted.",
+  "join.withdrawn-title": "That invitation was withdrawn",
+  "join.expired-title": "That invitation has expired",
+  "join.fresh-link-body": "Ask whoever sent it for a fresh link — they can create one in seconds.",
+  "join.went-wrong-title": "Something went wrong",
+  "join.try-again-moment": "Try the link again in a moment.",
+  "join.check-connection": "Check your connection and try the link again.",
+  "join.try-again": "Try again",
+  "join.alert-failed": "Could not join just now.",
+  "contest.presidential": "Presidential",
+  "contest.senate": "Senate",
+  "contest.house-of-representatives": "House of Representatives",
+  "contest.governorship": "Governorship",
+  "contest.state-house-of-assembly": "State House of Assembly",
+  "contest.by-election": "{v0} By-Election",
+  "observe.check-in-denied": "Location permission was refused, so a check-in cannot be recorded.",
+  "join.could-not-join-offline": "Could not join — check your connection and try again.",
+  "my-groups.decline-confirm": "Tell {name} you will not be at this unit? They can suggest another one. You cannot undo this here.",
+  "my-groups.decline-ok": "Decline this unit"
+}

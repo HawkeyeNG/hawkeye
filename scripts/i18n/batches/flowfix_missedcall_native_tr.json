@@ -1,0 +1,82 @@
+{
+  "auth.call-chip": {
+    "ha": "Kira",
+    "ig": "Oku",
+    "yo": "Ìpè"
+  },
+  "auth.call-title": {
+    "ha": "Kira mu ka katse",
+    "ig": "Kpọọ anyị oku a na-azaghị",
+    "yo": "Pè wá, kí ó sì gé fúnra rẹ̀"
+  },
+  "auth.call-body": {
+    "ha": "Kira {number} daga {phone}.",
+    "ig": "Kpọọ {number} site na {phone}.",
+    "yo": "Pe {number} láti {phone}."
+  },
+  "auth.call-ends-at-once": {
+    "ha": "Kiran zai katse nan take — haka ake so, kuma kyauta ne. Sannan ka dawo nan.",
+    "ig": "Oku ahụ ga-akwụsị ozugbo — nke ahụ bụ ihe nkịtị, ọ bụkwa n'efu. Mgbe ahụ laghachi ebe a.",
+    "yo": "Ìpè náà yóò gé lẹ́sẹ̀kẹsẹ̀ — ìyẹn dára, ọ̀fẹ́ sì ni. Lẹ́yìn náà padà wá síbí."
+  },
+  "auth.call-dual-sim": {
+    "ha": "A wayar mai SIM biyu, kira daga SIM ɗin da ke da {phone}.",
+    "ig": "Na ekwentị nwere SIM abụọ, kpọọ site na SIM nwere {phone}.",
+    "yo": "Lórí fóònù tó ní SIM méjì, pè láti SIM tó ní {phone}."
+  },
+  "auth.call-verified": {
+    "ha": "An tabbatar da lamba",
+    "ig": "E nyochaala nọmba",
+    "yo": "A ti fìdí nọ́mbà múlẹ̀"
+  },
+  "auth.call-now": {
+    "ha": "Kira yanzu",
+    "ig": "Kpọọ ugbu a",
+    "yo": "Pè báyìí"
+  },
+  "auth.call-desktop": {
+    "ha": "Kira daga wayar da ke da {phone}, ba daga wannan kwamfutar ba.",
+    "ig": "Kpọọ ya site na ekwentị nwere {phone}, ọ bụghị site na kọmputa a.",
+    "yo": "Pè é láti orí fóònù tó ní {phone}, kì í ṣe láti orí kọ̀mpútà yìí."
+  },
+  "auth.call-waiting": {
+    "ha": "Ana jiran kiranka…",
+    "ig": "Na-echere oku gị…",
+    "yo": "À ń dúró de ìpè rẹ…"
+  },
+  "auth.call-expires-in": {
+    "ha": "Zai ƙare cikin {time}",
+    "ig": "Ọ ga-agwụ n'ime {time}",
+    "yo": "Yóò parí ní {time}"
+  },
+  "auth.call-slow": {
+    "ha": "Kira daga lambar wayar da ka rubuta; ba za a iya duba kiran da aka ɓoye lambarsa ba.",
+    "ig": "Kpọọ site na nọmba ekwentị ị dere; enweghị ike ịlele oku sitere na nọmba ezoro ezo.",
+    "yo": "Pè láti nọ́mbà fóònù tí o tẹ̀; a kò lè ṣàyẹ̀wò ìpè láti nọ́mbà tí a fi pamọ́."
+  },
+  "auth.call-expired": {
+    "ha": "Lokaci ya ƙare. Sake farawa don sake kira.",
+    "ig": "Oge agwụla. Malite ọzọ ka ị kpọọ ọzọ.",
+    "yo": "Àkókò ti tán. Bẹ̀rẹ̀ lẹ́ẹ̀kan sí i láti pè lẹ́ẹ̀kan sí i."
+  },
+  "auth.call-starting": {
+    "ha": "Ana samo lambarmu…",
+    "ig": "Na-enweta nọmba anyị…",
+    "yo": "À ń gba nọ́mbà wa…"
+  },
+  "auth.call-unavailable": {
+    "ha": "Buɗe asusu ta kira mara amsa ba ya samuwa yanzu. Zaɓi Telegram ko WhatsApp maimakon haka.",
+    "ig": "Ịdebanye aha site n'oku a na-azaghị adịghị ugbu a. Họrọ Telegram ma ọ bụ WhatsApp kama.",
+    "yo": "Ìforúkọsílẹ̀ pẹ̀lú ìpè tí a kò gbé kò sí báyìí. Yan Telegram tàbí WhatsApp dípò."
+  },
+  "auth.call-has-account": {
+    "ha": "Wannan lambar tana da asusu riga — shiga maimakon haka. Ba a ƙirƙiri sabon abu ba.",
+    "ig": "Nọmba a enweelarị akaụntụ — banye kama. E mepụtaghị ihe ọhụrụ ọ bụla.",
+    "yo": "Nọ́mbà yìí ti ní àkàǹtì tẹ́lẹ̀ — wọlé dípò. A kò ṣẹ̀dá ohunkóhun tuntun."
+  },
+  "observe.sms": {
+    "ha": "SMS",
+    "ig": "SMS",
+    "yo": "SMS"
+  }
+}

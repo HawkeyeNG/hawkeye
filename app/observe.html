@@ -128,6 +128,17 @@
     }
 
     /* Camera overlay sizing lives in styles.css now — sitewide, one copy. */
+
+    /* The auth pane's later steps ("Create your password", "already exists")
+       title themselves inside the card; the page h1 still names the errand. */
+    .auth-step-title { margin: 0 0 4px; font-size: 1.15rem; }
+    #pw-set-body, #exists-body { margin: 0 0 10px; }
+    /* styles.css `label { display: block }` is an author rule and beats the UA
+       [hidden], so the field's label stayed up over the WhatsApp and password
+       steps. One attribute more specific, no !important (the sign-in parse-time
+       rules in styles.css must still win). */
+    #auth-card label[hidden] { display: none; }
+    #auth-why { margin: 0 0 10px; }
   
     /* THE RECEIPT. Width-capped so a 1080x1500 card does not dominate a laptop
        screen, and full width on a phone where it is the point of the screen. */
@@ -139,9 +150,35 @@
 
     /* "Send us this code on WhatsApp" — title, one line, code, button, a
        waiting line with a small spinner, then small fallback links. */
-    #wa-send .wa-title { margin: 8px 0 0; font-size: 1.15rem; font-weight: 800; color: var(--ink); }
-    #wa-send .wa-status { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; margin: 12px 0 0; }
-    #wa-send .wa-small { font-size: 0.8rem; text-align: center; margin: 4px 0 0; }
+    #wa-send .wa-title, #call-send .wa-title { margin: 8px 0 0; font-size: 1.15rem; font-weight: 800; color: var(--ink); }
+    #wa-send .wa-status, #call-send .wa-status { display: flex; align-items: center; justify-content: center; gap: 8px; text-align: center; margin: 12px 0 0; }
+    #wa-send .wa-small, #call-send .wa-small { font-size: 0.8rem; text-align: center; margin: 4px 0 0; }
+    /* SIGN-UP: FOUR ROUTES ON ONE LINE AT 360 PX (owner, 2026-10-04) —
+       WhatsApp, Telegram, Call, SMS, as chips like native's. The radio stays (the
+       keyboard and screen readers use it) but the chip is what is drawn; app.js
+       marks the picked one .on (no :has(), for older Lite WebViews) and drops
+       "(paid)" from SMS when the four would not fit one line (fitRoutes).
+       Stacked, four 44 px rows pushed Send Code under the keyboard (ONB-06).
+       Sign-in's reset keeps its own list. Scoped by the parse-time class, and
+       [hidden] first: an author display outranks the UA's [hidden]. */
+    #channel-pick[hidden] { display: none; }
+    /* !important against the fieldset's and labels' inline styles (the reset list's). */
+    html:not(.intent-signin) #channel-pick:not([hidden]) { display: flex; flex-wrap: wrap; gap: 5px; border: 0 !important; padding: 0 !important; margin: 12px 0 4px !important; }
+    html:not(.intent-signin) #channel-pick > legend { padding: 0 !important; margin: 0 0 6px; }
+    html:not(.intent-signin) #channel-pick > label {
+      position: relative; margin: 0 !important; padding: 0 8px; min-height: 44px; gap: 0 !important;
+      border: 1px solid var(--border); border-radius: 999px; background: var(--card);
+      white-space: nowrap; font-size: 0.88rem; color: var(--ink) !important;
+    }
+    html:not(.intent-signin) #otp-wa-opt { order: -1; }
+    /* The radio covers its chip, invisible: a tap (or a test's click) lands on
+       the radio itself, and the keyboard and screen readers still use it. */
+    html:not(.intent-signin) #channel-pick > label > input {
+      position: absolute; inset: 0; width: 100% !important; height: 100% !important; min-height: 0;
+      margin: 0 !important; padding: 0; opacity: 0; cursor: pointer; z-index: 1;
+    }
+    html:not(.intent-signin) #channel-pick > label.on { background: var(--green); border-color: var(--green); color: #fff !important; font-weight: 700 !important; }
+    html:not(.intent-signin) #channel-pick > label.kbd { outline: 3px solid var(--link); outline-offset: 2px; }
     #wa-send .wa-alt { margin-top: 16px; }
     #wa-send .wa-alt:empty { display: none; }
     /* The fallbacks are small text links here, not styles.css's green
@@ -159,7 +196,7 @@
     #btn-auth[aria-disabled="true"] { background: #9db8a7; box-shadow: none; cursor: not-allowed; transform: none; filter: none; }
     /* The channel labels carry an inline display:flex, which outranks the UA's
        [hidden]; without this a switched-off SMS option still showed. */
-    #otp-sms-opt[hidden], #otp-wa-opt[hidden] { display: none !important; }
+    #otp-sms-opt[hidden], #otp-wa-opt[hidden], #otp-call-opt[hidden] { display: none !important; }
     .wa-spin {
       flex: none; width: 14px; height: 14px; border-radius: 999px;
       border: 2px solid var(--line); border-top-color: var(--muted);
@@ -169,7 +206,7 @@
     @media (prefers-reduced-motion: reduce) { .wa-spin { animation-duration: 2.4s; } }
 </style>
   <script>/*hk-auth-prepaint*/(function(){try{if(!localStorage.getItem("hawkeye_token"))document.documentElement.classList.add("auth-screen");}catch(e){}})();</script>
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta property="og:type" content="website" />
@@ -181,7 +218,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -274,6 +311,10 @@
         </span>
       </a>
       <div class="card" id="auth-card">
+        <!-- An account from before passwords, met at sign-in (ONB-12): the pane
+             moves into the code route for it at once and says why here, as
+             native does. app.js paints it. -->
+        <p id="auth-why" class="notice" hidden></p>
         <!-- app.js retitles this to "Enter OTP" once a code is in flight: the
              field itself switches from a phone number to the code, so a label
              still reading "Nigerian mobile number" describes the wrong input. -->
@@ -294,6 +335,18 @@
           <label id="otp-wa-opt" style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
             <input type="radio" name="otp-channel" value="whatsapp" style="width:auto;margin:0" />
             <span data-i18n="observe.whatsapp">WhatsApp</span>
+          </label>
+          <!-- On sign-up the four sit on ONE line as chips, in the owner's order
+               WhatsApp, Telegram, Call, SMS (CSS order puts WhatsApp first);
+               sign-in's reset keeps Telegram, WhatsApp, SMS (paid).
+               MISSED CALL, FREE — SIGN-UP ONLY (2026-10-04): the observer rings
+               our number from the phone being verified; our gateway rejects the
+               call and the server marks the number proved. Shown (app.js
+               paintCallRoute) only while /api/health says callVerify, and only
+               on sign-up: never on sign-in, a reset, or with an ORG code. -->
+          <label id="otp-call-opt" hidden style="display:none;gap:8px;align-items:center;font-weight:400;cursor:pointer;margin:4px 0">
+            <input type="radio" name="otp-channel" value="call" style="width:auto;margin:0" />
+            <span data-i18n="auth.call-chip">Call</span>
           </label>
           <!-- SMS is offered only when the SERVER says it can deliver it.
                Nigerian carriers drop SMS from unapproved sender IDs, so for
@@ -349,19 +402,60 @@
           <p class="hint auth-alt" id="wa-paid-line" hidden><a href="#" class="btn-link" id="wa-paid" data-i18n="auth.wa-paid">Can't send it? Get a code on WhatsApp instead</a></p>
           <p class="hint auth-alt" id="wa-sms-line" hidden><a href="#" class="btn-link" id="wa-sms" data-i18n="auth.wa-sms">Get a code by SMS instead</a></p>
         </div>
-        <!-- Sign-up only (app.js reveals it): a first-time observer has no
-             password to "have", so what belongs on this page is CREATING one.
-             Applied straight after the OTP verifies — fresh phone proof, so no
-             current password is needed. -->
-        <!-- Password is REQUIRED (shown once a code is in flight): it's how you
-             sign in afterwards. Same field does double duty on a forgotten-password
-             reset (Forgot your password? → code → set a new one). -->
-        <div id="pw-opt" hidden>
-          <!-- The length rule lives in the PLACEHOLDER and in the error you get
-               for breaking it — not as a permanent parenthetical beside every
-               password field on every page. -->
-          <label data-i18n="observe.create-a-password" for="pw-opt-input">Create a Password</label>
-          <input data-i18n-attr="placeholder:common.at-least-8-characters" id="pw-opt-input" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+        <!-- MISSED CALL, FREE: "give us a missed call" (app.js startCallSend),
+             modelled on #wa-send. Our number, big; Call now (a phone: tel:; a
+             computer: the number to dial from the phone instead); the live line,
+             the countdown, and after a minute with nothing the one hint that
+             explains most misses. "← Use a Different Number" is #auth-reset. -->
+        <div id="call-send" hidden>
+          <p class="wa-title" data-i18n="auth.call-title">Give us a missed call</p>
+          <p id="call-body" class="hint" style="margin:2px 0 10px"></p>
+          <p id="call-number" aria-live="polite"
+             style="font:700 1.7rem/1.2 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;letter-spacing:.03em;text-align:center;margin:6px 0;user-select:all"></p>
+          <!-- SAID BEFORE THE TAP (owner's live test, 2026-10-04): our gateway
+               rejects the call at once — no ring, the line just drops — which
+               reads as a failure unless the reader was told first. -->
+          <p id="call-ends" class="hint wa-small" data-i18n="auth.call-ends-at-once" style="margin:0 0 8px">The call ends at once — that's normal, and it's free. Then come back here.</p>
+          <button type="button" id="call-open" data-i18n="auth.call-now">Call now</button>
+          <p id="call-desk" class="hint" style="text-align:center" hidden></p>
+          <!-- Two SIMs: the phone may dial from the other one. app.js paints it. -->
+          <p id="call-sim" class="hint wa-small"></p>
+          <p id="call-status" class="hint wa-status" role="status" aria-live="polite"><span class="wa-spin" id="call-spin" aria-hidden="true" hidden></span><span id="call-tick" aria-hidden="true" hidden style="color:var(--green);font-weight:800">✓</span><span id="call-status-text"></span></p>
+          <p id="call-left" class="hint wa-small"></p>
+          <p id="call-slow" class="hint wa-small" data-i18n="auth.call-slow" hidden>Call from the same phone number you typed; calls from hidden numbers can't be checked.</p>
+          <p id="call-again-line" class="hint" style="text-align:center" hidden><button type="button" class="secondary" id="call-again" data-i18n="auth.wa-start-again">Start again</button></p>
+        </div>
+        <!-- ALREADY REGISTERED (flow walkthrough ONB-04; native's 'exists'
+             step). BEFORE a code: sign-up sends intent "signup", so the server
+             refuses a number that already has a password and sends nothing —
+             nobody is signed in, and the offer is the sign-in door or a reset.
+             AFTER a proof (the free WhatsApp route answers every number alike):
+             the session is live, so the offer is to carry on. app.js paints it. -->
+        <div id="auth-exists" hidden>
+          <h2 id="exists-title" class="auth-step-title"></h2>
+          <p id="exists-body" class="hint"></p>
+          <button type="button" id="exists-go"></button>
+          <p class="hint auth-alt"><a href="#" id="exists-reset"></a></p>
+          <p class="hint auth-alt"><a href="#" id="exists-back"></a></p>
+        </div>
+        <!-- THE PASSWORD COMES AFTER THE PROOF (flow walkthrough ONB-03, owner's
+             leftover): "Create your password", typed twice, once the code — or
+             the WhatsApp message, or an organisation code — has signed this
+             device in. The order native has always used. It was asked up front,
+             beside the number and again beside the code, which pushed the button
+             out of reach of the keyboard (ONB-06) and refused a good code over
+             an empty password box. /set-password takes a new password alone
+             inside the proof's 15 minutes, so no current one is asked. The same
+             step closes a forgotten-password reset and an account that has no
+             password yet. app.js paints the title, the line and the way out;
+             the length rule lives in the placeholder and in the error. -->
+        <div id="pw-set" hidden>
+          <h2 id="pw-set-title" class="auth-step-title"></h2>
+          <p id="pw-set-body" class="hint"></p>
+          <label data-i18n="profile.new-password" for="pw-set-input">New Password</label>
+          <input data-i18n-attr="placeholder:common.at-least-8-characters" id="pw-set-input" type="password" autocomplete="new-password" placeholder="At least 8 characters" />
+          <label data-i18n="profile.confirm-new-password" for="pw-set-input2">Confirm New Password</label>
+          <input id="pw-set-input2" type="password" autocomplete="new-password" />
         </div>
         <!-- Sign-up only (app.js reveals #ref-opt; sign-in never shows it). The
              one way a referral survives an App Store install: invite.html prints
@@ -387,7 +481,13 @@
             <p data-i18n="auth.code-invalid" class="hint" id="ref-err" role="alert" hidden style="color:var(--danger)">Not a code we recognise. A friend's invite has 6 letters and numbers; an organisation code looks like ORG-ABCD-EFGH-JKMN.</p>
           </div>
         </div>
+        <!-- Not keyed: app.js paints it for the step on screen (Send Code, Verify,
+             Sign In, Save password…) at first paint and on every language load
+             (ONB-21: in Hausa it read "Send Code" when the bundle landed first). -->
         <button id="btn-auth" disabled>Send Code</button>
+        <!-- The password step's way out: "Not now — sign out" when a password is
+             required, "Keep my current password" on a reset. app.js paints it. -->
+        <p class="hint auth-alt" id="pw-set-alt-line" hidden><a href="#" id="pw-set-alt"></a></p>
         <!-- PASSKEY SIGN-IN, sign-in mode only, and only where a passkey can work
              (passkey.js supported(): a browser on hawkeye.com.ng, server on).
              An ordinary button: pressing it opens the browser's own passkey sheet,
@@ -410,8 +510,11 @@
         <!-- Practice link for BOTH modes: sign-up shows the big starter-card above;
              sign-in (where that card is hidden) gets this lighter link instead. -->
         <p data-i18n-html="observe.try-a-practice-run-first-no-sign" class="hint auth-alt" id="practice-line" hidden><a href="practice.html">Try a practice run first — no sign-up needed</a></p>
-        <p data-i18n-html="observe.resend-code-2" class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
-        <p data-i18n-html="observe.use-a-different-number-2" class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
+        <!-- PAINTED BY app.js, NOT KEYED HERE: the resend line counts down
+             (ONB-13), and i18n.js rebuilding these links from a keyed paragraph
+             on a language change dropped their handlers and hid them mid-code. -->
+        <p class="hint"><a id="otp-resend" href="#" hidden>Resend Code</a></p>
+        <p class="hint"><a id="auth-reset" href="#" hidden>← Use a Different Number</a></p>
       </div>
       <!-- "SIGN IN FASTER NEXT TIME" — offered once, inline, right after a
            returning sign-in on a device that can make a passkey (app.js
@@ -678,8 +781,8 @@
   <script src="receipt.js?v=3" defer></script>
   <!-- Before app.js (which mounts it) and not deferred, so window.puSearch
        exists by the time the deferred app.js runs. -->
-  <script src="register-store.js?v=3"></script>
-  <script src="pu-search.js?v=9"></script>
+  <script src="register-store.js?v=4"></script>
+  <script src="pu-search.js?v=10"></script>
   <!-- Tier A of the unit ladder: reads the delimitation code off the OCR'd
        sheet. Must load before app.js, which calls into it. -->
   <script src="pu-code.js?v=3"></script>
@@ -696,11 +799,11 @@
        nothing read it back. Also catches ?r=/&unit= arriving here directly. -->
   <script src="referral.js?v=2"></script>
   <script src="passkey.js?v=1"></script>
-  <script src="app.js?v=196" defer></script>
+  <script src="app.js?v=197" defer></script>
   <script src="tg.js?v=95" defer></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195" defer></script>
+  <script src="menu.js?v=196" defer></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

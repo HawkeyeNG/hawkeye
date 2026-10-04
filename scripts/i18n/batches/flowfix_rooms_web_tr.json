@@ -1,0 +1,117 @@
+{
+  "join.point-forward": {
+    "ha": "Za su ga rahotannin da za ka bayar daga yanzu — wace rumfa, da wane lokaci. Rahotannin da ka bayar a baya naka ne.",
+    "ig": "Ha ga-ahụ akụkọ ị ga-akọ site ugbu a — ebe ntuli aka ole, na mgbe ole. Akụkọ ị kọburu bụ nke gị.",
+    "yo": "Wọn yóò rí àwọn ìròyìn tí o bá fi ránṣẹ́ láti ìsinsìnyí — ibùdó ìdìbò wo, àti ìgbà wo. Àwọn ìròyìn rẹ àtẹ̀yìnwá jẹ́ tìrẹ."
+  },
+  "join.point-public": {
+    "ha": "Ba za su ga abin da jama’a ba za su gani ba. Shiga yana gaya musu waɗanne rahotanni ne naka kaɗai.",
+    "ig": "Ha apụghị ịhụ ihe ọ bụla ọha apụghị ịhụ. Isonye na-agwa ha naanị akụkọ ndị e bipụtara bụ nke gị.",
+    "yo": "Wọn kò lè rí ohun tí gbogbo ènìyàn kò lè rí. Kíkópa sọ fún wọn èwo nínú àwọn ìròyìn tí a ti tẹ̀ jáde ni tìrẹ."
+  },
+  "join.point-anywhere": {
+    "ha": "Za su iya ba ka rumfar zaɓe. Har yanzu za ka iya ba da rahoto daga duk inda kake.",
+    "ig": "Ha nwere ike ịtụ aro ebe ntuli aka. Ị ka nwere ike ịkọ akụkọ site n’ebe ị nọ n’ezie.",
+    "yo": "Wọ́n lè dábàá ibùdó ìdìbò fún ọ. O ṣì lè fi ìròyìn ránṣẹ́ láti ibi tí o bá wà ní ti gidi."
+  },
+  "join.point-leave": {
+    "ha": "Za ka iya fita duk lokacin da kake so, kuma za ka iya kasancewa a ƙungiya fiye da ɗaya.",
+    "ig": "Ị nwere ike ịpụ mgbe ọ bụla ị chọrọ, ị nwekwara ike ịnọ n’òtù karịrị otu.",
+    "yo": "O lè kúrò nígbà yòówù tí o bá fẹ́, o sì lè wà nínú ẹgbẹ́ tí ó ju ọ̀kan lọ."
+  },
+  "join.point-leave-where": {
+    "ha": "Duk ƙungiyoyin da kake ciki suna nan a {link}.",
+    "ig": "Otu ọ bụla ị nọ na ya dị na {link}.",
+    "yo": "Gbogbo ẹgbẹ́ tí o wà nínú rẹ̀ wà ní {link}."
+  },
+  "join.fine-print": {
+    "ha": "Babu wata jam'iyya, ɗan takara ko kamfen da ke tafiyar da Hawkeye, kuma shiga ƙungiya ba ya canza yadda ake duba ko ƙirga rahotanninka.",
+    "ig": "Ọ dịghị pati, onye na-azọ ọkwa ma ọ bụ mkpọsa na-achị Hawkeye, isonye n'otu agaghịkwa agbanwe otú e si enyocha ma ọ bụ agụta akụkọ gị.",
+    "yo": "Kò sí ẹgbẹ́ òṣèlú, olùdíje tàbí ìpolongo kankan tí ó ń ṣàkóso Hawkeye, dídara pọ̀ mọ́ ẹgbẹ́ kò sì yí bí a ṣe ń ṣàyẹ̀wò tàbí ka àwọn ìròyìn rẹ padà."
+  },
+  "join.could-not-join-offline": {
+    "ha": "Ba a iya shiga ba — duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Enweghị ike isonye — lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "A kò lè dara pọ̀ — ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "my-groups.have-link": {
+    "ha": "Kana da hanyar gayyata?",
+    "ig": "Ị nwere njikọ òkù?",
+    "yo": "Ṣé o ní ìjápọ̀ ìpè?"
+  },
+  "my-groups.have-link-sub": {
+    "ha": "Liƙa hanyar da wani kamfen ko ƙungiyar masu lura ta aiko maka.",
+    "ig": "Mado njikọ mkpọsa ma ọ bụ otu ndị na-ekiri ihe zitere gị.",
+    "yo": "Lẹ̀ ìjápọ̀ tí ìpolongo tàbí ẹgbẹ́ olùwòran fi ránṣẹ́ sí ọ."
+  },
+  "my-groups.bad-link": {
+    "ha": "Wannan ba hanyar gayyata ta Hawkeye ba ce. Kwafi hanyar gaba ɗaya ka sake gwadawa.",
+    "ig": "Nke ahụ abụghị njikọ òkù Hawkeye. Detuo njikọ ahụ niile ma nwaa ọzọ.",
+    "yo": "Èyí kì í ṣe ìjápọ̀ ìpè Hawkeye. Ṣe àdàkọ gbogbo ìjápọ̀ náà kí o sì tún gbìyànjú."
+  },
+  "my-groups.open-link": {
+    "ha": "Buɗe gayyata",
+    "ig": "Mepee òkù",
+    "yo": "Ṣí ìpè"
+  },
+  "my-groups.check-connection": {
+    "ha": "Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "my-groups.decline-confirm": {
+    "ha": "Ka gaya wa {name} cewa ba za ka kasance a wannan rumfar ba? Za su iya ba da shawarar wata. Ba za ka iya janye wannan a nan ba.",
+    "ig": "Gwa {name} na ị gaghị anọ n'ebe ntuli aka a? Ha nwere ike ịtụ aro ọzọ. Ị nweghị ike ịgbanwe nke a ebe a.",
+    "yo": "Sọ fún {name} pé o kò ní wà ní ibùdó ìdìbò yìí? Wọ́n lè dábàá òmíràn. O kò lè yí èyí padà níbí."
+  },
+  "my-groups.decline-ok": {
+    "ha": "Ƙi wannan rumfar",
+    "ig": "Jụ ebe ntuli aka a",
+    "yo": "Kọ ibùdó ìdìbò yìí"
+  },
+  "situation-room.codes-download-csv": {
+    "ha": "Sauke CSV na lambobi",
+    "ig": "Budata CSV koodu",
+    "yo": "Gba CSV kóòdù sílẹ̀"
+  },
+  "situation-room.codes-pending": {
+    "ha": "Za a iya duba lambobin ƙungiya a nan da zarar Hawkeye ya tabbatar da wannan ɗakin.",
+    "ig": "A ga-enwe ike ilele koodu nzukọ ebe a ozugbo Hawkeye nyochachara ọnụ ụlọ a.",
+    "yo": "A ó lè ṣàyẹ̀wò kóòdù àjọ níbí nígbà tí Hawkeye bá ti fìdí yàrá yìí múlẹ̀."
+  },
+  "situation-room.codes-no-issuer": {
+    "ha": "Ba a kafa lambobin ƙungiya don {v0} ba tukuna. Hawkeye yana kafa su idan an nema, haka nan ga kowace jam'iyya da ƙungiya.",
+    "ig": "A kwadobeghị koodu nzukọ maka {v0}. Hawkeye na-akwado ha ma a rịọ, n'otu ụzọ ahụ maka pati na nzukọ ọ bụla.",
+    "yo": "A kò tíì ṣètò kóòdù àjọ fún {v0}. Hawkeye máa ń ṣètò wọn bí a bá béèrè, bákan náà fún gbogbo ẹgbẹ́ òṣèlú àti àjọ."
+  },
+  "situation-room.room-left-note": {
+    "ha": "Kun fita daga {name}.",
+    "ig": "Ị hapụla {name}.",
+    "yo": "O ti kúrò nínú {name}."
+  },
+  "situation-room.room-deleted-note": {
+    "ha": "An goge {name}. Rahotannin masu lura da shi suna nan a cikin bayanan jama'a.",
+    "ig": "E hichapụla {name}. Akụkọ ndị nkiri ya ka dị na ndekọ ọha.",
+    "yo": "A ti pa {name} rẹ́. Àwọn ìròyìn àwọn olùwòran rẹ̀ ṣì wà nínú àkọsílẹ̀ gbogbo ènìyàn."
+  },
+  "situation-room.stop-managing": {
+    "ha": "Daina gudanarwa",
+    "ig": "Kwụsị ilekọta",
+    "yo": "Dá ìṣàkóso dúró"
+  },
+  "situation-room.read-only-title-cso": {
+    "ha": "Kana cikin jerin masu lura na wannan ƙungiyar masu sa ido.",
+    "ig": "Ị nọ na ndepụta nke otu ndị na-ekiri ihe a.",
+    "yo": "O wà nínú àkọsílẹ̀ ẹgbẹ́ olùwòran yìí."
+  },
+  "situation-room.no-live-links": {
+    "ha": "Babu hanyar haɗi da ke aiki. Babu sabon mutum da zai iya shiga har sai ka ƙirƙiri ɗaya.",
+    "ig": "Enweghị njikọ dị ndụ. Ọ dịghị onye ọhụrụ nwere ike isonye ruo mgbe ị mepụtara otu.",
+    "yo": "Kò sí ìjápọ̀ tí ó ń ṣiṣẹ́. Kò sí ẹni tuntun tí ó lè dara pọ̀ títí o fi ṣẹ̀dá ọ̀kan."
+  },
+  "situation-room.create-a-link": {
+    "ha": "Ƙirƙiri hanyar haɗi",
+    "ig": "Mepụta njikọ",
+    "yo": "Ṣẹ̀dá ìjápọ̀"
+  }
+}

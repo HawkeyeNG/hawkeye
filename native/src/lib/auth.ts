@@ -65,6 +65,8 @@ const listeners = new Set<() => void>();
 
 function set(next: AuthState) {
   state = next;
+  // Signed in again: the next session end is a fresh question (noteReturnAfterSignIn).
+  if (next.status === 'signedIn') signedOutByChoice = false;
   listeners.forEach((l) => l());
 }
 
@@ -376,6 +378,114 @@ export async function waCancel(pollToken: string): Promise<void> {
 }
 
 /**
+ * MISSED CALL — "GIVE US A MISSED CALL" (free, SIGN-UP ONLY).
+ *
+ * The server shows our number; the observer rings it FROM the phone being
+ * verified; our gateway rejects the call (free to the caller) and the server
+ * marks that number proved; this device collects its session with a poll token
+ * only it holds (backend services/callVerify.js). The same shapes as the
+ * WhatsApp route above, so the sign-in screen reuses its waiting step and
+ * adoptWaSession() keeps the session.
+ *
+ * Sign-up only, because caller ID can be forged: /call-start answers every
+ * number alike, and /call-status says `has-account` (409 call_signup_only) for
+ * a number that already has one — after the call, with nothing issued.
+ */
+export async function callVerifyEnabled(): Promise<boolean> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), 8_000);
+  try {
+    const r = await fetch(`${BASE}/api/health`, { signal: ctl.signal });
+    const b = r.ok ? ((await r.json()) as { callVerify?: boolean }) : null;
+    return b?.callVerify === true;   // fail closed
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export type CallStartResult =
+  | { ok: true; callNumber: string; display: string; telLink: string; pollToken: string; expiresInS: number; pollAfterMs: number }
+  | { ok: false; error?: string; hint?: string };
+
+export async function callStart(
+  phone: string,
+  /** As verifyOtp: sign-up's typed invite (null = none); omitted = the parked one. */
+  opts: { referralCode?: string | null } = {},
+): Promise<CallStartResult> {
+  const id = await getIdentity();
+  const referralCode = opts.referralCode === undefined ? await pendingInviteCode() : opts.referralCode || undefined;
+  const r = await postStatus<{
+    ok?: boolean; callNumber?: string; callNumberDisplay?: string; telLink?: string; pollToken?: string;
+    expiresInS?: number; pollAfterMs?: number; error?: string; hint?: string;
+  }>(
+    '/api/observers/call-start',
+    { phone, publicKeyJwk: id.publicKeyJwk, intent: 'signup', lang: currentLangForOtp(), referralCode },
+    { 'x-device-id': id.deviceId },
+  );
+  const b = r.body ?? {};
+  if (r.status === 200 && b.ok) {
+    // Only a tel: link is ever handed to the OS.
+    if (typeof b.pollToken !== 'string' || !b.pollToken || typeof b.telLink !== 'string' || !/^tel:\+?\d{6,15}$/.test(b.telLink)) {
+      return { ok: false, error: 'call_unavailable' };
+    }
+    const callNumber = typeof b.callNumber === 'string' ? b.callNumber : b.telLink.slice(4);
+    return {
+      ok: true,
+      callNumber,
+      display: typeof b.callNumberDisplay === 'string' && b.callNumberDisplay ? b.callNumberDisplay : callNumber,
+      telLink: b.telLink,
+      pollToken: b.pollToken,
+      expiresInS: Number(b.expiresInS) > 0 ? Number(b.expiresInS) : 600,
+      pollAfterMs: Number(b.pollAfterMs) > 0 ? Number(b.pollAfterMs) : 2000,
+    };
+  }
+  if (r.status === 503) return { ok: false, error: 'call_unavailable' };
+  return { ok: false, error: b.error, hint: b.hint };
+}
+
+export type CallStatusResult =
+  | { status: 'pending'; retryAfterMs: number }
+  | { status: 'verified'; session: WaSession }
+  /** The number already has an account: nothing issued; sign in instead. */
+  | { status: 'has-account' }
+  /** Expired, used, cancelled or another device's — one answer (410). */
+  | { status: 'expired' }
+  /** An answer that decides nothing (429, 5xx): ask again later. */
+  | { status: 'retry' };
+
+/** One poll. Stores NOTHING — the caller adopts a verified session (adoptWaSession) only if it still wants it. */
+export async function callStatus(pollToken: string, phone: string): Promise<CallStatusResult> {
+  const id = await getIdentity();
+  const r = await postStatus<{
+    ok?: boolean; status?: string; retryAfterMs?: number; error?: string;
+    observerId?: number; token?: string; isNew?: boolean; needsUnit?: boolean; hasPassword?: boolean;
+  }>('/api/observers/call-status', { pollToken, phone }, { 'x-device-id': id.deviceId });
+  const b = r.body ?? {};
+  if (r.status === 410) return { status: 'expired' };
+  if (r.status === 409 && b.error === 'call_signup_only') return { status: 'has-account' };
+  if (r.status === 200 && b.status === 'verified' && b.token && b.observerId) {
+    return {
+      status: 'verified',
+      session: { observerId: b.observerId, token: b.token, isNew: b.isNew, needsUnit: b.needsUnit, hasPassword: b.hasPassword },
+    };
+  }
+  if (r.status === 200 && b.status === 'pending') return { status: 'pending', retryAfterMs: Number(b.retryAfterMs) || 3000 };
+  return { status: 'retry' };
+}
+
+/** "Use a different number", or leaving the step: a call from the old number stops counting. */
+export async function callCancel(pollToken: string): Promise<void> {
+  try {
+    const id = await getIdentity();
+    await postStatus('/api/observers/call-cancel', { pollToken }, { 'x-device-id': id.deviceId });
+  } catch {
+    /* best effort — an abandoned sign-in also expires on its own */
+  }
+}
+
+/**
  * Password sign-in — phone + password on any device, no OTP. The server treats
  * success exactly like a fresh OTP verify: the signing key rotates to this
  * device. Its 401 hints are user-ready copy; surface them verbatim.
@@ -640,6 +750,26 @@ export async function expireSession(): Promise<void> {
   set({ status: 'signedOut', observerId: null, token: null });
 }
 
+/**
+ * WHERE A FINISHED SIGN-IN GOES BACK TO (flow walkthrough ONB-09).
+ *
+ * A refused session sends the reader to welcome from wherever they were — My
+ * Groups, Profile, a deep link a cold start opened — and sign-in used to land
+ * them on Home, the screen forgotten. The root layout notes the screen at the
+ * bounce (app/_layout.tsx); sign-in.tsx reads it, checks it is an app path,
+ * and returns there, then clears it. Memory only: it is about this session's
+ * last few seconds, not something to survive a restart.
+ */
+let returnAfterSignIn: string | null = null;
+/** signOut() was the observer's own choice: then there is nothing to return to. */
+let signedOutByChoice = false;
+export function noteReturnAfterSignIn(path: string | null): void {
+  returnAfterSignIn = signedOutByChoice ? null : path;
+}
+export function peekReturnAfterSignIn(): string | null {
+  return returnAfterSignIn;
+}
+
 /** The observer asked to sign out. This one IS a choice, so it is remembered. */
 export async function signOut(): Promise<void> {
   // Tell the server this phone's session has ended (POST /api/observers/sign-out).
@@ -648,6 +778,10 @@ export async function signOut(): Promise<void> {
   // owner is what lets another account's report claim the phone. Fire and
   // forget with a deadline: signing out must work offline and never wait.
   const token = state.token;
+  // Before the session ends: the root layout notes "where they were" the
+  // moment it sees signedOut, and a chosen sign-out has no way back to offer.
+  signedOutByChoice = true;
+  returnAfterSignIn = null;
   if (token) {
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 5_000);

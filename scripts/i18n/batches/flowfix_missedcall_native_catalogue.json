@@ -1,0 +1,18 @@
+{
+  "auth.call-chip": "Call",
+  "auth.call-title": "Give us a missed call",
+  "auth.call-body": "Call {number} from {phone}.",
+  "auth.call-ends-at-once": "The call ends at once — that's normal, and it's free. Then come back here.",
+  "auth.call-dual-sim": "On a two-SIM phone, call from the SIM with {phone}.",
+  "auth.call-verified": "Number verified",
+  "auth.call-now": "Call now",
+  "auth.call-desktop": "Dial it from the phone with {phone}, not from this computer.",
+  "auth.call-waiting": "Waiting for your call…",
+  "auth.call-expires-in": "Expires in {time}",
+  "auth.call-slow": "Call from the same phone number you typed; calls from hidden numbers can't be checked.",
+  "auth.call-expired": "Time is up. Start again to call once more.",
+  "auth.call-starting": "Getting our number…",
+  "auth.call-unavailable": "Missed-call sign-up is not available right now. Choose Telegram or WhatsApp instead.",
+  "auth.call-has-account": "This number already has an account — sign in instead. Nothing new was created.",
+  "observe.sms": "SMS"
+}

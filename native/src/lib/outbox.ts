@@ -215,8 +215,13 @@ function pruneOrphans() {
  * collide; the filename the SERVER sees still comes from `JobFile.name`.
  */
 async function stash(id: string, files: JobFile[]): Promise<JobFile[]> {
-  const dir = outboxDir(id);
+  // Built INSIDE the try: where there is no document directory at all (the
+  // react-native-web build the audits drive) the constructor itself throws,
+  // and that used to reject the whole queueJob — "nothing was saved" for a
+  // report the index could still have held.
+  let dir: Directory;
   try {
+    dir = outboxDir(id);
     dir.create({ intermediates: true, idempotent: true });
   } catch {
     return files; // no durable copy possible — the cache URI is better than nothing

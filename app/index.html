@@ -29,7 +29,7 @@
     // without stripping them from every other page in the shell.
     document.documentElement.classList.add('is-landing');
   </script>
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     /* ---- Observer Home (signed-in index) ---- */
@@ -78,11 +78,16 @@
        to write a gap. It costs each card ~4px of width at 390px. If the four
        actions should read as a tighter cluster than the sections below them,
        that is a design decision to take deliberately here, not a stray 12. */
-    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: var(--home-gap); margin: var(--home-gap) 0; }
+    /* NO MARGIN OF ITS OWN ANY MORE: the grid is one item of .home-cols now
+       (flow walkthrough FA-HOME-1 put the report actions fifth, between Latest
+       Alerts and My Activity), so the gap above and below it is .home-cols's
+       `gap` — the same token, written once. */
+    .qa-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 1fr; gap: var(--home-gap); margin: 0; }
     @media (min-width: 700px) { .qa-grid { grid-template-columns: repeat(4, 1fr); } }
-    /* THE FIRST GAP IS THE SAME GAP. `.qa-grid`'s top margin is the ONLY thing
-       that writes the space between the green .home-hero and the first row of
-       quick actions — on the website it collapses through <main> and lands at
+    /* THE FIRST GAP IS THE SAME GAP. `.home-cols`'s top margin (it was
+       `.qa-grid`'s, before the actions moved down the page) is the ONLY thing
+       that writes the space between the green .home-hero and the first card
+       — on the website it collapses through <main> and lands at
        exactly --home-gap, like every other gap on the page.
        In Lite it did not: styles.css carries
          html.native-app main.wrap { padding-top: 14px; }
@@ -106,13 +111,45 @@
     .qa.primary svg { stroke: #2EE59D; }
     .qa.primary small { color: #fff; } /* solid white on the dark green: >7:1 (axe AA) */
 
+    /**
+     * ONE ORDER ON EVERY SURFACE (flow walkthrough FA-HOME-1). Home was two
+     * different screens: a personal dashboard here and in Lite, a public feed
+     * on native. All three now read, top to bottom:
+     *   1 the next step (in the hero: choose your unit / report now / practice)
+     *   2 greeting + unit (the hero)
+     *   3 the two soonest elections   4 unread alerts   5 report actions
+     *   6 My Activity   7 Live on the Ledger   8 Chat
+     * Native twin: native/src/app/(tabs)/index.tsx, same order.
+     *
+     * One column of blocks in that order, every gap the token. On a wide
+     * screen it pairs up into two columns; the action grid and the chat card
+     * span both, so the reading order is still the list above, row by row.
+     */
     .home-cols { display: grid; gap: var(--home-gap); margin: var(--home-gap) 0; }
-    /* The stacked column is a GRID too, so the gap between the cards inside
-       it comes from the same token as the gap beside it. It used to be a
-       plain <div> whose children carried their own margins — which is what
-       made a second, different number possible in the first place. */
-    .home-cols > .home-stack { display: grid; gap: var(--home-gap); align-content: start; }
-    @media (min-width: 900px) { .home-cols { grid-template-columns: 1.2fr 1fr; align-items: start; } }
+    @media (min-width: 900px) {
+      .home-cols { grid-template-columns: 1fr 1fr; align-items: start; }
+      .home-cols > .qa-grid, .home-cols > .home-chat { grid-column: 1 / -1; }
+    }
+    /* 1. THE NEXT STEP sits at the top of the green hero, above the greeting —
+       it is the one thing on the page a new observer must do, so it leads.
+       At most one card shows: report now / choose your unit (#home-next) beat
+       the practice nudge, which beats the Practice Day card (.pday-yield). The
+       hero's white text must not leak into a card that paints its own. */
+    .home-hero .home-card { color: var(--ink); margin: 0 0 18px; }
+    .home-hero .home-card[hidden] { display: none; }
+    .home-hero .home-card a:not(.btn-accent) { color: var(--link); }
+    /* (0,2,0): .home-card's own border, declared further down, must not win. */
+    .home-card.next-card { border-left: 4px solid var(--gold); }
+    .home-card.next-card h2 { margin-bottom: 6px; }
+    #home-next:not([hidden]) ~ .pday-card { display: none; }
+    /* 3. The two soonest elections — the same rule as native's cards. */
+    .elec-line { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--border); text-decoration: none; color: inherit; }
+    .elec-line:first-of-type { border-top: none; padding-top: 2px; }
+    .elec-line .elec-tx { flex: 1; min-width: 0; }
+    .elec-line strong { display: block; font-size: 0.93rem; line-height: 1.3; }
+    .elec-line small { display: block; color: var(--muted); font-size: 0.8rem; margin-top: 2px; }
+    .elec-line .elec-when { flex: none; font-size: 0.74rem; font-weight: 700; color: var(--link); background: var(--tint); border-radius: 999px; padding: 4px 10px; white-space: nowrap; }
+    .elec-line .elec-when.open { background: var(--tint-ok, var(--tint)); }
     .home-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
     /* "Questions? Chat with us": opens the support chat (faq.html?chat=1 opens the messenger). */
     .home-chat { display: flex; align-items: center; gap: 14px; text-decoration: none; color: inherit; }
@@ -203,7 +240,7 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <!-- BOOT SPLASH — static markup, deliberately the first thing in <body>.
@@ -292,58 +329,75 @@
   <div class="home-obs">
     <section class="home-hero">
       <div class="wrap">
+        <!-- 1. THE NEXT STEP — at most one of these three shows (see the CSS).
+             #home-next: "Report now" while polls are open, else "Choose your
+             polling unit" until one is saved; painted below from /api/contests
+             and /me. -->
+        <div class="home-card next-card" id="home-next" hidden aria-live="polite"></div>
+        <!-- National Practice Day: painted by practice-day.js from
+             /api/practice-days, and hidden whenever there is no day to show. -->
+        <div class="home-card pday-card" id="pday-card" hidden aria-live="polite"></div>
+        <!-- "Try a practice run": painted below from /api/practice/nudge; hidden
+             unless the server says show and the observer has not dismissed it. -->
+        <div class="home-card pday-card pnudge-card" id="pnudge-card" hidden></div>
+        <!-- 2. GREETING + UNIT -->
         <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
         <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
-        <a class="unit-chip" id="home-unit-chip" href="map-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
+        <!-- CHOOSE, not map: choose-unit.html is the page that saves "my unit"
+             (Profile's row opens it too); Map a Polling Unit is a surveying job
+             and stays on the My Polling Unit action below. -->
+        <a class="unit-chip" id="home-unit-chip" href="choose-unit.html" data-i18n-html="index.save-your-polling-unit"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="vertical-align:-2px"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg> Save Your Polling Unit</a>
         <p class="home-offline" id="home-offline" role="status" hidden><span data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</span><button type="button" data-i18n="common.try-again">Try again</button></p>
       </div>
     </section>
     <main class="wrap">
-      <div class="qa-grid">
-        <a class="qa primary" href="observe.html?intent=observe">
-          <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
-          <strong data-i18n="common.report-a-result">Report a Result</strong><small data-i18n="index.photograph-the-ec8a-sheet-at-your">Photograph the EC8A sheet at your unit</small></a>
-        <a class="qa" href="incidents.html">
-          <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/></svg>
-          <strong data-i18n="common.report-an-incident">Report an Incident</strong><small data-i18n="index.violence-vote-buying-bvas-failure">Violence, vote-buying, BVAS failure…</small></a>
-        <a class="qa" href="collation.html">
-          <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
-          <strong data-i18n="index.collation-result">Collation Result</strong><small data-i18n="index.ward-lga-or-state-collation-ec8b">Ward, LGA or state collation (EC8B/C/D)</small></a>
-        <a class="qa" href="map-unit.html">
-          <svg viewBox="0 0 24 24"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-          <strong data-i18n="index.my-polling-unit">My Polling Unit</strong><small data-i18n="index.save-or-map-your-unit-for">Save or map your unit for alerts</small></a>
-      </div>
-
       <div class="home-cols">
-        <div class="home-stack">
-          <!-- National Practice Day: painted by practice-day.js from
-               /api/practice-days, and hidden whenever there is no day to show. -->
-          <div class="home-card pday-card" id="pday-card" hidden aria-live="polite"></div>
-          <!-- "Try a practice run": painted below from /api/practice/nudge; hidden
-               unless the server says show and the observer has not dismissed it. -->
-          <div class="home-card pday-card pnudge-card" id="pnudge-card" hidden></div>
-          <div class="home-card">
-            <h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
-            <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
-          </div>
-          <div class="home-card">
-            <h2><span data-i18n="index.my-activity">My Activity</span> <a data-i18n="index.my-profile" href="profile.html">My Profile →</a></h2>
-            <div class="mystats">
-              <div><strong id="ms-reports">0</strong><span data-i18n="index.result-reports">result reports</span></div>
-              <div><strong id="ms-incidents">0</strong><span data-i18n="index.incidents">incidents</span></div>
-              <div><strong id="ms-races">0</strong><span data-i18n="index.races-followed">races followed</span></div>
-            </div>
-          </div>
-          <a class="home-card home-chat" href="faq.html?chat=1" data-chat-open>
-            <span class="home-chat-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
-            <span class="home-chat-tx"><strong data-i18n="index.chat-card-title">Questions? Chat with us</strong><small data-i18n="index.chat-card-sub">Someone on the Hawkeye team answers — about reporting, practice runs or results.</small></span>
-            <span class="home-chat-go" aria-hidden="true">›</span>
-          </a>
+        <!-- 3. THE TWO SOONEST ELECTIONS — painted below from /api/contests;
+             hidden until there is one to show. -->
+        <div class="home-card" id="home-elections" hidden>
+          <h2><span data-i18n="index.upcoming-elections">Upcoming Elections</span> <a data-i18n="index.all-races" href="races.html">All Races →</a></h2>
+          <div id="home-elec"></div>
         </div>
+        <!-- 4. UNREAD ALERTS -->
+        <div class="home-card">
+          <h2><span data-i18n="index.latest-alerts">Latest Alerts</span> <a data-i18n="index.all-alerts" href="notifications.html">All Alerts →</a></h2>
+          <div id="home-alerts"><p data-i18n="index.loading" class="home-empty">Loading…</p></div>
+        </div>
+        <!-- 5. REPORT ACTIONS -->
+        <div class="qa-grid">
+          <a class="qa primary" href="observe.html?intent=observe">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="13.5" r="3"/><path d="M4 8.5h3L8.5 6.5h7L17 8.5h3v10H4z"/></svg>
+            <strong data-i18n="common.report-a-result">Report a Result</strong><small data-i18n="index.photograph-the-ec8a-sheet-at-your">Photograph the EC8A sheet at your unit</small></a>
+          <a class="qa" href="incidents.html">
+            <svg viewBox="0 0 24 24"><path d="M12 3 2.5 20h19z"/><path d="M12 10v4"/><circle cx="12" cy="17" r="0.5"/></svg>
+            <strong data-i18n="common.report-an-incident">Report an Incident</strong><small data-i18n="index.violence-vote-buying-bvas-failure">Violence, vote-buying, BVAS failure…</small></a>
+          <a class="qa" href="collation.html">
+            <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>
+            <strong data-i18n="index.collation-result">Collation Result</strong><small data-i18n="index.ward-lga-or-state-collation-ec8b">Ward, LGA or state collation (EC8B/C/D)</small></a>
+          <a class="qa" href="map-unit.html">
+            <svg viewBox="0 0 24 24"><path d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+            <strong data-i18n="index.my-polling-unit">My Polling Unit</strong><small data-i18n="index.save-or-map-your-unit-for">Save or map your unit for alerts</small></a>
+        </div>
+        <!-- 6. MY ACTIVITY -->
+        <div class="home-card">
+          <h2><span data-i18n="index.my-activity">My Activity</span> <a data-i18n="index.my-profile" href="profile.html">My Profile →</a></h2>
+          <div class="mystats">
+            <div><strong id="ms-reports">0</strong><span data-i18n="index.result-reports">result reports</span></div>
+            <div><strong id="ms-incidents">0</strong><span data-i18n="index.incidents">incidents</span></div>
+            <div><strong id="ms-races">0</strong><span data-i18n="index.races-followed">races followed</span></div>
+          </div>
+        </div>
+        <!-- 7. LIVE ON THE LEDGER -->
         <div class="home-card">
           <h2><span data-i18n="index.live-on-the-ledger">Live on the Ledger</span> <a data-i18n="index.all-reports" href="dashboard.html">All Reports →</a></h2>
           <div id="home-ledger"><p data-i18n="index.no-reports-on-the-ledger-yet" class="home-empty">No reports on the ledger yet — yours could be first.</p></div>
         </div>
+        <!-- 8. CHAT -->
+        <a class="home-card home-chat" href="faq.html?chat=1" data-chat-open>
+          <span class="home-chat-ic" aria-hidden="true"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#f5b301" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+          <span class="home-chat-tx"><strong data-i18n="index.chat-card-title">Questions? Chat with us</strong><small data-i18n="index.chat-card-sub">Someone on the Hawkeye team answers — about reporting, practice runs or results.</small></span>
+          <span class="home-chat-go" aria-hidden="true">›</span>
+        </a>
       </div>
     </main>
   </div>
@@ -607,24 +661,50 @@
 
     // Ledger stack: latest real reports; sample preview until the first ones land.
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+    const T0 = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    /**
+     * "2 min ago", DEFINED ON THIS PAGE (flow walkthrough FA-X8-2).
+     *
+     * The ledger cards and the alert rows called window.timeAgo, which menu.js
+     * defines — and menu.js is the LAST script on the page. When
+     * /api/notifications answered before it arrived, the row renderer threw a
+     * ReferenceError, and the fetch's .catch(alertsFailed) reported it as
+     * "Could not reach Hawkeye" on a network that was fine (and before that
+     * catch existed, as "Loading…" for good — the original X8). The same
+     * throw sent the landing's ledger stack to the SAMPLE cards. Same words and
+     * keys as menu.js's helper; nothing here waits on another script.
+     */
+    const agoText = (ts) => {
+      const d = new Date(ts);
+      const diff = (Date.now() - d.getTime()) / 1000;
+      const hm = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (diff < 60) return T0('time.just-now', 'just now');
+      if (diff < 3600) return T0('time.min-ago', '{n} min ago').replace('{n}', String(Math.floor(diff / 60)));
+      if (d.toDateString() === new Date().toDateString()) return T0('time.today', 'today {time}').replace('{time}', hm);
+      if (diff < 172800) return T0('time.yesterday', 'yesterday {time}').replace('{time}', hm);
+      return `${d.toLocaleDateString([], { day: 'numeric', month: 'short' })}, ${hm}`;
+    };
     // Fallbacks only. Any contest the backend has actually configured overrides
     // its entry below with the app-wide `<race> (<year>)` label, whose year is
     // derived from that contest's own polling date — so a ledger card names a
     // race exactly as the leaderboard and the bot do.
     const CONTEST_NAMES = { PRES: 'Presidency (2027)', SEN: 'Senate', REP: 'House of Reps', GOV: 'Governorship', SHA: 'State Assembly' };
-    fetch('/api/contests').then((r) => r.json()).then((cs) => {
-      for (const c of cs) {
+    /* One read of the catalogue, shared: the ledger labels below and the
+       signed-in Home's election card and next-step card all come from it. */
+    const contestsP = fetch('/api/contests').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    contestsP.then((cs) => {
+      for (const c of Array.isArray(cs) ? cs : []) {
         const year = Number(String(c.date || '').slice(0, 4)) || 2027;
         const where = Array.isArray(c.states) && c.states.length === 1 ? `${c.states[0]} ` : '';
         CONTEST_NAMES[c.code] = `${where}${c.name} (${year})`;
       }
-    }).catch(() => { /* fallbacks stand */ });
+    });
     const lcard = (e, sample) => `
       <div class="lcard">
         <div class="row"><strong>PU ${esc(e.pu_code)} · ${CONTEST_NAMES[e.contest] || esc(e.contest)}</strong>
           <span class="chip ${sample ? 'wait' : 'ok'}">${sample ? 'Sample — not real data' : '✓ On the ledger'}</span></div>
         ${e.votes ? `<div class="votes">${e.votes.map((v) => `<span>${esc(v.party)} ${v.n}<i>votes</i></span>`).join('')}</div>` : ''}
-        <div class="hash">sha256: ${esc(String(e.entry_hash).slice(0, 6))}…${esc(String(e.entry_hash).slice(-4))} · ${sample ? 'first live reports appear here' : timeAgo(e.created_at)}</div>
+        <div class="hash">sha256: ${esc(String(e.entry_hash).slice(0, 6))}…${esc(String(e.entry_hash).slice(-4))} · ${sample ? 'first live reports appear here' : agoText(e.created_at)}</div>
       </div>`;
     // Fictional party labels on purpose — real party names next to invented
     // counts screenshot badly in a charged election, even labelled "Sample".
@@ -731,11 +811,119 @@
           chip.removeAttribute('data-i18n-html');
           sub.removeAttribute('data-i18n');
           chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
+          // The chooser marks the saved one when it knows it (Profile's row does the same).
+          chip.setAttribute('href', 'choose-unit.html?current=' + encodeURIComponent(u.pu_code || ''));
           sub.textContent = tt('index.alerts-are-on-for-your-unit', 'Alerts are on for your unit — you\'ll hear the moment anything is reported there.');
         }
       };
       paintHome();
       document.addEventListener('hawkeye-lang', paintHome);
+
+      /**
+       * 1. THE NEXT STEP, and 3. THE TWO SOONEST ELECTIONS — both read the
+       * catalogue (contestsP, above). Native's Home has had the election cards
+       * all along; the web had none, and native had no next step at all, so a
+       * new observer on either one was never told to choose a unit (FA-HOME-2).
+       *
+       * The next step, most urgent first — and only one:
+       *   polls open today         → Report now
+       *   no polling unit saved    → Choose your polling unit
+       *   otherwise the practice nudge or the Practice Day card (their own
+       *   painters, below and practice-day.js) — the CSS steps them aside while
+       *   #home-next shows.
+       */
+      let CONTESTS = [];
+      const lagosToday = () => new Date(Date.now() + 3600000).toISOString().slice(0, 10);
+      const nextCard = document.getElementById('home-next');
+      const nextHtml = (title, sub, go, href) => `<h2><span>${esc(title)}</span></h2>`
+        + `<p class="pday-line">${esc(sub)}</p><a class="btn-accent pday-go" href="${esc(href)}">${esc(go)}</a>`;
+      const paintNext = () => {
+        if (!nextCard) return;
+        const today = lagosToday();
+        const live = CONTESTS.find((c) => c.open && c.date === today);
+        let html = '';
+        if (live) {
+          html = nextHtml(tt('index.next-report-title', 'Polls are open'),
+            tt('index.next-report-sub', 'Report the result at your polling unit once it is announced.'),
+            tt('index.next-report-go', 'Report now'),
+            'observe.html?intent=observe&contest=' + encodeURIComponent(live.code));
+        } else if (!me.unit) {
+          html = nextHtml(tt('index.next-unit-title', 'Choose your polling unit'),
+            tt('index.next-unit-sub', 'Save the unit where you vote. Its alerts come to you, and reporting starts there.'),
+            tt('index.next-unit-go', 'Choose your unit'),
+            'choose-unit.html');
+        }
+        nextCard.innerHTML = html;
+        nextCard.hidden = !html;
+      };
+
+      /* Soonest first, past ones gone, two shown — native's orderedContests()
+         and cardHref(), the same rule on both clients; All Races has the rest. */
+      const ORDER = ['PRES', 'GOV', 'SEN', 'REP', 'SHA'];
+      const magnitude = (code) => { const i = ORDER.indexOf(code); return i === -1 ? ORDER.length : i; };
+      /* Plural for everything but the presidency, NASS for the National
+         Assembly — native lib/api.ts:electionTitle, keys of its own here. */
+      const ELECTION = {
+        PRES: ['index.elec-pres', '2027 Presidential Election'],
+        GOV: ['index.elec-gov', '2027 Governorship Elections'],
+        SEN: ['index.elec-nass', '2027 NASS Elections'],
+        REP: ['index.elec-nass', '2027 NASS Elections'],
+        SHA: ['index.elec-sha', '2027 State Assembly Elections'],
+      };
+      const CHAMBER = { SEN: ['follow.plural-sen', 'Senate'], REP: ['follow.plural-rep', 'House of Reps'] };
+      const electionOf = (c) => (ELECTION[c.code] ? tt(ELECTION[c.code][0], ELECTION[c.code][1]) : (c.election || c.name || c.code));
+      const elecTitle = (c) => {
+        const base = electionOf(c);
+        if (CONTESTS.filter((x) => electionOf(x) === base).length < 2) return base;
+        return `${base} — ${CHAMBER[c.code] ? tt(CHAMBER[c.code][0], CHAMBER[c.code][1]) : c.name}`;
+      };
+      /* "Saturday, 16 January 2027" from keys (practice-day.js's): a phone's
+         Intl has no Hausa, Igbo or Yoruba month names to fall back on. */
+      const longDate = (iso) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(String(iso))) return '';
+        const [y, m, d] = iso.split('-').map(Number);
+        const wd = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
+        const days = tt('practiceday.weekdays', 'Sunday,Monday,Tuesday,Wednesday,Thursday,Friday,Saturday').split(',');
+        const months = tt('practiceday.months', 'January,February,March,April,May,June,July,August,September,October,November,December').split(',');
+        return tt('practiceday.date', '{weekday}, {day} {month}')
+          .replace('{weekday}', days[wd] || '').replace('{day}', d).replace('{month}', months[m - 1] || '') + ' ' + y;
+      };
+      const whenText = (c) => {
+        if (c.open) return tt('index.reporting-open', 'Reporting open');
+        if (!c.date) return '';
+        const n = Math.max(0, Math.ceil((new Date(`${c.date}T00:00:00+01:00`).getTime() - Date.now()) / 86400000));
+        if (n <= 0) return tt('index.opens-today', 'Opens today');
+        return (n === 1 ? tt('index.opens-in-day', 'Opens in {v0} day') : tt('index.opens-in-days', 'Opens in {v0} days')).replace('{v0}', n);
+      };
+      const elecHref = (c) => {
+        if (c.code === 'PRES') return 'candidates.html';
+        if (c.code === 'GOV' && (c.states || []).length === 1) return 'race.html?contest=GOV&state=' + encodeURIComponent(c.states[0]);
+        if ((c.constituencies || []).length) return 'race.html?contest=' + encodeURIComponent(c.code);
+        return 'results.html?contest=' + encodeURIComponent(c.code);
+      };
+      const paintElections = () => {
+        const card = document.getElementById('home-elections');
+        const today = lagosToday();
+        const soon = CONTESTS.filter((c) => !(c.date && c.date < today)).sort((a, b) => {
+          const ad = a.date || '', bd = b.date || '';
+          if (ad !== bd) return ad === '' ? 1 : bd === '' ? -1 : ad.localeCompare(bd);
+          return magnitude(a.code) - magnitude(b.code) || elecTitle(a).localeCompare(elecTitle(b));
+        }).slice(0, 2);
+        if (!card || !soon.length) { if (card) card.hidden = true; return; }
+        document.getElementById('home-elec').innerHTML = soon.map((c) => {
+          const w = whenText(c);
+          return `<a class="elec-line" href="${esc(elecHref(c))}"><span class="elec-tx"><strong>${esc(elecTitle(c))}</strong>`
+            + `<small>${esc(longDate(c.date))}</small></span>${w ? `<span class="elec-when${c.open ? ' open' : ''}">${esc(w)}</span>` : ''}</a>`;
+        }).join('');
+        card.hidden = false;
+      };
+      paintNext();
+      contestsP.then((cs) => {
+        CONTESTS = Array.isArray(cs) ? cs : [];
+        paintNext();
+        paintElections();
+      });
+      document.addEventListener('hawkeye-lang', () => { paintNext(); paintElections(); });
 
       /**
        * "TRY A PRACTICE RUN — 5 MINUTES", for an observer who never has.
@@ -792,9 +980,52 @@
         box.innerHTML = '<p class="home-empty" data-i18n="common.cant-reach-hawkeye">Could not reach Hawkeye — check your connection.</p>';
         if (window.HawkeyeI18n) window.HawkeyeI18n.apply(box);
       };
-      aget('/api/notifications').then((d) => {
-        const box = document.getElementById('home-alerts');
+      /**
+       * WHERE AN ALERT GOES — notifications.html's rule, the same two steps.
+       * Same-site absolute urls become RELATIVE, so Lite stays inside the app
+       * instead of opening the system browser signed out. Not root-relative:
+       * in the shell, native.js rewrites a leading-slash href on any element it
+       * sees added back to the live host — measured, every row here pointed at
+       * https://hawkeye.com.ng/… in Lite. Every page sits at the root, so the
+       * bare path resolves to the same page on both. And the incident
+       * FORM becomes the published LIST (FA-NOTIF-1): "Your incident report is
+       * live" is about a report that is now public, and incidents.html is where
+       * you file a new one. Native already sends that url to its published
+       * list (lib/push.ts ROUTES).
+       */
+      const alertHref = (u) => {
+        if (!u) return 'notifications.html';
+        try {
+          const x = new URL(u, location.href);
+          if (!/(^|\.)hawkeye\.com\.ng$/.test(x.hostname) && x.origin !== location.origin) return u;
+          // The situation room is not in the Lite bundle: in the app it stays on
+          // the live site (notifications.html's NOT_IN_APP, same rule).
+          if (window.HAWKEYE && window.HAWKEYE.native && /^\/(room\/|situation-room\.html)/.test(x.pathname)) {
+            return 'https://hawkeye.com.ng' + x.pathname + x.search + x.hash;
+          }
+          const p = x.pathname === '/incidents.html' ? 'incident-reports.html' : (x.pathname.replace(/^\/+/, '') || 'index.html');
+          return p + x.search + x.hash;
+        } catch { return u; }
+      };
+      /* THE NETWORK AND THE RENDER ARE SEPARATE STEPS (FA-X8-2). Only a request
+         that failed may say "could not reach Hawkeye"; a fault in painting the
+         rows is ours, and is no reason to tell the reader their signal is gone. */
+      let alertFeed = null;
+      aget('/api/notifications').catch(() => null).then((d) => {
         if (!d || !d.items) { alertsFailed(); return; }
+        alertFeed = d;
+        paintAlerts();
+      });
+      document.addEventListener('hawkeye-lang', () => { if (alertFeed) paintAlerts(); });
+      function paintAlerts() {
+        const box = document.getElementById('home-alerts');
+        const d = alertFeed;
+        try { paintAlertRows(box, d); } catch (e) {
+          console.error('[home] alerts', e);
+          box.innerHTML = `<p class="home-empty"><a href="notifications.html">${esc(tt('index.all-alerts', 'All Alerts →'))}</a></p>`;
+        }
+      }
+      function paintAlertRows(box, d) {
         /**
          * UNREAD ONLY, and at most three.
          *
@@ -815,7 +1046,8 @@
           // panels; only one of them means the feature is working.
           box.innerHTML = d.items.length
             ? '<p class="home-empty" data-i18n-html="index.you-re-all-caught-up">You’re all caught up. <a href="notifications.html">See all alerts →</a></p>'
-            : '<p class="home-empty">Nothing yet — reports at your saved unit and status updates land here.</p>';
+            // Keyed (FA-HOME-4): this line stayed English on a Hausa Home.
+            : '<p class="home-empty" data-i18n="index.nothing-yet-alerts">Nothing yet — reports at your saved unit and status updates land here.</p>';
           /* PAINTED AFTER THE SWEEP. i18n.js applies data-i18n on load and on
              every language change; this panel is written later, from a fetch,
              so nothing had ever applied it and the line stayed English on a
@@ -824,8 +1056,8 @@
           return;
         }
         box.innerHTML = fresh.map((n) => `
-          <a class="alert-line" data-note="${n.id}" href="${esc(n.url || 'notifications.html')}"><span class="dot"></span>
-            <span>${esc(n.title)}</span><time>${timeAgo(n.created_at)}</time></a>`).join('');
+          <a class="alert-line" data-note="${esc(n.id)}" href="${esc(alertHref(n.url))}"><span class="dot"></span>
+            <span>${esc(n.title)}</span><time>${esc(agoText(n.created_at))}</time></a>`).join('');
         /**
          * Opening one marks it read, so it is gone from here next time — which
          * is the whole point of an unread list. keepalive, because the click
@@ -857,7 +1089,7 @@
             if (window.hawkeyeSetUnread) window.hawkeyeSetUnread(Math.max(0, unreadNow - 1));
           } catch { /* a badge must never break a navigation */ }
         }));
-      }).catch(alertsFailed);
+      }
 
       fetch('/api/ledger/entries?limit=3&fields=feed').then((r) => r.json()).then((rows) => {
         const last = rows.slice(-3).reverse();
@@ -988,7 +1220,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

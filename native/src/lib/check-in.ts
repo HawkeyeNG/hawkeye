@@ -17,6 +17,8 @@
  */
 import { BASE } from '@/lib/api';
 import { authedGet, getToken } from '@/lib/auth';
+import { t as i18nT } from '@/lib/i18n';
+import { trySubmitFix } from '@/lib/location';
 import { bust, fresh } from '@/lib/signed-in-cache';
 
 const ROOMS_KEY = '/api/my/rooms';
@@ -87,10 +89,87 @@ export async function checkIn(
       body: JSON.stringify({ pu_code: puCode, lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy }),
     });
     const body = await res.json().catch(() => ({}));
+    // A 401 is its own answer whatever the body calls it ('invalid_token',
+    // 'unauthorized', …): the fix and the unit were fine, the session was not.
+    if (res.status === 401) return { ok: false, error: 'signed_out' };
     if (res.status !== 200) return { ok: false, error: String(body?.error || 'failed') };
     bust(ROOMS_KEY);
     return { ok: true, standing: body.standing };
   } catch {
     return { ok: false, error: 'network' };
+  }
+}
+
+/**
+ * Every way a check-in can fail, as ONE vocabulary for every native caller.
+ *
+ * WHY THIS EXISTS (flow walkthrough R-CHECKIN-OFFLINE-BLAMES-GPS). Each caller
+ * used to print "Could not read your location. Move into the open" for every
+ * failure — so an agent with a perfect GPS fix and no data on election morning
+ * was sent outside to fix the one thing that was working. The two awaits fail
+ * for different reasons and are now told apart: the FIX (location, or a
+ * permission the agent refused) and the REQUEST (no connection, a session that
+ * lapsed, or a server refusal with its own code).
+ */
+export type CheckInFailure =
+  | 'denied'        // location permission refused
+  | 'location'      // permission fine, no usable fix (timeout, services off, error)
+  | 'network'       // the request never reached Hawkeye
+  | 'signed_out'    // 401
+  | 'no_fix'        // the server judged the fix unusable
+  | 'no_rooms'      // not on any roster (any more)
+  | 'no_such_unit'  // the unit is not in the register
+  | 'server';       // anything else the server said
+
+export type CheckInOutcome =
+  | { ok: true; standing: 'verified' | 'plausible' | 'unverified' }
+  | { ok: false; why: CheckInFailure };
+
+const SERVER_CODES: Record<string, CheckInFailure> = {
+  network: 'network',
+  signed_out: 'signed_out',
+  not_signed_in: 'signed_out',
+  no_fix: 'no_fix',
+  no_rooms: 'no_rooms',
+  no_such_unit: 'no_such_unit',
+};
+
+/**
+ * Take the fix, then check in at `puCode` — the two awaits every caller made,
+ * with their failures kept apart. The fix is the submit-grade one, same as
+ * the report itself uses, so a check-in never claims more than a report could.
+ */
+export async function checkInAt(puCode: string): Promise<CheckInOutcome> {
+  const got = await trySubmitFix();
+  if (!got.ok) return { ok: false, why: got.reason === 'denied' ? 'denied' : 'location' };
+  const r = await checkIn(puCode, got.fix);
+  if (r.ok) return r;
+  return { ok: false, why: SERVER_CODES[r.error] ?? 'server' };
+}
+
+/**
+ * The line to show for a failure. Resolved per call, never at import — see
+ * lib/i18n.tsx on why a module-level translated string freezes in English.
+ * The web keys are shared with app.js doFlowCheckIn, so both clients say the
+ * same sentence for the same failure.
+ */
+export function checkInFailureLine(why: CheckInFailure): string {
+  switch (why) {
+    case 'denied':
+      return i18nT('observe.check-in-denied');
+    case 'location':
+      return i18nT('n.app.report.result.check-in-failed');
+    case 'network':
+      return i18nT('observe.check-in-offline');
+    case 'signed_out':
+      return i18nT('n.lib.check-in.signed-out');
+    case 'no_fix':
+      return i18nT('observe.check-in-no-fix');
+    case 'no_rooms':
+      return i18nT('observe.check-in-not-member');
+    case 'no_such_unit':
+      return i18nT('observe.check-in-no-such-unit');
+    default:
+      return i18nT('n.lib.check-in.server-failed');
   }
 }

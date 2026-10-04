@@ -38,6 +38,46 @@ import { SafeScreen } from '@/components/safe-screen';
  */
 type Invite = { group_id: number; name: string; kind: string; contest: string; scope: string; scope_label?: string };
 
+/**
+ * WHAT A NON-OK ANSWER MEANS, the web's four answers (app/join.html). Every
+ * one of them — and a dropped connection — used to read "That invitation is no
+ * longer valid, ask for a fresh link", which sent someone with a perfectly good
+ * link off to ask for a new one because of a passing 500 or a lost signal.
+ *   missing  404 — mistyped, or the group was deleted
+ *   revoked  410 invite_revoked     expired  410 invite_expired
+ *   error    5xx — try again        offline  the request never got through
+ */
+type Spent = 'missing' | 'revoked' | 'expired' | 'error';
+async function spentState(r: Response): Promise<Spent> {
+  if (r.status === 404) return 'missing';
+  if (r.status === 410) {
+    const b = (await r.json().catch(() => null)) as { error?: string } | null;
+    return b?.error === 'invite_revoked' ? 'revoked' : 'expired';
+  }
+  return 'error';
+}
+const STOPPED: Record<Spent | 'offline' | 'held', [string, string]> = {
+  held: ['join.held-title', 'join.held-body'],
+  missing: ['join.not-recognised-title', 'join.not-recognised-body'],
+  revoked: ['join.withdrawn-title', 'join.fresh-link-body'],
+  expired: ['join.expired-title', 'join.fresh-link-body'],
+  error: ['join.went-wrong-title', 'join.try-again-moment'],
+  offline: ['join.went-wrong-title', 'join.check-connection'],
+};
+
+/* THE RACE BY ITS NAME, not its code ("GOV · Lagos") — the web's contest.*
+   keys; a by-election code (REP_BYE_GOMBE_2026) reads as its race's
+   by-election, the seat itself being in the scope beside it. */
+const CONTEST_KEY: Record<string, string> = {
+  PRES: 'contest.presidential', SEN: 'contest.senate', REP: 'contest.house-of-representatives',
+  GOV: 'contest.governorship', SHA: 'contest.state-house-of-assembly',
+};
+function contestName(code: string, t: (k: string, p?: Record<string, string>) => string): string {
+  if (CONTEST_KEY[code]) return t(CONTEST_KEY[code]);
+  const bye = /^([A-Z]+)_BYE_/.exec(code);
+  return bye && CONTEST_KEY[bye[1]] ? t('contest.by-election', { v0: t(CONTEST_KEY[bye[1]]), v1: '' }) : code;
+}
+
 /** One of the four disclosures, with its own icon so the list is scannable. */
 function Point({ icon, text }: { icon: keyof typeof Feather.glyphMap; text: string }) {
   const ui = useUi();
@@ -101,7 +141,13 @@ export default function JoinGroup() {
   /* 'held': the server answered 409 — the room's party label is still being
      verified by Hawkeye (or its name names a party it is not verified for), so
      it admits nobody yet. Not 'gone': the link is fine and will work later. */
-  const [state, setState] = useState<'loading' | 'ready' | 'gone' | 'held' | 'joining' | 'done'>('loading');
+  const [state, setState] = useState<'loading' | 'ready' | Spent | 'offline' | 'held' | 'joining' | 'done'>('loading');
+  /* The line under the Join button when a tap did not go through — a key, so
+     it follows a language change. It used to just put the button back with
+     nothing said, so the tap looked ignored. */
+  const [joinError, setJoinError] = useState<string | null>(null);
+  // Bumped by Try again: re-runs the preview below.
+  const [attempt, setAttempt] = useState(0);
   const code = String(token || '');
 
   useEffect(() => {
@@ -111,29 +157,41 @@ export default function JoinGroup() {
         const r = await fetch(`${BASE}/api/join/${encodeURIComponent(code)}`);
         if (!live) return;
         if (r.status === 409) { setState('held'); return; }
-        if (!r.ok) { setState('gone'); return; }
+        if (!r.ok) { const s = await spentState(r); if (live) setState(s); return; }
         setInvite(await r.json());
         setState('ready');
       } catch {
-        if (live) setState('gone');
+        if (live) setState('offline');
       }
     })();
     return () => { live = false; };
-  }, [code]);
+  }, [code, attempt]);
 
   const join = useCallback(async () => {
     if (!session) { router.push('/sign-in'); return; }
+    setJoinError(null);
     setState('joining');
     try {
       const r = await fetch(`${BASE}/api/join/${encodeURIComponent(code)}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
       });
-      setState(r.ok ? 'done' : r.status === 409 ? 'held' : 'gone');
+      if (r.ok) { setState('done'); return; }
+      if (r.status === 409) { setState('held'); return; }
+      // Withdrawn, expired or unknown since the preview: the invitation is spent.
+      if (r.status === 404 || r.status === 410) { setState(await spentState(r)); return; }
+      setState('ready');
+      setJoinError('join.alert-failed');
     } catch {
       setState('ready');
+      setJoinError('join.could-not-join-offline');
     }
   }, [code, session]);
+
+  const retry = useCallback(() => {
+    setState('loading');
+    setAttempt((a) => a + 1);
+  }, []);
 
   /**
    * "CONTINUE" GOES TO THE APP'S OWN MY GROUPS (app/my-groups.tsx) — where
@@ -161,16 +219,16 @@ export default function JoinGroup() {
     );
   }
 
-  if (state === 'gone' || state === 'held') {
+  if (state in STOPPED) {
+    const [title, body] = STOPPED[state as keyof typeof STOPPED];
+    // Only a failure that was not the link's fault is worth trying again.
+    const canRetry = state === 'error' || state === 'offline';
     return (
       <Frame>
         <Crest />
-        <Text className="text-center text-xl font-bold text-ink">
-          {state === 'held' ? t('join.held-title') : t('n.app.join.expired-title')}
-        </Text>
-        <Text className="pt-3 text-center text-sm leading-5 text-muted">
-          {state === 'held' ? t('join.held-body') : t('n.app.join.expired-body')}
-        </Text>
+        <Text className="text-center text-xl font-bold text-ink">{t(title)}</Text>
+        <Text className="pt-3 text-center text-sm leading-5 text-muted">{t(body)}</Text>
+        {canRetry ? <Action label={t('join.try-again')} onPress={retry} /> : null}
         <Action tone="quiet" label={t('n.app.join.back-home')} onPress={() => router.replace('/(tabs)')} />
       </Frame>
     );
@@ -202,7 +260,7 @@ export default function JoinGroup() {
         <Text className="pt-2 text-center text-sm leading-5 text-muted">{t('n.app.join.invited')}</Text>
         {invite?.contest ? (
           <Text className="pt-1 text-center text-sm text-muted">
-            {[invite.contest, invite.scope_label || invite.scope].filter(Boolean).join(' · ')}
+            {[contestName(invite.contest, t), invite.scope_label || invite.scope].filter(Boolean).join(' · ')}
           </Text>
         ) : null}
 
@@ -222,6 +280,9 @@ export default function JoinGroup() {
           busy={state === 'joining'}
           onPress={join}
         />
+        {joinError ? (
+          <Text accessibilityRole="alert" className="pt-3 text-center text-sm leading-5 text-warn-ink">{t(joinError)}</Text>
+        ) : null}
         {/* Declining is a real answer and needs somewhere to go. Without it the
             only way out of a forwarded invite is the system back gesture, which
             reads as "there is no way to say no". */}

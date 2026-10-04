@@ -363,10 +363,18 @@
    *
    * The server:
    *   1. matches name / pu_code / ward,
-   *   2. tries PREFIX first and only falls back to CONTAINS when that finds
-   *      nothing (a leading wildcard cannot use an index, so it full-scans),
-   *   3. orders by exact-code, then name-prefix, then code-prefix, then the
-   *      rest, and alphabetically by name inside each tier.
+   *   2. tries PREFIX first, and when that does not fill the page, appends the
+   *      CONTAINS page after it (a leading wildcard cannot use an index, so it
+   *      full-scans — but only when the cheap seek left room),
+   *   3. orders each page by exact-code, then name-prefix, then code-prefix,
+   *      then the rest, and alphabetically by name inside each tier.
+   *
+   * THE APPEND IS THE FIX FOR "17, Oziegbe St." (flow walkthrough REP-UNIT-01).
+   * Contains used to run only when prefix found NOTHING, so "Oziegbe" answered
+   * "1 match" (Oziegbe/Akinbola Junction) and hid every "NN, Oziegbe St." unit
+   * — the usual Lagos house-number-first form. A count line that reads as
+   * complete told the observer their unit was missing. Same change in the
+   * server route and in native/src/lib/register-pack.ts; the three must agree.
    *
    * Names and wards are compared FOLDED on both sides (the server has
    * name_fold/ward_fold columns for exactly this); codes are compared raw,
@@ -383,8 +391,7 @@
 
     var qf = fold(term);
     var N = pack.unitCount;
-    var hit = new Uint8Array(N);
-    var found = [];
+    var hit, found;
 
     function addUnit(i) { if (!hit[i]) { hit[i] = 1; found.push(i); } }
     function addGroup(g) {
@@ -424,36 +431,51 @@
       }
     }
 
-    collect(true);
-    if (!found.length) collect(false);
-
     var codeAt = function (i) { return pack.codes.substr(i * CODE_STRIDE, 12); };
     var nameAt = function (i) { return displayName(pack, i); };
     var foldedAt = function (i) { return pack.folded.slice(pack.fOffs[i], pack.fOffs[i + 1] - 1); };
 
-    var ranked = found.map(function (i) {
-      var code = codeAt(i);
-      var rank = 3;
-      if (code === qRaw) rank = 0;
-      else if (qf && foldedAt(i).lastIndexOf(qf, 0) === 0) rank = 1;
-      else if (code.lastIndexOf(qRaw, 0) === 0) rank = 2;
-      return { i: i, rank: rank, name: nameAt(i) };
-    });
+    /** One server query: match, ORDER BY, LIMIT — as unit indices. */
+    function page(prefixOnly) {
+      hit = new Uint8Array(N);
+      found = [];
+      collect(prefixOnly);
+      var ranked = found.map(function (i) {
+        var code = codeAt(i);
+        var rank = 3;
+        if (code === qRaw) rank = 0;
+        else if (qf && foldedAt(i).lastIndexOf(qf, 0) === 0) rank = 1;
+        else if (code.lastIndexOf(qRaw, 0) === 0) rank = 2;
+        return { i: i, rank: rank, name: nameAt(i) };
+      });
+      // rank, then name — the server's ORDER BY, and SQLite's BINARY collation is
+      // JavaScript's default string comparison, so the tie-break agrees too.
+      ranked.sort(function (a, b) {
+        if (a.rank !== b.rank) return a.rank - b.rank;
+        if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+        // Units do share names, and the server breaks that tie on pu_code so the
+        // two implementations return the same page rather than the same set.
+        var ca = codeAt(a.i), cb = codeAt(b.i);
+        return ca < cb ? -1 : ca > cb ? 1 : 0;
+      });
+      return ranked.slice(0, limit).map(function (r) { return r.i; });
+    }
 
-    // rank, then name — the server's ORDER BY, and SQLite's BINARY collation is
-    // JavaScript's default string comparison, so the tie-break agrees too.
-    ranked.sort(function (a, b) {
-      if (a.rank !== b.rank) return a.rank - b.rank;
-      if (a.name !== b.name) return a.name < b.name ? -1 : 1;
-      // Units do share names, and the server breaks that tie on pu_code so the
-      // two implementations return the same page rather than the same set.
-      var ca = codeAt(a.i), cb = codeAt(b.i);
-      return ca < cb ? -1 : ca > cb ? 1 : 0;
-    });
+    // Prefix page first; the contains page fills whatever room it left, in its
+    // own order, without repeating a unit the prefix page already listed.
+    var picked = page(true);
+    if (picked.length < limit) {
+      var seen = {};
+      picked.forEach(function (i) { seen[i] = 1; });
+      var more = page(false);
+      for (var m = 0; m < more.length && picked.length < limit; m++) {
+        if (!seen[more[m]]) picked.push(more[m]);
+      }
+    }
 
     var out = [];
-    for (var n2 = 0; n2 < ranked.length && out.length < limit; n2++) {
-      out.push(materialise(pack, ranked[n2].i, opts.stateName));
+    for (var n2 = 0; n2 < picked.length; n2++) {
+      out.push(materialise(pack, picked[n2], opts.stateName));
     }
     // The server reports truncation as "we filled the page", not "more exist".
     return { units: out, truncated: out.length === limit, tookMs: now() - t0 };
@@ -802,6 +824,32 @@
       return out.length ? out : null;
     },
 
+    /**
+     * One unit by its code, from its state's pack — null if that pack is not
+     * in memory. A pu_code IS its address (state-lga-ward-serial), so this is
+     * a walk over one state's groups, not a search. The report flow uses it to
+     * offer the observer's saved unit with no signal, when the server's full
+     * row is not to hand.
+     */
+    unit: function (puCode) {
+      var m = /^(\d\d)-(\d\d)-(\d\d)-(\d\d\d)$/.exec(String(puCode || '').trim());
+      if (!m) return null;
+      var p = loaded[m[1]];
+      if (!p) return null;
+      var lga = +m[2], ward = +m[3], serial = +m[4];
+      var startIx = 0;
+      for (var g = 0; g < p.groups.counts.length; g++) {
+        var n = p.groups.counts[g];
+        if (p.groups.lgaCodes[g] === lga && p.groups.wardCodes[g] === ward) {
+          for (var k = 0; k < n; k++) {
+            if (p.serials[startIx + k] === serial) return materialise(p, startIx + k, p.stateName);
+          }
+        }
+        startIx += n;
+      }
+      return null;
+    },
+
     /** What the UI needs to say: ready / downloading / absent, and how big. */
     stateStatus: function (code) {
       if (!code) return Promise.resolve({ state: 'unknown' });
@@ -830,7 +878,12 @@
           return p;
         });
       });
-      pending[state]['finally'](function () { delete pending[state]; });
+      // then(done, done), not finally(): finally() returns a NEW promise that
+      // re-rejects, and nobody holds it — every offline miss on a state not on
+      // the phone surfaced as an unhandled "Failed to fetch". Callers still get
+      // the rejection from the promise returned below.
+      var done = function () { delete pending[state]; };
+      pending[state].then(done, done);
       return pending[state];
     },
 

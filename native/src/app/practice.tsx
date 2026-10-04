@@ -99,6 +99,10 @@ type Unit = {
   ward: string;
   lga: string;
   state: string;
+  /** The unit's own Senate / House seats (SELECT *; pack rows carry them too) —
+   *  the race picker confirms them instead of asking, as report/result.tsx does. */
+  senatorial?: string | null;
+  federal_constituency?: string | null;
   // Tier fields ride along (the API SELECT *s the register row) so browse rows
   // can carry the same location badge the nearby rows and the web show.
   coords_source?: string | null;
@@ -1717,6 +1721,7 @@ export default function Practice() {
               value={race}
               onSelect={setRace}
               lockedState={lockedState}
+              unitSeats={unit}
               allowClosed
             />
           </ScrollView>

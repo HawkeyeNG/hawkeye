@@ -11,7 +11,7 @@ import { useHideOnScroll } from '@/hooks/use-hide-on-scroll';
 import { BASE } from '@/lib/api';
 import { authedGet } from '@/lib/auth';
 import { authedSend } from '@/lib/authed-send';
-import { forgetRooms, myRooms, type MyRoom } from '@/lib/check-in';
+import { checkInFailureLine, forgetRooms, myRooms, type CheckInFailure, type MyRoom } from '@/lib/check-in';
 import { t as i18nT } from '@/lib/i18n';
 import { trySubmitFix } from '@/lib/location';
 import { useUi } from '@/lib/theme';
@@ -70,8 +70,20 @@ type Groups = { member: Member[]; managing: Managed[] };
 
 const kindLabel = (kind: string) =>
   kind === 'cso' ? i18nT('my-groups.kind-cso') : i18nT('my-groups.kind-campaign');
+/* THE RACE BY ITS NAME, not its code ("GOV · Lagos") — the web's contest.*
+   keys, as app/my-groups.html; a by-election code reads as its race's
+   by-election (the seat is in the scope beside it). */
+const CONTEST_KEY: Record<string, string> = {
+  PRES: 'contest.presidential', SEN: 'contest.senate', REP: 'contest.house-of-representatives',
+  GOV: 'contest.governorship', SHA: 'contest.state-house-of-assembly',
+};
+const contestName = (code: string) => {
+  if (CONTEST_KEY[code]) return i18nT(CONTEST_KEY[code]);
+  const bye = /^([A-Z]+)_BYE_/.exec(code);
+  return bye && CONTEST_KEY[bye[1]] ? i18nT('contest.by-election', { v0: i18nT(CONTEST_KEY[bye[1]]), v1: '' }) : code;
+};
 const subLine = (g: { kind: string; contest: string; scope: string | null; scope_label?: string | null }) =>
-  [kindLabel(g.kind), g.contest, g.scope_label || g.scope].filter(Boolean).join(' · ');
+  [kindLabel(g.kind), g.contest ? contestName(g.contest) : '', g.scope_label || g.scope].filter(Boolean).join(' · ');
 const roleLine = (role: string | null) =>
   role === 'owner' ? i18nT('n.app.my-groups.you-own')
     : role === 'coordinator' ? i18nT('n.app.my-groups.you-coordinate')
@@ -127,9 +139,14 @@ export default function MyGroups() {
   const [rooms, setRooms] = useState<MyRoom[]>([]);
   /** `${verb}:${groupId}` while that request is in flight. */
   const [busy, setBusy] = useState<string | null>(null);
-  const [confirm, setConfirm] = useState<{ kind: 'leave' | 'refuse'; id: number; name: string } | null>(null);
+  const [confirm, setConfirm] = useState<{ kind: 'leave' | 'refuse' | 'decline'; id: number; name: string } | null>(null);
   const [room, setRoom] = useState<{ name: string; url: string } | null>(null);
-  const [checkIn, setCheckIn] = useState<Record<number, 'working' | 'failed' | undefined>>({});
+  /* Why a check-in did not land, each in its own words — lib/check-in.ts's
+     ONE vocabulary (CheckInFailure) and its line (checkInFailureLine), so this
+     screen says what the report flow says for the same failure. It used to be
+     the location line for every failure — telling an agent with a good fix
+     and no data to go and stand in the open. */
+  const [checkIn, setCheckIn] = useState<Record<number, 'working' | CheckInFailure | undefined>>({});
   const [link, setLink] = useState('');
   const [linkBad, setLinkBad] = useState(false);
 
@@ -191,20 +208,33 @@ export default function MyGroups() {
     setCheckIn((c) => ({ ...c, [id]: 'working' }));
     const got = await trySubmitFix();
     if (!got.ok) {
-      setCheckIn((c) => ({ ...c, [id]: 'failed' }));
+      setCheckIn((c) => ({ ...c, [id]: got.reason === 'denied' ? 'denied' : 'location' }));
       return;
     }
+    let r;
     try {
-      const r = await authedSend('POST', `/api/groups/${id}/check-in`, {
+      r = await authedSend<{ error?: string }>('POST', `/api/groups/${id}/check-in`, {
         pu_code: puCode, lat: got.fix.lat, lng: got.fix.lng, accuracy: got.fix.accuracy,
       });
-      if (r.status !== 200) throw new Error(String(r.status));
-      forgetRooms();
-      setRooms(await myRooms());
-      setCheckIn((c) => ({ ...c, [id]: undefined }));
     } catch {
-      setCheckIn((c) => ({ ...c, [id]: 'failed' }));
+      setCheckIn((c) => ({ ...c, [id]: 'network' }));
+      return;
     }
+    if (r.status !== 200) {
+      // This room's own route (routes/groups.js recordCheckIn) — its codes,
+      // in the shared vocabulary. not_a_member is "no rooms" for THIS room.
+      const code = r.body?.error;
+      const why: CheckInFailure = r.status === 401 ? 'signed_out'
+        : code === 'not_a_member' ? 'no_rooms'
+          : code === 'no_fix' || code === 'no_such_unit' ? code
+            : 'server';
+      setCheckIn((c) => ({ ...c, [id]: why }));
+      return;
+    }
+    // Recorded. A list that cannot be re-read now is stale, not a failed check-in.
+    forgetRooms();
+    try { setRooms(await myRooms()); } catch { /* the next focus re-reads it */ }
+    setCheckIn((c) => ({ ...c, [id]: undefined }));
   };
 
   const openLink = () => {
@@ -256,8 +286,10 @@ export default function MyGroups() {
               : i18nT('n.app.report.result.check-in')}
           </Text>
         </Pressable>
-        {state === 'failed' ? (
-          <Text className="pt-2 text-xs text-warn-ink">{i18nT('n.app.report.result.check-in-failed')}</Text>
+        {state && state !== 'working' ? (
+          <Text className="pt-2 text-xs text-warn-ink">
+            {checkInFailureLine(state)}
+          </Text>
         ) : null}
       </View>
     );
@@ -319,7 +351,8 @@ export default function MyGroups() {
               label={i18nT('my-groups.not-where')}
               icon="map-pin"
               busy={busy === `decline:${g.id}`}
-              onPress={() => act('decline', g.id, 'my-groups.send-failed')}
+              // Asked first: there is no member-side way to take it back.
+              onPress={() => setConfirm({ kind: 'decline', id: g.id, name: g.name })}
             />
           ) : null}
           <Btn
@@ -350,7 +383,14 @@ export default function MyGroups() {
 
   return (
     <View className="flex-1 bg-surface">
-      <ScreenHeader title={i18nT('my-groups.your-groups')} translateY={translateY} onClose={() => router.back()} />
+      {/* Home when there is nothing to go back to: an invite link opens the
+          join screen first, and its Continue REPLACES it with this one, so a
+          bare back() had nowhere to go and the X did nothing. */}
+      <ScreenHeader
+        title={i18nT('my-groups.your-groups')}
+        translateY={translateY}
+        onClose={() => (router.canGoBack() ? router.back() : router.replace('/(tabs)'))}
+      />
       <Animated.ScrollView
         onScroll={onScroll}
         scrollEventThrottle={scrollEventThrottle}
@@ -428,25 +468,34 @@ export default function MyGroups() {
 
       <ConfirmSheet
         visible={!!confirm}
-        icon={confirm?.kind === 'leave' ? 'log-out' : 'x-circle'}
+        icon={confirm?.kind === 'leave' ? 'log-out' : confirm?.kind === 'decline' ? 'map-pin' : 'x-circle'}
         danger={confirm?.kind === 'leave'}
-        title={confirm?.kind === 'leave' ? i18nT('my-groups.leave') : i18nT('my-groups.no-thanks')}
+        title={confirm?.kind === 'leave' ? i18nT('my-groups.leave')
+          : confirm?.kind === 'decline' ? i18nT('my-groups.not-where') : i18nT('my-groups.no-thanks')}
         body={
           confirm?.kind === 'leave'
             ? i18nT('my-groups.leave-confirm', { name: confirm?.name ?? '' })
-            : i18nT('my-groups.refuse-confirm', { name: confirm?.name ?? '' })
+            : confirm?.kind === 'decline'
+              /* There is no member-side "un-decline" (the coordinator
+                 reassigns), so a mis-tap used to stand until somebody
+                 noticed. Same words as the web. */
+              ? i18nT('my-groups.decline-confirm', { name: confirm?.name ?? '' })
+              : i18nT('my-groups.refuse-confirm', { name: confirm?.name ?? '' })
         }
-        confirmLabel={confirm?.kind === 'leave' ? i18nT('my-groups.leave') : i18nT('my-groups.no-thanks')}
+        confirmLabel={confirm?.kind === 'leave' ? i18nT('my-groups.leave')
+          : confirm?.kind === 'decline' ? i18nT('my-groups.decline-ok') : i18nT('my-groups.no-thanks')}
         cancelLabel={i18nT('common.cancel')}
         busy={!!busy}
         onCancel={() => setConfirm(null)}
         onConfirm={() => {
           const c = confirm;
           setConfirm(null);
+          if (!c) return;
+          if (c.kind === 'decline') { act('decline', c.id, 'my-groups.send-failed'); return; }
           /* Refusing REMOVES the row, the same endpoint as leaving: a campaign
              that could keep a list of who said no would have been handed the
              very fact the person withheld. */
-          if (c) act('leave', c.id, c.kind === 'leave' ? 'my-groups.leave-failed' : 'my-groups.refuse-failed');
+          act('leave', c.id, c.kind === 'leave' ? 'my-groups.leave-failed' : 'my-groups.refuse-failed');
         }}
       />
 

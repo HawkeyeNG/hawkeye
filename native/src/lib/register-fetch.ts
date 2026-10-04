@@ -15,7 +15,7 @@
  * See docs/PU-SEARCH-2027.md.
  */
 import {
-  loadIndex, statesOffline, lgasOffline, wardsOffline, unitsOffline,
+  loadIndex, statesOffline, lgasOffline, wardsOffline, unitsOfflineHeld,
 } from '@/lib/register';
 
 /** A Response-shaped object, so callers keep using `.json()` and `.ok`. */
@@ -63,7 +63,9 @@ export async function regFetch(url: string, init?: RequestInit): Promise<Respons
         const v = wardsOffline(state, lga);
         if (v && v.length) return jsonResponse(v);
       } else if (path.endsWith('/units') && state && lga && ward) {
-        const v = unitsOffline(state, lga, ward);
+        // Waits for a pack STORED on the phone but not yet decoded — the first
+        // offline ward pick used to answer 0 units while it loaded (REP-OFF-02).
+        const v = await unitsOfflineHeld(state, lga, ward);
         if (v && v.length) return jsonResponse({ units: v });
       }
     }

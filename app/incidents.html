@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199">
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -138,7 +138,7 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -358,7 +358,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     // Escape ALL HTML metacharacters (not just '<') so observer-supplied text is
@@ -997,35 +997,88 @@
         /* The modal's heading says which ending this is; the attribute goes too,
            so a language change repaints the right one. */
         const doneTitle = (key, en) => { $('done-title').setAttribute('data-i18n', key); $('done-title').textContent = T(key, en); };
+        /**
+         * PARK IT, THE WAY A RESULT IS PARKED (flow walkthrough REP-INC-01/02).
+         *
+         * The outbox (outbox.js) holds a 401 until this device signs in again
+         * and retries 5xx/408/429 on its own backoff; a result report has used
+         * it for all three all along. An incident used it only for a network
+         * failure: an expired session hid the form and linked AWAY from it —
+         * description and photo gone, nothing queued — and a 500 showed a raw
+         * code and made the observer stay and retry. Now all of those end on
+         * the same "Saved on your phone" modal, with the line that says what
+         * happens next. Returns false when there is no outbox to hold it.
+         */
+        const parkIncident = async (key, en, notBefore) => {
+          if (!window.HawkeyeOutbox) return false;
+          const fields = {};
+          for (const [k, v] of fd.entries()) if (typeof v === 'string') fields[k] = v;
+          await window.HawkeyeOutbox.queue({
+            kind: 'incident', url: '/api/incidents', label: `incident · ${kind}`, deviceId: headers['x-device-id'], fields,
+            files: files.map((f) => ['media', f, f.name || 'media']),
+            ...(notBefore ? { notBefore } : {}),
+          });
+          keepCopies(); // once, at queueing — never again when the outbox sends it
+          clearIncidentDraft();
+          $('desc').value = ''; attachments.length = 0; renderPreview(); resetKind();
+          $('status').textContent = T(key, en);
+          // The same ending as a sent report — the modal and the card — in its
+          // waiting state: "Saved on your phone", no claim that it was sent.
+          doneTitle('receipt.title-pending', 'Saved on your phone');
+          $('done-msg').setAttribute('data-i18n', key);
+          $('done-msg').textContent = T(key, en);
+          $('done-modal').hidden = false;
+          showCopy(null);
+          $('btn-submit').disabled = false;
+          return true;
+        };
         let res;
         try {
           res = await postWithProgress('/api/incidents', fd, headers, total);
         } catch (netErr) {
           // Offline: queue it — outbox.js sends it on reconnect — rather than
           // lose what the observer just recorded.
-          if (!window.HawkeyeOutbox) throw netErr;
-          const fields = {};
-          for (const [k, v] of fd.entries()) if (typeof v === 'string') fields[k] = v;
-          await window.HawkeyeOutbox.queue({
-            kind: 'incident', url: '/api/incidents', label: `incident · ${kind}`, deviceId: headers['x-device-id'], fields,
-            files: files.map((f) => ['media', f, f.name || 'media']),
-          });
-          keepCopies(); // once, at queueing — never again when the outbox sends it
-          $('desc').value = ''; attachments.length = 0; renderPreview();
-          $('status').textContent = T('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.');
-          // The same ending as a sent report — the modal and the card — in its
-          // waiting state: "Saved on your phone", no claim that it was sent.
-          doneTitle('receipt.title-pending', 'Saved on your phone');
-          $('done-msg').setAttribute('data-i18n', 'incidents.saved-offline');
-          $('done-msg').textContent = T('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.');
-          $('done-modal').hidden = false;
-          showCopy(null);
-          $('btn-submit').disabled = false;
+          if (!(await parkIncident('incidents.saved-offline', 'Saved offline — this report will send automatically when you are back online.'))) throw netErr;
           return;
         }
         const body = await res.json().catch(() => ({}));
+        if (res.status !== 201 && (window.HAWKEYE && window.HAWKEYE.authRejected
+          ? window.HAWKEYE.authRejected(res.status, body) : res.status === 401)) {
+          // Only our server refusing the token ends the session (design audit X1).
+          localStorage.removeItem('hawkeye_token');
+          if (await parkIncident('incidents.saved-signed-out', 'You are signed out. Your report is saved on this phone and sends when you sign in again.')) {
+            // The way back in, under the line that says why: sign-in returns
+            // here (intent=incident), and the outbox sends it from any page.
+            const back = document.createElement('a');
+            back.id = 'done-signin';
+            back.className = 'link';
+            back.href = 'observe.html?intent=incident';
+            back.textContent = T('incidents.sign-in-again', 'Sign in again →');
+            const old = $('done-signin');
+            if (old) old.remove();
+            $('done-msg').after(back);
+            $('form-card').hidden = true; $('need-auth').hidden = false;
+            return;
+          }
+          $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=incident' });
+          $('form-card').hidden = true; $('need-auth').hidden = false;
+          $('btn-submit').disabled = false;
+          return;
+        }
+        // The report is fine, the server is not: busy, rate-limited, down.
+        if (res.status >= 500 || res.status === 408 || res.status === 425 || res.status === 429) {
+          const O = window.HawkeyeOutbox;
+          let ra = null;
+          try { ra = (res.headers && res.headers.get && res.headers.get('retry-after')) || null; } catch { /* unexposed */ }
+          if (!ra && body && body.retryAfterS != null) ra = String(body.retryAfterS);
+          const notBefore = O && O.retryDelayMs ? Date.now() + O.retryDelayMs(res.status, ra, 0) : 0;
+          if (await parkIncident('incidents.server-busy-saved', 'Hawkeye is busy right now — your report is saved on this phone and sends automatically.', notBefore)) return;
+        }
+        const doneSignin = $('done-signin');
+        if (doneSignin) doneSignin.remove();
         if (res.status === 201) {
           keepCopies();
+          clearIncidentDraft();
           $('desc').value = ''; attachments.length = 0; renderPreview();
           $('status').textContent = '';
           // One whole sentence per branch, not fragments concatenated: clause
@@ -1045,12 +1098,6 @@
           showCopy(body.id != null ? body.id : 'sent');
           $('btn-submit').disabled = false;
           return; // the modal IS the outcome; skip the inline status/scroll below
-        } else if (window.HAWKEYE && window.HAWKEYE.authRejected
-          ? window.HAWKEYE.authRejected(res.status, body) : res.status === 401) {
-          // Only our server refusing the token ends the session (design audit X1).
-          localStorage.removeItem('hawkeye_token');
-          $('status').innerHTML = T('common.session-expired-register-again', 'Session expired — <a href="{v0}">register your device again →</a>', { v0: 'observe.html?intent=incident' });
-          $('form-card').hidden = true; $('need-auth').hidden = false;
         } else {
           $('status').textContent = body.error === 'invalid_kind' ? KIND_REQUIRED()
             : body.error === 'empty_report' ? T('incidents.add-media-or-description', 'Add a photo/video or a description.')
@@ -1119,15 +1166,72 @@
     // Show the right panel immediately — never gate it behind a network call.
     if (token) { $('form-card').hidden = false; } else { $('need-auth').hidden = false; }
     loadFeed();
-    (async () => {
-      const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => Object.keys(kindLabels()));
+    /**
+     * THE KINDS ARE PAINTED, NOT WRITTEN ONCE (flow walkthrough REP-LANG-03).
+     *
+     * The options were built once, when /api/incidents/kinds answered, in
+     * whatever language had loaded by then — and nothing repainted them. A
+     * Hausa reader got "Violence / Ballot snatching / …" on a Hausa page, and
+     * this is the one question the report cannot be filed without. Now the
+     * list is repainted on every hawkeye-lang — which i18n.js fires once the
+     * dictionary is in place, as well as on a switch — keeping the reader's
+     * choice (the frozen-at-import class of bug).
+     */
+    let KINDS = Object.keys(kindLabels());
+    function paintKinds() {
+      const sel = $('kind');
+      const was = sel.value;
       // The placeholder is re-inserted FIRST and stays selected. Writing the
       // API's kinds straight into innerHTML is what pre-selected 'violence' in
       // the first place — the list arrives ordered, and option 0 of a <select>
       // is selected whether or not anyone chose it.
-      $('kind').innerHTML = `<option value="">${esc(KIND_PLACEHOLDER())}</option>`
-        + kinds.map((k) => `<option value="${esc(k)}">${esc(kindLabels()[k] || k)}</option>`).join('');
-      $('kind').value = '';
+      sel.innerHTML = `<option value="">${esc(KIND_PLACEHOLDER())}</option>`
+        + KINDS.map((k) => `<option value="${esc(k)}">${esc(kindLabels()[k] || k)}</option>`).join('');
+      sel.value = KINDS.includes(was) ? was : '';
+    }
+    document.addEventListener('hawkeye-lang', paintKinds);
+
+    /**
+     * THE TYPED PART SURVIVES A RELOAD (flow walkthrough REP-INC-03).
+     *
+     * Kind and description were in the form only, so a reload — or Android
+     * killing a backgrounded WebView — emptied it. Text is cheap to keep; the
+     * attachments are not kept (they are still in the gallery, or the camera is
+     * one tap away). localStorage rather than sessionStorage, because a killed
+     * Lite WebView loses the session; scoped to the account by the token's
+     * `sub`, and dropped after 12 hours or once the report is handed off.
+     */
+    const DRAFT_KEY = 'hk_incident_draft1';
+    const draftOwner = () => {
+      try { return String(JSON.parse(atob(String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || ''); } catch { return ''; }
+    };
+    function saveIncidentDraft() {
+      try {
+        const kind = $('kind').value, desc = $('desc').value;
+        if (!kind && !desc.trim()) { localStorage.removeItem(DRAFT_KEY); return; }
+        localStorage.setItem(DRAFT_KEY, JSON.stringify({ sub: draftOwner(), at: Date.now(), kind, desc }));
+      } catch { /* private mode: the form still works */ }
+    }
+    function clearIncidentDraft() {
+      try { localStorage.removeItem(DRAFT_KEY); } catch { /* nothing kept */ }
+    }
+    function restoreIncidentDraft() {
+      try {
+        const d = JSON.parse(localStorage.getItem(DRAFT_KEY) || 'null');
+        if (!d) return;
+        if (d.sub !== draftOwner() || Date.now() - (d.at || 0) > 12 * 3600 * 1000) { clearIncidentDraft(); return; }
+        // Never over something already typed since the page opened.
+        if (!$('desc').value && d.desc) $('desc').value = d.desc;
+        if (!$('kind').value && d.kind && KINDS.includes(d.kind)) $('kind').value = d.kind;
+      } catch { /* unreadable — start empty */ }
+    }
+    $('desc').addEventListener('input', saveIncidentDraft);
+    $('kind').addEventListener('change', saveIncidentDraft);
+    (async () => {
+      const kinds = await fetch('/api/incidents/kinds').then((r) => r.json()).catch(() => null);
+      if (Array.isArray(kinds) && kinds.length) KINDS = kinds;
+      paintKinds();
+      restoreIncidentDraft();
     })();
   </script>
   <script src="shell.js?v=2" defer></script>

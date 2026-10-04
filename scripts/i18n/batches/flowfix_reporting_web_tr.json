@@ -1,0 +1,234 @@
+{
+  "observe.the-fct": { "ha": "FCT", "ig": "FCT", "yo": "FCT" },
+  "observe.state-label": { "ha": "Jihar {state}", "ig": "Steeti {state}", "yo": "Ìpínlẹ̀ {state}" },
+  "observe.scope-sen": {
+    "ha": "Gundumar Sanata ta {district}, {state}",
+    "ig": "Mpaghara Sineti {district}, {state}",
+    "yo": "Ẹkùn Sẹ́nétọ̀ {district}, {state}"
+  },
+  "observe.scope-sen-missing": {
+    "ha": "{state} — babu gundumar sanata a rajista",
+    "ig": "{state} — mpaghara sineti adịghị na ndekọ",
+    "yo": "{state} — ẹkùn sẹ́nétọ̀ kò sí nínú àkọsílẹ̀"
+  },
+  "observe.scope-rep": {
+    "ha": "Mazaɓar Tarayya ta {district}, {state}",
+    "ig": "Mpaghara Gọọmentị Etiti {district}, {state}",
+    "yo": "Ẹkùn Àpapọ̀ {district}, {state}"
+  },
+  "observe.scope-rep-missing": {
+    "ha": "{state} — babu mazaɓar tarayya a rajista",
+    "ig": "{state} — mpaghara gọọmentị etiti adịghị na ndekọ",
+    "yo": "{state} — ẹkùn àpapọ̀ kò sí nínú àkọsílẹ̀"
+  },
+  "observe.scope-gov": {
+    "ha": "Zaɓen Gwamnan Jihar {state}",
+    "ig": "Ntuli aka Gọvanọ Steeti {state}",
+    "yo": "Ìdìbò Gómìnà Ìpínlẹ̀ {state}"
+  },
+  "observe.scope-sha": {
+    "ha": "Majalisar Dokokin Jihar {state} (mazaɓar da ta ƙunshi ƙaramar hukumar {lga})",
+    "ig": "Ụlọ Omebe Iwu Steeti {state} (mpaghara gụnyere LGA {lga})",
+    "yo": "Ilé Ìgbìmọ̀ Aṣòfin Ìpínlẹ̀ {state} (ẹkùn tí ó bo ìjọba ìbílẹ̀ {lga})"
+  },
+  "observe.scope-pres": {
+    "ha": "Shugaban Ƙasa — zaɓen ƙasa baki ɗaya",
+    "ig": "Onye isi ala — ntuli aka mba niile",
+    "yo": "Ààrẹ — ìdìbò orílẹ̀-èdè"
+  },
+  "observe.reporting-opens-when-polls-open": {
+    "ha": "Kai rahoton sakamako zai buɗe idan an buɗe zaɓe — {when}.",
+    "ig": "Ịkọ akụkọ nsonaazụ ga-emeghe mgbe ntuli aka malitere — {when}.",
+    "yo": "Ìròyìn èsì yóò ṣí nígbà tí ìdìbò bá bẹ̀rẹ̀ — {when}."
+  },
+  "observe.you-are-reporting-election": {
+    "ha": "Kana kai rahoto: {scope} — {election}{when}.",
+    "ig": "Ị na-akọ akụkọ: {scope} — {election}{when}.",
+    "yo": "O ń ròyìn: {scope} — {election}{when}."
+  },
+  "observe.you-are-reporting": {
+    "ha": "Kana kai rahoto: {scope}.",
+    "ig": "Ị na-akọ akụkọ: {scope}.",
+    "yo": "O ń ròyìn: {scope}."
+  },
+  "observe.choose-election-before-continuing": {
+    "ha": "Zaɓi zaɓen da kake kai rahoto kafin ka ci gaba.",
+    "ig": "Họrọ ntuli aka ị na-akọ akụkọ ya tupu ị gaa n'ihu.",
+    "yo": "Yan ìdìbò tí o ń ròyìn rẹ̀ kí o tó tẹ̀síwájú."
+  },
+  "observe.no-race-open-here": {
+    "ha": "Babu zaɓen da aka buɗe don rahoto a wannan rumfa tukuna. Kowane zaɓe yana nuna ranar da zai buɗe.",
+    "ig": "Enweghị ntuli aka emepere maka akụkọ n'ebe a ugbu a. Ntuli aka ọ bụla na-egosi ụbọchị ọ ga-emeghe.",
+    "yo": "Kò sí ìdìbò tí ó ṣí sílẹ̀ fún ìròyìn ní ibùdó yìí síbẹ̀. Ìdìbò kọ̀ọ̀kan fi ọjọ́ tí yóò ṣí hàn."
+  },
+  "observe.near-me-offline": {
+    "ha": "Babu intanet don neman na kusa. Yi bincike ko duba rajista a ƙasa.",
+    "ig": "Enweghị njikọ maka nke dị nso. Chọọ ma ọ bụ lelee ndekọ dị n'okpuru.",
+    "yo": "Kò sí ìsopọ̀ fún tòsí mi. Wá a tàbí wo àkọsílẹ̀ nísàlẹ̀."
+  },
+  "observe.unit-list-not-on-phone": {
+    "ha": "Jerin rumfunan bai shigo wannan wayar ba tukuna. Haɗa intanet sau ɗaya don saukewa, sannan zai yi aiki ba tare da intanet ba.",
+    "ig": "Ndepụta ebe ntuli aka adịghị na ekwentị a ugbu a. Jikọọ otu ugboro ka ibudata ya, mgbe ahụ ọ ga-arụ ọrụ na-enweghị ịntanetị.",
+    "yo": "Àkójọ ibùdó kò tí ì sí lórí fóònù yìí. Sopọ̀ lẹ́ẹ̀kan láti gbà á sílẹ̀, lẹ́yìn náà yóò ṣiṣẹ́ láìsí ìntánẹ́ẹ̀tì."
+  },
+  "observe.could-not-load-units": {
+    "ha": "An kasa loda rumfunan wannan mazaɓa.",
+    "ig": "Enweghị ike ibulite ebe ntuli aka nke wọọdụ a.",
+    "yo": "Kò ṣeé ṣe láti gbé àwọn ibùdó wọ́ọ̀dù yìí wá."
+  },
+  "observe.no-units-in-this-ward": {
+    "ha": "Babu rumfunan da aka jera a wannan mazaɓa.",
+    "ig": "Enweghị ebe ntuli aka edepụtara maka wọọdụ a.",
+    "yo": "Kò sí ibùdó tí a kọ sílẹ̀ fún wọ́ọ̀dù yìí."
+  },
+  "observe.tier-notice-crowd": {
+    "ha": "◌ Jama'a sun tabbatar da wurin wannan rumfa, amma ba a tabbatar da shi a hukumance ba tukuna.",
+    "ig": "◌ Ọha mmadụ kwadoro ebe ọnọdụ a dị, mana a kwadobeghị ya n'ụzọ gọọmentị.",
+    "yo": "◌ Àwọn ènìyàn ti fìdí ibi tí ibùdó yìí wà múlẹ̀, ṣùgbọ́n a kò tí ì fìdí rẹ̀ múlẹ̀ ní ìjọba."
+  },
+  "observe.tier-notice-unverified": {
+    "ha": "⚠ Ba a tabbatar da wurin wannan rumfa ba. Za a rubuta wurin GPS ɗinka tare da rahotonka, kuma sakamakon zai ci gaba da alamar \"ba a tabbatar da wuri ba\" har sai wasu rahotanni daga wuri ɗaya sun goyi bayansa.",
+    "ig": "⚠ A kwadobeghị ebe ọnọdụ a dị. A ga-edekọ ọnọdụ GPS gị na akụkọ gị, nsonaazụ ga-anọgide na-egosi \"ebe a kwadobeghị\" ruo mgbe akụkọ ndị ọzọ si n'otu ebe ahụ kwadoro ya.",
+    "yo": "⚠ A kò tí ì fìdí ibi tí ibùdó yìí wà múlẹ̀. A ó kọ ipò GPS rẹ sílẹ̀ pẹ̀lú ìròyìn rẹ, èsì náà yóò sì máa ní àmì \"ibi tí a kò fìdí rẹ̀ múlẹ̀\" títí àwọn ìròyìn mìíràn láti ibì kan náà yóò fi tì í lẹ́yìn."
+  },
+  "observe.your-saved-unit": { "ha": "Rumfar zaɓenka", "ig": "Ebe ntuli aka gị", "yo": "Ibùdó ìdìbò rẹ" },
+  "observe.draft-title": {
+    "ha": "Kana da rahoton da ba ka kammala ba",
+    "ig": "Ị nwere akụkọ ị na-emechabeghị",
+    "yo": "O ní ìròyìn tí o kò tí ì parí"
+  },
+  "observe.draft-line-unit": {
+    "ha": "{unit}, an fara da ƙarfe {time}. Hotunanka suna nan a wannan wayar.",
+    "ig": "{unit}, amalitere n'elekere {time}. Foto gị ka dị na ekwentị a.",
+    "yo": "{unit}, ó bẹ̀rẹ̀ ní agogo {time}. Àwọn fọ́tò rẹ ṣì wà lórí fóònù yìí."
+  },
+  "observe.draft-line": {
+    "ha": "An fara da ƙarfe {time}. Hotunanka suna nan a wannan wayar.",
+    "ig": "Amalitere n'elekere {time}. Foto gị ka dị na ekwentị a.",
+    "yo": "Ó bẹ̀rẹ̀ ní agogo {time}. Àwọn fọ́tò rẹ ṣì wà lórí fóònù yìí."
+  },
+  "observe.draft-continue": { "ha": "Ci gaba da wannan rahoton", "ig": "Gaa n'ihu na akụkọ a", "yo": "Tẹ̀síwájú pẹ̀lú ìròyìn yìí" },
+  "observe.draft-start-again": { "ha": "Fara sabo", "ig": "Malite ọzọ", "yo": "Bẹ̀rẹ̀ lẹ́ẹ̀kan sí i" },
+  "observe.check-in-offline": {
+    "ha": "Ba a samu Hawkeye ba. Duba haɗin intanet ɗinka ka sake gwadawa.",
+    "ig": "Enweghị ike iru Hawkeye. Lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "Kò ṣeé ṣe láti dé Hawkeye. Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbìyànjú lẹ́ẹ̀kan sí i."
+  },
+  "observe.check-in-server-busy": {
+    "ha": "Hawkeye bai iya rubuta shi yanzu ba. Sake gwadawa bayan minti ɗaya.",
+    "ig": "Hawkeye enweghị ike idekọ ya ugbu a. Nwaa ọzọ n'otu nkeji.",
+    "yo": "Hawkeye kò lè kọ ọ́ sílẹ̀ báyìí. Gbìyànjú lẹ́ẹ̀kan sí i ní ìṣẹ́jú kan."
+  },
+  "observe.ocr-reading": {
+    "ha": "📖 Ana karanta lambobi daga hoton takardarka… za ka iya ci gaba — za a cike a ƙasa idan an gama.",
+    "ig": "📖 A na-agụ ọnụọgụ site na foto mpempe akwụkwọ gị… ị nwere ike ịga n'ihu — ọ ga-ejupụta n'okpuru mgbe ọ gwụrụ.",
+    "yo": "📖 À ń ka àwọn nọ́ńbà láti inú fọ́tò ìwé rẹ… o lè máa bá a lọ — yóò kún nísàlẹ̀ nígbà tí ó bá parí."
+  },
+  "observe.ocr-no-numbers": {
+    "ha": "📖 Ba a iya karanta lambobi daga hoton ba — shigar da ƙididdiga daga takardarka.",
+    "ig": "📖 Enweghị ike ịgụ ọnụọgụ na foto ahụ — tinye ọnụọgụ site na mpempe akwụkwọ gị.",
+    "yo": "📖 Kò ṣeé ṣe láti ka àwọn nọ́ńbà láti inú fọ́tò náà — tẹ àwọn ìkà láti inú ìwé rẹ."
+  },
+  "observe.ocr-failed": {
+    "ha": "📖 Ba a iya karanta hoton a nan ba — shigar da ƙididdiga daga takardarka.",
+    "ig": "📖 Enweghị ike ịgụ foto ahụ ebe a — tinye ọnụọgụ site na mpempe akwụkwọ gị.",
+    "yo": "📖 Kò ṣeé ṣe láti ka fọ́tò náà níbí — tẹ àwọn ìkà láti inú ìwé rẹ."
+  },
+  "observe.ocr-filled-one": {
+    "ha": "✨ An cike ƙidaya 1 daga hoton takardarka (an haskaka) — duba shi da takardar ka gyara idan bai dace ba.",
+    "ig": "✨ E jupụtara otu ọnụọgụ site na foto mpempe akwụkwọ gị (e mere ka ọ pụta ìhè) — lelee ya na mpempe akwụkwọ ahụ ma dezie ya ma ọ bụrụ na ọ ezighi ezi.",
+    "yo": "✨ A ti kún ìkà kan láti inú fọ́tò ìwé rẹ (a ti tàn án) — fi wé ìwé náà kí o sì ṣàtúnṣe rẹ̀ bí kò bá tọ̀nà."
+  },
+  "observe.ocr-filled-n": {
+    "ha": "✨ An cike ƙidaya {n} daga hoton takardarka (an haskaka) — duba kowanne da takardar ka gyara abin da bai dace ba.",
+    "ig": "✨ E jupụtara ọnụọgụ {n} site na foto mpempe akwụkwọ gị (e mere ka ha pụta ìhè) — lelee nke ọ bụla na mpempe akwụkwọ ahụ ma dezie nke ezighi ezi.",
+    "yo": "✨ A ti kún ìkà {n} láti inú fọ́tò ìwé rẹ (a ti tàn wọ́n) — fi ọ̀kọ̀ọ̀kan wé ìwé náà kí o sì ṣàtúnṣe èyí tí kò tọ̀nà."
+  },
+  "observe.ocr-numbers-read": {
+    "ha": "📖 Lambobin da aka karanta daga hoton takardarka (ka tabbatar da kanka): {list}",
+    "ig": "📖 Ọnụọgụ a gụrụ site na foto mpempe akwụkwọ gị (lelee n'onwe gị): {list}",
+    "yo": "📖 Àwọn nọ́ńbà tí a kà láti inú fọ́tò ìwé rẹ (ṣàyẹ̀wò fúnra rẹ): {list}"
+  },
+  "observe.result-status-line": {
+    "ha": "Matsayi: {status} · Tabbaci: {pct} (rahotanni {m} cikin {n} sun dace)",
+    "ig": "Ọnọdụ: {status} · Ntụkwasị obi: {pct} (akụkọ {m} n'ime {n} kwekọrọ)",
+    "yo": "Ipò: {status} · Ìdánilójú: {pct} (ìròyìn {m} nínú {n} bá ara wọn mu)"
+  },
+  "observe.ocr-cross-check": {
+    "ha": "🔎 Binciken OCR: an karanta {m}/{n} na ƙidayarka a hoton takardar.",
+    "ig": "🔎 Nlele OCR: a gụrụ {m}/{n} n'ime ọnụọgụ gị na foto mpempe akwụkwọ.",
+    "yo": "🔎 Àyẹ̀wò OCR: a ka {m}/{n} nínú àwọn ìkà rẹ lórí fọ́tò ìwé náà."
+  },
+  "observe.one-party-entered": { "ha": "✔ An shigar da jam'iyya 1", "ig": "✔ Etinyela otu pati", "yo": "✔ A ti tẹ ẹgbẹ́ kan sí i" },
+  "pu.offline-browse-below": {
+    "ha": "Babu intanet. Duba rajista a ƙasa maimakon haka.",
+    "ig": "Enweghị njikọ. Lelee ndekọ dị n'okpuru kama.",
+    "yo": "Kò sí ìsopọ̀. Wo àkọsílẹ̀ nísàlẹ̀ dípò rẹ̀."
+  },
+  "outbox.one-waiting": {
+    "ha": "⏳ Rahoto 1 yana jiran aikawa. Zai tafi da kansa idan ka dawo kan intanet.",
+    "ig": "⏳ Otu akụkọ na-eche ka e zipu ya. Ọ ga-eziga onwe ya mgbe ị laghachiri n'ịntanetị.",
+    "yo": "⏳ Ìròyìn kan ń dúró láti lọ. Yóò lọ fúnra rẹ̀ nígbà tí o bá padà sórí ìntánẹ́ẹ̀tì."
+  },
+  "outbox.one-waiting-signed-out": {
+    "ha": "⏳ Rahoto 1 yana jiran aikawa. Zai tafi idan ka sake shiga.",
+    "ig": "⏳ Otu akụkọ na-eche ka e zipu ya. Ọ ga-eziga mgbe ị banyere ọzọ.",
+    "yo": "⏳ Ìròyìn kan ń dúró láti lọ. Yóò lọ nígbà tí o bá wọlé lẹ́ẹ̀kan sí i."
+  },
+  "outbox.n-waiting": {
+    "ha": "⏳ Rahotanni {n} suna jiran aikawa. Za su tafi da kansu idan ka dawo kan intanet.",
+    "ig": "⏳ Akụkọ {n} na-eche ka e zipu ha. Ha ga-eziga onwe ha mgbe ị laghachiri n'ịntanetị.",
+    "yo": "⏳ Ìròyìn {n} ń dúró láti lọ. Wọn yóò lọ fúnra wọn nígbà tí o bá padà sórí ìntánẹ́ẹ̀tì."
+  },
+  "outbox.n-waiting-signed-out": {
+    "ha": "⏳ Rahotanni {n} suna jiran aikawa. Za su tafi idan ka sake shiga.",
+    "ig": "⏳ Akụkọ {n} na-eche ka e zipu ha. Ha ga-eziga mgbe ị banyere ọzọ.",
+    "yo": "⏳ Ìròyìn {n} ń dúró láti lọ. Wọn yóò lọ nígbà tí o bá wọlé lẹ́ẹ̀kan sí i."
+  },
+  "outbox.one-sent": {
+    "ha": "✔ An aika rahoton da aka ajiye.",
+    "ig": "✔ E zipụla akụkọ gị echekwara.",
+    "yo": "✔ A ti fi ìròyìn rẹ tí a fipamọ́ ránṣẹ́."
+  },
+  "outbox.n-sent": {
+    "ha": "✔ An aika rahotanni {n} da aka ajiye.",
+    "ig": "✔ E zipụla akụkọ {n} echekwara.",
+    "yo": "✔ A ti fi ìròyìn {n} tí a fipamọ́ ránṣẹ́."
+  },
+  "incidents.sign-in-again": { "ha": "Sake shiga →", "ig": "Banye ọzọ →", "yo": "Wọlé lẹ́ẹ̀kan sí i →" },
+  "incidents.saved-signed-out": {
+    "ha": "Ka fita. An ajiye rahotonka a wannan wayar kuma zai tafi idan ka sake shiga.",
+    "ig": "Ị pụọla. E chekwara akụkọ gị na ekwentị a, ọ ga-eziga mgbe ị banyere ọzọ.",
+    "yo": "O ti jáde. A ti fi ìròyìn rẹ pamọ́ sórí fóònù yìí, yóò sì lọ nígbà tí o bá wọlé lẹ́ẹ̀kan sí i."
+  },
+  "incidents.server-busy-saved": {
+    "ha": "Hawkeye yana da aiki da yawa yanzu — an ajiye rahotonka a wannan wayar kuma zai tafi da kansa.",
+    "ig": "Hawkeye nọ n'ọrụ ugbu a — e chekwara akụkọ gị na ekwentị a, ọ ga-eziga n'onwe ya.",
+    "yo": "Hawkeye ń ṣiṣẹ́ lọ́wọ́ báyìí — a ti fi ìròyìn rẹ pamọ́ sórí fóònù yìí, yóò sì lọ fúnra rẹ̀."
+  },
+  "map-unit.could-not-save-check-connection": {
+    "ha": "An kasa ajiyewa — duba haɗin intanet ka sake gwadawa.",
+    "ig": "Enweghị ike ịchekwa — lelee njikọ gị ma nwaa ọzọ.",
+    "yo": "Kò ṣeé ṣe láti fipamọ́ — ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì gbìyànjú lẹ́ẹ̀kan sí i."
+  },
+  "practice.no-units-near": {
+    "ha": "Ba a sami rumfuna kusa da kai ba. Yi bincike a ƙasa, ko yi amfani da rumfar gwaji.",
+    "ig": "Ahụghị ebe ntuli aka dị gị nso. Chọọ n'okpuru, ma ọ bụ jiri ebe omume.",
+    "yo": "A kò rí ibùdó nítòsí rẹ. Wá a nísàlẹ̀, tàbí lo ibùdó àdánwò."
+  },
+  "practice.unit-step-hint": {
+    "ha": "A ranar zaɓe za ka zaɓi rumfar da kake tsaye. Yi gwaji da taka, ko yi amfani da rumfar gwaji.",
+    "ig": "N'ụbọchị ntuli aka, ị ga-ahọrọ ebe ị guzo. Mee omume na nke gị, ma ọ bụ jiri ebe omume.",
+    "yo": "Ní ọjọ́ ìdìbò, o máa yan ibùdó tí o dúró sí. Ṣe àdánwò pẹ̀lú tìrẹ, tàbí lo ibùdó àdánwò."
+  },
+  "practice.or-use-the-practice-unit": {
+    "ha": "Ko ka yi gwaji ba tare da rumfa ta gaske ba:",
+    "ig": "Ma ọ bụ mee omume na-enweghị ezigbo ebe ntuli aka:",
+    "yo": "Tàbí ṣe àdánwò láìsí ibùdó gidi:"
+  },
+  "practice.race-step-hint": {
+    "ha": "A gwaji kowane zaɓe a buɗe yake. A ranar zaɓe sai zaɓukan da ake yi a ranar ne kawai za a iya zaɓa.",
+    "ig": "N'omume, ntuli aka niile mepere emepe. N'ụbọchị ntuli aka, ọ bụ naanị ntuli aka a na-eme n'ụbọchị ahụ ka a ga-ahọrọ.",
+    "yo": "Nínú àdánwò, gbogbo ìdìbò ló ṣí sílẹ̀. Ní ọjọ́ ìdìbò, àwọn ìdìbò tí a ń ṣe lọ́jọ́ náà nìkan ni a lè yàn."
+  }
+}

@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -24,8 +24,16 @@ import { PasswordField } from '@/components/password-field';
 import { SignedOutElsewhereNote } from '@/components/signed-out-elsewhere';
 import {
   accountHasPassword,
+  adoptWaSession,
+  authedGet,
+  callCancel,
+  callStart,
+  callStatus,
+  callVerifyEnabled,
+  noteReturnAfterSignIn,
   orgSignup,
   passwordLogin,
+  peekReturnAfterSignIn,
   requestOtp,
   setPassword as savePassword,
   signOut,
@@ -50,9 +58,26 @@ import {
 } from '@/lib/passkeys';
 import { openWhatsApp, startWaPoller, type WaPoller, type WaProof, type WaWait } from '@/lib/wa-signin';
 
-type Channel = 'whatsapp' | 'telegram' | 'sms';
+/** 'call' = the free missed call (sign-up only; step 'call-send'). */
+type Channel = 'whatsapp' | 'telegram' | 'sms' | 'call';
+/** m:ss for the missed-call countdown. */
+const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 /** D3: resets are nudged to before the election window (9 Jan 2027 00:00 WAT). */
 const NUDGE_RESETS = Date.now() < Date.parse('2027-01-09T00:00:00+01:00'); // module scope: render stays pure
+
+/**
+ * The screen to return to once signed in (ONB-09): a `?next=` on this route,
+ * or the one the root layout noted when it bounced a refused session to
+ * welcome (lib/auth.ts noteReturnAfterSignIn). An APP PATH only: one leading
+ * slash, no scheme, no host, never the auth funnel itself — so it can never be
+ * turned into a way out of the app.
+ */
+function safeNext(raw: unknown): string | null {
+  const n = typeof raw === 'string' ? raw : '';
+  if (!/^\/(?![/\\])[^\s:]*$/.test(n)) return null;
+  if (/^\/(welcome|sign-in)(?:[/?#]|$)/.test(n)) return null;
+  return n;
+}
 
 /**
  * Sign in — password-first, the way a normal app works.
@@ -70,6 +95,12 @@ const NUDGE_RESETS = Date.now() < Date.parse('2027-01-09T00:00:00+01:00'); // mo
  *   wa-send       WhatsApp in reverse: the observer sends US a code (free);
  *                 replaces request -> otp for WhatsApp while /api/health says
  *                 `waInbound`, and ends exactly where a verified code does
+ *   call-send     MISSED CALL (free, SIGN-UP ONLY): the observer rings our
+ *                 number from the phone being verified; our gateway rejects it
+ *                 and the server marks the number proved. While /api/health
+ *                 says `callVerify`; never on sign-in, a reset or with an ORG
+ *                 code. Ends where a verified code does — or on 'exists' when
+ *                 the number already has an account (nothing issued).
  *   set-password  choose + confirm a password (mandatory when the account has none)
  *   pk-offer      "Sign in faster next time": after a RETURNING sign-in, an
  *                 inline offer to make a passkey on this phone (lib/passkeys.ts)
@@ -87,14 +118,43 @@ const NUDGE_RESETS = Date.now() < Date.parse('2027-01-09T00:00:00+01:00'); // mo
  * made the button spin for a whole round-trip, which reads as a slow app. On
  * failure we drop back to the request step with the error line.
  */
-type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'set-password' | 'exists' | 'pk-offer';
+type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'call-send' | 'set-password' | 'exists' | 'pk-offer';
 /** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
 type Purpose = 'signup' | 'reset' | 'no-password';
 
 export default function SignIn() {
   const ui = useUi();
-  const { intent } = useLocalSearchParams<{ intent?: string }>();
+  const { intent, next } = useLocalSearchParams<{ intent?: string; next?: string }>();
   const signUpFirst = intent === 'signup';
+  // `?next=`, else the screen a refused session bounced from (_layout.tsx).
+  const [returnTo] = useState(() => safeNext(next) ?? safeNext(peekReturnAfterSignIn()));
+  /**
+   * PUSHED OVER AN INVITE (R-NATIVE-SIGNIN-LEAVES-INVITE): join/[token]'s
+   * "Sign in to join" pushes this screen and waits underneath — its button
+   * turns into Join once the session lands. Every way out of here used to
+   * replace the stack with Home (or the unit chooser), burying the invite;
+   * leave() pops back onto it instead. Read from the navigator, so it holds
+   * whether or not the invite passed a `next`.
+   */
+  const navigation = useNavigation();
+  const inviteBelow = useCallback((): boolean => {
+    try {
+      const s = navigation.getState() as { index?: number; routes?: { name?: string }[] } | undefined;
+      const below = s?.routes?.[(s.index ?? 0) - 1];
+      return typeof below?.name === 'string' && below.name.startsWith('join/');
+    } catch {
+      return false;
+    }
+  }, [navigation]);
+  /** Out of sign-in: back onto the invite, to `next`, or Home. */
+  const leave = useCallback(() => {
+    noteReturnAfterSignIn(null);   // used once
+    if (inviteBelow() && router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace((returnTo ?? '/(tabs)') as never);
+  }, [inviteBelow, returnTo]);
 
   const [step, setStep] = useState<Step>(signUpFirst ? 'request' : 'password');
   const [purpose, setPurpose] = useState<Purpose>('signup');
@@ -111,6 +171,8 @@ export default function SignIn() {
   const [waPaid, setWaPaid] = useState(false);
   // The server ANSWERED and runs neither WhatsApp route: no WhatsApp chip.
   const [waNone, setWaNone] = useState(false);
+  // The free missed call (sign-up only): /api/health callVerify, fail closed.
+  const [callOk, setCallOk] = useState(false);
   /** Passkeys: this binary has the module AND the server has them on (lib/passkeys.ts). */
   const [pkUsable, setPkUsable] = useState(false);
   /** This phone made or used a Hawkeye passkey: the passkey leads the sign-in (D2). */
@@ -129,6 +191,7 @@ export default function SignIn() {
     });
     passkeysUsable().then((ok) => { if (alive) setPkUsable(ok); }).catch(() => {});
     passkeyHereOnDevice().then((h) => { if (alive) setPkHere(h); }).catch(() => {});
+    callVerifyEnabled().then((ok) => { if (alive) setCallOk(ok); }).catch(() => {});
     return () => { alive = false; };
   }, []);
   /** The passkey sheet is up (sign-in or the offer); its own flag, so `busy` keeps meaning the form. */
@@ -147,6 +210,18 @@ export default function SignIn() {
   const waPoller = useRef<WaPoller | null>(null);
   /** The server refused another free code for this number (429): WhatsApp sends the paid one from now on. */
   const [waLimited, setWaLimited] = useState(false);
+  /**
+   * The free missed call for this screen: our number, the tel: link, and the
+   * poll token; the poll runs in the step's own effect (below), so leaving the
+   * step by any route stops it and cancels the sign-in on the server.
+   */
+  const [call, setCall] = useState<{ display: string; tel: string; pollToken: string; deadline: number; firstMs: number } | null>(null);
+  const [callWait, setCallWait] = useState<'waiting' | 'offline' | 'expired' | 'verified'>('waiting');
+  const [callLeft, setCallLeft] = useState(0);
+  /** A minute with nothing: say what explains most misses. */
+  const [callSlow, setCallSlow] = useState(false);
+  /** The 'exists' step came from a missed call (409 call_signup_only): its own sentence. */
+  const [existsViaCall, setExistsViaCall] = useState(false);
   const [otp, setOtp] = useState('');
   /**
    * How the 'exists' step was reached. BEFORE a code the server refused to send
@@ -212,6 +287,8 @@ export default function SignIn() {
    * account signing up again is not a new observer.
    */
   const [isNewAccount, setIsNewAccount] = useState(false);
+  /** The account was made with an organisation code (its room may already be waiting, ONB-11). */
+  const [viaOrg, setViaOrg] = useState(false);
 
   /**
    * "INVITE CODE (OPTIONAL)" — sign-up only. The one route for a referral on an
@@ -248,6 +325,35 @@ export default function SignIn() {
    * and a 503 says so rather than anything being sent.
    */
   const freeWhatsapp = channel === 'whatsapp' && (!waPaid || (waOk && !waLimited));
+  /** The missed-call chip: the server runs it, this is a sign-up, and no ORG code replaces the proof. */
+  const callRoute = callOk && purpose === 'signup' && !withOrgCode;
+  /**
+   * A route that sends nothing TO the observer: the missed call (sign-up only)
+   * or WhatsApp in reverse. Neither falls back to a paid code by itself.
+   */
+  const freeRoute = channel === 'call' || freeWhatsapp;
+  const startFree = () => (channel === 'call' ? (callRoute ? startCall() : Promise.resolve()) : startWa());
+  // The chip went (a reset, an ORG code, the server switched it off): let go of
+  // a pick made on it, so Send code never runs a route that is not on screen.
+  useEffect(() => {
+    if (!callRoute) setChannel((c) => (c === 'call' ? null : c));
+  }, [callRoute]);
+  /**
+   * "SMS (paid)" while the chips fit ONE line; "SMS" once the row has wrapped
+   * (owner, 2026-10-04). Measured as the ROW's height against one chip's: a chip
+   * that only MOVES to a second line fires no onLayout on the web build (that
+   * watches size, not position), but the row grows. Only ever shortens, so the
+   * label cannot flip back and forth; measured again when the errand changes.
+   */
+  const chipRow = useRef<{ chip: number; row: number }>({ chip: 0, row: 0 });
+  const [smsShort, setSmsShort] = useState(false);
+  const checkSmsFit = () => {
+    const { chip, row } = chipRow.current;
+    if (chip > 0 && row > chip * 1.5) setSmsShort(true);
+  };
+  useEffect(() => {
+    setSmsShort(false);
+  }, [purpose, callRoute]);
   /**
    * Send code needs a full number, and a route unless an organisation code
    * replaces the code. With no route it LOOKS off (sendLooksOff) but still
@@ -304,6 +410,11 @@ export default function SignIn() {
       setStep('request');
       return;
     }
+    // A missed call sends no code at all (startCall): it never reaches /register.
+    if (via === 'call') {
+      setStep('request');
+      return;
+    }
     setLine(verb === 'Re-sending'
       ? i18nT('n.app.sign-in.resending-code-to', { v0: phone.trim() })
       : i18nT('n.app.sign-in.sending-code-to', { v0: phone.trim() }));
@@ -328,6 +439,7 @@ export default function SignIn() {
           // Nothing was sent. The reader is NOT signed in — they are simply on
           // the wrong door.
           setExistsAfterOtp(false);
+          setExistsViaCall(false);
           setLine(null);
           setStep('exists');
         } else {
@@ -339,7 +451,10 @@ export default function SignIn() {
                 ? i18nT('n.app.sign-in.too-many-code-requests')
                 : r.error === 'sms_send_failed'
                   ? i18nT('n.app.sign-in.code-not-delivered')
-                  : (r.hint ?? i18nT('n.app.sign-in.could-not-send-a-code-check')),
+                  // Anything else (a 500's internal_error, a code this build
+                  // does not know) is the server's trouble, not the number's:
+                  // "check the number" made a correct number look wrong (ONB-16).
+                  : (r.hint ?? i18nT('n.app.sign-in.server-busy-try-again')),
           );
         }
       })
@@ -373,7 +488,7 @@ export default function SignIn() {
       setStep('pk-offer');
       return;
     }
-    router.replace('/(tabs)');
+    leave();
   };
   /** The same, from a button that holds no busy state of its own. */
   const continueReturning = async () => {
@@ -396,7 +511,7 @@ export default function SignIn() {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         // A returning sign-in, like the password: no sign-up routing, no offer
         // (this phone has just used a passkey).
-        router.replace('/(tabs)');
+        leave();
         return;
       }
       if (r.error !== 'cancelled') setLine(passkeyErrorText(r.error));
@@ -455,8 +570,10 @@ export default function SignIn() {
         return;
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // A new account, like an OTP sign-up: the password step, then the unit.
+      // A new account, like an OTP sign-up: the password step, then the unit
+      // — or the room the code put them in (onSavePassword).
       setIsNewAccount(r.isNew === true || r.needsUnit === true);
+      setViaOrg(true);
       setHasPw(false);
       setNewPw('');
       setNewPw2('');
@@ -487,13 +604,50 @@ export default function SignIn() {
       return;
     }
     setTgLink(null);
-    if (freeWhatsapp) {
-      void startWa();
+    if (freeRoute) {
+      void startFree();
       return;
     }
     setStep('otp');
     setTimeout(() => otpRef.current?.focus(), 250);
     send('Sending');
+  };
+
+  /**
+   * Start (or restart) the free MISSED CALL — sign-up only. The server shows our
+   * number; the step's effect polls until the call has been seen, then hands the
+   * session to afterProof, the same tail as a typed code (so "Create your
+   * password" follows). A server that cannot take calls (503) loses the chip
+   * and says so; nothing is sent anywhere.
+   */
+  const startCall = async () => {
+    setBusy(true);
+    setLine(null);
+    try {
+      const r = await callStart(phone.trim(), { referralCode: typedInviteCode(inviteCode) || null });
+      if (r.ok) {
+        setCall({ display: r.display, tel: r.telLink, pollToken: r.pollToken, deadline: Date.now() + r.expiresInS * 1000, firstMs: r.pollAfterMs });
+        setCallWait('waiting');
+        setCallSlow(false);
+        setCallLeft(r.expiresInS);
+        setStep('call-send');
+        return;
+      }
+      if (r.error === 'call_unavailable') {
+        setCallOk(false);
+        setLine(i18nT('auth.call-unavailable'));
+        return;
+      }
+      setLine(
+        r.error === 'too_many_requests' ? i18nT('auth.wa-too-many-free')
+        : r.error === 'invalid_phone' ? i18nT('n.auth.wa-invalid-phone')
+        : (r.hint ?? i18nT('n.app.sign-in.server-busy-try-again')),
+      );
+    } catch {
+      setLine(i18nT('n.app.sign-in.network-error-try-again'));
+    } finally {
+      setBusy(false);
+    }
   };
 
   /** The code comes TO the observer (paid): the WhatsApp step's fallbacks, and a server that cannot receive. */
@@ -644,6 +798,7 @@ export default function SignIn() {
           // (/wa-start answers every number alike, by design), an older
           // server, or the account gained a password between the two calls.
           setExistsAfterOtp(true);
+          setExistsViaCall(false);
           setLine(null);
           setStep('exists');
           return;
@@ -702,6 +857,103 @@ export default function SignIn() {
       waPoller.current = null;
     };
   }, [step]);
+
+  /**
+   * THE MISSED-CALL STEP'S POLL, scoped to the step: first after the server's
+   * pollAfterMs, then at its retryAfterMs, never past the expiry, at once when
+   * the app comes back (from the dialler, most likely), one poll in flight.
+   * LEAVING THE STEP BY ANY ROUTE — "Use a different number", the close
+   * button, a proof that moved on — stops it, and cancels the sign-in on the
+   * server unless it was spent. Keyed on the step and the sign-in, so no other
+   * re-render restarts it. Twin of app/app.js callPoll().
+   */
+  useEffect(() => {
+    if (step !== 'call-send' || !call) return;
+    let alive = true;
+    let spent = false;
+    let busyPoll = false;
+    let fails = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const started = Date.now();
+    const tick = setInterval(() => {
+      const left = Math.max(0, Math.ceil((call.deadline - Date.now()) / 1000));
+      setCallLeft(left);
+      if (Date.now() - started >= 60_000) setCallSlow(true);
+      if (!left && !spent) {
+        if (timer) clearTimeout(timer);
+        setCallWait('expired');
+      }
+    }, 1000);
+    const schedule = (ms: number) => {
+      if (!alive || spent) return;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void poll(), Math.max(0, Math.min(ms, call.deadline - Date.now() + 250)));
+    };
+    const poll = async () => {
+      if (!alive || spent || busyPoll || Date.now() > call.deadline) return;
+      busyPoll = true;
+      let r: Awaited<ReturnType<typeof callStatus>>;
+      try {
+        r = await callStatus(call.pollToken, phone.trim());
+      } catch {
+        r = { status: 'retry' };
+      }
+      busyPoll = false;
+      if (!alive) return;
+      if (r.status === 'verified') {
+        // ✓ "Number verified" for about a second — the reader has just come
+        // back from a call that dropped at once, and needs to see it worked —
+        // then the password step. The session is kept at once.
+        spent = true;
+        if (timer) clearTimeout(timer);
+        setCallWait('verified');
+        const proof = await adoptWaSession(r.session);
+        await new Promise((res) => setTimeout(res, 1000));
+        void afterProofRef.current(proof);
+        return;
+      }
+      if (r.status === 'has-account') {
+        // Nothing was issued: the same two ways in as a refused code (ONB-04),
+        // in the call's own words.
+        spent = true;
+        setExistsAfterOtp(false);
+        setExistsViaCall(true);
+        setLine(null);
+        setStep('exists');
+        return;
+      }
+      if (r.status === 'expired') {
+        spent = true;
+        setCallWait('expired');
+        return;
+      }
+      if (r.status === 'retry') {
+        fails += 1;
+        if (fails >= 2) setCallWait('offline');
+        schedule(Math.min(10_000, 3000 * fails));
+        return;
+      }
+      fails = 0;
+      setCallWait('waiting');
+      schedule(r.retryAfterMs);
+    };
+    schedule(call.firstMs);
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active' && !spent) {
+        if (timer) clearTimeout(timer);
+        void poll();
+      }
+    });
+    return () => {
+      alive = false;
+      if (timer) clearTimeout(timer);
+      clearInterval(tick);
+      sub.remove();
+      if (!spent) void callCancel(call.pollToken);
+    };
+    // `phone` is fixed while this step is up (the field is on another step).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, call]);
 
   /**
    * A blank password is a legitimate submission here, not junk input.
@@ -771,6 +1023,16 @@ export default function SignIn() {
     }
   };
 
+  /** Is this account already a member of a room? Any doubt (offline, an error) says no: the chooser, as before. */
+  const orgRoomJoined = async (): Promise<boolean> => {
+    try {
+      const g = await authedGet<{ member?: unknown[] }>('/api/groups', { signOutOn401: false });
+      return Array.isArray(g?.member) && g.member.length > 0;
+    } catch {
+      return false;
+    }
+  };
+
   const onSavePassword = async () => {
     if (newPw.length < 8) {
       setLine(i18nT('n.app.sign-in.use-at-least-8-characters'));
@@ -805,6 +1067,22 @@ export default function SignIn() {
         // cleared) here: it is a suggestion for this one step, and the route
         // param carries it from now on. lib/pending-invite.ts.
         if (purpose === 'signup' && isNewAccount) {
+          // CAME FOR SOMETHING SPECIFIC — an invite under this screen, or a
+          // `next` — then that comes first, as the web's NEXT_DEST does
+          // (app.js afterVerified): back to it, not into the chooser.
+          if (returnTo || inviteBelow()) {
+            leave();
+            return;
+          }
+          // AN ORGANISATION CODE'S ROOM (ONB-11). The server puts the agent in
+          // its issuer's room at sign-up when there is one room (backend
+          // routes/groups.js autoJoinOrgRoom), so they land IN it — My Groups —
+          // rather than on the chooser and then a Home that never names it. A
+          // room per area waits for the unit, so the chooser stays for that.
+          if (viaOrg && (await orgRoomJoined())) {
+            router.replace('/my-groups' as never);
+            return;
+          }
           const unit = await takeInviteUnit();
           router.replace(
             (unit ? `/choose-unit?onboard=1&unit=${encodeURIComponent(unit)}` : '/choose-unit?onboard=1') as never,
@@ -854,10 +1132,15 @@ export default function SignIn() {
   // free route nor paid codes (waNone).
   // Telegram and WhatsApp side by side, equal (D2). SMS is NOT in this row: it
   // costs per code, so it sits below, smaller, labelled as the fallback.
-  const CHANNELS: { key: Channel; label: string }[] = [
-    { key: 'telegram', label: 'Telegram' },
-    ...(waNone ? [] : [{ key: 'whatsapp' as Channel, label: 'WhatsApp' }]),
-  ];
+  // SIGN-UP's LINE-UP (owner, 2026-10-04): WhatsApp, Telegram, Call, then SMS
+  // (below) — all four on ONE line at 360 px; the reset and the no-password
+  // rescue keep Telegram, WhatsApp, SMS. The row still wraps (flex-wrap) on a
+  // narrower phone rather than overflowing.
+  const WA_CHIP = waNone ? [] : [{ key: 'whatsapp' as Channel, label: 'WhatsApp' }];
+  const TG_CHIP = [{ key: 'telegram' as Channel, label: 'Telegram' }];
+  const CHANNELS: { key: Channel; label: string }[] = purpose === 'signup'
+    ? [...WA_CHIP, ...TG_CHIP, ...(callRoute ? [{ key: 'call' as Channel, label: i18nT('auth.call-chip') }] : [])]
+    : [...TG_CHIP, ...WA_CHIP];
 
   const requestCopy =
     purpose === 'signup'
@@ -911,7 +1194,7 @@ export default function SignIn() {
               hitSlop={12}
               // On the passkey offer the person is already signed in: closing
               // it goes into the app, never back to a sign-in form.
-              onPress={() => (step === 'pk-offer' ? router.replace('/(tabs)') : router.back())}
+              onPress={() => (step === 'pk-offer' ? leave() : router.back())}
               className="h-9 w-9 items-center justify-center rounded-full bg-card"
             >
               <Feather name="x" size={18} color={ui.ink} />
@@ -1049,7 +1332,7 @@ export default function SignIn() {
               </Pressable>
               <Pressable className="mt-5 items-center" onPress={() => startOtp('signup')}>
                 <Text className="text-sm text-muted">
-                  New here? <Text className="font-semibold text-good-ink">{i18nT('index.create-an-account')}</Text>
+                  {i18nT('n.app.sign-in.new-here')} <Text className="font-semibold text-good-ink">{i18nT('index.create-an-account')}</Text>
                 </Text>
               </Pressable>
             </>
@@ -1069,10 +1352,15 @@ export default function SignIn() {
                 editable={!busy}
               />
               {/* No channel with an organisation code: nothing is sent. */}
-              <View className="flex-row flex-wrap gap-2 pt-3" style={withOrgCode ? { display: 'none' } : undefined}>
-                {CHANNELS.map((c) => (
+              <View
+                className="flex-row flex-wrap gap-2 pt-3"
+                style={withOrgCode ? { display: 'none' } : undefined}
+                onLayout={(e) => { chipRow.current.row = e.nativeEvent.layout.height; checkSmsFit(); }}
+              >
+                {CHANNELS.map((c, i) => (
                   <Pressable
                     key={c.key}
+                    onLayout={i === 0 ? (e) => { chipRow.current.chip = e.nativeEvent.layout.height; checkSmsFit(); } : undefined}
                     onPress={() => {
                       setChannel(c.key);
                       setNeedChoice(false);
@@ -1092,8 +1380,10 @@ export default function SignIn() {
                 ))}
                 {/* SMS LAST, A CHIP LIKE THE OTHERS, LABELLED PAID (owner,
                     2026-10-03): as a small line apart it did not read as
-                    pickable at all. "Paid" steers people to the two free
-                    routes. Never pre-selected. */}
+                    pickable at all. "Paid" steers people to the free routes —
+                    but only while the row still fits ONE line (owner,
+                    2026-10-04): measured (onLayout), plain "SMS" once it wraps.
+                    Never pre-selected. */}
                 {smsOk ? (
                   <Pressable
                     onPress={() => {
@@ -1105,7 +1395,7 @@ export default function SignIn() {
                     className={`rounded-full px-3 py-2 ${channel === 'sms' ? 'bg-hawk-green' : 'bg-card'}`}
                   >
                     <Text className={`text-sm ${channel === 'sms' ? 'font-semibold text-hawk-gold' : 'text-faint'}`}>
-                      {i18nT('auth.sms-paid')}
+                      {smsShort ? i18nT('observe.sms') : i18nT('auth.sms-paid')}
                     </Text>
                   </Pressable>
                 ) : null}
@@ -1229,7 +1519,11 @@ export default function SignIn() {
               <Text className="pb-5 pt-2 text-sm text-muted">
                 {existsAfterOtp
                   ? i18nT('n.app.sign-in.is-already-registered-as-an-observer', { v0: phone.trim() })
-                  : i18nT('n.app.sign-in.is-already-registered-as-an-observer-2', { v0: phone.trim() })}
+                  // A missed call only ever CREATES an account (caller ID can
+                  // be forged), so nothing was issued — said in its own words.
+                  : existsViaCall
+                    ? i18nT('auth.call-has-account')
+                    : i18nT('n.app.sign-in.is-already-registered-as-an-observer-2', { v0: phone.trim() })}
               </Text>
 
               {existsAfterOtp ? (
@@ -1275,7 +1569,10 @@ export default function SignIn() {
                 }}
               >
                 <Text className="text-sm font-semibold text-good-ink">
-                  Forgot your password? {existsAfterOtp ? i18nT('n.app.sign-in.set-a-new-one') : i18nT('n.app.sign-in.reset-it')}
+                  {/* Two sentences side by side, each keyed — "Forgot your
+                      password?" was an English literal glued to a translated
+                      half (ONB-HA-native). */}
+                  {i18nT('n.app.sign-in.forgot-your-password')} {existsAfterOtp ? i18nT('n.app.sign-in.set-a-new-one') : i18nT('n.app.sign-in.reset-it')}
                 </Text>
               </Pressable>
 
@@ -1321,7 +1618,7 @@ export default function SignIn() {
               <Text className="pb-4 pt-1 text-sm text-muted">{i18nT('passkey.offer-body')}</Text>
               <Pressable
                 disabled={pkBusy}
-                onPress={() => (pkSaved ? router.replace('/(tabs)') : void onAddPasskey())}
+                onPress={() => (pkSaved ? leave() : void onAddPasskey())}
                 accessibilityRole="button"
                 className={`items-center rounded-2xl py-4 ${pkBusy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
               >
@@ -1346,10 +1643,98 @@ export default function SignIn() {
                   className="mt-4 items-center"
                   disabled={pkBusy}
                   onPress={() => {
-                    void offerPasskeyLater().finally(() => router.replace('/(tabs)'));
+                    void offerPasskeyLater().finally(() => leave());
                   }}
                 >
                   <Text className="text-sm font-semibold text-good-ink">{i18nT('passkey.offer-no')}</Text>
+                </Pressable>
+              ) : null}
+            </>
+          ) : step === 'call-send' ? (
+            <>
+              {/* MISSED CALL (free, sign-up only). Modelled on the WhatsApp
+                  step below: our number, big and selectable; Call now (the
+                  dialler, tel:); the live line; the countdown; after a minute
+                  with nothing, the hint that explains most misses; and the way
+                  back. Twin of app/observe.html #call-send. */}
+              <Text className="text-2xl font-bold text-ink">{i18nT('auth.call-title')}</Text>
+              <Text className="pb-4 pt-1 text-sm text-muted">
+                {i18nT('auth.call-body', { number: call?.display ?? '', phone: phone.trim() })}
+              </Text>
+              <View className="items-center rounded-2xl bg-card px-4 py-5">
+                <Text
+                  selectable
+                  className={`text-3xl font-bold ${callWait === 'expired' ? 'text-faint' : 'text-ink'}`}
+                >
+                  {call?.display}
+                </Text>
+              </View>
+              {/* SAID BEFORE THE TAP (owner's live test, 2026-10-04): the
+                  gateway rejects the call at once — no ring, the line just
+                  drops — which reads as a failure unless the reader was told. */}
+              {callWait === 'waiting' || callWait === 'offline' ? (
+                <Text className="pt-4 text-center text-sm text-muted">{i18nT('auth.call-ends-at-once')}</Text>
+              ) : null}
+              {callWait === 'expired' ? (
+                <Pressable
+                  disabled={busy}
+                  onPress={() => void startCall()}
+                  accessibilityRole="button"
+                  className={`mt-5 items-center rounded-2xl py-4 ${busy ? 'bg-disabled' : 'bg-hawk-green active:opacity-80'}`}
+                >
+                  {busy ? (
+                    <ActivityIndicator color={BRAND.gold} />
+                  ) : (
+                    <Text className="text-base font-bold text-hawk-gold">{i18nT('n.auth.wa-again')}</Text>
+                  )}
+                </Pressable>
+              ) : (
+                <Pressable
+                  disabled={callWait === 'verified'}
+                  onPress={() => {
+                    // Only a tel: link reaches the OS (lib/auth.ts callStart).
+                    // The dialler, not CALL_PHONE: placing the call ourselves
+                    // would need a new permission and a store build.
+                    if (call) Linking.openURL(call.tel).catch(() => {});
+                  }}
+                  accessibilityRole="button"
+                  className="mt-5 flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
+                >
+                  <Feather name="phone-call" size={18} color={BRAND.gold} />
+                  <Text className="pl-2 text-base font-bold text-hawk-gold">{i18nT('auth.call-now')}</Text>
+                </Pressable>
+              )}
+              {/* Two SIMs: the phone may dial from the other one. */}
+              {callWait === 'waiting' || callWait === 'offline' ? (
+                <Text className="pt-2 text-center text-xs text-muted">{i18nT('auth.call-dual-sim', { phone: phone.trim() })}</Text>
+              ) : null}
+              {/* A CLEAR SUCCESS: ✓ "Number verified", for a moment, before the password. */}
+              <View className="flex-row items-center justify-center gap-2 pt-4" accessibilityLiveRegion="polite">
+                {callWait === 'waiting' ? <ActivityIndicator size="small" color={ui.muted} /> : null}
+                {callWait === 'verified' ? <Feather name="check-circle" size={18} color={ui.tint.good.ink} /> : null}
+                <Text className={`shrink text-center text-sm ${callWait === 'verified' ? 'font-bold text-good-ink' : callWait === 'waiting' ? 'text-muted' : 'text-warn-ink'}`}>
+                  {callWait === 'verified' ? i18nT('auth.call-verified')
+                    : callWait === 'expired' ? i18nT('auth.call-expired')
+                    : callWait === 'offline' ? i18nT('n.auth.wa-offline')
+                    : i18nT('auth.call-waiting')}
+                </Text>
+              </View>
+              {callWait === 'waiting' || callWait === 'offline' ? (
+                <Text className="pt-2 text-center text-xs text-muted">{i18nT('auth.call-expires-in', { time: mmss(callLeft) })}</Text>
+              ) : null}
+              {callSlow && (callWait === 'waiting' || callWait === 'offline') ? (
+                <Text className="pt-3 text-center text-sm text-warn-ink">{i18nT('auth.call-slow')}</Text>
+              ) : null}
+              {callWait !== 'verified' ? (
+                <Pressable
+                  className="mt-5 items-center"
+                  disabled={busy}
+                  onPress={() => {
+                    setLine(null);
+                    setStep('request');
+                  }}
+                >
+                  <Text className="text-sm font-semibold text-muted">{i18nT('n.app.sign-in.use-a-different-number')}</Text>
                 </Pressable>
               ) : null}
             </>

@@ -54,7 +54,14 @@
       return exp * 1000 > Date.now() + 60000;            // matches app.js tokenFresh()
     } catch (e) { return false; }
   }
-  if (tokenFresh()) return;
+  /* THIS DEVICE HAS HAD AN ACCOUNT. Set on every signed-in page load and never
+     cleared by a sign-out, so the app shell can tell a first launch (offer
+     sign-up first) from a returning reader (straight to sign-in) — see below. */
+  var K_HAD = 'hawkeye_had_account';
+  if (tokenFresh()) {
+    try { localStorage.setItem(K_HAD, '1'); } catch (e) { /* a courtesy */ }
+    return;
+  }
 
   var page = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
 
@@ -66,11 +73,15 @@
   // public transparency pages. The tamper-evident ledger, public docket and
   // integrity views stay OPEN to signed-out visitors — "anyone can audit" is the
   // whole point; only Take Part actions (report/collation/incident/map) are gated.
+  // A CASE is the docket's own page (FA-PUB-1): the docket linked to it and the
+  // gate sent a signed-out auditor to sign-in. Reading it is public (GET
+  // /api/docket/:id needs no session); case.html asks for sign-in only where a
+  // verdict is cast.
   var WEB_PUBLIC = {
     'index.html': 1, '': 1,
     'results.html': 1, 'osun.html': 1, 'candidates.html': 1, 'dashboard.html': 1,
     'political.html': 1, 'race.html': 1, 'races.html': 1,
-    'ledger.html': 1, 'docket.html': 1, 'integrity.html': 1, 'incident-reports.html': 1,
+    'ledger.html': 1, 'docket.html': 1, 'case.html': 1, 'integrity.html': 1, 'incident-reports.html': 1,
     'how.html': 1, 'guide.html': 1, 'faq.html': 1, 'about.html': 1,
     'privacy.html': 1, 'terms.html': 1, 'meta.html': 1, 'preview.html': 1
   };
@@ -81,6 +92,23 @@
   );
 
   if (ALWAYS[page] || (!isApp && WEB_PUBLIC[page])) return;
+
+  /* THE APP'S FIRST LAUNCH OPENS ON SIGN-UP (ONB-05). A stranger opening Lite
+     for the first time was met by "Sign In — Welcome back" with sign-up a small
+     link at the bottom, where native opens on a welcome with "Become an
+     observer" first and the web on its landing page's same button. Home with
+     no sign of an account on this device (never signed in here, no stale
+     token, not signed out by another device) goes to the sign-up form, the
+     web's "Become an observer" — whose "Have an account? Sign In" keeps a
+     returning reader one tap from signing in. Everyone else, as before. */
+  var fresh = false;
+  if (page === 'index.html' || page === '') {
+    try {
+      fresh = !localStorage.getItem(K_HAD) && !localStorage.getItem('hawkeye_token')
+        && !localStorage.getItem('hawkeye_signed_out_elsewhere');
+    } catch (e) { fresh = false; }
+  }
+  if (fresh) { location.replace('observe.html?intent=observe'); return; }
 
   // Gated → sign-in, remembering the page they were headed for (app.js honours ?next).
   location.replace('observe.html?intent=signin&next=' + encodeURIComponent(nextHere()));

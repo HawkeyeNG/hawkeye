@@ -1,0 +1,23 @@
+{
+  "n.app.tabs.index.save-your-unit": { "ha": "Ajiye rumfar zaɓenka", "ig": "Chekwaa ngalaba ntuli aka gị", "yo": "Fi ẹ̀ka ìdìbò rẹ pamọ́" },
+  "n.app.tabs.index.all-caught-up": { "ha": "Ka riga ka ga komai.", "ig": "Ị hụla ihe niile.", "yo": "O ti rí gbogbo rẹ̀." },
+  "n.components.follow-race.could-not-follow": { "ha": "Ba a iya bi ba", "ig": "Enweghị ike iso", "yo": "A kò lè tẹ̀lé e" },
+  "n.components.follow-race.could-not-unfollow": { "ha": "Ba a iya daina bi ba", "ig": "Enweghị ike ịkwụsị iso", "yo": "A kò lè jáwọ́ nínú títẹ̀lé" },
+  "n.components.follow-race.declared-title": { "ha": "An bayyana sakamakon gasa", "ig": "Ekwuputala asọmpi", "yo": "A ti kéde ìdíje" },
+  "n.components.follow-race.declared-body": { "ha": "An bayyana sakamakon wannan gasa — babu sauran abin bi.", "ig": "Ekwuputala nsonaazụ asọmpi a — ọ dịghị ihe ọzọ a ga-eso.", "yo": "A ti kéde ìdíje yìí — kò sí nǹkan mìíràn láti tẹ̀lé." },
+  "n.components.follow-race.session-ended-title": { "ha": "Zamanka ya ƙare", "ig": "Oge gị agwụla", "yo": "Àkókò rẹ ti parí" },
+  "n.components.follow-race.session-ended-body": { "ha": "Sake shiga, sannan ka dawo don bin wannan gasa.", "ig": "Banye ọzọ, wee laghachi iso asọmpi a.", "yo": "Tún wọlé, lẹ́yìn náà padà wá láti tẹ̀lé ìdíje yìí." },
+  "n.components.follow-race.how-they-reach-you": { "ha": "Yadda sanarwa ke isowa gare ka →", "ig": "Otu ọkwa si eru gị →", "yo": "Bí ìkìlọ̀ ṣe ń dé ọ̀dọ̀ rẹ →" },
+  "n.app.assistant.could-not-answer": { "ha": "Mataimakin bai iya amsa wannan ba. Sake gwadawa.", "ig": "Onye enyemaka enweghị ike ịza nke a. Nwaa ọzọ.", "yo": "Olùrànlọ́wọ́ kò lè dáhùn èyí. Tún gbìyànjú." },
+  "n.app.profile.on": { "ha": "A kunne", "ig": "Na-arụ ọrụ", "yo": "Ó ń ṣiṣẹ́" },
+  "n.app.profile.off": { "ha": "A kashe", "ig": "Agbanyụọla", "yo": "Ó ti wà ní pípa" },
+  "n.app.profile.not-available": { "ha": "Babu shi", "ig": "Adịghị", "yo": "Kò sí" },
+  "n.app.profile.no-screen-lock-biometric": { "ha": "Wannan wayar ba ta da makullin yatsa ko na fuska.", "ig": "Ekwentị a enweghị mkpọchi mkpịsị aka ma ọ bụ ihu edobere.", "yo": "Fóònù yìí kò ní títìpa ìka tàbí ojú tí a ṣètò." },
+  "n.app.profile.alerts-this-phone": { "ha": "Wannan wayar", "ig": "Ekwentị a", "yo": "Fóònù yìí" },
+  "n.app.profile.turn-on-in-phone-settings": { "ha": "Kunna a saitunan wannan wayar.", "ig": "Gbanye ya na ntọala ekwentị a.", "yo": "Tàn án ní ètò fóònù yìí." },
+  "n.app.profile.located": { "ha": "An gano wurinsa ✓", "ig": "Achọtala ebe ọ dị ✓", "yo": "A ti rí ibi tí ó wà ✓" },
+  "n.app.profile.via-your-verified-report": { "ha": "ta rahotonka da aka tabbatar", "ig": "site n’akụkọ gị a kwadoro", "yo": "nípasẹ̀ ìjábọ̀ rẹ tí a fìdí rẹ̀ múlẹ̀" },
+  "n.app.profile.practice-polling-unit": { "ha": "Rumfar zaɓe ta atisaye", "ig": "Ngalaba ntuli aka omume", "yo": "Ẹ̀ka ìdìbò àdánwò" },
+  "n.app.profile.all-zero": { "ha": "duk sifili", "ig": "efu niile", "yo": "gbogbo rẹ̀ jẹ́ òdo" },
+  "n.app.profile.practice-chain": { "ha": "sarkar atisaye", "ig": "agbụ omume", "yo": "ẹ̀wọ̀n àdánwò" }
+}

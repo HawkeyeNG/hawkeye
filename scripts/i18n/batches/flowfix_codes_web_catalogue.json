@@ -1,0 +1,21 @@
+{
+  "situation-room.codes-check-other": "Check other codes",
+  "situation-room.codes-yours-title": "Your organisation codes",
+  "situation-room.codes-yours-intro": "Every batch Hawkeye has issued for {v0}, with each code’s status. It refreshes by itself about once a minute.",
+  "situation-room.codes-none-issued": "Hawkeye has not issued any codes for {v0} yet. When it does, they appear here by themselves.",
+  "situation-room.codes-list-failed": "Could not load your codes. Check your connection — it tries again by itself.",
+  "situation-room.codes-batch-n": "Batch {v0}",
+  "situation-room.codes-batch-line": "{v0} · {v1} codes",
+  "situation-room.codes-tally-line": "{v0} unused · {v1} used · {v2} withdrawn",
+  "situation-room.codes-by-hawkeye": "Withdrawn by Hawkeye",
+  "situation-room.codes-unlisted": "This batch was issued before Hawkeye kept codes for rooms, so its codes cannot be listed here. Check them with “Check other codes” below.",
+  "situation-room.codes-unlisted-some": "{v0} codes in this batch cannot be listed. Check them with “Check other codes” below.",
+  "situation-room.codes-select-batch": "Select this batch’s unused ({v0})",
+  "situation-room.codes-filter-all": "All codes",
+  "situation-room.codes-show": "Show",
+  "situation-room.codes-shown-batch": "Showing the first {v0} of {v1} codes. The download has them all.",
+  "situation-room.codes-filter-empty": "No codes in this batch match.",
+  "situation-room.codes-refresh-failed": "Could not refresh just now. This is the list from {v0}.",
+  "situation-room.codes-updated": "Updated {v0}",
+  "situation-room.codes-col-batch": "Batch"
+}

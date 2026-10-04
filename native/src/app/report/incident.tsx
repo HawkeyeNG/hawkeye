@@ -53,6 +53,9 @@ import {
 } from '@/lib/location';
 import { queueJob } from '@/lib/outbox';
 import { filePart } from '@/lib/submit';
+import { holdsQueue, retryableStatus, retryAfterOf, retryDelayMs } from '@/lib/retry';
+import { clearDraft, loadDraft, saveDraft } from '@/lib/report-draft';
+import { useLeaveGuard } from '@/components/leave-guard';
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { InfoDot } from '@/components/info-dot';
@@ -65,6 +68,10 @@ import { saveReportMedia } from '@/lib/save-to-device';
 // backend; production blocks cross-origin calls. See lib/api.ts.
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
+
+/** The incident being written — kind and description only (REP-INC-03). */
+const DRAFT_KEY = 'hk_incident_draft_v1';
+const DRAFT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 /** Kind codes from /api/incidents/kinds, with observer-facing labels. */
 const KINDS: { code: string; label: string; icon: keyof typeof Feather.glyphMap }[] = [
@@ -579,7 +586,35 @@ export default function ReportIncident() {
     kind: string;
     reference: number | string | null;
     at: number;
+    /** Queued behind a lapsed session: the ending offers Sign in (REP-INC-01). */
+    signIn?: boolean;
   } | null>(null);
+
+  /**
+   * THE DRAFT (REP-INC-03): kind and description survive a reload or an OS
+   * kill. Text only — the media tray is not kept; the brief is that what was
+   * TYPED, the slowest thing to redo with a crowd around, is never lost.
+   * Restored once, on open, and only into empty fields.
+   */
+  const draftRead = useRef(false);
+  useEffect(() => {
+    loadDraft<{ kind: string | null; description: string }>(DRAFT_KEY, DRAFT_MAX_AGE_MS)
+      .then((d) => {
+        if (d) {
+          setKind((k) => k ?? d.kind ?? null);
+          setDescription((s) => s || d.description || '');
+        }
+      })
+      .catch(() => {})
+      .finally(() => { draftRead.current = true; });
+  }, []);
+  useEffect(() => {
+    // Not before the stored one has been read — an empty first render would
+    // overwrite the very draft about to be restored.
+    if (!draftRead.current || done) return;
+    if (kind || description.trim()) saveDraft(DRAFT_KEY, { kind, description });
+    else clearDraft(DRAFT_KEY);
+  }, [kind, description, done]);
 
   /** A decision about the unit has been made, either way. */
   const unitDecided = !!unit || noUnit;
@@ -1112,18 +1147,26 @@ export default function ReportIncident() {
       }
       // The upload is over either way; the bar must not outlive it.
       setUp(null);
-      if (!res) {
-        // Both attempts threw, so nothing reached the server — hand the report
-        // to the outbox instead of asking someone in the middle of an incident
-        // to hold the screen open until the network returns. Queued ONLY on
-        // this path: a request that came back with an HTTP answer WAS received,
-        // and replaying it would file the same incident twice.
+
+      /**
+       * Hand the report to the outbox and end on "saved on this phone".
+       *
+       * Three ways here, one rule — the one lib/submit.ts already applies to a
+       * result (REP-INC-01/02): nothing reached the server; the session lapsed
+       * (the outbox holds a job until there is a token again, then sends it);
+       * or the server answered with a status worth retrying (5xx/408/425/429).
+       * A 5xx MAY have stored it, so a replay can file it twice — the same
+       * trade the silent retry above already makes, and a duplicate in the
+       * review queue costs far less than an incident lost on a busy morning.
+       */
+      const park = async (why: 'offline' | 'signedOut' | 'busy', notBefore?: number) => {
         try {
           await queueJob({
             kind: 'incident',
             body: fields,
             files,
             label: i18nT('n.app.report.incident.incident', { v0: (() => { const f = KINDS.find((k) => k.code === kind); return f ? i18nT(f.label) : kind; })() }),
+            notBefore,
           });
         } catch (e) {
           setLine(
@@ -1132,15 +1175,47 @@ export default function ReportIncident() {
           return;
         }
         saveReportMedia(ownShots);
+        clearDraft(DRAFT_KEY);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.incident.saved-to-send-later'),
           icon: 'clock',
-          line: i18nT('n.app.report.incident.saved-on-this-phone-it-sends'),
+          line:
+            why === 'signedOut'
+              ? i18nT('n.app.report.incident.signed-out-saved')
+              : why === 'busy'
+                ? i18nT('n.app.report.incident.server-busy-saved')
+                : i18nT('n.app.report.incident.saved-on-this-phone-it-sends'),
           kind,
           reference: null,
           at: Date.now(),
+          signIn: why === 'signedOut',
         });
+      };
+
+      if (!res) {
+        // Both attempts threw, so nothing reached the server — hand the report
+        // to the outbox instead of asking someone in the middle of an incident
+        // to hold the screen open until the network returns.
+        await park('offline');
+        return;
+      }
+      /* 401: KEPT, NOT LOST, and the ending says how to get it sent.
+         No re-mint here, unlike lib/submit.ts deliver(): the outbox re-mints
+         the session once itself before it resends (lib/outbox.ts flush), and a
+         failed re-mint on THIS screen flips the app to signed-out — whereupon
+         the root layout bounces to Welcome before the "saved on this phone"
+         ending can be read, which is exactly the news this observer needs. */
+      if (res.status === 401) {
+        await park('signedOut');
+        return;
+      }
+      if (retryableStatus(res.status)) {
+        // 429/503 are "busy": honour Retry-After, as a result does.
+        const notBefore = holdsQueue(res.status)
+          ? Date.now() + retryDelayMs(res.status, await retryAfterOf(res), 0)
+          : undefined;
+        await park('busy', notBefore);
         return;
       }
       const body = (await res.json().catch(() => ({}))) as {
@@ -1151,6 +1226,7 @@ export default function ReportIncident() {
       };
       if (res.ok && body.ok) {
         saveReportMedia(ownShots);
+        clearDraft(DRAFT_KEY);
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         setDone({
           title: i18nT('n.app.report.incident.incident-reported'),
@@ -1183,45 +1259,20 @@ export default function ReportIncident() {
     }
   };
 
+  /** Leaving with something captured or typed and nothing handed off asks
+   *  first — the guard report/result.tsx uses (REP-RES-01). Discard drops the
+   *  kept text too; an app kill keeps it. */
+  const { sheet: leaveGuard, confirmLeave } = useLeaveGuard(
+    // Never against the root layout's signed-out bounce: that removal is the
+    // app's, not the observer's, and blocking it is how a modal gets orphaned.
+    auth.status === 'signedIn' && !done && (media.length > 0 || description.trim().length > 0),
+    () => clearDraft(DRAFT_KEY),
+  );
+
   // -- guards ---------------------------------------------------------------
-  if (auth.status !== 'signedIn') {
-    return (
-      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
-        <Feather name="lock" size={28} color={BRAND.leaf} />
-        <Text className="pt-3 text-center text-base font-semibold text-ink">
-          {i18nT('n.app.report.incident.sign-in-to-report-an-incident')}
-        </Text>
-        <Pressable
-          className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
-          onPress={() => router.push('/sign-in')}
-        >
-          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
-        </Pressable>
-        <Pressable className="mt-3" onPress={() => router.back()}>
-          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
-        </Pressable>
-      </SafeScreen>
-    );
-  }
-
-  if (camera) {
-    return (
-      <CaptureCamera
-        title={i18nT('n.app.report.incident.capture-evidence')}
-        hint={i18nT('n.app.report.incident.photo-or-switch-to-video-up', { v0: MAX_VIDEO_SECONDS })}
-        allowVideo
-        onCapture={(m) => {
-          // 'camera': the recorder already stopped this at MAX_VIDEO_SECONDS,
-          // so the duration cap is the gate and no size check applies.
-          shotHere.current.add(m.uri);
-          addMedia([m], 'camera');
-          setCamera(false);
-        }}
-        onCancel={() => setCamera(false)}
-      />
-    );
-  }
-
+  /* THE ENDING COMES FIRST, ahead of the sign-in guard: once a report has been
+     handed off, "saved on this phone, sign in to send it" is the sentence to
+     keep on screen, never a bare sign-in prompt that hides that it was kept. */
   if (done) {
     const kindDef = KINDS.find((k) => k.code === done.kind);
     return (
@@ -1253,6 +1304,16 @@ export default function ReportIncident() {
         {/* Pinned below the scroll: the card pushes it down on a small phone,
             and the one action here must never need scrolling to reach. */}
         <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
+          {/* Kept behind a lapsed session: signing in is what sends it, so it
+              is the first thing offered (REP-INC-01). */}
+          {done.signIn ? (
+            <Pressable
+              className="mb-3 items-center rounded-2xl bg-hawk-gold py-4 active:opacity-80"
+              onPress={() => router.push('/sign-in')}
+            >
+              <Text className="text-base font-bold text-hawk-ink">{i18nT('index.sign-in')}</Text>
+            </Pressable>
+          ) : null}
           <Pressable
             className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
             onPress={() => router.back()}
@@ -1261,6 +1322,48 @@ export default function ReportIncident() {
           </Pressable>
         </View>
       </SafeScreen>
+    );
+  }
+
+  if (auth.status !== 'signedIn') {
+    return (
+      <SafeScreen className="flex-1 items-center justify-center bg-surface px-8">
+        <Feather name="lock" size={28} color={BRAND.leaf} />
+        <Text className="pt-3 text-center text-base font-semibold text-ink">
+          {i18nT('n.app.report.incident.sign-in-to-report-an-incident')}
+        </Text>
+        <Pressable
+          className="mt-4 rounded-2xl bg-hawk-green px-6 py-3"
+          onPress={() => router.push('/sign-in')}
+        >
+          <Text className="text-base font-bold text-hawk-gold">{i18nT('index.sign-in')}</Text>
+        </Pressable>
+        <Pressable className="mt-3" onPress={() => router.back()}>
+          <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
+        </Pressable>
+        {leaveGuard}
+      </SafeScreen>
+    );
+  }
+
+  if (camera) {
+    return (
+      <>
+      <CaptureCamera
+        title={i18nT('n.app.report.incident.capture-evidence')}
+        hint={i18nT('n.app.report.incident.photo-or-switch-to-video-up', { v0: MAX_VIDEO_SECONDS })}
+        allowVideo
+        onCapture={(m) => {
+          // 'camera': the recorder already stopped this at MAX_VIDEO_SECONDS,
+          // so the duration cap is the gate and no size check applies.
+          shotHere.current.add(m.uri);
+          addMedia([m], 'camera');
+          setCamera(false);
+        }}
+        onCancel={() => setCamera(false)}
+      />
+      {leaveGuard}
+      </>
     );
   }
 
@@ -1283,7 +1386,8 @@ export default function ReportIncident() {
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
         <Pressable
-          onPress={() => router.navigate('/(tabs)' as never)}
+          // Asks first while something is captured or typed (components/leave-guard.tsx).
+          onPress={() => confirmLeave(() => router.navigate('/(tabs)' as never))}
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
@@ -1952,6 +2056,7 @@ export default function ReportIncident() {
       >
         <Text className="text-sm leading-5 text-muted">{blocked?.body}</Text>
       </ModalCard>
+      {leaveGuard}
     </SafeScreen>
   );
 }

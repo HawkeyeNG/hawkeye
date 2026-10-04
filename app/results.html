@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     .map-card svg { width: 100%; height: auto; display: block; }
@@ -76,11 +76,11 @@
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta name="twitter:card" content="summary_large_image" />
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
   <script src="map-label.js?v=2"></script>
   <!-- For window.followSubject — the Follow button here and the one on a race
        page describe their subscriptions with the same words, from one place. -->
-  <script src="follow.js?v=5"></script>
+  <script src="follow.js?v=6"></script>
   <script src="race-picker.js?v=14"></script>
   <!-- For window.findRace only — the board resolves a clicked region to its race
        page through the same index the race pages use, so the two can never
@@ -1404,37 +1404,63 @@
       info.hidden = false;
     });
 
+    /* THE SAME WORDS AS EVERY OTHER FOLLOW BUTTON (follow.js, flow walkthrough
+       FA-FOLLOW-1). This board keeps its own button — it follows whatever the
+       scope picker says — but every message was an English literal, and every
+       failure told signed-in, verified observers to "make sure your phone is
+       verified" when the real problem was a dropped connection or an expired
+       session. Now: signed out → sign in and come back (?next=); 401 → the
+       session ended; anything else → check your connection. */
     document.getElementById('btn-follow').onclick = async () => {
       const token = localStorage.getItem('hawkeye_token');
       const msg = document.getElementById('follow-msg');
-      if (!token) { msg.innerHTML = 'To follow a race, first <a href="observe.html">verify your phone</a>, then return here.'; return; }
+      const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+      const signIn = (k, en) => ` <a href="observe.html?intent=signin&amp;next=${esc(encodeURIComponent('results.html' + location.search))}">${esc(T(k, en))}</a>`;
+      if (!token) {
+        msg.innerHTML = esc(T('follow.signed-out', 'To follow a race, sign in first.')) + signIn('follow.sign-in', 'Sign in →');
+        return;
+      }
       const contest = document.getElementById('sel-contest').value;
       const scope = document.getElementById('sel-scope').value;
       const r = await fetch('/api/subscriptions', {
         method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
         body: JSON.stringify({ contest, state: scope }),
-      });
+      }).catch(() => null);
+      const status = r ? r.status : 0;
       // Names the same subject the button does — "everywhere" left the reader to
       // work out what they had just signed up for.
-      const subject = scope || (window.followSubject ? window.followSubject(contest, '') : 'this race');
-      // 409 = declared while this board was open. Not a failure the reader can
-      // act on, so the control goes rather than reporting one.
-      if (r.status === 409) {
+      const subject = scope || (window.followSubject ? window.followSubject(contest, '') : T('follow.this-race', 'this race'));
+      // 409 = declared while this board was open. The control goes, but says
+      // why first: a button vanishing under your thumb reads as a fault.
+      if (status === 409) {
         document.getElementById('btn-follow').hidden = true;
-        msg.textContent = '';
+        msg.textContent = T('follow.declared', 'This race has been declared — there is nothing more to follow.');
         return;
       }
-      msg.textContent = r.ok
-        // The button beside this already reads Follow / Unfollow this race, and
-        // the sentence explaining what following does was three lines of it.
-        ? `🔔 Following ${subject}.`
-        : 'Could not set up following — make sure your phone is verified.';
+      if (status === 401) {
+        const body = await r.json().catch(() => null);
+        const H = window.HAWKEYE;
+        if (!H || !H.authRejected || H.authRejected(401, body && body.error)) {
+          try { localStorage.removeItem('hawkeye_token'); } catch { /* signed out either way */ }
+        }
+        msg.innerHTML = esc(T('follow.session-ended', 'Your session has ended.')) + signIn('follow.sign-in-again', 'Sign in again →');
+        return;
+      }
+      if (!r || !r.ok) {
+        msg.textContent = T('follow.could-not-follow', 'Could not follow — check your connection and try again.');
+        return;
+      }
+      // The button beside this already reads Follow / Unfollow this race, and
+      // the sentence explaining what following does was three lines of it. The
+      // link says where the alerts go, as follow.js's "Alerts on" line does.
+      msg.innerHTML = '🔔 ' + esc(TV('results.following-subject', 'Following {v0}.', { v0: subject }))
+        + ` <a href="profile.html#alerts">${esc(T('follow.how-they-reach-you', 'How they reach you →'))}</a>`;
     };
   </script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

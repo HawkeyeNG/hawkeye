@@ -130,6 +130,7 @@
       const id = await run('readwrite', (s) => s.add({ ...entry, queuedAt: Date.now() }));
       session().catch(() => {}); // the worker needs the token to send it
       wantSync();
+      if (inPage) G.dispatchEvent(new CustomEvent('hawkeye-outbox-queued', { detail: { id } }));
       return id;
     },
     all: () => run('readonly', (s) => s.getAll()),
@@ -272,7 +273,61 @@
   };
   G.HawkeyeOutbox = Outbox;
 
-  const go = () => Outbox.flush().catch(() => {});
+  /**
+   * WHAT IS WAITING, ON SCREEN (flow walkthrough REP-OFF-01).
+   *
+   * Once the receipt screen was left, a queued report was invisible: Profile
+   * listed only what the server had, and when the queue finally drained nothing
+   * said so — the events below were dispatched and nobody listened. So every
+   * page that runs this file (all of them: menu.js injects it) carries one line
+   * at the top of <main> while the queue is not empty, and says so once when a
+   * saved report goes out. One line, not a page: it is a fact about the phone,
+   * and the phone is where the observer is looking.
+   */
+  const tr = (key, en, params) => {
+    const I = G.HawkeyeI18n;
+    let s = I ? I.t(key, en) : en;
+    for (const [k, v] of Object.entries(params || {})) s = String(s).split('{' + k + '}').join(v);
+    return s;
+  };
+  let sentNote = null; // { n, until } — the "was sent" line, shown for a few seconds
+  let paintSeq = 0;
+  async function paintPending() {
+    if (!inPage || !document.body) return;
+    const mine = ++paintSeq;
+    let n = 0;
+    try { n = await Outbox.count(); } catch { return; }
+    if (mine !== paintSeq) return;
+    const main = document.querySelector('main');
+    let row = document.getElementById('hk-outbox-row');
+    const showSent = sentNote && sentNote.until > Date.now();
+    // Shown on the sign-in screen too: a report held for a dead session is
+    // exactly what that screen is for, and its line says "when you sign in".
+    if (!main || (!n && !showSent)) { if (row) row.remove(); return; }
+    if (!row) {
+      row = document.createElement('p');
+      row.id = 'hk-outbox-row';
+      row.className = 'notice';
+      row.setAttribute('role', 'status');
+      row.style.cssText = 'margin:0 0 12px';
+      main.insertBefore(row, main.firstChild);
+    }
+    let signedIn = false;
+    try { signedIn = !!G.localStorage.getItem('hawkeye_token'); } catch { /* treat as signed out */ }
+    row.textContent = n
+      ? (n === 1
+        ? (signedIn
+          ? tr('outbox.one-waiting', '⏳ 1 report is waiting to send. It sends by itself when you are back online.')
+          : tr('outbox.one-waiting-signed-out', '⏳ 1 report is waiting to send. It sends when you sign in again.'))
+        : (signedIn
+          ? tr('outbox.n-waiting', '⏳ {n} reports are waiting to send. They send by themselves when you are back online.', { n })
+          : tr('outbox.n-waiting-signed-out', '⏳ {n} reports are waiting to send. They send when you sign in again.', { n })))
+      : (sentNote.n === 1
+        ? tr('outbox.one-sent', '✔ Your saved report was sent.')
+        : tr('outbox.n-sent', '✔ {n} saved reports were sent.', { n: sentNote.n }));
+  }
+
+  const go = () => Outbox.flush().catch(() => {}).then(() => paintPending());
   // Reconnect and resume are the moments every phone in an area acts at once
   // (a mast comes back; everyone unlocks at close of poll), so the first
   // attempt is staggered by a random delay rather than fired on the event.
@@ -280,13 +335,25 @@
   if (inPage) {
     G.addEventListener('online', () => goSoon(10000));
     // Coming back to the tab or app (the Lite shell resumes its WebView this
-    // way) is often the first moment the network is back.
-    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') goSoon(3000); });
+    // way) is often the first moment the network is back — and the service
+    // worker may have sent the queue while the page was away.
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { paintPending(); goSoon(3000); } });
     setInterval(() => { if (document.visibilityState === 'visible') go(); }, 60000);
+    G.addEventListener('hawkeye-outbox-queued', () => paintPending());
+    G.addEventListener('hawkeye-outbox-dropped', () => paintPending());
+    G.addEventListener('hawkeye-outbox-sent', (e) => {
+      const n = (e && e.detail && e.detail.sent) || 1;
+      sentNote = { n, until: Date.now() + 8000 };
+      paintPending();
+      setTimeout(paintPending, 8100);
+    });
+    // The line is painted by this file, so it follows a language change here.
+    document.addEventListener('hawkeye-lang', () => paintPending());
     const start = async () => {
       // Drops the service worker recorded while no page was open.
       const parked = await getKv('swDropped').catch(() => null);
       if (parked && parked.length) { await putKv('swDropped', []).catch(() => {}); record(parked); }
+      paintPending();
       go();
     };
     // menu.js injects this after the page has parsed, so DOMContentLoaded may be gone.

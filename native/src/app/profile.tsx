@@ -1,5 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as Clipboard from 'expo-clipboard';
+import * as Notifications from 'expo-notifications';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import * as SecureStore from '@/lib/secure-store';
@@ -8,6 +9,7 @@ import {
   ActivityIndicator,
   Animated,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
@@ -37,6 +39,10 @@ import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
 import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
+import { KIND_LABEL } from '@/lib/incident-kinds';
+
+/** The race-results Telegram channel — the one the FAQ and the web Profile name. */
+const RESULTS_CHANNEL = 'https://t.me/HawkeyeNG_Results';
 import {
   createState,
   listPasskeys,
@@ -223,6 +229,10 @@ export default function Profile() {
   /** Copy report photos and videos to this phone's library. Default on; see
    *  lib/save-to-device.ts. */
   const [saveOn, setSaveOn] = useState(true);
+  /** This phone's notification permission, for "How alerts reach you". */
+  const [pushPerm, setPushPerm] = useState<'on' | 'off' | 'unknown'>('unknown');
+  /** The passkey a Remove tap is asking about; the sheet confirms first. */
+  const [pkRemove, setPkRemove] = useState<PasskeyItem | null>(null);
   const notice = useNotice();
   /** Practice runs are per-device, not per-observer — practice never asks
    *  anyone to sign in, so they arrive from their own endpoint. */
@@ -251,6 +261,18 @@ export default function Profile() {
       setBioOn(enabled);
       setSaveOn(saving);
     })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  /* Asked of the OS, never assumed. A platform without the module (the web
+     build) says nothing rather than something false. */
+  useEffect(() => {
+    let alive = true;
+    Notifications.getPermissionsAsync()
+      .then((p) => { if (alive) setPushPerm(p.granted ? 'on' : 'off'); })
+      .catch(() => { if (alive) setPushPerm('unknown'); });
     return () => {
       alive = false;
     };
@@ -662,9 +684,11 @@ export default function Profile() {
               </Text>
             </View>
 
-            {/* Account */}
+            {/* Account. Every literal on this screen is a key (flow walkthrough
+                FA-PROF-2: "ACCOUNT", On/Off and Not Available stayed English in
+                every other language). */}
             <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
-              Account
+              {i18nT('profile.account')}
             </Text>
             <View className="overflow-hidden rounded-2xl bg-card">
               <Row
@@ -707,7 +731,8 @@ export default function Profile() {
                             </View>
                             <Pressable
                               disabled={!!pkBusy}
-                              onPress={() => void onRemovePasskey(p.id)}
+                              // Asks first (FA-PROF-3): one tap deleted a sign-in key.
+                              onPress={() => setPkRemove(p)}
                               accessibilityRole="button"
                               accessibilityLabel={i18nT('passkey.remove-aria', { label: p.label ?? '' })}
                               className="rounded-full bg-bad px-3 py-1.5 active:opacity-70"
@@ -758,20 +783,20 @@ export default function Profile() {
               <Row
                 icon="shield"
                 label={i18nT('n.app.profile.face-id-or-fingerprint-to-sign')}
-                value={bioAvailable ? (bioOn ? 'On' : 'Off') : 'Not Available'}
+                value={bioAvailable ? (bioOn ? i18nT('n.app.profile.on') : i18nT('n.app.profile.off')) : i18nT('n.app.profile.not-available')}
                 onPress={bioAvailable ? toggleBio : undefined}
                 sub={
                   <Text className="pt-0.5 text-xs text-muted">
                     {bioAvailable
                       ? i18nT('n.app.profile.asked-once-just-before-a-real')
-                      : 'This phone has no fingerprint or face unlock set up.'}
+                      : i18nT('n.app.profile.no-screen-lock-biometric')}
                   </Text>
                 }
               />
               <Row
                 icon="download"
                 label={i18nT('n.app.profile.save-report-photos-and-videos-to')}
-                value={saveOn ? 'On' : 'Off'}
+                value={saveOn ? i18nT('n.app.profile.on') : i18nT('n.app.profile.off')}
                 onPress={toggleSave}
                 sub={
                   <Text className="pt-0.5 text-xs text-muted">
@@ -784,7 +809,7 @@ export default function Profile() {
                 label={i18nT('index.my-polling-unit')}
                 // Right-hand column only carries the empty state; a saved unit
                 // needs its whole identification, which lives in `sub`.
-                value={savedUnit ? undefined : 'None Saved'}
+                value={savedUnit ? undefined : i18nT('profile.none-saved')}
                 sub={
                   savedUnit ? (
                     <>
@@ -836,6 +861,47 @@ export default function Profile() {
                 />
               ) : null}
             </View>
+            {/* HOW ALERTS REACH YOU (flow walkthrough FA-FOLLOW-4). Push was
+                registered at sign-in and nothing on any screen said where a
+                race alert goes. There is no per-race channel choice on the
+                server — every alert goes to all three at once — so this names
+                them and opens where each is switched on. A Follow button's
+                "How alerts reach you" lands here. Web twin: profile.html#alerts. */}
+            <Text className="pb-2 pt-4 text-[11px] font-bold uppercase tracking-wider text-faint">
+              {i18nT('profile.alerts-reach-you')}
+            </Text>
+            <View className="overflow-hidden rounded-2xl bg-card">
+              <Row
+                first
+                icon="bell"
+                label={i18nT('profile.alerts-in-app')}
+                sub={<Text className="pt-0.5 text-xs text-muted">{i18nT('profile.alerts-in-app-sub')}</Text>}
+                chevron
+                onPress={() => router.push('/alerts' as never)}
+              />
+              <Row
+                icon="smartphone"
+                label={i18nT('n.app.profile.alerts-this-phone')}
+                value={pushPerm === 'on' ? i18nT('n.app.profile.on') : pushPerm === 'off' ? i18nT('n.app.profile.off') : undefined}
+                sub={
+                  pushPerm === 'off' ? (
+                    <Text className="pt-0.5 text-xs text-muted">{i18nT('n.app.profile.turn-on-in-phone-settings')}</Text>
+                  ) : undefined
+                }
+                chevron
+                // The OS settings page for this app is where notifications are
+                // switched on or off; there is no in-app toggle to offer.
+                onPress={() => { Promise.resolve().then(() => Linking.openSettings()).catch(() => {}); }}
+              />
+              <Row
+                icon="send"
+                label="Telegram"
+                sub={<Text className="pt-0.5 text-xs text-muted">{i18nT('profile.alerts-telegram-sub')}</Text>}
+                chevron
+                onPress={() => { Promise.resolve().then(() => Linking.openURL(RESULTS_CHANNEL)).catch(() => {}); }}
+              />
+            </View>
+
             {/* Headed, not bare: these chips used to float under the account
                 card as naked codes, and read as noise rather than as the
                 alerts the observer had switched on. */}
@@ -900,7 +966,7 @@ export default function Profile() {
                           </Text>
                           <Text className="text-[11px] text-muted">
                             {[r.lga, r.state].filter(Boolean).join(', ')} · {dt(r.created_at)} ·{' '}
-                            ledger {String(r.entry_hash).slice(0, 10)}…
+                            {i18nT('profile.ledger-label')} {String(r.entry_hash).slice(0, 10)}…
                           </Text>
                         </View>
                       ))
@@ -922,17 +988,17 @@ export default function Profile() {
                     ? practice.map((r) => (
                         <View key={r.id} className="border-t border-line px-4 py-2.5">
                           <Text className="text-sm font-semibold text-ink">
-                            {r.pu_name || r.pu_code || 'Practice polling unit'}
+                            {r.pu_name || r.pu_code || i18nT('n.app.profile.practice-polling-unit')}
                           </Text>
                           <Text className="text-[11px] text-muted">
                             {r.votes
                               .filter((v) => v.count > 0)
                               .map((v) => `${v.party} ${v.count}`)
-                              .join(' · ') || 'all zero'}{' '}
+                              .join(' · ') || i18nT('n.app.profile.all-zero')}{' '}
                             · {dt(r.created_at)}
                           </Text>
                           <Text className="pt-0.5 font-mono text-[10px] text-faint">
-                            practice chain {String(r.entry_hash).slice(0, 16)}…
+                            {i18nT('n.app.profile.practice-chain')} {String(r.entry_hash).slice(0, 16)}…
                           </Text>
                         </View>
                       ))
@@ -947,8 +1013,8 @@ export default function Profile() {
                             {[m.ward, m.lga, m.state].filter(Boolean).join(', ')} · {dt(m.created_at)}
                           </Text>
                           <Text className="pt-0.5 text-[11px] font-semibold text-good-ink">
-                            {m.confirmed ? 'Located ✓' : i18nT('n.app.profile.fix-es-so-far', { v0: m.crowd_reports ?? 0 })}
-                            {m.source === 'report' ? ' · via your verified report' : ''}
+                            {m.confirmed ? i18nT('n.app.profile.located') : i18nT('n.app.profile.fix-es-so-far', { v0: m.crowd_reports ?? 0 })}
+                            {m.source === 'report' ? ` · ${i18nT('n.app.profile.via-your-verified-report')}` : ''}
                           </Text>
                         </View>
                       ))
@@ -957,10 +1023,10 @@ export default function Profile() {
                     ? me.incidents?.map((n, j) => (
                         <View key={j} className="border-t border-line px-4 py-2.5">
                           <Text className="text-sm font-semibold text-ink">
-                            {n.kind} <Text className="text-xs text-muted">({n.status})</Text>
+                            {KIND_LABEL[n.kind] ?? n.kind.replace(/_/g, ' ')} <Text className="text-xs text-muted">({n.status})</Text>
                           </Text>
                           <Text className="text-[11px] text-muted">
-                            {[n.pu_code, n.state].filter(Boolean).join(' · ') || 'no location'} ·{' '}
+                            {[n.pu_code, n.state].filter(Boolean).join(' · ') || i18nT('profile.no-location')} ·{' '}
                             {dt(n.created_at)}
                           </Text>
                         </View>
@@ -1098,6 +1164,21 @@ export default function Profile() {
           </Pressable>
         </View>
       ) : null}
+
+      <ConfirmSheet
+        visible={!!pkRemove}
+        icon="lock"
+        danger
+        title={i18nT('passkey.remove-confirm-title', { label: pkRemove?.label ?? '' })}
+        body={i18nT('passkey.remove-confirm-body')}
+        confirmLabel={i18nT('passkey.remove')}
+        onConfirm={() => {
+          const id = pkRemove?.id;
+          setPkRemove(null);
+          if (id) void onRemovePasskey(id);
+        }}
+        onCancel={() => setPkRemove(null)}
+      />
 
       <ConfirmSheet
         visible={confirm === 'signout'}

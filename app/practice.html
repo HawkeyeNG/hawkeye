@@ -14,7 +14,7 @@
        heading does not reflow from the fallback face once it lands (audit W3). -->
   <link rel="preload" href="fonts/spline-700.woff2?v=1" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -44,8 +44,23 @@
     .iu-card button, .iu-card a.btn-accent { margin: 0; }
     .iu-status:empty { display: none; }
     .iu-status { margin: 8px 0 0 !important; font-weight: 600; color: var(--muted); }
+    /* The real report's step cards and submit facts (observe.html keeps these
+       page-local too), so the rehearsal looks and folds the same. */
+    .step-card.locked { border-style: dashed; }
+    .step-card.locked > summary, .step-card.locked > summary h2 { color: var(--muted); }
+    .step-card.locked .step-no { filter: grayscale(1); }
+    .step-card.locked > summary { pointer-events: none; cursor: default; }
+    .step-card > summary::marker, .step-card > summary::-webkit-details-marker { display: none; }
+    .step-card.done > summary { color: var(--green); }
+    .step-card > summary .hint { display: block; margin-left: 0 !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    #preview-sheet[hidden], #preview-venue[hidden] { display: none; }
+    .submit-facts[hidden] { display: none; }
+    .submit-facts { background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin: 0 0 12px; }
+    .submit-facts strong { display: block; font-size: 0.95rem; }
+    .submit-facts small { display: block; color: var(--muted); font-size: 0.78rem; }
+    .submit-facts .sf-race { display: block; margin-top: 4px; font-size: 0.78rem; font-weight: 700; color: var(--link); }
 </style>
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
   <style>
     /* The practice preview mirrors the reports-log card (dashboard.html),
        whose sheet-strip rules are inline there for the same reason: styles.css
@@ -103,13 +118,21 @@
            phase banner and the lede already say: nothing here is published.
            Three restatements of one fact pushed the actual flow below the fold. -->
 
-      <div class="card">
-        <strong data-i18n="practice.practice-polling-unit" id="prac-unit-name">Practice Polling Unit</strong>
-        <p class="hint" id="prac-unit-scope"></p>
-      </div>
-
-      <div class="card">
-        <h2 data-i18n-html="observe.1-capture-the-evidence"><span class="step-no">1</span> Capture the Evidence</h2>
+      <!-- THE SAME FIVE STEP CARDS AS THE REAL REPORT (flow walkthrough
+           REP-PRAC-01). This page used to be a fixed "Practice Polling Unit"
+           card, then capture, counts and submit — so the two steps observers
+           actually stumble on, finding their unit and choosing the race, were
+           never rehearsed. Now it is observe.html's order and fold behaviour:
+           1 capture, 2 which polling unit (near me, search, or the practice
+           unit), 3 which election, 4 counts + Verify counts, 5 sign. Native
+           practice already mirrors native result the same way. Still no write
+           to the real ledger: the submit goes to /api/practice/submit, as
+           before, with the unit code and race as plain strings. -->
+      <details class="card step-card" id="photo-fold" open>
+        <summary style="cursor:pointer;list-style:none">
+          <h2 data-i18n-html="observe.1-capture-the-evidence" style="display:inline-block;margin:0"><span class="step-no">1</span> Capture the Evidence</h2>
+          <span id="photo-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <p data-i18n="practice.on-election-day-you-take-two" class="hint">On election day you take two live photos here — the results sheet and the venue.
         Try it now (or tap “Use a sample” if you’d rather skip the camera in practice).</p>
         <div class="capture-slot">
@@ -126,16 +149,53 @@
           <div class="row"><button data-i18n="common.take-photo" id="btn-cam-venue" class="secondary" style="width:auto">Take photo</button>
             <button data-i18n="practice.use-a-sample" id="btn-skip-venue" class="btn-link" style="width:auto">Use a sample</button></div>
         </div>
-      </div>
+      </details>
 
-      <div class="card">
-        <h2 data-i18n-html="practice.2-enter-the-announced-counts"><span class="step-no">2</span> Enter the Announced Counts</h2>
+      <details class="card step-card" id="unit-fold" data-step="2">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 data-i18n-html="observe.2-which-polling-unit" style="display:inline-block;margin:0"><span class="step-no">2</span> Which polling unit?</h2>
+          <span id="unit-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
+        <p data-i18n="practice.unit-step-hint" class="hint">On election day you pick the unit you are standing at. Practise with your own, or use the practice unit.</p>
+        <!-- The observer's saved unit, when signed in (filled by practice.js). -->
+        <div id="pu-saved"></div>
+        <button data-i18n="observe.find-polling-units-near-me" id="btn-locate" type="button">Find polling units near me</button>
+        <p id="locate-status" class="status" role="status"></p>
+        <div id="pu-list" class="option-list"></div>
+        <!-- The same search box as the real step (pu-search.js). -->
+        <div id="pu-search-host"></div>
+        <p class="hint" style="margin:14px 0 6px" data-i18n="practice.or-use-the-practice-unit">Or practise without a real unit:</p>
+        <button type="button" id="btn-prac-unit" class="pu-option"><strong data-i18n="practice.practice-polling-unit">Practice Polling Unit</strong><br /><small id="prac-unit-sub"></small></button>
+      </details>
+
+      <details class="card step-card" id="race-fold" data-step="3">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 data-i18n-html="collation.3-which-election" style="display:inline-block;margin:0"><span class="step-no">3</span> Which election?</h2>
+          <span id="race-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
+        <select id="sel-contest"></select>
+        <p data-i18n="practice.race-step-hint" class="hint">In practice every race is open. On election day only the races held that day can be chosen.</p>
+      </details>
+
+      <details class="card step-card" id="counts-fold" data-step="4">
+        <summary style="cursor:pointer;list-style:none">
+          <h2 data-i18n-html="observe.4-the-announced-counts" style="display:inline-block;margin:0"><span class="step-no">4</span> The Announced Counts</h2>
+          <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
+        </summary>
         <p data-i18n="practice.type-the-number-of-votes-each" class="hint">Type the number of votes each party was announced to have at the unit.</p>
         <div id="vote-inputs"></div>
-      </div>
+        <button data-i18n="observe.verify-counts" id="btn-verify-counts" type="button" class="secondary" style="margin-top:12px">Verify counts</button>
+      </details>
 
       <div class="card">
-        <h2 data-i18n-html="practice.3-sign-submit"><span class="step-no">3</span> Sign &amp; Submit</h2>
+        <h2 data-i18n-html="collation.5-sign-and-submit"><span class="step-no">5</span> Sign and Submit</h2>
+        <!-- What is about to be "signed": the unit and the race, as on the real
+             step 5. #prac-unit-name / #prac-unit-scope also feed the preview. -->
+        <div id="submit-facts" class="submit-facts" hidden>
+          <strong data-i18n="practice.practice-polling-unit" id="prac-unit-name">Practice Polling Unit</strong>
+          <small id="prac-unit-scope"></small>
+          <span id="prac-race" class="sf-race"></span>
+        </div>
         <p data-i18n="practice.on-election-day-your-report-is" class="hint">On election day your report is signed on your phone and added to the public,
         tamper-evident ledger. Here it just completes the practice.</p>
         <button data-i18n="practice.sign-submit-practice" id="btn-submit" disabled>Sign &amp; submit (practice)</button>
@@ -237,7 +297,10 @@
 
   <script src="device.js"></script>
   <script src="save-media.js?v=1"></script>
-  <script src="practice.js?v=12"></script>
+  <!-- The real step 2's search box, on the same offline packs. -->
+  <script src="register-store.js?v=4"></script>
+  <script src="pu-search.js?v=10"></script>
+  <script src="practice.js?v=13"></script>
   <script src="invite-unit.js?v=2"></script>
   <script>
     /* The second-observer card on the completion screen. Not a real report —
@@ -286,7 +349,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="receipt.js?v=3" defer></script>
   <script src="shell.js?v=2" defer></script>
 </body>

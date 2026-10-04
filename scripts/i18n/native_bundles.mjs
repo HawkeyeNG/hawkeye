@@ -47,6 +47,7 @@ const tr = {
 /* Identical to English on purpose: product names, handles, domains, a year, and
    a copyright line. Listed so "same as English" stays a real check. */
 const SAME_OK = new Set([
+  'observe.sms', // "SMS" in every language (the sign-up route chip; web exempts it too)
   'n.app.osun.osun-2026',
   'n.app.tabs.more.inixien-llc',
   'n.components.gov-disclaimer.inecelectionresults-ng',

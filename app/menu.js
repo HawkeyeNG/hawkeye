@@ -2141,6 +2141,8 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     #hk-in{flex:1;min-width:0;width:auto;display:block;margin:0;border:1px solid var(--border,#dde4de);border-radius:10px;padding:9px 11px;font:inherit;font-size:16px;background:var(--card,#fff);color:var(--ink,#14201a)}
     #hk-form button{display:inline-block;width:auto;margin:0;flex:none;background:var(--green,#004225);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
     #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}
+    .hk-a.hk-fail{border-color:var(--amber-border,#d4770c)}
+    #hk-panel .hk-retry{display:block;width:auto;margin:8px 0 0;padding:7px 14px;border-radius:999px;border:1px solid var(--line,#e3e8e4);background:var(--card,#fff);color:var(--link,#0a6b40);font:inherit;font-size:.85rem;font-weight:700;box-shadow:none;cursor:pointer}
     /* PHONES: a full-screen modal, not a floating card — the card left a strip of
        page around a chat that needs the whole screen and the keyboard. 110 sits
        above the tab bar (95) and below the blocking modals (report sheet 120+). */
@@ -2211,19 +2213,54 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // Close on outside click / Escape, just like the header dropdown.
     document.addEventListener('click', () => { if (panel.classList.contains('open')) close(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-    panel.querySelector('#hk-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const inp = panel.querySelector('#hk-in'); const q = inp.value.trim(); if (!q) return;
-      inp.value = ''; add('u', q); const t = add('a', '…');
+    /**
+     * A FAILED ANSWER KEEPS THE QUESTION AND OFFERS IT AGAIN (flow walkthrough
+     * FA-ASK-1). The box was emptied BEFORE the request, so a dropped signal
+     * cost the reader their typed question, and the reply was a bare "Network
+     * error — try again." with nothing to try again with. Now the box empties
+     * only on an answer, the failure says which side failed (your connection,
+     * or the assistant), and carries a Try again that re-asks in place — no
+     * second copy of the question. Native keeps its question the same way
+     * (assistant.tsx). `asking` is the one-at-a-time guard: a double tap must
+     * not send two.
+     */
+    let asking = false;
+    const ask = async (q, t) => {
+      if (asking) return;
+      asking = true;
+      const inp = panel.querySelector('#hk-in');
+      t.classList.remove('hk-fail');
+      t.textContent = '…';
+      let fail = null, retry = true;
       try {
         const r = await fetch('/api/assistant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
         const j = await r.json().catch(() => ({}));
-        t.textContent = j.answer
-          || (j.error === 'assistant_unconfigured'
-            ? i18nT('assistant.unconfigured', "The assistant isn't switched on yet.")
-            : i18nT('assistant.error', 'Something went wrong — try again.'));
-      } catch { t.textContent = i18nT('assistant.network-error', 'Network error — try again.'); }
+        if (j.answer) t.textContent = j.answer;
+        else if (j.error === 'assistant_unconfigured') { fail = i18nT('assistant.unconfigured', "The assistant isn't switched on yet."); retry = false; }
+        else fail = i18nT('assistant.err-service', 'The assistant could not answer that just now.');
+      } catch { fail = i18nT('common.cant-reach-hawkeye', 'Could not reach Hawkeye — check your connection.'); }
+      asking = false;
+      if (!fail) {
+        if (inp.value.trim() === q) inp.value = '';
+      } else {
+        t.textContent = fail;
+        t.classList.add('hk-fail');
+        if (retry) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'hk-retry';
+          b.textContent = i18nT('common.try-again', 'Try again');
+          b.onclick = () => ask(q, t);
+          t.appendChild(b);
+        }
+      }
       msgs.scrollTop = msgs.scrollHeight;
+    };
+    panel.querySelector('#hk-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const inp = panel.querySelector('#hk-in'); const q = inp.value.trim(); if (!q || asking) return;
+      add('u', q);
+      ask(q, add('a', '…'));
     });
   }
 
@@ -2274,8 +2311,34 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     { code: 'SHA', name: 'State Assembly', key: 'race.state-assembly' },
   ];
 
+  /**
+   * A CONFIGURED RACE BY ITS TRANSLATED NAME (flow walkthrough REP-LANG-04).
+   *
+   * Its options were the server's English name as-is, so a Hausa observer's
+   * step 3 read "Presidential, Senate, House of Representatives…" — only the
+   * disabled fallbacks went through race.* keys. Keyed by CODE over the
+   * contest.* keys my-groups.html, join.html and results.html already use; a
+   * by-election is "<office> By-Election (<place>)", where the office and the
+   * pattern translate and the place does not. Anything else keeps the
+   * server's name, which is also every key's fallback.
+   */
+  const CONTEST_KEY = {
+    PRES: 'contest.presidential', SEN: 'contest.senate', REP: 'contest.house-of-representatives',
+    GOV: 'contest.governorship', SHA: 'contest.state-house-of-assembly',
+  };
+  const contestName = (c) => {
+    if (CONTEST_KEY[c.code]) return i18nT(CONTEST_KEY[c.code], c.name);
+    const bye = /^([A-Z]+)_BYE_/.exec(c.code || '');
+    const m = /^(.*?) By-Election(?: \((.+)\))?$/i.exec(c.name || '');
+    if (!bye || !m || !CONTEST_KEY[bye[1]]) return c.name;
+    const base = String(i18nT('contest.by-election', '{v0} By-Election'))
+      .replace('{v0}', i18nT(CONTEST_KEY[bye[1]], m[1])).replace('{v1}', '');
+    return m[2] ? `${base} (${m[2]})` : base;
+  };
+
   window.HAWKEYE_RACES = {
     ORDER: RACE_ORDER,
+    name: contestName,
     /**
      * Fill a <select> with all five races.
      * @param sel        the <select> element
@@ -2311,11 +2374,11 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       const extras = (available || []).filter((c) => !general.has(c.code));
       sel.innerHTML = head + RACE_ORDER.map((r) => {
         const c = by.get(r.code);
-        if (c) return `<option value="${esc(c.code)}">${esc(c.name)}</option>`;
+        if (c) return `<option value="${esc(c.code)}">${esc(contestName(c))}</option>`;
         // Named, visible, and unselectable — it tells people the race exists and
         // is coming without letting them file against an election with no date.
         return `<option value="${esc(r.code)}" disabled>${esc(i18nT(r.key, r.name))} — ${esc(i18nT('race.not-open-yet', 'not open yet'))}</option>`;
-      }).concat(extras.map((c) => `<option value="${esc(c.code)}">${esc(c.name)}</option>`)).join('');
+      }).concat(extras.map((c) => `<option value="${esc(c.code)}">${esc(contestName(c))}</option>`)).join('');
       if (prev && by.has(prev)) { sel.value = prev; return prev; }
       // Exactly one race actually reportable (today: Osun GOV) ⇒ pick it, rather
       // than making everyone choose from a list of one enabled row.

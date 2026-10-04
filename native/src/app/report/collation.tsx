@@ -20,6 +20,7 @@ import { SafeScreen } from '@/components/safe-screen';
 import { SerialField } from '@/components/serial-field';
 import { CaptureCamera } from '@/components/capture-camera';
 import { ContestPicker } from '@/components/contest-picker';
+import { useLeaveGuard } from '@/components/leave-guard';
 import { NoElection } from '@/components/no-election';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ReceiptCopy } from '@/components/receipt-copy';
@@ -49,13 +50,16 @@ type Step = 'scope' | 'contest' | 'sheet' | 'venue' | 'votes' | 'review' | 'done
 // scope, the race and the figures keep. Step order does not touch the signature,
 // which is one sign over the whole payload at submit.
 // See docs/REPORT-FLOW-CAPTURE-FIRST.md.
+// KEYS, resolved at render (REP-LANG-02: these were English literals, so the
+// stepper read "Form / Venue / Scope" in Hausa right beside the translated
+// result stepper). Same keys as that stepper wherever the word is the same.
 const STEPS: { key: Step; label: string }[] = [
-  { key: 'sheet', label: 'Form' },
-  { key: 'venue', label: 'Venue' },
-  { key: 'scope', label: 'Scope' },
-  { key: 'contest', label: 'Race' },
-  { key: 'votes', label: 'Votes' },
-  { key: 'review', label: 'Send' },
+  { key: 'sheet', label: 'n.app.report.collation.form' },
+  { key: 'venue', label: 'n.step.venue' },
+  { key: 'scope', label: 'political.scope' },
+  { key: 'contest', label: 'n.step.race' },
+  { key: 'votes', label: 'n.step.votes' },
+  { key: 'review', label: 'n.step.send' },
 ];
 
 const LEVELS: { key: CollationLevel; label: string; form: string; sub: string }[] = [
@@ -300,7 +304,7 @@ export default function ReportCollation() {
     if (!contest || !level || !stateSel || !sheet || !venue) return;
     setBusy(true);
     setGpsSettings(false);
-    setLine('Getting your location…');
+    setLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // DISCRIMINATED failure, named. A collation centre is an indoor room —
       // a hall, a party secretariat, an INEC office — which is precisely where
@@ -319,7 +323,7 @@ export default function ReportCollation() {
         return;
       }
       const fix = got.fix;
-      setLine('Signing and submitting…');
+      setLine(i18nT('n.app.report.result.signing-and-submitting'));
       const r = await submitCollation({
         level,
         contest: contest.code,
@@ -366,12 +370,24 @@ export default function ReportCollation() {
       }
     } catch (e) {
       setLine(
-        humanError(e, 'Something went wrong — nothing was sent. Retry.'),
+        humanError(e, i18nT('n.app.report.result.something-went-wrong-nothing-was-sent')),
       );
     } finally {
       setBusy(false);
     }
   };
+
+  /** Leaving with a photo taken and nothing handed off asks first — the same
+   *  guard as report/result.tsx (REP-RES-01). */
+  const [camEpoch, setCamEpoch] = useState(0);
+  const { sheet: leaveGuard, confirmLeave } = useLeaveGuard(
+    // Never against the root layout's signed-out bounce (app/_layout.tsx).
+    auth.status === 'signedIn' && !!(sheet || venue) && step !== 'done',
+    undefined,
+    // Stayed after the camera's Cancel: that camera has marked itself
+    // cancelled and would ignore the shutter, so a fresh one replaces it.
+    () => setCamEpoch((e) => e + 1),
+  );
 
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
@@ -390,6 +406,7 @@ export default function ReportCollation() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
+        {leaveGuard}
       </SafeScreen>
     );
   }
@@ -397,14 +414,15 @@ export default function ReportCollation() {
   if (step === 'sheet' || step === 'venue') {
     const isSheet = step === 'sheet';
     return (
+      <>
       <CaptureCamera
-        key={step}
+        key={`${step}:${camEpoch}`}
         title={isSheet ? i18nT('n.app.report.collation.photo-1-of-2-the-collation') : i18nT('n.app.report.collation.photo-2-of-2-the-centre')}
         frameGuide={isSheet}
         venueGuide={isSheet ? undefined : i18nT("n.app.report.collation.venue-photo-aim-at-the-collation-centre")}
         hint={
           isSheet
-            ? 'Fit the whole form in frame. Every figure must be readable.'
+            ? i18nT('n.app.report.collation.fit-the-whole-form-in-frame')
             : i18nT("n.app.report.collation.step-back-and-capture-the-collation-centre")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.collation.check-the-form') : i18nT('n.app.report.collation.check-the-venue-photo')}
@@ -446,10 +464,12 @@ export default function ReportCollation() {
           }
         }}
       />
+      {leaveGuard}
+      </>
     );
   }
 
-  const Chip = ({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
+  const Chip =({ label, on, onPress }: { label: string; on?: boolean; onPress: () => void }) => (
     <Pressable
       onPress={onPress}
       className={`mb-2 mr-2 rounded-full px-4 py-2 ${on ? 'bg-hawk-green' : 'bg-card'}`}
@@ -466,7 +486,8 @@ export default function ReportCollation() {
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
         <Pressable
-          onPress={() => router.navigate('/(tabs)' as never)}
+          // Asks first while there is evidence (components/leave-guard.tsx).
+          onPress={() => confirmLeave(() => router.navigate('/(tabs)' as never))}
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
@@ -500,7 +521,7 @@ export default function ReportCollation() {
                 <Text
                   className={`pt-1 text-center text-[10px] font-semibold ${on ? 'text-good-ink' : 'text-faint'}`}
                 >
-                  {s.label}
+                  {i18nT(s.label)}
                 </Text>
               </View>
             );
@@ -545,7 +566,8 @@ export default function ReportCollation() {
               </>
             ) : (
               <Crumb
-                label={levelDef!.label}
+                // A key, like every LEVELS label — translated here, not printed raw.
+                label={i18nT(levelDef!.label)}
                 onPress={() => {
                   setLevel(null);
                   setLgaSel(null);
@@ -663,7 +685,7 @@ export default function ReportCollation() {
               proposed={readSerial}
               editable={!busy}
               label={i18nT('n.app.report.collation.form-serial-number')}
-              where="top of the collation form"
+              where={i18nT('n.app.report.collation.serial-where')}
             />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
@@ -729,7 +751,11 @@ export default function ReportCollation() {
             <Text className="pb-3 text-xl font-bold text-ink">{i18nT('n.app.practice.confirm-and-send')}</Text>
             <View className="mb-3 rounded-2xl bg-card px-4 py-3">
               <Text className="text-base font-semibold text-ink">
-                {levelDef?.label} collation · {levelDef?.form}
+                {/* The label is a KEY (LEVELS above); printed raw it read
+                    "n.level.ward collation" in every language (REP-COL-02). */}
+                {levelDef
+                  ? `${i18nT('n.app.report.collation.level-collation', { v0: i18nT(levelDef.label) })} · ${levelDef.form}`
+                  : null}
               </Text>
               <Text className="text-xs text-muted">{scopeLine}</Text>
               {contest ? (
@@ -755,7 +781,7 @@ export default function ReportCollation() {
                     />
                     <View className="flex-row items-center justify-between px-3 py-2">
                       <Text className="text-xs font-semibold text-muted">
-                        {i === 0 ? 'Collation form' : 'Venue'}
+                        {i === 0 ? i18nT('n.app.report.collation.collation-form') : i18nT('n.app.practice.venue')}
                       </Text>
                       <Text className="text-xs font-bold text-good-ink">{i18nT('n.app.report.collation.retake')}</Text>
                     </View>
@@ -919,7 +945,9 @@ export default function ReportCollation() {
               <View className="flex-row items-center justify-between py-1.5">
                 <Text className="text-sm text-muted">{i18nT('n.app.report.collation.form')}</Text>
                 <Text className="text-sm font-bold text-ink">
-                  {levelDef?.form} · {levelDef?.label} collation
+                  {levelDef
+                    ? `${levelDef.form} · ${i18nT('n.app.report.collation.level-collation', { v0: i18nT(levelDef.label) })}`
+                    : null}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
@@ -981,6 +1009,7 @@ export default function ReportCollation() {
       </KeyboardAvoidingView>
 
       <NoticeSheet {...notice.props} />
+      {leaveGuard}
     </SafeScreen>
   );
 }

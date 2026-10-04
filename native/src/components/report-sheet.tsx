@@ -1,12 +1,16 @@
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import { forwardRef, useCallback, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Feather from '@expo/vector-icons/Feather';
+import { assignedUnit, CheckInCard, checkedInEverywhere } from '@/components/check-in-card';
 import { BRAND } from '@/lib/api';
+import { useAuth } from '@/lib/auth';
+import { myRooms, type MyRoom } from '@/lib/check-in';
+import { useOutbox } from '@/lib/outbox';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -54,8 +58,15 @@ const ACTIONS: {
   },
 ];
 
-/** Module-level so the array identity is stable across renders. */
-const SNAP_POINTS = ['42%'];
+/**
+ * The sheet's height, as a percentage of the screen: the three actions, plus
+ * room for the arrival check-in card and the waiting-reports line when they
+ * are drawn. Memoised per combination below, so the array identity is stable
+ * across renders that change neither.
+ */
+const BASE_PCT = 42;
+const CHECK_IN_PCT = 26;
+const OUTBOX_PCT = 7;
 
 export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   { onAction },
@@ -69,6 +80,43 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
    * Not cosmetic — it decides whether the backdrop exists at all. See below.
    */
   const [open, setOpen] = useState(false);
+
+  /**
+   * THE ROSTER, ASKED BEFORE THE SHEET IS EVER OPENED — and again as it opens.
+   *
+   * Prefetched once signed in (this sheet lives in the tab layout, so that is
+   * app start), so the first open already has the card instead of growing it
+   * mid-slide. Asked again at the start of every opening animation (onAnimate)
+   * and on settling open (onChange): myRooms() is held 120 s
+   * (lib/signed-in-cache.ts), so those are usually answered from memory, and
+   * neither callback is relied on alone — with reduced motion the sheet can
+   * jump open without animating at all, which is how a first version of this
+   * card never appeared. A failed lookup is `[]`: no card, which is what
+   * everyone off a roster sees anyway.
+   *
+   * Kept as fetched rather than live: after a tap the card has to stay up to
+   * say what was recorded, even though the roster it re-reads now says "done".
+   * The next open asks again and draws nothing.
+   */
+  const auth = useAuth();
+  const [rooms, setRooms] = useState<MyRoom[] | null>(null);
+  const refreshRooms = useCallback(() => {
+    myRooms().then(setRooms).catch(() => setRooms([]));
+  }, []);
+  useEffect(() => {
+    if (auth.status === 'signedIn') refreshRooms();
+    else setRooms(null);
+  }, [auth.status, refreshRooms]);
+  const arrival = rooms && !checkedInEverywhere(rooms) ? assignedUnit(rooms) : null;
+
+  /* REP-OFF-01: a report held in the outbox was invisible once its receipt
+     screen was left. This sheet is where a reporter looks next. */
+  const { pending } = useOutbox();
+
+  const snapPoints = useMemo(
+    () => [`${BASE_PCT + (arrival ? CHECK_IN_PCT : 0) + (pending > 0 ? OUTBOX_PCT : 0)}%`],
+    [arrival, pending],
+  );
 
   /**
    * THE BACKDROP IS UNMOUNTED WHEN CLOSED, NOT JUST FADED.
@@ -106,7 +154,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
     <BottomSheet
       ref={ref}
       index={-1}
-      snapPoints={SNAP_POINTS}
+      snapPoints={snapPoints}
       // enableDynamicSizing defaults to TRUE in v5: with a BottomSheetView the
       // sheet measures its content on mount and settles at that height BEFORE
       // honouring index={-1}, which is why it appeared half-open on every
@@ -117,7 +165,13 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       enablePanDownToClose
       // index >= 0 means open. onChange fires for every settle, including the
       // one that lands on -1, so the backdrop is torn down as the sheet closes.
-      onChange={(i) => setOpen(i >= 0)}
+      onChange={(i) => {
+        if (i >= 0 && !open) refreshRooms();
+        setOpen(i >= 0);
+      }}
+      onAnimate={(from, to) => {
+        if (from < 0 && to >= 0) refreshRooms();
+      }}
       // undefined, not null: the prop types as FC | undefined, and passing null
       // is the difference between "no backdrop" and a type error.
       backdropComponent={open ? backdrop : undefined}
@@ -134,6 +188,18 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
         <Text className="px-5 pb-3 text-sm text-muted">
           {i18nT('n.components.report-sheet.every-report-is-signed-hash-chained')}
         </Text>
+        {pending > 0 ? (
+          <View className="mx-4 mb-2 flex-row items-center rounded-xl bg-warn px-3 py-2">
+            <Feather name="clock" size={14} color={ui.tint.warn.ink} />
+            <Text className="flex-1 pl-2 text-xs font-semibold text-warn-ink">
+              {pending === 1
+                ? i18nT('n.components.report-sheet.waiting-one')
+                : i18nT('n.components.report-sheet.waiting-many', { v0: pending })}
+            </Text>
+          </View>
+        ) : null}
+        {/* ON ARRIVAL, before any camera — see components/check-in-card.tsx. */}
+        <CheckInCard key={arrival?.pu_code ?? 'none'} rooms={rooms} unit={arrival} chosen={false} className="mx-4 mb-2" />
         {ACTIONS.map((a) => (
           <Pressable
             key={a.key}

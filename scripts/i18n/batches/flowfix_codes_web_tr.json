@@ -1,0 +1,97 @@
+{
+  "situation-room.codes-check-other": {
+    "ha": "Duba wasu lambobi",
+    "ig": "Lelee koodu ndị ọzọ",
+    "yo": "Ṣàyẹ̀wò àwọn kóòdù mìíràn"
+  },
+  "situation-room.codes-yours-title": {
+    "ha": "Lambobin ƙungiyarka",
+    "ig": "Koodu nzukọ gị",
+    "yo": "Àwọn kóòdù àjọ rẹ"
+  },
+  "situation-room.codes-yours-intro": {
+    "ha": "Kowane rukunin lambobi da Hawkeye ya bayar don {v0}, tare da matsayin kowace lamba. Yana sabunta kansa kusan sau ɗaya a minti.",
+    "ig": "Ngwugwu ọ bụla Hawkeye nyere maka {v0}, ya na ọnọdụ koodu ọ bụla. Ọ na-emelite onwe ya ihe dị ka otu ugboro kwa nkeji.",
+    "yo": "Gbogbo àkójọ tí Hawkeye ti pèsè fún {v0}, pẹ̀lú ipò kóòdù kọ̀ọ̀kan. Ó máa ń sọ ara rẹ̀ dọ̀tun ní ẹ̀ẹ̀kan ní ìṣẹ́jú kan."
+  },
+  "situation-room.codes-none-issued": {
+    "ha": "Hawkeye bai bayar da wasu lambobi don {v0} ba tukuna. Idan ya bayar, za su bayyana a nan da kansu.",
+    "ig": "Hawkeye enyebeghị koodu ọ bụla maka {v0}. Mgbe o nyere, ha ga-apụta ebe a n’onwe ha.",
+    "yo": "Hawkeye kò tíì pèsè kóòdù kankan fún {v0}. Nígbà tí ó bá ṣe é, wọn yóò hàn níbí fúnra wọn."
+  },
+  "situation-room.codes-list-failed": {
+    "ha": "Ba a iya loda lambobinka ba. Duba haɗin intanet ɗinka — zai sake gwadawa da kansa.",
+    "ig": "Enweghị ike ibunye koodu gị. Lelee njikọ ịntanetị gị — ọ ga-anwa ọzọ n’onwe ya.",
+    "yo": "A kò lè gbé àwọn kóòdù rẹ jáde. Ṣàyẹ̀wò ìsopọ̀ rẹ — yóò tún gbìyànjú fúnra rẹ̀."
+  },
+  "situation-room.codes-batch-n": {
+    "ha": "Rukuni {v0}",
+    "ig": "Ngwugwu {v0}",
+    "yo": "Àkójọ {v0}"
+  },
+  "situation-room.codes-batch-line": {
+    "ha": "{v0} · lambobi {v1}",
+    "ig": "{v0} · koodu {v1}",
+    "yo": "{v0} · kóòdù {v1}"
+  },
+  "situation-room.codes-tally-line": {
+    "ha": "{v0} ba a yi amfani ba · {v1} an yi amfani · {v2} an janye",
+    "ig": "{v0} e jibeghị · {v1} e jirila · {v2} a wepụla",
+    "yo": "{v0} a kò tíì lò · {v1} a ti lò · {v2} a ti fagi"
+  },
+  "situation-room.codes-by-hawkeye": {
+    "ha": "Hawkeye ya janye",
+    "ig": "Hawkeye wepụrụ ya",
+    "yo": "Hawkeye ti fagi i"
+  },
+  "situation-room.codes-unlisted": {
+    "ha": "An bayar da wannan rukunin kafin Hawkeye ya fara adana lambobi don ɗakuna, don haka ba za a iya jera lambobinsa a nan ba. Duba su da “Duba wasu lambobi” a ƙasa.",
+    "ig": "E nyere ngwugwu a tupu Hawkeye amalite idebe koodu maka ọnụ ụlọ, ya mere enweghị ike idepụta koodu ya ebe a. Lelee ha site na “Lelee koodu ndị ọzọ” n’okpuru.",
+    "yo": "A pèsè àkójọ yìí kí Hawkeye tó bẹ̀rẹ̀ sí í tọ́jú kóòdù fún àwọn yàrá, nítorí náà a kò lè ṣe àkọsílẹ̀ àwọn kóòdù rẹ̀ níbí. Ṣàyẹ̀wò wọn pẹ̀lú “Ṣàyẹ̀wò àwọn kóòdù mìíràn” nísàlẹ̀."
+  },
+  "situation-room.codes-unlisted-some": {
+    "ha": "Ba za a iya jera lambobi {v0} a wannan rukunin ba. Duba su da “Duba wasu lambobi” a ƙasa.",
+    "ig": "Enweghị ike idepụta koodu {v0} n’ime ngwugwu a. Lelee ha site na “Lelee koodu ndị ọzọ” n’okpuru.",
+    "yo": "A kò lè ṣe àkọsílẹ̀ kóòdù {v0} nínú àkójọ yìí. Ṣàyẹ̀wò wọn pẹ̀lú “Ṣàyẹ̀wò àwọn kóòdù mìíràn” nísàlẹ̀."
+  },
+  "situation-room.codes-select-batch": {
+    "ha": "Zaɓi waɗanda ba a yi amfani da su ba a wannan rukunin ({v0})",
+    "ig": "Họrọ ndị a na-ejibeghị n’ime ngwugwu a ({v0})",
+    "yo": "Yan àwọn tí a kò tíì lò nínú àkójọ yìí ({v0})"
+  },
+  "situation-room.codes-filter-all": {
+    "ha": "Duk lambobi",
+    "ig": "Koodu niile",
+    "yo": "Gbogbo kóòdù"
+  },
+  "situation-room.codes-show": {
+    "ha": "Nuna",
+    "ig": "Gosi",
+    "yo": "Fi hàn"
+  },
+  "situation-room.codes-shown-batch": {
+    "ha": "Ana nuna lambobi {v0} na farko cikin {v1}. Fayil ɗin da za a sauke yana da su duka.",
+    "ig": "Na-egosi koodu {v0} mbụ n’ime {v1}. Faịlụ a na-ebudata nwere ha niile.",
+    "yo": "À ń fi kóòdù {v0} àkọ́kọ́ hàn nínú {v1}. Fáìlì tí o gbà sílẹ̀ ní gbogbo wọn."
+  },
+  "situation-room.codes-filter-empty": {
+    "ha": "Babu lambar da ta dace a wannan rukunin.",
+    "ig": "Ọ dịghị koodu dabara n’ime ngwugwu a.",
+    "yo": "Kò sí kóòdù tí ó bá a mu nínú àkójọ yìí."
+  },
+  "situation-room.codes-refresh-failed": {
+    "ha": "Ba a iya sabuntawa yanzu ba. Wannan jerin na {v0} ne.",
+    "ig": "Enweghị ike imelite ugbu a. Nke a bụ ndepụta nke {v0}.",
+    "yo": "A kò lè sọ ọ́ dọ̀tun báyìí. Àkọsílẹ̀ ti {v0} nìyí."
+  },
+  "situation-room.codes-updated": {
+    "ha": "An sabunta {v0}",
+    "ig": "E meliteere {v0}",
+    "yo": "A sọ ọ́ dọ̀tun {v0}"
+  },
+  "situation-room.codes-col-batch": {
+    "ha": "Rukuni",
+    "ig": "Ngwugwu",
+    "yo": "Àkójọ"
+  }
+}

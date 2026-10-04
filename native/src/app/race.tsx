@@ -76,7 +76,19 @@ export default function RaceScreen() {
    */
   const [contestStates, setContestStates] = useState<string[] | null>(null);
 
+  /**
+   * THE PRESIDENCY HAS ITS OWN SCREEN (flow walkthrough FA-PUB-2). A
+   * /race?contest=PRES link (a shared web url, a board) said "Hawkeye has no
+   * page for this race yet" — while /candidates IS the presidential page.
+   * Replace, so Back skips the hop. The web's race.html does the same.
+   */
+  const isPres = !key && String(contest ?? '').toUpperCase() === 'PRES';
   useEffect(() => {
+    if (isPres) router.replace('/candidates' as never);
+  }, [isPres]);
+
+  useEffect(() => {
+    if (isPres) return;
     let live = true;
     (async () => {
       const { data, logos: l } = await loadPolitical();
@@ -183,7 +195,7 @@ export default function RaceScreen() {
     return () => {
       live = false;
     };
-  }, [key, contest, state, seat, lga]);
+  }, [key, contest, state, seat, lga, isPres]);
 
   const { translateY, onScroll, headerH, scrollEventThrottle } = useHideOnScroll();
   const title = pick

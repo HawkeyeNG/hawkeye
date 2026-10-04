@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     /* CHOOSE YOUR POLLING UNIT — the web twin of native's /choose-unit route
@@ -157,7 +157,7 @@
     .cu-after strong { display: block; font-size: 1rem; }
     .cu-after p.cu-after-why { margin: 3px 0 10px; font-size: 0.86rem; color: var(--muted); }
   </style>
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -667,28 +667,54 @@
       // -- leaving -----------------------------------------------------------
       let leaving = false;
       let fallback = null;
+      /* IN A GROUP ALREADY? THEN MY GROUPS, NOT HOME (flow walkthrough ONB-11).
+         An organisation-code sign-up is put in the issuer's room by the server
+         — at sign-up, or once the unit is saved (backend routes/groups.js
+         autoJoinOrgRoom) — and Home has no rooms card, so the room they joined
+         was never opened or named. Any membership (or an invitation waiting)
+         ends sign-up on My Groups. Bounded at 3 s and silent on failure: no
+         answer is Home, as before. Native: app/choose-unit.tsx hasGroup. */
+      async function hasGroup() {
+        const ask = fetch('/api/groups', { headers: { authorization: 'Bearer ' + token() } })
+          .then((r) => (r.ok ? r.json() : null))
+          .then((g) => !!(g && ((g.member && g.member.length) || (g.managing && g.managing.length))))
+          .catch(() => false);
+        return Promise.race([ask, new Promise((r) => setTimeout(() => r(false), 3000))]);
+      }
       function leave() {
         if (leaving) return;
         leaving = true;
-        // Sign-up: Home, by REPLACE, so Back never returns to a finished step.
-        // The invited unit was a suggestion for this step only; it is over.
-        if (ONBOARD) { if (REF && REF.clearUnit) REF.clearUnit(); location.replace('index.html'); return; }
+        // Sign-up: Home (or My Groups, above), by REPLACE, so Back never
+        // returns to a finished step. The invited unit was a suggestion for
+        // this step only; it is over.
+        if (ONBOARD) {
+          if (REF && REF.clearUnit) REF.clearUnit();
+          hasGroup().then((yes) => location.replace(yes ? 'my-groups.html' : 'index.html'));
+          return;
+        }
         // From Profile: go BACK to it when it is the page underneath, so Back
         // from Profile does not land here again. Profile re-reads the saved
         // unit on pageshow. Anywhere else, replace with a fresh Profile.
         // Same for the election-day readiness page (ready.html), whose "Choose
         // unit" row opens this one: back to it, where the row re-checks itself.
+        // And for Home, whose "Choose your polling unit" card and unit chip
+        // open this page: leaving landed on Profile, a page the reader never
+        // visited (flow walkthrough). Home does NOT re-read on pageshow, so
+        // after a SAVE it is a fresh Home (replace) — a restored one would
+        // still be asking them to choose a unit. `saving` stays set only after
+        // a successful save.
         let from = '';
         try {
           const r = new URL(document.referrer);
-          const m = r.origin === location.origin && /\/(profile|ready)\.html$/.exec(r.pathname);
+          const p = r.pathname === '/' ? '/index.html' : r.pathname;
+          const m = r.origin === location.origin && /\/(profile|ready|index)\.html$/.exec(p);
           from = m ? m[1] + '.html' : '';
         } catch { /* no referrer */ }
-        if (from && history.length > 1) {
+        if (from && history.length > 1 && !(from === 'index.html' && saving)) {
           history.back();
           fallback = setTimeout(() => location.replace(from), 800);
         } else {
-          location.replace('profile.html');
+          location.replace(from || 'profile.html');
         }
       }
       addEventListener('pagehide', () => { clearTimeout(fallback); });
@@ -740,6 +766,20 @@
             return;
           }
           ok = true;
+          /* The report flow offers this unit at its step 2 with no signal and
+             searches its state offline (app.js loadSavedUnit, REP-OFF-02):
+             keep it on the phone, per account, and fetch its state's unit list
+             now, while there is signal. */
+          try {
+            const sub = String(JSON.parse(atob(String(token()).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || '');
+            localStorage.setItem('hk_my_unit1', JSON.stringify({ sub, at: 0, unit }));
+          } catch { /* the report flow fetches it next time there is signal */ }
+          try {
+            if (unit.state && window.puSearch && window.puSearch.rememberState) {
+              window.puSearch.rememberState(unit.state);
+              window.puSearch.warmState(unit.state);
+            }
+          } catch { /* best effort */ }
           if (await offerInvite(unit)) return;
           leave();
         } catch {
@@ -804,11 +844,11 @@
     })();
   </script>
   <script src="device.js"></script>
-  <script src="register-store.js?v=3"></script>
-  <script src="pu-search.js?v=9"></script>
+  <script src="register-store.js?v=4"></script>
+  <script src="pu-search.js?v=10"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

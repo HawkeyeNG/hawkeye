@@ -1,6 +1,6 @@
 import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 
 import { Crumb, Prompt } from '@/components/wizard';
@@ -68,6 +68,49 @@ export interface ContestPickerProps {
    * any race); the styling still shows real openness so a rehearsal reads as one.
    */
   allowClosed?: boolean;
+  /**
+   * The polling unit's OWN seats, off its register row — for a flow reporting
+   * AT a unit (always together with `lockedState`). Senate and House are then
+   * narrowed to that one seat and confirmed for the observer; see `ownSeat`.
+   */
+  unitSeats?: UnitSeats | null;
+}
+
+/** The two seat columns a register row carries (API rows are SELECT *; pack rows materialise them). */
+export type UnitSeats = {
+  senatorial?: string | null;
+  federal_constituency?: string | null;
+};
+
+/** Spelling-insensitive: "Lagos West", "LAGOS WEST" and "Lagos  West" are one seat. */
+const foldSeat = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+
+/**
+ * THE UNIT'S OWN SENATE / HOUSE RACE, or null when the unit does not decide it.
+ *
+ * Flow walkthrough REP-RES-06: at 24-16-05-007 (Lagos West) tapping Senate
+ * listed all three Lagos districts to choose from. Only the contest CODE is
+ * submitted — the server derives the seat from the unit (scope.js) — so the
+ * answer was ignored, yet a wrong tap read to the observer as a wrong report.
+ * Web/Lite never ask. The register row names the seat, so it is not asked here
+ * either: the list is narrowed to it, and a single match is confirmed.
+ *
+ * Null — and so today's full list — whenever the row names no seat, the type
+ * has no per-unit seat (PRES, GOV, SHA: the register has no state-constituency
+ * column), or nothing in the catalogue matches the name. Never an empty list.
+ */
+export function ownSeat(type: ElectionTypeCode, races: Race[], seats?: UnitSeats | null): Race[] | null {
+  if (!seats) return null;
+  const name = type === 'SEN' ? seats.senatorial : type === 'REP' ? seats.federal_constituency : null;
+  if (!name || !foldSeat(name)) return null;
+  const want = foldSeat(name);
+  const own = races.filter((r) => foldSeat((type === 'SEN' ? r.district : r.constituency) ?? '') === want);
+  return own.length ? own : null;
+}
+
+/** `races` narrowed to the unit's own seat when it decides one, else unchanged. */
+export function seatRaces(type: ElectionTypeCode, races: Race[], seats?: UnitSeats | null): Race[] {
+  return ownSeat(type, races, seats) ?? races;
 }
 
 /**
@@ -97,8 +140,11 @@ export function ContestPicker({
   onSelect,
   lockedState,
   allowClosed = false,
+  unitSeats = null,
 }: ContestPickerProps) {
   const ui = useUi();
+  // A unit's seats mean nothing without its state; never narrow on one alone.
+  const seats = lockedState ? unitSeats : null;
 
   // Stage state. Seeded from `value` so a picker handed an existing selection
   // opens on the matching branch with the right crumbs, rather than back at the
@@ -136,7 +182,8 @@ export function ContestPicker({
     const soonest = {} as Record<ElectionTypeCode, string | null>;
     const now = Date.now();
     for (const t of ELECTION_TYPES) {
-      const rs = listRaces(t.code, lockedState);
+      // At a unit, a tier's count is the unit's own seat, not the whole state's.
+      const rs = seatRaces(t.code, listRaces(t.code, lockedState), seats);
       counts[t.code] = rs.filter(isOpen).length;
       const upcoming = rs
         .map((r) => match(r)?.opensAt)
@@ -145,7 +192,7 @@ export function ContestPicker({
       soonest[t.code] = upcoming[0] ?? null;
     }
     return { match, isOpen, counts, soonest };
-  }, [contests, lockedState]);
+  }, [contests, lockedState, seats]);
 
   const anyOpen = ELECTION_TYPES.some((t) => counts[t.code] > 0);
 
@@ -190,6 +237,24 @@ export function ContestPicker({
   const needsState = !!type && type.narrowBy.includes('state');
   const effectiveState = lockedState ?? stateSel;
 
+  /**
+   * CONFIRMED FOR THEM: Senate or House at a unit whose register row names the
+   * seat. Selected as soon as the tier is opened — the observer sees their own
+   * district ticked, with the way back (the tier crumb) and nothing to choose.
+   * Only an OPEN seat (or any seat, in practice) is confirmed; a closed one is
+   * shown, locked, exactly as before.
+   */
+  const confirmedSeat = useMemo(() => {
+    if (!typeSel || !lockedState || !seats) return null;
+    const own = ownSeat(typeSel, listRaces(typeSel, lockedState), seats);
+    if (!own || own.length !== 1) return null;
+    return allowClosed || isRaceOpen(own[0], contests) ? own[0] : null;
+  }, [typeSel, lockedState, seats, contests, allowClosed]);
+  useEffect(() => {
+    if (confirmedSeat && value?.key !== confirmedSeat.key) onSelect(confirmedSeat);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmedSeat?.key]);
+
   // ── Filter toggle — shown only when there is something open to filter to ──
   const filterToggle = anyOpen ? (
     <Pressable
@@ -212,7 +277,7 @@ export function ContestPicker({
     <>
       {type ? (
         <Crumb
-          label={type.label}
+          label={i18nT(type.labelKey)}
           onPress={() => {
             setTypeSel(null);
             setStateSel(null);
@@ -248,14 +313,15 @@ export function ContestPicker({
               }`}
             >
               <View className="flex-1 pr-3">
-                <Text className="text-base font-bold text-ink">{t.label}</Text>
+                {/* KEYS, NOT races.ts's English (REP-LANG-04): see ElectionType. */}
+                <Text className="text-base font-bold text-ink">{i18nT(t.labelKey)}</Text>
                 <Text className="pt-0.5 text-xs text-muted">
-                  {t.seatLabel} · {t.seats} nationwide
+                  {i18nT('n.components.contest-picker.seats-nationwide', { v0: i18nT(t.seatKey), v1: t.seats })}
                 </Text>
               </View>
               {open > 0 ? (
                 <View className="mr-1.5 rounded-full bg-good px-2.5 py-1">
-                  <Text className="text-[11px] font-bold text-good-ink">{open} open</Text>
+                  <Text className="text-[11px] font-bold text-good-ink">{i18nT('n.components.contest-picker.n-open', { v0: open })}</Text>
                 </View>
               ) : next ? (
                 <View className="mr-1.5 rounded-full border border-good-ink px-2.5 py-1">
@@ -291,8 +357,7 @@ export function ContestPicker({
         <Prompt>{i18nT('n.components.contest-picker.choose-a-state')}</Prompt>
         {shown.length === 0 ? (
           <Text className="px-1 py-2 text-sm text-muted">
-            No {type.label.toLowerCase()} race is open yet. Turn off “Open races only” to browse the
-            full list.
+            {i18nT('n.components.contest-picker.no-open-race-here-yet-turn')}
           </Text>
         ) : (
           <View className="flex-row flex-wrap">
@@ -320,7 +385,8 @@ export function ContestPicker({
   // a list for SEN/REP/SHA — SHA seats now come from STATE_ASSEMBLY via
   // listRaces('SHA', state), exactly like SEN districts and REP constituencies.
   // FCT never reaches here for SHA (statesFor('SHA') drops it, seats === 0). ──
-  const races = listRaces(type.code, effectiveState ?? undefined);
+  // At a unit that names its seat, Senate/House list that seat alone (REP-RES-06).
+  const races = seatRaces(type.code, listRaces(type.code, effectiveState ?? undefined), seats);
   // NEVER OFFER A RACE NO CONTEST COVERS. listRaces() enumerates the whole
   // constitutional catalogue — all 36 governorships, all 109 districts — while
   // /api/contests says which of them Hawkeye is actually collecting. The 2027

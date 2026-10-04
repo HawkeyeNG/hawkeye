@@ -188,6 +188,9 @@ const ROUTES: Record<string, string> = {
   'notifications.html': '/alerts',
   'dashboard.html': '/reports-log',
   'incidents.html': '/incidents',
+  // The published list — what the "incident published" alerts link
+  // (backend/src/routes/admin.js). Native's /incidents IS that list.
+  'incident-reports.html': '/incidents',
   'docket.html': '/docket',
   'ledger.html': '/ledger',
   'integrity.html': '/integrity',

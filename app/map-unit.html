@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199">
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
        on flaky networks and inside the future Telegram webview. -->
@@ -45,7 +45,7 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -141,8 +141,8 @@
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script src="device.js"></script>
-  <script src="register-store.js?v=3"></script>
-  <script src="pu-search.js?v=9"></script>
+  <script src="register-store.js?v=4"></script>
+  <script src="pu-search.js?v=10"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <!-- Vector basemap: our own Nigeria PMTiles, OpenFreeMap if ours fails (basemap.js).
        Replaces tile.openstreetmap.org, whose usage policy forbids election-night load. -->
@@ -539,14 +539,40 @@
     $('btn-save-unit').onclick = async () => {
       if (!unit) return;
       $('cap-status').textContent = T('map-unit.saving', 'Saving…');
-      const { status, b } = await api('/api/observers/my-unit', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
-        body: JSON.stringify({ puCode: unit.pu_code }),
-      });
+      /* A FAILED SAVE SAYS SO (flow walkthrough REP-UNIT-03). api() rejects
+         when there is no network (and on a body that is not JSON), and nothing
+         caught it: the line said "Saving…" for ever, with "Failed to fetch" in
+         the console only. Same ending as the chooser's failed save. */
+      let status = 0, b = {};
+      try {
+        ({ status, b } = await api('/api/observers/my-unit', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json', authorization: `Bearer ${token}` },
+          body: JSON.stringify({ puCode: unit.pu_code }),
+        }));
+      } catch {
+        $('cap-status').textContent = T('map-unit.could-not-save-check-connection', 'Could not save — check your connection and try again.');
+        return;
+      }
       $('cap-status').textContent = status === 200
         ? '⭐ ' + T('map-unit.saved-alerts-for-unit', "Saved — you'll get alerts for everything at {v0}.").replace('{v0}', unit.pu_code)
-        : (b.error === 'unknown_unit' ? T('map-unit.unit-not-on-register', 'Unit not on the register.') : T('map-unit.could-not-save-try-again', 'Could not save — try again.'));
+        : ((b && b.error) === 'unknown_unit' ? T('map-unit.unit-not-on-register', 'Unit not on the register.') : T('map-unit.could-not-save-try-again', 'Could not save — try again.'));
+      if (status === 200) {
+        /* The report flow offers this unit at its step 2 with no signal, and
+           searches its state offline (app.js loadSavedUnit, REP-OFF-02): keep
+           it on the phone now, and fetch its state's unit list while there is
+           signal. Same record app.js writes, scoped to this account. */
+        try {
+          const sub = String(JSON.parse(atob(String(token).split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).sub || '');
+          localStorage.setItem('hk_my_unit1', JSON.stringify({ sub, at: 0, unit }));
+        } catch { /* the report flow fetches it next time there is signal */ }
+        try {
+          if (unit.state && window.puSearch && window.puSearch.rememberState) {
+            window.puSearch.rememberState(unit.state);
+            window.puSearch.warmState(unit.state);
+          }
+        } catch { /* best effort */ }
+      }
       showMyUnit();
       // Onboarding: saved is done. On to the report flow, as a sign-up always
       // went — after a beat, so the "Saved" line is actually seen. A failed
@@ -575,7 +601,7 @@
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

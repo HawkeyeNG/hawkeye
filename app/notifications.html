@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
     .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
@@ -132,7 +132,7 @@
                -webkit-appearance: none; appearance: none; }
     button.n > div { flex: 1 1 auto; min-width: 0; }
   </style>
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -450,25 +450,60 @@
     // push and Telegram need them so; inside Lite an absolute link leaves the
     // bundled app for the system browser, signed out. Same-site → root-relative,
     // which on the website is the same page.
+    //
+    // THE FORM IS NOT THE LIST (flow walkthrough FA-NOTIF-1). "Your incident
+    // report is live" and the saved-unit incident alert carry incidents.html —
+    // the page where you file a NEW incident. What the alert is about is the
+    // published one, on incident-reports.html, which is where native already
+    // lands (lib/push.ts sends that url to its published list). Index's
+    // Latest Alerts card maps it the same way.
+    //
+    // EXCEPT WHAT THE APP DOES NOT CARRY. The situation room (/room/<slug>,
+    // situation-room.html) is not in the Lite bundle, so inside the app shell a
+    // root-relative link resolved to https://localhost/room/… — nothing there.
+    // In the app those stay ABSOLUTE (the live site); on the website they are
+    // the same page either way, so they go relative like everything else.
+    const NOT_IN_APP = /^\/(room\/|situation-room\.html)/;
     function localUrl(u) {
-      try { const x = new URL(u, location.href); return /(^|\.)hawkeye\.com\.ng$/.test(x.hostname) ? x.pathname + x.search + x.hash : u; }
-      catch { return u; }
+      try {
+        const x = new URL(u, location.href);
+        if (!/(^|\.)hawkeye\.com\.ng$/.test(x.hostname)) return u;
+        if (window.HAWKEYE && window.HAWKEYE.native && NOT_IN_APP.test(x.pathname)) return x.href;
+        return (x.pathname === '/incidents.html' ? '/incident-reports.html' : x.pathname) + x.search + x.hash;
+      } catch { return u; }
     }
     // Mark ONE alert read, update every badge, and grey the row immediately —
     // the receipt catches up behind the navigation.
+    //
+    // A REFUSED RECEIPT PUTS THE ROW BACK (flow walkthrough FA-NOTIF-3). It was
+    // fire-and-forget: the server could answer 500 and the row stayed grey,
+    // only to come back unread on the next load — which looks exactly like
+    // "tapping does not mark it read". Native already restores the row and
+    // says so; this does the same. If the tap navigated away, the page is gone
+    // and nothing here runs — the next load shows the server's truth anyway.
     function markOneRead(n) {
       if (!n || n.read) return;
       n.read = 1;
       const left = lastItems.filter((x) => !x.read).length;
       setUnreadEverywhere(left);
       paintActions();
+      const paintRow = (read) => {
+        const row = $('list').querySelector(`[data-id="${n.id}"]`);
+        if (row) { row.classList.toggle('unread', !read); row.classList.toggle('read', read); }
+      };
+      const undo = () => {
+        n.read = 0;
+        paintRow(false);
+        setUnreadEverywhere(lastItems.filter((x) => !x.read).length);
+        paintActions();
+        failed('notifications.could-not-mark-one-read', 'Could not mark that alert read');
+      };
       fetch('/api/notifications/read', {
         method: 'POST', keepalive: true,
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
         body: JSON.stringify({ id: n.id }),
-      }).catch(() => {});
-      const row = $('list').querySelector(`[data-id="${n.id}"]`);
-      if (row) { row.classList.remove('unread'); row.classList.add('read'); }
+      }).then((r) => { if (!r.ok) undo(); }, undo);
+      paintRow(true);
     }
     // MARK ALL READ (✓✓). A failure now says so — it used to be swallowed, and
     // an unchanged list is indistinguishable from a button that did nothing.
@@ -587,7 +622,7 @@
   </script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

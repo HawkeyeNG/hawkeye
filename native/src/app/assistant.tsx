@@ -130,10 +130,13 @@ export default function Assistant() {
         return;
       }
       setFailedId(id);
+      // Plain words (flow walkthrough FA-ASK-1): these carried the raw code —
+      // "Could not answer that. (no_answer / HTTP 200)" — and the switched-off
+      // case was an English literal. The question stays and Retry re-asks it.
       setErr(
         j.error === 'assistant_unconfigured'
-          ? "The assistant isn't switched on yet. (assistant_unconfigured / HTTP " + res.status + ')'
-          : i18nT('n.app.assistant.could-not-answer-that-http', { v0: j.error ?? 'no_answer', v1: res.status }),
+          ? i18nT('n.app.assistant.the-assistant-isn-t-switched-on')
+          : i18nT('n.app.assistant.could-not-answer'),
       );
     } catch (e) {
       setFailedId(id);

@@ -1,0 +1,23 @@
+{
+  "n.app.tabs.index.save-your-unit": "Save your polling unit",
+  "n.app.tabs.index.all-caught-up": "You're all caught up.",
+  "n.components.follow-race.could-not-follow": "Could not follow",
+  "n.components.follow-race.could-not-unfollow": "Could not unfollow",
+  "n.components.follow-race.declared-title": "Race declared",
+  "n.components.follow-race.declared-body": "This race has been declared — there is nothing more to follow.",
+  "n.components.follow-race.session-ended-title": "Your session has ended",
+  "n.components.follow-race.session-ended-body": "Sign in again, then come back to follow this race.",
+  "n.components.follow-race.how-they-reach-you": "How alerts reach you →",
+  "n.app.assistant.could-not-answer": "The assistant could not answer that. Try again.",
+  "n.app.profile.on": "On",
+  "n.app.profile.off": "Off",
+  "n.app.profile.not-available": "Not available",
+  "n.app.profile.no-screen-lock-biometric": "This phone has no fingerprint or face unlock set up.",
+  "n.app.profile.alerts-this-phone": "This phone",
+  "n.app.profile.turn-on-in-phone-settings": "Turn on in this phone's settings.",
+  "n.app.profile.located": "Located ✓",
+  "n.app.profile.via-your-verified-report": "via your verified report",
+  "n.app.profile.practice-polling-unit": "Practice polling unit",
+  "n.app.profile.all-zero": "all zero",
+  "n.app.profile.practice-chain": "practice chain"
+}

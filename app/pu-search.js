@@ -62,12 +62,27 @@
 
   // The state whose units we hold. Set when the cascade picks one, remembered
   // across sessions so a returning observer searches offline immediately.
+  //
+  // NOBODY CALLED rememberState() (flow walkthrough REP-UNIT-02), and no page
+  // passed `state`, so stateName was always "" and every search went to the
+  // server — with no signal, "Could not search just now" every time, at the
+  // unit, which is the one place search has to work. Now a chosen unit
+  // remembers its state here (any picker), and the report flow seeds it from
+  // the observer's saved unit (app.js), so that state's pack answers offline.
   const STATE_KEY = 'hk_reg_state';
   function rememberedState() {
     try { return localStorage.getItem(STATE_KEY) || ''; } catch { return ''; }
   }
   function rememberState(name) {
     try { if (name) localStorage.setItem(STATE_KEY, name); } catch { /* private mode */ }
+  }
+  /** The state's pack, loaded into memory if it is on this phone (or fetchable). */
+  function warmState(name) {
+    const st = store();
+    if (!st || !st.available() || !name) return Promise.resolve(null);
+    return st.loadIndex()
+      .then(() => { const code = st.stateCode(name); return code ? st.loadState(code) : null; })
+      .catch(() => null);
   }
 
   function mount(host, opts) {
@@ -87,17 +102,21 @@
     // someone who reaches this pane is about to type, and there are usually a
     // few seconds of reading first. The index is ~56 KB and precached; the state
     // pack is ~32 KB and only fetched when we know which state to get.
-    const st = store();
-    let stateName = o.state || rememberedState();
-    let stateCode = null;
-    if (st && st.available()) {
-      st.loadIndex()
-        .then(() => {
-          stateCode = st.stateCode(stateName);
-          if (stateCode) return st.loadState(stateCode);
-        })
-        .catch(() => { /* offline with nothing stored: the server path still works */ });
-    }
+    // Read on every search, not once at mount: the report flow learns the
+    // observer's saved unit a moment AFTER this box exists.
+    const stateNow = () => o.state || rememberedState();
+    // Offline with nothing stored: the server path still works.
+    warmState(stateNow());
+    // The pack for the state we search, loaded if this phone has it. Waits for
+    // IndexedDB (milliseconds); on the network it is the ~32 KB pack.
+    const packFor = async () => {
+      const sx = store();
+      const name = stateNow();
+      if (!sx || !name) return null;
+      await warmState(name);
+      const code = sx.stateCode(name);
+      return code && sx.isLoaded(code) ? code : null;
+    };
 
     let timer = null;
     let seq = 0;
@@ -139,24 +158,32 @@
          * a page neither path would have returned.
          */
         let r = cache.get(key);
+        const sx = store();
+        const fromPack = (code) => {
+          const local = code && sx && sx.isLoaded(code) ? sx.search(code, term, { limit: 25 }) : null;
+          if (local) cache.set(key, { units: local.units, truncated: local.truncated });
+          return local;
+        };
 
-        // The pack, when we hold the right state. Instant and offline.
+        // The pack, when we hold the right state. Instant and offline. With no
+        // signal, read it off the phone first (IndexedDB, milliseconds) rather
+        // than ask a network that is not there.
         if (!r) {
-          const sx = store();
-          const code = stateCode || (sx && sx.stateCode(stateName));
-          if (sx && code && sx.isLoaded(code)) {
-            const local = sx.search(code, term, { limit: 25 });
-            if (local) {
-              r = local;
-              cache.set(key, { units: local.units, truncated: local.truncated });
-            }
-          }
+          const code = sx && sx.stateCode(stateNow());
+          r = fromPack(code) || (!navigator.onLine ? fromPack(await packFor()) : null);
         }
 
         if (!r) {
           status.textContent = navigator.onLine ? T('pu.searching', 'Searching…') : T('pu.looking-on-this-device', 'Looking on this device…');
-          r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
-          if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
+          try {
+            r = await fetch(`/api/register/search?${p}`).then((x) => x.json());
+            if (r && !r.error) cache.set(key, { units: r.units || [], truncated: !!r.truncated });
+          } catch (netErr) {
+            // navigator.onLine lies (a dead cell still says "online"), so a
+            // failed request is the real offline signal: try the pack then.
+            r = fromPack(await packFor());
+            if (!r) throw netErr;
+          }
         }
         // A slower earlier request must never overwrite a newer answer.
         if (mine !== seq) return;
@@ -172,7 +199,11 @@
           `<button type="button" class="pu-option" data-i="${i}"><strong>${esc(u.name)}</strong><br />`
           + `<small>${esc(u.pu_code)} · ${esc(u.ward)}, ${esc(u.lga)}, ${esc(u.state)} · ${tierLabel(tierOf(u))}</small></button>`).join('');
         list.querySelectorAll('.pu-option').forEach((b) => {
-          b.onclick = () => o.onSelect && o.onSelect(units[+b.dataset.i]);
+          b.onclick = () => {
+            const u = units[+b.dataset.i];
+            if (u && u.state) { rememberState(u.state); warmState(u.state); }
+            if (o.onSelect) o.onSelect(u);
+          };
         });
       } catch {
         if (mine !== seq) return;
@@ -180,16 +211,21 @@
         // indefinite "could not search" on a phone with no signal is the failure
         // mode docs/PU-SEARCH-2027.md calls a regression rather than degradation.
         const sx = store();
-        const code = stateCode || (sx && sx.stateCode(stateName));
+        const code = sx && sx.stateCode(stateNow());
+        // No state to search offline at all: point at the register, which
+        // walks state -> LGA -> ward from the index every install carries.
+        const fallback = () => (navigator.onLine
+          ? T('pu.could-not-search', 'Could not search just now — check your connection.')
+          : T('pu.offline-browse-below', 'No connection. Browse the register below instead.'));
         if (sx && code && !sx.isLoaded(code)) {
           sx.stateStatus(code).then((info) => {
             if (mine !== seq) return;
             status.textContent = info.state === 'absent'
               ? T('pu.unit-list-not-on-device', 'The unit list for {v0} is not on this device yet ({v1} KB). Connect once to download it, then search works offline.').replace('{v0}', info.name).replace('{v1}', Math.round(info.bytes / 1024))
-              : T('pu.could-not-search', 'Could not search just now — check your connection.');
+              : fallback();
           });
         } else {
-          status.textContent = T('pu.could-not-search', 'Could not search just now — check your connection.');
+          status.textContent = fallback();
         }
       }
     }
@@ -198,5 +234,7 @@
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); clearTimeout(timer); run(); } });
   }
 
-  window.puSearch = { mount };
+  // rememberState/warmState are exported for the report flow (app.js), which
+  // knows the observer's saved unit before anyone has typed.
+  window.puSearch = { mount, rememberState, rememberedState, warmState };
 })();

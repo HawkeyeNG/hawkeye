@@ -316,8 +316,8 @@ export function search(
   if (!p.folded) buildSearchIndex(p);
   const qf = fold(term);
   const N = p.unitCount;
-  const hit = new Uint8Array(N);
-  const found: number[] = [];
+  let hit = new Uint8Array(N);
+  let found: number[] = [];
 
   const addUnit = (i: number) => { if (!hit[i]) { hit[i] = 1; found.push(i); } };
   const addGroup = (g: number) => {
@@ -355,32 +355,46 @@ export function search(
     }
   };
 
-  collect(true);
-  if (!found.length) collect(false);
-
   const codeAt = (i: number) => p.codes!.substr(i * CODE_STRIDE, 12);
   const foldedAt = (i: number) => p.folded!.slice(p.fOffs![i], p.fOffs![i + 1] - 1);
 
-  const ranked = found.map((i) => {
-    const code = codeAt(i);
-    let rank = 3;
-    if (code === qRaw) rank = 0;
-    else if (qf && foldedAt(i).lastIndexOf(qf, 0) === 0) rank = 1;
-    else if (code.lastIndexOf(qRaw, 0) === 0) rank = 2;
-    return { i, rank, name: displayName(p, i) };
-  });
+  /** One server query — match, ORDER BY, LIMIT — as unit indices. */
+  const page = (prefixOnly: boolean): number[] => {
+    hit = new Uint8Array(N);
+    found = [];
+    collect(prefixOnly);
+    const ranked = found.map((i) => {
+      const code = codeAt(i);
+      let rank = 3;
+      if (code === qRaw) rank = 0;
+      else if (qf && foldedAt(i).lastIndexOf(qf, 0) === 0) rank = 1;
+      else if (code.lastIndexOf(qRaw, 0) === 0) rank = 2;
+      return { i, rank, name: displayName(p, i) };
+    });
+    ranked.sort((a, b) => {
+      if (a.rank !== b.rank) return a.rank - b.rank;
+      if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+      const ca = codeAt(a.i), cb = codeAt(b.i);
+      return ca < cb ? -1 : ca > cb ? 1 : 0;
+    });
+    return ranked.slice(0, limit).map((r) => r.i);
+  };
 
-  ranked.sort((a, b) => {
-    if (a.rank !== b.rank) return a.rank - b.rank;
-    if (a.name !== b.name) return a.name < b.name ? -1 : 1;
-    const ca = codeAt(a.i), cb = codeAt(b.i);
-    return ca < cb ? -1 : ca > cb ? 1 : 0;
-  });
-
-  const units: RegisterRow[] = [];
-  for (let n = 0; n < ranked.length && units.length < limit; n++) {
-    units.push(materialise(p, ranked[n].i, opts.stateName));
+  /* PREFIX PAGE, THEN THE CONTAINS PAGE APPENDED INTO WHATEVER ROOM IS LEFT
+     (flow walkthrough REP-UNIT-01). Contains used to run only when prefix found
+     nothing, so "Oziegbe" hid every "17, Oziegbe St." — the house-number-first
+     form most Lagos units take. Same rule as app/register-store.js and the
+     server route; the three must agree. */
+  const picked = page(true);
+  if (picked.length < limit) {
+    const seen = new Set(picked);
+    for (const i of page(false)) {
+      if (picked.length >= limit) break;
+      if (!seen.has(i)) picked.push(i);
+    }
   }
+
+  const units: RegisterRow[] = picked.map((i) => materialise(p, i, opts.stateName));
   return { units, truncated: units.length === limit };
 }
 

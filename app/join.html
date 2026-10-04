@@ -15,7 +15,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
@@ -103,29 +103,72 @@ function bad(tk, title, mk, msg) {
   paint(() => { $('jn').innerHTML = `<div class="card bad"><h1>${esc(T(tk, title))}</h1><p>${esc(T(mk, msg))}</p></div>`; });
 }
 
+/* A SPENT LINK SAYS SO, at the preview AND at the tap. The tap used to map only
+   invite_expired, so a link withdrawn between the two read "Could not join just
+   now" with a Try again that could never work. True when it painted. */
+function refused(status, body) {
+  if (status === 404) {
+    bad('join.not-recognised-title', 'We do not recognise that invitation', 'join.not-recognised-body', 'The link may have been mistyped, or the group may have been deleted.');
+    return true;
+  }
+  if (status === 410) {
+    if ((body || {}).error === 'invite_revoked') bad('join.withdrawn-title', 'That invitation was withdrawn', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.');
+    else bad('join.expired-title', 'That invitation has expired', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.');
+    return true;
+  }
+  return false;
+}
+
 async function main() {
   if (!token) return bad('join.link-incomplete-title', 'That link is incomplete', 'join.link-incomplete-body', 'Ask whoever sent it for the full link.');
   const res = await fetch('/api/join/' + encodeURIComponent(token));
   const g = await res.json().catch(() => ({}));
-  if (res.status === 404) return bad('join.not-recognised-title', 'We do not recognise that invitation', 'join.not-recognised-body', 'The link may have been mistyped, or the group may have been deleted.');
-  if (res.status === 410) {
-    return g.error === 'invite_revoked'
-      ? bad('join.withdrawn-title', 'That invitation was withdrawn', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.')
-      : bad('join.expired-title', 'That invitation has expired', 'join.fresh-link-body', 'Ask whoever sent it for a fresh link — they can create one in seconds.');
-  }
+  if (refused(res.status, g)) return;
   /* 409: the room's party label is still being verified by Hawkeye (or its
      name names a party it is not verified for). The name is withheld on
      purpose — it is the unchecked claim — so this says only that it is shut. */
   if (res.status === 409) return bad('join.held-title', 'This room is not open yet', 'join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.');
   if (!res.ok) return bad('join.went-wrong-title', 'Something went wrong', 'join.try-again-moment', 'Try the link again in a moment.');
+  /* ALREADY IN? Back from My Groups — or a second tap on a forwarded link —
+     re-opened this preview with a live "Join" button, as if the reader were not
+     in the group, and the tap then answered "You are already with…". Signed
+     in, their own group list answers it first. Any failure here just shows the
+     invitation as before: this is a courtesy, never a gate. An "invited" row
+     (copied over from another roster, not yet answered) is not a membership. */
+  if (signedIn()) {
+    const mine = await fetch('/api/groups', { headers: { authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') } })
+      .then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    const inIt = mine && ((mine.member || []).some((x) => x.id === g.group_id && x.member_state !== 'invited'));
+    if (inIt) return paint(() => showJoined(g, { already: true }));
+  }
   paint(() => showCard(g));
+}
+
+/* THE RACE BY ITS NAME. The API sends the contest CODE, and "the GOV race in
+   Lagos" is not a sentence in any language. The five standing races use the
+   contest.* keys situation-room.html already has; a by-election code
+   (REP_BYE_GOMBE_2026) reads as its race's by-election — the seat itself is
+   in the scope that follows. Anything else is shown as sent. */
+const CONTEST = {
+  PRES: ['contest.presidential', 'Presidential'],
+  SEN: ['contest.senate', 'Senate'],
+  REP: ['contest.house-of-representatives', 'House of Representatives'],
+  GOV: ['contest.governorship', 'Governorship'],
+  SHA: ['contest.state-house-of-assembly', 'State House of Assembly'],
+};
+function contestName(code) {
+  const c = String(code || '');
+  if (CONTEST[c]) return T(CONTEST[c][0], CONTEST[c][1]);
+  const bye = c.match(/^([A-Z]+)_BYE_/);
+  if (bye && CONTEST[bye[1]]) return T('contest.by-election', '{v0} By-Election', { v0: contestName(bye[1]), v1: '' });
+  return c;
 }
 
 /* One whole sentence per branch — kind x scope — never a translated noun
    spliced into an English-ordered sentence. */
 function invitedLine(g) {
   // scope_label: a state constituency is stored "State|Seat" and reads "Seat (State)".
-  const v = { contest: esc(g.contest), scope: esc(g.scope_label || g.scope || '') };
+  const v = { contest: esc(contestName(g.contest)), scope: esc(g.scope_label || g.scope || '') };
   if (g.kind === 'cso') {
     return g.scope
       ? T('join.invited-cso-scope', 'You have been invited to observe with this observer group for the {contest} race in {scope}.', v)
@@ -136,37 +179,43 @@ function invitedLine(g) {
     : T('join.invited-campaign', 'You have been invited to observe with this campaign for the {contest} race.', v);
 }
 
+/* The first sentence of a disclosure in bold — the line a skimming reader
+   takes away. Split at the first full stop, which ends a sentence in all four
+   languages; a string with no second sentence is shown plain. */
+const lead = (s) => {
+  const i = s.search(/[.!?]\s/);
+  return i > 0 ? `<b>${esc(s.slice(0, i + 1))}</b>${esc(s.slice(i + 1))}` : esc(s);
+};
+
 function showCard(g) {
-  const kind = g.kind === 'cso' ? 'observer group' : 'campaign';
+  const myGroups = `<a class="plain" href="my-groups.html">${T('my-groups.your-groups', 'My Groups')}</a>`;
   $('jn').innerHTML = `
     <div class="card">
       <h1>${T('join.heading', 'Join <span class="name">{name}</span>', { name: esc(g.name) })}</h1>
       <p class="who">${invitedLine(g)}</p>
-      <!-- The list and the fine print below are a CONSENT NOTICE and a
-           non-affiliation statement. They stay in English in every language
-           until a human translator signs for them — app/i18n/GLOSSARY.md:
-           consent wording is never machine-translated. -->
-      <ul lang="en">
-        <li><i>&#9679;</i><span><b>They will see the reports you file from now on.</b>
-          Which polling unit, and when. Your reports from before today stay yours.</span></li>
-        <li><i>&#9679;</i><span><b>They cannot see anything the public cannot.</b>
-          Your reports are already published on Hawkeye. Joining only tells this
-          ${esc(kind)} which of them are yours.</span></li>
-        <li><i>&#9679;</i><span><b>Nothing about how you report changes.</b>
-          They may suggest a polling unit for you, but you can always report from
-          wherever you actually are — and you can decline the unit.</span></li>
+      <!-- ONE ACCOUNT OF WHAT JOINING DISCLOSES, ON EVERY SURFACE. This list
+           and the fine print are a CONSENT NOTICE and a non-affiliation
+           statement. They were English-only here while the app showed the same
+           four points translated (n.app.join.point-*), so a Hausa reader was
+           told two different things depending on where the link opened. These
+           are now the app's four sentences, word for word, in the same
+           translations — one text to have reviewed (app/i18n/GLOSSARY.md:
+           consent wording goes to a human translator), not two. -->
+      <ul>
+        <li><i>&#9679;</i><span>${lead(T('join.point-forward', 'They will see the reports you file from now on — which polling unit, and when. Your earlier reports stay yours.'))}</span></li>
+        <li><i>&#9679;</i><span>${lead(T('join.point-public', 'They cannot see anything the public cannot. Joining only tells them which published reports are yours.'))}</span></li>
+        <li><i>&#9679;</i><span>${lead(T('join.point-anywhere', 'They may suggest a polling unit. You can still report from wherever you actually are.'))}</span></li>
         <!-- This list is a CONSENT NOTICE, so every line has to be true on the
              day it ships — every verb offered here has a screen behind it in
              my-groups.html. Do not add a line before the screen that honours it
              exists: a promise with nothing behind it reads as handled. -->
-        <li><i>&#9679;</i><span><b>You can leave whenever you want</b>, and every
-          group you are in is listed under <a class="plain" href="my-groups.html">My Groups</a>.</span></li>
+        <li><i>&#9679;</i><span><b>${esc(T('join.point-leave', 'You can leave whenever you want, and you can be in more than one group.'))}</b>
+          ${T('join.point-leave-where', 'Every group you are in is listed under {link}.', { link: myGroups })}</span></li>
       </ul>
       <button id="go">${signedIn() ? T('join.button-join', 'Join {name}', { name: esc(g.name) }) : T('join.button-sign-in', 'Sign in to join')}</button>
-      <p class="fine" lang="en">Hawkeye is not run by any party, candidate or campaign, and joining a
-        group does not change how your reports are checked or counted.
-        <a class="plain" href="privacy.html">Privacy</a> &middot;
-        <a class="plain" href="terms.html">Terms</a></p>
+      <p class="fine">${esc(T('join.fine-print', 'Hawkeye is not run by any party, candidate or campaign, and joining a group does not change how your reports are checked or counted.'))}
+        <a class="plain" href="privacy.html">${esc(T('common.privacy', 'Privacy'))}</a> &middot;
+        <a class="plain" href="terms.html">${esc(T('privacy.terms', 'Terms'))}</a></p>
     </div>`;
   $('go').addEventListener('click', () => go(g));
   offerApp();
@@ -220,19 +269,31 @@ async function go(g) {
       const back = 'join.html?t=' + encodeURIComponent(token);
       return location.assign('/observe.html?intent=signin&next=' + encodeURIComponent(back));
     }
-    $('go').disabled = true;
-    $('go').textContent = T('join.joining', 'Joining…');
-    const r = await fetch('/api/join/' + encodeURIComponent(token), {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') },
-    });
-    const b = await r.json().catch(() => ({}));
+    const btn = $('go');
+    const again = () => { btn.disabled = false; btn.textContent = T('join.try-again', 'Try again'); };
+    btn.disabled = true;
+    btn.textContent = T('join.joining', 'Joining…');
+    let r;
+    let b;
+    try {
+      r = await fetch('/api/join/' + encodeURIComponent(token), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: 'Bearer ' + localStorage.getItem('hawkeye_token') },
+      });
+      b = await r.json().catch(() => ({}));
+    } catch (e) {
+      /* NO SIGNAL. The fetch rejects; uncaught, the button stayed "Joining…"
+         and disabled for good and nothing said the join had not happened —
+         only a reload recovered. */
+      again();
+      return void hkAlert(T('join.could-not-join-offline', 'Could not join — check your connection and try again.'));
+    }
     if (!r.ok) {
-      $('go').disabled = false;
-      $('go').textContent = T('join.try-again', 'Try again');
-      return void hkAlert(b.error === 'invite_expired' ? T('join.alert-expired', 'That invitation has expired.')
-        : r.status === 409 ? T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.')
-          : T('join.alert-failed', 'Could not join just now.'));
+      // Withdrawn, expired or unknown: the invitation is spent, so no Try again.
+      if (refused(r.status, b)) return;
+      again();
+      return void hkAlert(r.status === 409 ? T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.')
+        : T('join.alert-failed', 'Could not join just now.'));
     }
     paint(() => showJoined(g, b));
 }

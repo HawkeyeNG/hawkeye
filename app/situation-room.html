@@ -22,11 +22,11 @@
   <link rel="manifest" href="room.webmanifest?v=4" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
   <script>/*hk-room-forward*/
   /* THE INSTALLED ROOM'S SCOPE IS /situation-room.html (room.webmanifest), so
      two addresses forward into it. After authgate.js: signed out, authgate's
@@ -450,6 +450,12 @@
 .sr-cc-pick, .sr-cc-all { display: inline-flex; align-items: center; margin: 0; font-weight: 400; cursor: pointer; }
 .sr-cc-all { font-size: 0.85rem; }
 .sr-tbl.codes td .sr-btn.mini { margin: 0 0 0 6px; }
+/* The room's own batches (paintBatches): a card each, opened on request; the
+   summary line carries the name, the date and the tallies. */
+.sr-batch { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 10px 13px; margin: 0 0 10px; }
+.sr-batch > summary { cursor: pointer; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; }
+.sr-batch > summary .sr-sub { display: inline; margin: 0; font-size: 0.8rem; }
+.sr-batch[open] > summary { margin-bottom: 4px; }
 /* One panel height for both columns, so the map and the gap list read as a pair
    rather than two cards that happen to sit side by side. The lists scroll INSIDE
    it: truncating to the worst six hid the rest of the election, and "most
@@ -482,6 +488,13 @@
   border-radius: 8px; padding: 12px 14px; margin: 14px 0; font-size: 0.85rem; color: var(--muted); line-height: 1.55;
 }
 .sr-note strong { color: var(--ink); }
+/* A note that can be put away: the "room was deleted" line after a delete. */
+.sr-note.closable { display: flex; gap: 10px; align-items: flex-start; }
+.sr-note.closable > span { flex: 1; }
+.sr-note .sr-note-x { background: none; border: 0; color: var(--muted); font: inherit; font-size: 1.1rem; line-height: 1;
+  padding: 2px 6px; min-width: 32px; min-height: 32px; cursor: pointer; }
+/* The Codes tab of a room whose reader cannot check codes: there, and quieter. */
+.sr-tabs button[data-muted]:not([aria-selected="true"]) { opacity: 0.7; }
 .sr-empty { text-align: center; padding: 44px 20px; }
 .sr-empty h2 { font-family: var(--display); font-size: 1.25rem; margin: 0 0 8px; }
 .sr-empty p { color: var(--muted); max-width: 46ch; margin: 0 auto 8px; font-size: 0.9rem; line-height: 1.6; }
@@ -907,17 +920,56 @@ function nameError(body) {
   return null;
 }
 
+/**
+ * WHY THIS READER CANNOT CHECK CODES HERE, or '' when there is nothing to say.
+ *
+ * The Codes tab used to be drawn only when the server said yes
+ * (org_code_check), so the owner of an approved room with no code issuer had
+ * no tab and nothing anywhere saying why — told "check your codes in the
+ * room", they could not tell missing from broken from not-for-them. Now a
+ * manager of a labelled room gets the tab either way, and this is what it says
+ * when it cannot work. The server still decides; this only explains.
+ */
+function codesWhyNot(g) {
+  if (!g || g.org_code_check || !iManage()) return '';
+  const cso = g.kind === 'cso';
+  const label = cso ? (g.org || g.org_claim) : (g.party || g.party_claim);
+  if (!label) return '';
+  // Not verified yet: no issuer speaks for an unchecked label.
+  if (!(cso ? g.org : g.party)) {
+    return T('situation-room.codes-pending', 'Organisation codes can be checked here once Hawkeye has verified this room.');
+  }
+  /* The owner of a verified room is refused only when no issuer exists; anyone
+     else may also simply not be the coordinator named for it. */
+  if (iAmOwner()) {
+    return T('situation-room.codes-no-issuer', 'Organisation codes are not set up for {v0} yet. Hawkeye sets them up on request, the same way for every party and organisation.', { v0: label });
+  }
+  return cso
+    ? T('situation-room.codes-not-allowed-org', 'Only this room’s owner, or a coordinator named for your organisation, can check codes.')
+    : T('situation-room.codes-not-allowed', 'Only this room’s owner, or a coordinator named for your party, can check codes.');
+}
+
 function render() {
-  if (!S.groups.length) return S.gone ? renderNoRooms() : renderWelcome();
-  S.gone = null;
+  if (!S.groups.length) return (S.gone || S.noRooms) ? renderNoRooms() : renderWelcome();
+  /* SAY WHAT JUST HAPPENED. Deleting a room when others remain used to jump to
+     another room with nothing saying the deletion took — only the last-room
+     page did. Kept (S.goneNote) across tab switches until put away. */
+  if (S.gone) { S.goneNote = S.gone; S.gone = null; }
   const g = S.group || {};
   /* The Coverage tab is the deployment overlay; a plain member does not get it,
      including by ?tab=coverage or a drill from the overview. */
   if (S.tab === 'coverage' && S.group && !iSeeDeployment()) S.tab = 'overview';
-  /* The code checker is drawn only for the reader the server said may use it. */
-  if (S.tab === 'codes' && S.group && !S.group.org_code_check) S.tab = 'overview';
+  /* The code checker is drawn for the reader the server said may use it, and
+     — explained, not working — for a manager it says cannot (codesWhyNot). */
+  const codesTab = !!g.org_code_check || !!codesWhyNot(g);
+  if (S.tab === 'codes' && S.group && !codesTab) S.tab = 'overview';
+  const gone = S.goneNote;
+  const goneHtml = gone ? `<div class="sr-note closable" role="status" id="sr-gone"><span>${esc(gone.how === 'left'
+    ? T('situation-room.room-left-note', 'You stepped back from {name}.', { name: gone.name })
+    : T('situation-room.room-deleted-note', '{name} was deleted. Its observers’ reports stay in the public record.', { name: gone.name }))}</span>
+    <button type="button" class="sr-note-x" id="sr-gone-x" aria-label="${esc(T('common.close', 'Close'))}">&times;</button></div>` : '';
   const scope = g.scope_label || g.scope || T('situation-room.nationwide', 'Nationwide');
-  $('sr').innerHTML = `
+  $('sr').innerHTML = `${goneHtml}
     <div class="sr-bar">
       ${g.party && LOGOS[g.party] ? `<span class="sr-emblem"><img src="${esc(LOGOS[g.party])}" alt="${esc(g.party)}" /></span>` : ''}
       <h1>${esc(g.name || '')}</h1>
@@ -933,7 +985,8 @@ function render() {
              verified, "(pending verification)" until then. */
           g.org || (g.org_claim
             ? T('situation-room.party-pending', '{v0} (pending verification)', { v0: g.org_claim }) : ''),
-          g.contest || '',
+          // The API sends the CODE ("GOV"); the race reads by its name.
+          g.contest ? contestName(g.contest) : '',
           scope,
           g.members === 1
             ? T('situation-room.n-observer', '{v0} observer', { v0: n(g.members) })
@@ -949,14 +1002,14 @@ function render() {
       ${iSeeDeployment() ? `<button role="tab" aria-selected="${S.tab === 'coverage'}" data-tab="coverage" title="2">${T('situation-room.coverage', 'Coverage')}</button>` : ''}
       <button role="tab" aria-selected="${S.tab === 'team'}" data-tab="team" title="${iSeeDeployment() ? 3 : 2}">${T('situation-room.team', 'Team')}</button>
       <button role="tab" aria-selected="${S.tab === 'incidents'}" data-tab="incidents" title="${iSeeDeployment() ? 4 : 3}">${T('situation-room.incidents', 'Incidents')}</button>
-      ${g.org_code_check ? `<button role="tab" aria-selected="${S.tab === 'codes'}" data-tab="codes" title="${iSeeDeployment() ? 5 : 4}">${T('situation-room.codes-tab', 'Codes')}</button>` : ''}
+      ${codesTab ? `<button role="tab" aria-selected="${S.tab === 'codes'}" data-tab="codes" title="${iSeeDeployment() ? 5 : 4}"${g.org_code_check ? '' : ' data-muted'}>${T('situation-room.codes-tab', 'Codes')}</button>` : ''}
     </div>
     ${iManage() && g.admission_block ? `<div class="sr-note" role="status" id="sr-held">${esc(heldText(g))}</div>` : ''}
     <div id="sr-body"><div class="sr-msg">${T('index.loading', 'Loading…')}</div></div>`;
 
   /* The four console actions live in the green header bar. Painted here rather
      than in the static markup because two of them depend on the group: only a
-     non-owner can sign out, and the tooltip has to say which case this is. */
+     non-owner can stop managing, and the tooltip has to say which case this is. */
   const owner = iAmOwner();
   /* An observer on the roster gets the room and none of its levers: no invite
      link to hand out, no room to create, nothing to leave (leaving the campaign
@@ -971,7 +1024,12 @@ function render() {
     + (owner ? `<button id="del-btn" title="${T('situation-room.title-delete-this-room', 'Delete this room')}">${T('situation-room.delete', 'Delete')}</button>` : '')
     + (iManage() ? `<button id="leave-btn"${owner ? ' disabled' : ''} title="${owner
       ? T('situation-room.title-owner-cannot-step-back', 'The owner cannot step back from their own room')
-      : T('situation-room.title-stop-managing-this-room', 'Stop managing this room')}">${T('situation-room.sign-out', 'Sign out')}</button>` : '');
+      : T('situation-room.title-stop-managing-this-room', 'Stop managing this room')}">${
+      /* NOT "Sign out". On a shared office computer that is the button someone
+         presses to end their session — and this one gives up their role in the
+         room until the owner adds them back. It says what it does. */
+      T('situation-room.stop-managing', 'Stop managing')}</button>` : '');
+  if ($('sr-gone-x')) $('sr-gone-x').addEventListener('click', () => { S.goneNote = null; $('sr-gone').remove(); });
   $('gpick') && $('gpick').addEventListener('change', (e) => { pickGroup(Number(e.target.value)); });
   if ($('invite-btn')) $('invite-btn').addEventListener('click', () => showInvite());
   if ($('rename-btn')) $('rename-btn').addEventListener('click', renameRoom);
@@ -1014,8 +1072,20 @@ const CONTEST_KEY = {
   Governorship: 'contest.governorship',
   'State House of Assembly': 'contest.state-house-of-assembly',
 };
+/* The room's own contest arrives as a CODE (GET /groups/:id), and the header
+   printed it raw: "GOV". Codes map to the names above; a by-election code
+   (REP_BYE_GOMBE_2026) reads as its race's by-election — the seat is in the
+   scope beside it. */
+const CONTEST_CODE = {
+  PRES: 'Presidential', SEN: 'Senate', REP: 'House of Representatives', GOV: 'Governorship', SHA: 'State House of Assembly',
+};
 function contestName(en) {
   const s = String(en || '');
+  if (CONTEST_CODE[s]) return contestName(CONTEST_CODE[s]);
+  const bye = s.match(/^([A-Z]+)_BYE_/);
+  if (bye && CONTEST_CODE[bye[1]]) {
+    return T('contest.by-election', '{v0} By-Election{v1}', { v0: contestName(CONTEST_CODE[bye[1]]), v1: '' });
+  }
   const m = s.match(/^(.*?) By-Election(.*)$/);
   if (m) {
     return T('contest.by-election',
@@ -1031,9 +1101,11 @@ function contestName(en) {
  * page points at it. The old room's levers (Invite, Delete…) are cleared.
  */
 function renderNoRooms() {
-  const gone = S.gone; S.gone = null;
+  /* Held in S.noRooms so a language change repaints THIS page, not the setup
+     form; New room lets it go. */
+  const gone = S.gone || S.noRooms; S.gone = null; S.noRooms = gone;
   $('sr-actions').innerHTML = `<button id="new-btn" title="${T('situation-room.title-set-up-another-room', 'Set up another situation room')}">${T('situation-room.new-room', 'New room')}</button>`;
-  $('new-btn').addEventListener('click', () => { S.groupsHeld = []; renderWelcome(); });
+  $('new-btn').addEventListener('click', () => { S.noRooms = null; S.groupsHeld = []; renderWelcome(); });
   $('sr').innerHTML = `
     <div class="sr-empty">
       <h2>${T('situation-room.no-rooms-heading', 'You have no situation rooms')}</h2>
@@ -1045,6 +1117,11 @@ function renderNoRooms() {
 }
 
 function renderWelcome() {
+  /* NO ROOM, NO ROOM LEVERS. The header keeps whatever the last render()
+     painted, so the setup form sat under the previous room's Invite / Delete /
+     Copy link — and a left-over "Invite observers" asked for
+     /api/groups/null/invites. The form's own Cancel is the way back. */
+  $('sr-actions').innerHTML = '';
   $('sr').innerHTML = `
     <div class="sr-empty">
       <h2>${T('situation-room.set-up-your-situation-room', 'Set up your situation room')}</h2>
@@ -2758,7 +2835,11 @@ function renderTeam() {
     </div>
     ${checkInCardHtml()}
     <div class="sr-note">
-      <strong>${T('situation-room.read-only-title', "You are on this campaign’s roster.")}</strong>
+      <strong>${g.kind === 'cso'
+    /* A civil-society room is not a "campaign" — the one word a non-partisan
+       observer group would not want attached to it. Same rule as join.html. */
+    ? T('situation-room.read-only-title-cso', 'You are on this observer group’s roster.')
+    : T('situation-room.read-only-title', 'You are on this campaign’s roster.')}</strong>
       ${T('situation-room.restricted-body', 'Where the team is deployed — the roster, its units and check-ins — is for this room’s managers and coordinators. You see your own place here and the room’s totals above.')}
     </div>
     ${ms.length ? `<div class="sr-wrap"><table class="sr-tbl text">
@@ -3382,11 +3463,16 @@ function downloadCodes(unusedOnly) {
     if (!unusedOnly) lines.push([...r.cells, st.map((x) => codeWord(x, true)).join('; ')]);
     else if (r.codes.length && st.every((x) => x.s === 'unused')) lines.push(r.cells);
   }
-  const blob = new Blob(['﻿' + lines.map((l) => l.map(cell).join(d)).join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
+  saveCsv(lines.map((l) => l.map(cell).join(d)), (unusedOnly ? 'hawkeye-unused-codes-' : 'hawkeye-code-check-') + ((S.group && S.group.slug) || 'room') + '.csv');
+}
+/* A CSV built in memory, with a byte-order mark so Excel shows Hausa, Igbo and
+   Yoruba correctly. Nothing is stored. */
+function saveCsv(lines, filename) {
+  const blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = (unusedOnly ? 'hawkeye-unused-codes-' : 'hawkeye-code-check-') + ((S.group && S.group.slug) || 'room') + '.csv';
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
@@ -3416,6 +3502,39 @@ function codesFromText() {
 function renderCodes() {
   const body = $('sr-body');
   if (!body || S.tab !== 'codes') return;
+  /* The tab a manager gets when the server said no: why, in place of a checker
+     that would only be refused (codesWhyNot, above render()). */
+  const whyNot = codesWhyNot(S.group);
+  if (whyNot) {
+    body.innerHTML = `<div class="sr-note" role="status" id="cc-why-not">
+      <strong>${T('situation-room.codes-title', 'Check your organisation codes')}</strong><br />${esc(whyNot)}</div>`;
+    return;
+  }
+  /* TWO PARTS, PAINTED APART. The room's own batches (paintBatches) come first
+     and repaint on every poll; the paste/upload checker is the secondary tool
+     under "Check other codes" (paintChecker). Separate boxes so a poll never
+     rewrites the textarea someone is typing in, and the <details> keeps its
+     open state. The skeleton is built once per #sr-body. */
+  if (!$('cc-batches')) {
+    const C = codeState();
+    body.innerHTML = `<div id="cc-batches"></div>
+      <details class="sr-card sr-cc-other" id="cc-other"${C.otherOpen || C.rows.length || C.text ? ' open' : ''}>
+        <summary class="sr-h2" style="margin:0;cursor:pointer">${T('situation-room.codes-check-other', 'Check other codes')}</summary>
+        <div id="cc-checker" style="padding-top:8px"></div>
+      </details>`;
+    $('cc-other').addEventListener('toggle', (e) => { codeState().otherOpen = e.target.open; });
+    bindBatches($('cc-batches'));
+  }
+  paintBatches();
+  paintChecker();
+  startCodePoll();
+  if (!batchState().batches) loadBatches();
+}
+
+/** The paste/upload checker — the secondary tool now, for codes not listed above. */
+function paintChecker() {
+  const box = $('cc-checker');
+  if (!box) return;
   const C = codeState();
   const hasRows = C.rows.length > 0;
   const statuses = C.rows.map((r) => rowStatus(C, r));
@@ -3436,9 +3555,8 @@ function renderCodes() {
     : esc(c.code));
   const head = (cls, v, label) => `<div class="sr-head ${cls}"><b class="num">${n(v)}</b><span>${label}</span></div>`;
   const ph = esc(T('situation-room.codes-placeholder', 'ORG-XXXX-XXXX-XXXX — one code, or many'));
-  body.innerHTML = `
-    <div class="sr-card">
-      <div class="sr-h2" style="margin:0 0 4px">${T('situation-room.codes-title', 'Check your organisation codes')}</div>
+  box.innerHTML = `
+    <div>
       <p class="sr-fine" style="margin:0 0 6px">${T('situation-room.codes-intro', 'Type or paste codes, or upload the CSV file you were given, to see which are still unused. Only the codes are sent to Hawkeye — the rest of your file stays on this computer, and nothing is stored.')}</p>
       <p class="sr-fine" style="margin:0 0 10px">${orgRoom()
     ? T('situation-room.codes-privacy-org', 'A used code shows the day it was used, never who used it. A code that is not your organisation’s, or does not exist, shows as “Not one of yours” — Hawkeye does not say which.')
@@ -3450,7 +3568,7 @@ function renderCodes() {
         <button class="sr-btn" id="cc-upload"${C.busy ? ' disabled' : ''}>${T('situation-room.codes-upload', 'Upload CSV')}</button>
         <input type="file" id="cc-file" accept=".csv,.txt,text/csv,text/plain" hidden />
         <div class="spacer"></div>
-        ${done ? `<button class="sr-btn" id="cc-dl-all">${T('situation-room.codes-download-results', 'Download results (CSV)')}</button>
+        ${done ? `<button class="sr-btn" id="cc-dl-all">${T('situation-room.codes-download-csv', 'Download codes CSV')}</button>
         <button class="sr-btn" id="cc-dl-unused"${unusedRows ? '' : ' disabled'}>${T('situation-room.codes-download-unused', 'Download unused codes only')}</button>` : ''}
       </div>
       ${C.progress ? `<p class="sr-fine" role="status" id="cc-status">${esc(C.progress)}</p>` : ''}
@@ -3511,6 +3629,314 @@ function renderCodes() {
     });
   }
   paintCodeSelection();
+}
+
+/* --- the room's own codes, batch by batch -------------------------------- */
+
+/**
+ * EVERY BATCH HAWKEYE ISSUED TO THIS ROOM'S PARTY OR ORGANISATION, listed by
+ * itself — GET /api/groups/:id/org-codes/batches, the same gate as the checker
+ * (the owner, or a coordinator named for that issuer; routes/groups.js). The
+ * room no longer has to re-upload its own list to learn what was used.
+ *
+ * KEPT CURRENT WITHOUT A RE-CHECK: polled about once a minute while the Codes
+ * tab is open, and at once when the window comes back. Each poll sends the last
+ * version; the server answers "unchanged" without opening a single code until a
+ * code is used, withdrawn or restored, or a batch arrives.
+ *
+ * Batches issued before Hawkeye kept codes for rooms are counted, never listed
+ * — their codes exist only in the CSV — and point at "Check other codes".
+ */
+const CODE_POLL_MS = 60000;
+const BATCH_TABLE_MAX = 500;
+function batchState() {
+  if (!S.cb || S.cb.gid !== S.gid) {
+    S.cb = { gid: S.gid, version: '', batches: null, at: 0, error: '', loading: false, busy: false, progress: '',
+      sel: new Set(), open: new Set(), filter: 'all', note: '', undo: null, msg: '' };
+  }
+  return S.cb;
+}
+const batchCodes = (B, id) => (B.batches || []).filter((b) => !id || b.id === id).flatMap((b) => b.codes);
+const batchName = (b) => b.label || T('situation-room.codes-batch-n', 'Batch {v0}', { v0: n(b.id) });
+const hhmm = (ms) => new Date(ms).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+async function loadBatches(force) {
+  const B = batchState();
+  if (B.loading || B.busy) return;
+  B.loading = true;
+  let r;
+  try {
+    r = await api('/api/groups/' + S.gid + '/org-codes/batches' + (B.version && !force ? '?v=' + encodeURIComponent(B.version) : ''));
+  } catch (e) { r = { status: 0, body: {} }; }
+  B.loading = false;
+  // Moved to another room meanwhile: drop it.
+  if (S.cb !== B) return;
+  if (r.status !== 200 || !r.body) {
+    // The last list stays on screen, saying how old it is.
+    B.error = r.status === 429 ? codeCheckError(r) : 'net';
+    return paintBatches();
+  }
+  B.error = '';
+  B.at = Date.now();
+  if (!r.body.unchanged) {
+    B.version = r.body.version || '';
+    B.batches = Array.isArray(r.body.batches) ? r.body.batches : [];
+    // A code no longer unused cannot stay ticked.
+    const live = new Set(batchCodes(B).filter((c) => c.status === 'unused').map((c) => c.code));
+    for (const c of [...B.sel]) if (!live.has(c)) B.sel.delete(c);
+  }
+  paintBatches();
+}
+
+let codePoll = null;
+function startCodePoll() {
+  if (codePoll) return;
+  codePoll = setInterval(() => {
+    if (S.tab !== 'codes' || !(S.group && S.group.org_code_check)) { clearInterval(codePoll); codePoll = null; return; }
+    if (!document.hidden) loadBatches();
+  }, CODE_POLL_MS);
+}
+/* Back to the window or the tab: catch up now rather than wait out the minute. */
+function codesCatchUp() {
+  if (S.tab === 'codes' && S.group && S.group.org_code_check && !document.hidden && $('cc-batches')) loadBatches();
+}
+window.addEventListener('focus', codesCatchUp);
+document.addEventListener('visibilitychange', codesCatchUp);
+
+function paintBatches() {
+  const box = $('cc-batches');
+  if (!box) return;
+  const B = batchState();
+  const g = S.group || {};
+  const who = esc(g.party || g.org || '');
+  const title = `<div class="sr-h2" style="margin:0 0 4px">${T('situation-room.codes-yours-title', 'Your organisation codes')}</div>`;
+  if (!B.batches) {
+    box.innerHTML = `<div class="sr-card">${title}<p class="sr-fine" role="status">${B.error
+      ? T('situation-room.codes-list-failed', 'Could not load your codes. Check your connection — it tries again by itself.')
+      : T('index.loading', 'Loading…')}</p></div>`;
+    return;
+  }
+  const sum = (k) => B.batches.reduce((a, b) => a + (b[k] || 0), 0);
+  const head = (cls, v, label) => `<div class="sr-head ${cls}"><b class="num">${n(v)}</b><span>${label}</span></div>`;
+  const FILTERS = [
+    ['all', T('situation-room.codes-filter-all', 'All codes')],
+    ['unused', T('situation-room.code-unused', 'Unused')],
+    ['used', T('situation-room.code-used', 'Used')],
+    ['revoked', T('situation-room.code-revoked', 'Withdrawn')],
+  ];
+  const shown = (c) => B.filter === 'all' || c.status === B.filter;
+  const anyListed = batchCodes(B).length > 0;
+  const restoreBtn = (c) => (c.status === 'revoked' && c.restorable
+    ? ` <button class="sr-btn mini" data-brestore="${esc(c.code)}"${B.busy ? ' disabled' : ''}>${T('situation-room.codes-restore', 'Restore')}</button>` : '');
+  const codeCell = (c) => (c.status === 'unused'
+    ? `<label class="sr-cc-pick"><input type="checkbox" class="cb-pick" value="${esc(c.code)}"${B.sel.has(c.code) ? ' checked' : ''}${B.busy ? ' disabled' : ''} />${esc(c.code)}</label>`
+    : esc(c.code));
+  const pill = (c) => `<span class="pill ${CODE_PILL[c.status] || 'idle'}"><i>&#9679;</i>${esc(codeWord({ s: c.status, usedOn: c.usedOn }))}</span>${restoreBtn(c)}`;
+  const dl = (kind, id, disabled) => `<button class="sr-btn${id ? ' mini' : ''}" data-bdl="${kind}" data-bid="${id || ''}"${disabled ? ' disabled' : ''}>${kind === 'unused'
+    ? T('situation-room.codes-download-unused', 'Download unused codes only')
+    : T('situation-room.codes-download-csv', 'Download codes CSV')}</button>`;
+  const batchHtml = (b) => {
+    const rows = b.codes.filter(shown);
+    const unusedHere = b.codes.filter((c) => c.status === 'unused').length;
+    const day = new Date(b.createdAt).toLocaleDateString([], { day: 'numeric', month: 'short', year: 'numeric' });
+    return `<details class="sr-batch" data-batch="${b.id}"${B.open.has(b.id) ? ' open' : ''}>
+      <summary><b>${esc(batchName(b))}</b>
+        <span class="sr-sub">${T('situation-room.codes-batch-line', '{v0} · {v1} codes', { v0: esc(day), v1: n(b.size) })}</span>
+        <span class="sr-sub">${T('situation-room.codes-tally-line', '{v0} unused · {v1} used · {v2} withdrawn', { v0: n(b.unused), v1: n(b.used), v2: n(b.withdrawn) })}</span>
+        ${b.withdrawnByHawkeye ? `<span class="pill off"><i>&#9679;</i>${T('situation-room.codes-by-hawkeye', 'Withdrawn by Hawkeye')}</span>` : ''}
+      </summary>
+      ${b.unlisted && !b.codes.length
+    ? `<p class="sr-fine">${T('situation-room.codes-unlisted', 'This batch was issued before Hawkeye kept codes for rooms, so its codes cannot be listed here. Check them with “Check other codes” below.')}</p>`
+    : `${b.unlisted ? `<p class="sr-fine">${T('situation-room.codes-unlisted-some', '{v0} codes in this batch cannot be listed. Check them with “Check other codes” below.', { v0: n(b.unlisted) })}</p>` : ''}
+      <div class="sr-tools" style="padding:8px 0">
+        ${unusedHere ? `<label class="sr-cc-all"><input type="checkbox" data-batch-all="${b.id}"${B.busy ? ' disabled' : ''} />${T('situation-room.codes-select-batch', 'Select this batch’s unused ({v0})', { v0: n(unusedHere) })}</label>` : ''}
+        <div class="spacer"></div>
+        ${dl('all', b.id, !b.codes.length)}
+        ${dl('unused', b.id, !unusedHere)}
+      </div>
+      ${rows.length ? `<div class="sr-wrap"><table class="sr-tbl text codes">
+        <thead><tr><th>${T('situation-room.codes-col-code', 'Code')}</th><th>${T('situation-room.codes-col-status', 'Status')}</th></tr></thead>
+        <tbody>${rows.slice(0, BATCH_TABLE_MAX).map((c) => `<tr><td class="sr-code-cell">${codeCell(c)}</td><td>${pill(c)}</td></tr>`).join('')}</tbody>
+      </table></div>${rows.length > BATCH_TABLE_MAX
+    ? `<p class="sr-fine">${T('situation-room.codes-shown-batch', 'Showing the first {v0} of {v1} codes. The download has them all.', { v0: n(BATCH_TABLE_MAX), v1: n(rows.length) })}</p>` : ''}`
+    : `<p class="sr-fine">${T('situation-room.codes-filter-empty', 'No codes in this batch match.')}</p>`}`}
+    </details>`;
+  };
+  const allUnused = batchCodes(B).filter((c) => c.status === 'unused').length;
+  box.innerHTML = `<div class="sr-card">
+    ${title}
+    <p class="sr-fine" style="margin:0 0 6px">${T('situation-room.codes-yours-intro', 'Every batch Hawkeye has issued for {v0}, with each code’s status. It refreshes by itself about once a minute.', { v0: who })}</p>
+    ${B.batches.length ? `
+    <div class="sr-heads" style="margin:10px 0">
+      ${head('ok', sum('unused'), T('situation-room.code-unused', 'Unused'))}
+      ${head('', sum('used'), T('situation-room.code-used', 'Used'))}
+      ${head('off', sum('withdrawn'), T('situation-room.code-revoked', 'Withdrawn'))}
+    </div>
+    <div class="sr-tools">
+      <select class="sr-sel" id="cb-filter" aria-label="${esc(T('situation-room.codes-show', 'Show'))}" style="flex:0 1 auto;width:auto">${FILTERS.map(([v, l]) =>
+    `<option value="${v}"${B.filter === v ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <div class="spacer"></div>
+      ${dl('all', 0, !anyListed)}
+      ${dl('unused', 0, !allUnused)}
+    </div>
+    ${allUnused ? `<div class="sr-tools" id="cb-select">
+      <label class="sr-cc-all"><input type="checkbox" id="cb-all"${B.busy ? ' disabled' : ''} />${T('situation-room.codes-select-all', 'Select all unused ({v0})', { v0: n(allUnused) })}</label>
+      <div class="spacer"></div>
+      <button class="sr-btn" id="cb-withdraw" disabled></button>
+    </div>` : ''}` : `<p class="sr-fine">${T('situation-room.codes-none-issued', 'Hawkeye has not issued any codes for {v0} yet. When it does, they appear here by themselves.', { v0: who })}</p>`}
+    ${B.progress ? `<p class="sr-fine" role="status">${esc(B.progress)}</p>` : ''}
+    ${B.note ? `<p class="sr-fine" role="status" id="cb-note">${esc(B.note)}${B.undo && B.undo.length && !B.busy
+    ? ` <button class="sr-btn mini" id="cb-undo">${T('situation-room.codes-undo', 'Undo')}</button>` : ''}</p>` : ''}
+    ${B.msg ? `<p class="sr-fine" role="alert" style="color:var(--off)">${esc(B.msg)}</p>` : ''}
+    <p class="sr-fine" id="cb-stamp">${B.error
+    ? esc(B.error === 'net' ? T('situation-room.codes-refresh-failed', 'Could not refresh just now. This is the list from {v0}.', { v0: hhmm(B.at) }) : B.error)
+    : T('situation-room.codes-updated', 'Updated {v0}', { v0: hhmm(B.at) })}</p>
+    </div>
+    ${B.batches.map(batchHtml).join('')}`;
+  paintBatchSelection();
+}
+
+/* Ticks, the batch and "all" boxes, and the Withdraw button, without a redraw. */
+function paintBatchSelection() {
+  const B = batchState();
+  const unusedOf = (id) => batchCodes(B, id).filter((c) => c.status === 'unused').map((c) => c.code);
+  const mark = (el, codes) => {
+    const k = codes.filter((c) => B.sel.has(c)).length;
+    el.checked = !!codes.length && k === codes.length;
+    el.indeterminate = k > 0 && k < codes.length;
+  };
+  if ($('cb-all')) mark($('cb-all'), unusedOf(0));
+  document.querySelectorAll('#cc-batches [data-batch-all]').forEach((el) => mark(el, unusedOf(Number(el.getAttribute('data-batch-all')))));
+  document.querySelectorAll('#cc-batches input.cb-pick').forEach((el) => { el.checked = B.sel.has(el.value); });
+  const btn = $('cb-withdraw');
+  if (btn) {
+    btn.textContent = T('situation-room.codes-withdraw-selected', 'Withdraw selected ({v0})', { v0: n(B.sel.size) });
+    btn.disabled = B.busy || !B.sel.size;
+  }
+}
+
+/* Delegated once per #sr-body: the box survives every repaint, its contents do not. */
+function bindBatches(box) {
+  box.addEventListener('change', (e) => {
+    const B = batchState();
+    const t = e.target;
+    if (t.id === 'cb-filter') { B.filter = t.value; return paintBatches(); }
+    if (t.id === 'cb-all' || t.hasAttribute('data-batch-all')) {
+      const id = t.id === 'cb-all' ? 0 : Number(t.getAttribute('data-batch-all'));
+      for (const c of batchCodes(B, id)) if (c.status === 'unused') { if (t.checked) B.sel.add(c.code); else B.sel.delete(c.code); }
+      return paintBatchSelection();
+    }
+    if (t.classList.contains('cb-pick')) {
+      if (t.checked) B.sel.add(t.value); else B.sel.delete(t.value);
+      paintBatchSelection();
+    }
+  });
+  box.addEventListener('click', (e) => {
+    const B = batchState();
+    const d = e.target.closest('[data-bdl]');
+    if (d) return downloadBatchCodes(d.getAttribute('data-bdl') === 'unused', Number(d.getAttribute('data-bid')) || 0);
+    if (e.target.closest('#cb-withdraw')) return withdrawBatchSelected();
+    if (e.target.closest('#cb-undo')) return restoreBatchCodes(B.undo || []);
+    const r = e.target.closest('[data-brestore]');
+    if (r) restoreBatchCodes([r.getAttribute('data-brestore')]);
+  });
+  // `toggle` does not bubble; caught on the way down, so an open batch stays open across polls.
+  box.addEventListener('toggle', (e) => {
+    const el = e.target;
+    if (!el.matches || !el.matches('details[data-batch]')) return;
+    const id = Number(el.getAttribute('data-batch'));
+    if (el.open) batchState().open.add(id); else batchState().open.delete(id);
+  }, true);
+}
+
+/** Withdraw or restore from the list, 5,000 a call; the list is re-read after. */
+async function batchWrite(kind, codes) {
+  const B = batchState();
+  const changed = [];
+  let error = '';
+  Object.assign(B, { busy: true, msg: '', note: '', undo: null });
+  for (let i = 0; i < codes.length; i += CODE_CHUNK) {
+    const vars = { v0: n(Math.min(i + CODE_CHUNK, codes.length)), v1: n(codes.length) };
+    B.progress = kind === 'withdraw'
+      ? T('situation-room.codes-withdrawing', 'Withdrawing {v0} of {v1}…', vars)
+      : T('situation-room.codes-restoring', 'Restoring {v0} of {v1}…', vars);
+    paintBatches();
+    let r;
+    try {
+      r = await api('/api/groups/' + S.gid + '/org-codes/' + kind, {
+        method: 'POST', body: JSON.stringify({ codes: codes.slice(i, i + CODE_CHUNK).map((c) => c.replace(/-/g, '')) }),
+      });
+    } catch (e) { r = { status: 0, body: {} }; }
+    if (S.cb !== B) return null;
+    if (r.status !== 200) {
+      error = codeWriteError(r) + (i ? ' ' + T('situation-room.codes-write-partial', 'The rest were not changed.') : '');
+      break;
+    }
+    for (const x of r.body.results || []) if (x.changed) changed.push(x.code);
+  }
+  Object.assign(B, { busy: false, progress: '' });
+  await loadBatches(true);
+  return { changed, error };
+}
+
+async function withdrawBatchSelected() {
+  const B = batchState();
+  const live = new Set(batchCodes(B).filter((c) => c.status === 'unused').map((c) => c.code));
+  const codes = [...B.sel].filter((c) => live.has(c));
+  if (!codes.length || B.busy) return;
+  const sure = await hkConfirm(codes.length === 1
+    ? T('situation-room.codes-withdraw-confirm-one', 'Withdraw 1 code? A withdrawn code can no longer be used to sign up. Accounts already created with your codes are not affected.')
+    : T('situation-room.codes-withdraw-confirm-many', 'Withdraw {v0} codes? A withdrawn code can no longer be used to sign up. Accounts already created with your codes are not affected.', { v0: n(codes.length) }),
+  { title: T('situation-room.codes-withdraw-title', 'Withdraw codes'), ok: T('situation-room.codes-withdraw-ok', 'Withdraw'), danger: true });
+  if (!sure) return;
+  const r = await batchWrite('withdraw', codes);
+  if (!r) return;
+  const k = r.changed.length;
+  const bits = [];
+  if (k) {
+    bits.push(k === 1
+      ? T('situation-room.codes-withdrawn-one', '1 code withdrawn. It can no longer be used to sign up.')
+      : T('situation-room.codes-withdrawn-many', '{v0} codes withdrawn. They can no longer be used to sign up.', { v0: n(k) }));
+  }
+  if (!r.error && k < codes.length) {
+    bits.push(T('situation-room.codes-withdraw-skipped', 'Not withdrawn: {v0} — used or withdrawn in the meantime. See the status below.', { v0: n(codes.length - k) }));
+  }
+  for (const c of r.changed) B.sel.delete(c);
+  Object.assign(B, { note: bits.join(' '), undo: k ? r.changed : null, msg: r.error });
+  paintBatches();
+}
+
+async function restoreBatchCodes(codes) {
+  const B = batchState();
+  if (!codes.length || B.busy) return;
+  const r = await batchWrite('restore', codes);
+  if (!r) return;
+  const k = r.changed.length;
+  const note = !k ? (r.error ? '' : T('situation-room.codes-restore-none', 'Nothing was restored: those codes are no longer withdrawn by this room. Their status is shown below.'))
+    : k === 1 ? T('situation-room.codes-restored-one', '1 code restored. It can be used to sign up again.')
+      : T('situation-room.codes-restored-many', '{v0} codes restored. They can be used to sign up again.', { v0: n(k) });
+  Object.assign(B, { note, undo: null, msg: r.error });
+  paintBatches();
+}
+
+/** Every listed code of one batch (or all), or only the unused ones — built here, from the list on screen. */
+function downloadBatchCodes(unusedOnly, batchId) {
+  const B = batchState();
+  const cell = (v) => {
+    const s = String(v == null ? '' : v);
+    return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+  const lines = [unusedOnly
+    ? [T('situation-room.codes-col-batch', 'Batch'), T('situation-room.codes-col-code', 'Code')]
+    : [T('situation-room.codes-col-batch', 'Batch'), T('situation-room.codes-col-code', 'Code'), T('situation-room.codes-col-status', 'Status')]];
+  for (const b of (B.batches || []).filter((x) => !batchId || x.id === batchId)) {
+    for (const c of b.codes) {
+      if (unusedOnly && c.status !== 'unused') continue;
+      lines.push(unusedOnly ? [batchName(b), c.code] : [batchName(b), c.code, codeWord({ s: c.status, usedOn: c.usedOn }, true)]);
+    }
+  }
+  saveCsv(lines.map((l) => l.map(cell).join(',')),
+    (unusedOnly ? 'hawkeye-unused-codes-' : 'hawkeye-codes-') + ((S.group && S.group.slug) || 'room') + (batchId ? '-batch-' + batchId : '') + '.csv');
 }
 
 /**
@@ -3905,7 +4331,9 @@ async function leaveRoom() {
  * A promise with no control behind it is the same failure as a consent notice
  * describing a screen that does not exist: it reads as handled.
  */
-async function showInvite(sheet) {
+async function showInvite(sheet, afterRevoke) {
+  // No room open (a left-over header button): there is nothing to invite to.
+  if (!S.gid) return;
   /* A room whose party label is still being verified admits nobody, so its
      links are not offered — listing old ones would say "anyone with a live
      link can join" about links that do not work. */
@@ -3913,7 +4341,11 @@ async function showInvite(sheet) {
   const { body } = await api('/api/groups/' + S.gid + '/invites');
   const all = Array.isArray(body) ? body : [];
   const live = all.filter((t) => !t.revoked && t.expires_at > Date.now());
-  if (!live.length) {
+  /* A link is made for you when you OPEN the sheet with none live — that is
+     what "Invite observers" is for. NOT after a revoke: revoking the only link
+     is how a manager stops people joining, and silently minting a fresh one
+     straight after undid it with nothing on screen saying so. */
+  if (!live.length && !afterRevoke) {
     const made = await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
     // Never loop on a refusal: the recursion below assumes a link now exists.
     if (!(made.status >= 200 && made.status < 300)) return void hkAlert(roleError(made.body && made.body.error));
@@ -3924,6 +4356,13 @@ async function showInvite(sheet) {
      again — reopening would stack a second one over the first. */
   const s = sheet || openSheet(T('situation-room.invite-links', 'Invite links'));
   const panel = s.body;
+  if (!live.length) {
+    panel.innerHTML = `<div class="sr-inv-note" role="status" id="inv-none">${T('situation-room.no-live-links',
+      'No live links. Nobody new can join until you create one.')}</div>
+      <button class="sr-btn primary" id="inv-new">${T('situation-room.create-a-link', 'Create a link')}</button>`;
+    $('inv-new').addEventListener('click', () => newInvite(s));
+    return;
+  }
   panel.innerHTML = `${live.map((t) => `<div class="sr-link">
       <code>${esc(hkShareOrigin() + '/join/' + t.token)}</code>
       <span class="sr-sub num" style="white-space:nowrap">${T('situation-room.n-used', '{v0} used', { v0: n(t.uses) })} &middot; ${days(t)}d</span>
@@ -3941,12 +4380,16 @@ async function showInvite(sheet) {
   panel.querySelectorAll('[data-revoke]').forEach((b) => b.addEventListener('click', async () => {
     if (!await ask(T('situation-room.revoke-this-link-anyone-who-has-not', 'Revoke this link? Anyone who has not used it yet will not be able to join with it.'))) return;
     await api('/api/groups/' + S.gid + '/invites/' + b.dataset.revoke, { method: 'DELETE' });
-    showInvite(s);
+    showInvite(s, true);
   }));
-  $('inv-new').addEventListener('click', async () => {
-    await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
-    showInvite(s);
-  });
+  $('inv-new').addEventListener('click', () => newInvite(s));
+}
+
+/* A new link, on request — and a refusal is said, not redrawn as nothing. */
+async function newInvite(s) {
+  const made = await api('/api/groups/' + S.gid + '/invites', { method: 'POST' });
+  if (!(made.status >= 200 && made.status < 300)) return void hkAlert(roleError(made.body && made.body.error));
+  showInvite(s, true);
 }
 
 /* --- boot -------------------------------------------------------------- */
@@ -4086,7 +4529,11 @@ async function boot(preferId) {
   const managing = (body && body.managing) || [];
   const seen = new Set(managing.map((x) => x.id));
   S.groups = managing.concat(((body && body.member) || []).filter((x) => !seen.has(x.id)));
-  if (!S.groups.length) return renderWelcome();
+  /* After deleting or leaving the LAST room, the page that says so — not the
+     setup form. render() was the only reader of S.gone, and this went straight
+     past it, so renderNoRooms() never ran. */
+  if (!S.groups.length) return (S.gone || S.noRooms) ? renderNoRooms() : renderWelcome();
+  S.noRooms = null;
   /* A slug in the address wins over "whatever was first": that link is how a
      manager or coordinator who did not create the room reaches it at all. */
   const bySlug = URL_SLUG && S.groups.find((x) => x.slug === URL_SLUG);

@@ -1,0 +1,107 @@
+{
+  "n.app.my-groups.check-in-offline": {
+    "ha": "Ba a iya kaiwa ga Hawkeye ba — duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Enweghị ike iru Hawkeye — lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "A kò lè dé ọ̀dọ̀ Hawkeye — ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "join.not-recognised-title": {
+    "ha": "Ba mu gane wannan gayyatar ba",
+    "ig": "Anyị amataghị òkù ahụ",
+    "yo": "A kò dá ìpè yẹn mọ̀"
+  },
+  "join.not-recognised-body": {
+    "ha": "Wataƙila an rubuta hanyar haɗin ba daidai ba, ko kuma an goge ƙungiyar.",
+    "ig": "Ikekwe e dehiere njikọ ahụ ezighi ezi, ma ọ bụ e hichapụla otu ahụ.",
+    "yo": "Ó ṣeé ṣe kí a ti tẹ ìjápọ̀ náà ní àṣìṣe, tàbí kí a ti pa ẹgbẹ́ náà rẹ́."
+  },
+  "join.withdrawn-title": {
+    "ha": "An janye wannan gayyatar",
+    "ig": "Ewepụla òkù ahụ",
+    "yo": "A ti fa ìpè yẹn padà"
+  },
+  "join.expired-title": {
+    "ha": "Wa'adin wannan gayyatar ya ƙare",
+    "ig": "Òkù ahụ agafeela oge ya",
+    "yo": "Àkókò ìpè yẹn ti kọjá"
+  },
+  "join.fresh-link-body": {
+    "ha": "Nemi sabuwar hanyar haɗi daga wanda ya aiko maka — zai iya ƙirƙiro ɗaya cikin daƙiƙu kaɗan.",
+    "ig": "Rịọ onye zitere gị ya ka o zitere gị njikọ ọhụrụ — ọ nwere ike ịmepụta otu n'ime sekọnd ole na ole.",
+    "yo": "Béèrè ìjápọ̀ tuntun lọ́wọ́ ẹni tí ó fi ránṣẹ́ — ó lè ṣe ọ̀kan láàrin ìṣẹ́jú-àáyá díẹ̀."
+  },
+  "join.went-wrong-title": {
+    "ha": "Wani abu ya faru ba daidai ba",
+    "ig": "Ihe adịghị mma mere",
+    "yo": "Nǹkan kan ṣẹlẹ̀ tí kò tọ́"
+  },
+  "join.try-again-moment": {
+    "ha": "Sake gwada hanyar haɗin nan ba da daɗewa ba.",
+    "ig": "Nwaa njikọ ahụ ọzọ n'oge na-adịghị anya.",
+    "yo": "Tún gbìyànjú ìjápọ̀ náà ní ìṣẹ́jú díẹ̀ sí i."
+  },
+  "join.check-connection": {
+    "ha": "Duba haɗin intanet ɗinka sannan ka sake gwada hanyar haɗin.",
+    "ig": "Lelee njikọ ịntanetị gị wee nwaa njikọ ahụ ọzọ.",
+    "yo": "Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú ìjápọ̀ náà."
+  },
+  "join.try-again": {
+    "ha": "Sake gwadawa",
+    "ig": "Nwaa ọzọ",
+    "yo": "Tún gbìyànjú"
+  },
+  "join.alert-failed": {
+    "ha": "Ba a iya shigar da kai yanzu ba.",
+    "ig": "Enweghị ike isonye ugbu a.",
+    "yo": "A kò lè dá ọ pọ̀ báyìí."
+  },
+  "contest.presidential": {
+    "ha": "Shugaban ƙasa",
+    "ig": "Onye isi ala",
+    "yo": "Ààrẹ"
+  },
+  "contest.senate": {
+    "ha": "Majalisar Dattawa",
+    "ig": "Sineti",
+    "yo": "Ìgbìmọ̀ Aṣòfin Àgbà"
+  },
+  "contest.house-of-representatives": {
+    "ha": "Majalisar Wakilai",
+    "ig": "Ụlọ Nnọchiteanya",
+    "yo": "Ilé Aṣojú"
+  },
+  "contest.governorship": {
+    "ha": "Gwamna",
+    "ig": "Ọchịchị gọvanọ",
+    "yo": "Gómìnà"
+  },
+  "contest.state-house-of-assembly": {
+    "ha": "Majalisar Dokokin Jiha",
+    "ig": "Ụlọ Omebe Iwu Steeti",
+    "yo": "Ilé Ìgbìmọ̀ Aṣòfin Ìpínlẹ̀"
+  },
+  "contest.by-election": {
+    "ha": "Zaɓen Cike Gurbi na {v0}",
+    "ig": "Ntuli Aka Ndochi {v0}",
+    "yo": "Ìdìbò Ìrọ́pò {v0}"
+  },
+  "observe.check-in-denied": {
+    "ha": "An ƙi izinin wuri, don haka ba za a iya yin rajistar zuwa ba.",
+    "ig": "A jụrụ ikike ebe, ya mere enweghị ike ide na ị bịara.",
+    "yo": "A kọ̀ àṣẹ ibi, nítorí náà a kò lè kọ ìdé sílẹ̀."
+  },
+  "join.could-not-join-offline": {
+    "ha": "Ba a iya shiga ba — duba haɗin intanet ɗinka sannan ka sake gwadawa.",
+    "ig": "Enweghị ike isonye — lelee njikọ ịntanetị gị wee nwaa ọzọ.",
+    "yo": "A kò lè dara pọ̀ — ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú."
+  },
+  "my-groups.decline-confirm": {
+    "ha": "Ka gaya wa {name} cewa ba za ka kasance a wannan rumfar ba? Za su iya ba da shawarar wata. Ba za ka iya janye wannan a nan ba.",
+    "ig": "Gwa {name} na ị gaghị anọ n'ebe ntuli aka a? Ha nwere ike ịtụ aro ọzọ. Ị nweghị ike ịgbanwe nke a ebe a.",
+    "yo": "Sọ fún {name} pé o kò ní wà ní ibùdó ìdìbò yìí? Wọ́n lè dábàá òmíràn. O kò lè yí èyí padà níbí."
+  },
+  "my-groups.decline-ok": {
+    "ha": "Ƙi wannan rumfar",
+    "ig": "Jụ ebe ntuli aka a",
+    "yo": "Kọ ibùdó ìdìbò yìí"
+  }
+}

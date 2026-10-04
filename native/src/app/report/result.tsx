@@ -1,4 +1,5 @@
 import Feather from '@expo/vector-icons/Feather';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Clipboard from 'expo-clipboard';
 import * as Haptics from 'expo-haptics';
 import { Image } from 'expo-image';
@@ -10,8 +11,10 @@ import { InfoDot } from '@/components/info-dot';
 import { ButtonText } from '@/components/button-text';
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
+import { CheckInCard } from '@/components/check-in-card';
 import { ConfirmSheet } from '@/components/confirm-sheet';
-import { ContestPicker } from '@/components/contest-picker';
+import { ContestPicker, seatRaces } from '@/components/contest-picker';
+import { useLeaveGuard } from '@/components/leave-guard';
 import { NoElection } from '@/components/no-election';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
@@ -51,7 +54,7 @@ import {
 } from '@/lib/races';
 import { extractCandidates, resolveUnitFromText } from '@/lib/pu-code';
 import { useUi } from '@/lib/theme';
-import { useAuth } from '@/lib/auth';
+import { authedGet, useAuth } from '@/lib/auth';
 import {
   describeFixFailure,
   DISCOVERY_RADIUS_M,
@@ -61,16 +64,32 @@ import {
 } from '@/lib/location';
 import { submitResult, type Receipt, type Shot, type Vote } from '@/lib/submit';
 import { regFetch } from '@/lib/register-fetch';
+import {
+  rememberedState,
+  rememberedStateNow,
+  rememberState,
+  registerReady,
+  unitsOffline,
+  warmRegister,
+} from '@/lib/register';
+import { clearDraft, draftTime, fileStillThere, loadDraft, saveDraft } from '@/lib/report-draft';
 import { humanError } from '@/lib/errors';
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
 import { ReceiptCopy } from '@/components/receipt-copy';
-import { checkIn, myRooms, type MyRoom } from '@/lib/check-in';
+import { myRooms, type MyRoom } from '@/lib/check-in';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
+
+/** The observer's saved unit, kept so the unit step can offer it offline. */
+const SAVED_UNIT_KEY = 'hk_saved_unit_v1';
+/** The report in progress (lib/report-draft.ts). */
+const DRAFT_KEY = 'hk_result_draft_v1';
+/** A draft older than this is not offered: the day has moved on. */
+const DRAFT_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 
 /** A register row — every field the rest of this screen reads off the selection.
  *  The tier fields ride along (the API SELECT *s the register row) so browse
@@ -83,6 +102,13 @@ type Unit = {
   state: string;
   coords_source?: string | null;
   locationTier?: string;
+  /**
+   * The unit's own Senate / House seats — on every register row (`SELECT *`,
+   * and register-pack materialise()). The race picker confirms them instead of
+   * asking the observer to pick among the whole state's (REP-RES-06).
+   */
+  senatorial?: string | null;
+  federal_constituency?: string | null;
   /**
    * THE LONGITUDES WERE MISSING FROM THIS TYPE, WHICH IS WHY NO SELECTION PATH
    * COULD MEASURE ANYTHING. /register/search, /register/units and
@@ -348,13 +374,23 @@ const ringLine = (_s: Searched): string =>
 const nothingFoundLine = (s: Searched): string => {
   const m = s.registerM ?? s.envelopeM;
   if (m != null) return i18nT('n.app.report.result.no-unit-found-within-m-browse', { v0: m });
-  // POINT AT SEARCH, NOT BROWSE. This is the NETWORK-failure case, and browsing
-  // the register is itself network-backed (/lgas, /wards, /units) — so the old
-  // copy sent an observer whose DNS had just failed to the one other path that
-  // could not work either. Search answers from the register bundled into the
-  // app, which is the only unit lookup that survives having no connection.
-  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
+  // This is the NETWORK-failure case — see nearMeOfflineLine.
+  return nearMeOfflineLine();
 };
+
+/**
+ * Where to send an observer whose near-me lookup could not reach the server.
+ *
+ * Search, when the remembered state's pack is on this phone: it answers from
+ * the pack with no signal at all. Otherwise search cannot answer either (its
+ * offline path IS that pack — REP-UNIT-02), so the line points at Browse the
+ * register, whose state/LGA/ward lists come from the index every install holds,
+ * and which says plainly at the ward when the unit list is not on the phone.
+ */
+const nearMeOfflineLine = (): string =>
+  registerReady(rememberedStateNow())
+    ? i18nT('n.app.report.result.could-not-check-nearby-units-search')
+    : i18nT('n.app.report.result.could-not-check-nearby-browse');
 
 /**
  * The line for a lookup that FAILED rather than one that came back empty, and
@@ -372,7 +408,7 @@ const lookupFailedLine = (detail: string): string => {
   // how "fetch failed: java.net.UnknownHostException: Unable to resolve host" came
   // to be four lines of Java under "Report a result" on a phone with no signal.
   if (detail) console.warn('[hawkeye] near-me lookup failed', detail);
-  return i18nT('n.app.report.result.could-not-check-nearby-units-search');
+  return nearMeOfflineLine();
 };
 
 /** The tier's colour, sized for a line of text — so a row, a receipt line and
@@ -603,8 +639,10 @@ export default function ReportResult() {
      see lib/check-in.ts for why that decision is the server's and not this
      screen's. `null` means "not asked yet" and draws nothing. */
   const [rooms, setRooms] = useState<MyRoom[] | null>(null);
-  const [checkInState, setCheckInState] = useState<'idle' | 'working' | 'verified' | 'weak' | 'failed'>('idle');
   const [units, setUnits] = useState<Unit[]>([]);
+  /** The ward's unit list could not be had — offline, and the state's pack is
+   *  not on this phone. Said in the ward instead of an empty list (REP-OFF-02). */
+  const [unitsMissing, setUnitsMissing] = useState(false);
   const [unit, setUnit] = useState<Unit | null>(null);
 
   /* Asked ONCE per screen, never awaited by anything the observer is waiting
@@ -614,6 +652,43 @@ export default function ReportResult() {
     myRooms().then((r) => { if (live) setRooms(r); });
     return () => { live = false; };
   }, []);
+
+  /**
+   * THE OBSERVER'S SAVED UNIT — offered at the unit step, never chosen for them.
+   *
+   * Flow walkthrough REP-OFF-02 (web P1, checked here for parity): offline at
+   * the unit step, near me and search can both be dead, and the one unit the
+   * app already knows was not offered. It is kept on the phone (SAVED_UNIT_KEY)
+   * so it is still offered with no signal; the live answer replaces it when it
+   * comes. Its state also seeds the offline search (lib/register.ts
+   * rememberState) and that state's pack is pulled now, while the photos are
+   * being taken — so the unit step can search with no signal.
+   */
+  const [savedUnit, setSavedUnit] = useState<Unit | null>(null);
+  useEffect(() => {
+    if (auth.status !== 'signedIn') return;
+    let live = true;
+    AsyncStorage.getItem(SAVED_UNIT_KEY)
+      .then((raw) => {
+        const kept = raw ? (JSON.parse(raw) as Unit) : null;
+        if (live && kept?.pu_code) setSavedUnit((cur) => cur ?? kept);
+      })
+      .catch(() => {});
+    authedGet<{ unit?: Unit | null }>('/api/observers/my-unit', { signOutOn401: false })
+      .then((r) => {
+        if (!live) return;
+        const u = r?.unit && r.unit.pu_code && r.unit.state && r.unit.lga ? r.unit : null;
+        setSavedUnit(u);
+        if (u) {
+          AsyncStorage.setItem(SAVED_UNIT_KEY, JSON.stringify(u)).catch(() => {});
+          void rememberState(u.state, { ifUnset: true });
+        } else {
+          AsyncStorage.removeItem(SAVED_UNIT_KEY).catch(() => {});
+        }
+      })
+      .catch(() => {});
+    return () => { live = false; };
+  }, [auth.status]);
 
   // GPS discovery — the way an observer standing at their unit should find it.
   const [nearby, setNearby] = useState<NearRow[]>([]);
@@ -669,6 +744,10 @@ export default function ReportResult() {
       .then((r) => r.json())
       .then(setStates)
       .catch(() => {});
+    // The remembered state's pack, decoded while the photos are taken: the unit
+    // step can then search with no signal (REP-UNIT-02). Storage when it is
+    // held, ~32 KB of network when it is not and there is signal.
+    rememberedState().then((s) => warmRegister(s)).catch(() => {});
   }, []);
 
   // No contest filter on the register drill: the server ignores the parameter
@@ -689,8 +768,13 @@ export default function ReportResult() {
 
   useEffect(() => {
     if (!stateSel || !lgaSel || !wardSel) return;
+    setUnitsMissing(false);
     regFetch(`${REG}/units?state=${encodeURIComponent(stateSel)}&lga=${encodeURIComponent(lgaSel)}&ward=${encodeURIComponent(wardSel)}`)
-      .then((r) => r.json()).then((d) => setUnits(d.units ?? [])).catch(() => {});
+      .then((r) => r.json()).then((d) => setUnits(d.units ?? []))
+      // regFetch has already tried the phone's pack, so a request that still
+      // fails means the list is neither here nor reachable. Say so — an empty
+      // ward with no sentence read as "this ward has no units" (REP-OFF-02).
+      .catch(() => setUnitsMissing(true));
   }, [stateSel, lgaSel, wardSel]);
 
   /**
@@ -758,7 +842,10 @@ export default function ReportResult() {
   const openRacesHere = useMemo<Race[]>(() => {
     if (!unit) return [];
     const st = unit.state as StateName;
-    return ELECTION_TYPES.flatMap((t) => listRaces(t.code, st)).filter((r) =>
+    // Senate / House at the unit's OWN seat, as the picker offers them — or the
+    // three Lagos districts would count as three open races and the picker
+    // would never be skipped for a unit that has exactly one of each.
+    return ELECTION_TYPES.flatMap((t) => seatRaces(t.code, listRaces(t.code, st), unit)).filter((r) =>
       isRaceOpen(r, contests),
     );
   }, [unit, contests]);
@@ -1013,7 +1100,13 @@ export default function ReportResult() {
           // A whole register row arrived with it, so selecting this one needs
           // no second lookup — but only if it really carries the fields the
           // race rules read; a half-built unit dead-ends two taps later.
-          unit: u.state && u.lga ? { pu_code: u.pu_code, name: u.name, ward: u.ward, lga: u.lga, state: u.state } : null,
+          unit: u.state && u.lga
+            ? {
+                pu_code: u.pu_code, name: u.name, ward: u.ward, lga: u.lga, state: u.state,
+                // The seats ride along, or the race step asks what the unit decides.
+                senatorial: u.senatorial, federal_constituency: u.federal_constituency,
+              }
+            : null,
         });
       }
       for (const n of envelopeRows) {
@@ -1279,10 +1372,28 @@ export default function ReportResult() {
       }
     }
     pick();
-    setUnit(u);
+    setUnit(withSeats(u));
     setRace(null);
     setContest(null);
     setWantsPicker(false);
+    // The next search, here or on any picker, answers from this state's pack.
+    void rememberState(u.state);
+  };
+
+  /**
+   * A row that arrived without its seats — the saved unit (/my-unit selects
+   * five columns) — takes them from the state's pack when the pack is decoded,
+   * so the race step can still confirm them. Otherwise it is left as it came,
+   * and the picker simply lists the state's seats as it always did.
+   */
+  const withSeats = (u: Unit): Unit => {
+    if (u.senatorial || u.federal_constituency) return u;
+    try {
+      const row = unitsOffline(u.state, u.lga, u.ward)?.find((r) => r.pu_code === u.pu_code);
+      return row ? { ...u, senatorial: row.senatorial, federal_constituency: row.federal_constituency } : u;
+    } catch {
+      return u;
+    }
   };
 
   /**
@@ -1630,7 +1741,12 @@ export default function ReportResult() {
       });
       // Handed off — accepted, or safe in the outbox. The photos are the ones
       // just signed; the outbox flush never saves them again.
-      if (r.ok || r.queued) saveReportMedia([sheet.uri, venue.uri]);
+      if (r.ok || r.queued) {
+        saveReportMedia([sheet.uri, venue.uri]);
+        // Handed off: the outbox holds its own durable copy from here, so the
+        // draft would only offer to resume a report that is already filed.
+        clearDraft(DRAFT_KEY);
+      }
       if (r.ok) {
         // KEPT, NOT COUNTED (backend services/deviceClaims.js): the unit's
         // result then describes OTHER accounts' reports, so it is not shown
@@ -1674,6 +1790,89 @@ export default function ReportResult() {
     }
   };
 
+  // -- the report in progress survives a reload / an OS kill (REP-RES-02) ---
+  /**
+   * 'checking' until storage has answered — the camera does not open before
+   * then, because offering "Continue your report?" over a running scanner is
+   * how a capture gets lost. A draft: offer it. 'none': carry on as always.
+   */
+  type ResultDraft = {
+    sheet: Shot | null;
+    venue: Shot | null;
+    readCodes: string[];
+    unit: Unit | null;
+    race: Race | null;
+    counts: Record<string, string>;
+    sheetSerial: string;
+    readSerial: string | null;
+  };
+  const [draft, setDraft] = useState<'checking' | 'none' | (ResultDraft & { savedAt: number })>('checking');
+  useEffect(() => {
+    let live = true;
+    (async () => {
+      const d = await loadDraft<ResultDraft>(DRAFT_KEY, DRAFT_MAX_AGE_MS);
+      // Only a draft whose photos are still on the phone: resuming a report
+      // whose evidence the OS has reclaimed would be worse than starting over.
+      const files = d ? [d.sheet?.uri, d.venue?.uri].filter((x): x is string => !!x) : [];
+      const ok = d && files.length > 0 && (await Promise.all(files.map(fileStillThere))).every(Boolean);
+      if (!live) return;
+      if (d && !ok) clearDraft(DRAFT_KEY);
+      setDraft(ok && d ? d : 'none');
+    })().catch(() => { if (live) setDraft('none'); });
+    return () => { live = false; };
+  }, []);
+
+  /** Continue: everything back where it was, at the first step still to do. */
+  const resumeDraft = (d: ResultDraft) => {
+    setSheet(d.sheet);
+    setVenue(d.venue);
+    setReadCodes(d.readCodes ?? []);
+    setCounts(d.counts ?? {});
+    setSheetSerial(d.sheetSerial ?? '');
+    setReadSerial(d.readSerial ?? null);
+    setUnit(d.unit);
+    setRace(d.race);
+    setContest(null); // re-resolved from `race` once the contest list is in, below
+    // The draft's own race wins over one a race page proposed this time.
+    proposed.current = null;
+    setStep(!d.sheet ? 'sheet' : !d.venue ? 'venue' : !d.unit ? 'unit' : d.race ? 'votes' : 'unit');
+    setDraft('none');
+  };
+
+  /* A resumed race is a catalogue Race; what the submit reads is the matching
+     /api/contests row, which may arrive after the resume. One rule for both:
+     races.ts matchContest, exactly as selectRace uses it. */
+  useEffect(() => {
+    if (race && !contest && contests.length) setContest(matchContest(race, contests) ?? null);
+  }, [race, contest, contests]);
+
+  /* Kept while there is evidence and the report is not handed off. Never while
+     a draft is still being offered — that would overwrite the one on offer
+     with this empty screen. "Start again" leaves the old draft in place until
+     the first new photo replaces it, so a stray Back on that question costs
+     nothing. */
+  useEffect(() => {
+    if (draft !== 'none' || step === 'done' || !(sheet || venue)) return;
+    saveDraft<ResultDraft>(DRAFT_KEY, { sheet, venue, readCodes, unit, race, counts, sheetSerial, readSerial });
+  }, [draft, step, sheet, venue, readCodes, unit, race, counts, sheetSerial, readSerial]);
+
+  /**
+   * LEAVING ASKS FIRST once there is evidence (REP-RES-01): the ×, the crest,
+   * Android's Back and the camera's Cancel on the first step all remove this
+   * screen, and components/leave-guard.tsx intercepts exactly that. Discard
+   * deletes the draft too; an app kill keeps it, which is the point of it.
+   */
+  const [camEpoch, setCamEpoch] = useState(0);
+  const { sheet: leaveGuard, confirmLeave } = useLeaveGuard(
+    // Never against the root layout's signed-out bounce (app/_layout.tsx):
+    // that removal is the app's, and a 401 has already parked the report.
+    auth.status === 'signedIn' && !!(sheet || venue) && step !== 'done',
+    () => clearDraft(DRAFT_KEY),
+    // Stayed after the camera's Cancel: that camera marked itself cancelled, so
+    // a fresh one replaces it or the shutter would do nothing from here on.
+    () => setCamEpoch((e) => e + 1),
+  );
+
   // -- guards ---------------------------------------------------------------
   if (auth.status !== 'signedIn') {
     return (
@@ -1691,6 +1890,30 @@ export default function ReportResult() {
         <Pressable className="mt-3" onPress={() => router.back()}>
           <Text className="text-sm text-muted">{i18nT('lang.later')}</Text>
         </Pressable>
+        {/* A session that lapsed mid-report lands here with the photos still
+            held; "Not now" leaves, so it asks like every other exit. */}
+        {leaveGuard}
+      </SafeScreen>
+    );
+  }
+
+  // Nothing — not even the camera — until storage says whether a report is
+  // waiting to be resumed. It answers in milliseconds.
+  if (draft === 'checking') return <SafeScreen className="flex-1 bg-surface">{null}</SafeScreen>;
+
+  if (draft !== 'none') {
+    return (
+      <SafeScreen className="flex-1 bg-surface">
+        <ConfirmSheet
+          visible
+          icon="rotate-ccw"
+          title={i18nT('n.app.report.result.draft-title', { v0: draftTime(draft.savedAt) })}
+          body={i18nT('n.app.report.result.draft-body')}
+          confirmLabel={i18nT('n.app.practice.continue')}
+          cancelLabel={i18nT('n.app.report.result.draft-start-again')}
+          onConfirm={() => resumeDraft(draft)}
+          onCancel={() => setDraft('none')}
+        />
       </SafeScreen>
     );
   }
@@ -1698,16 +1921,18 @@ export default function ReportResult() {
   if (step === 'sheet' || step === 'venue') {
     const isSheet = step === 'sheet';
     return (
+      <>
       <CaptureCamera
         // Fresh mount per step: without the key, the venue step inherits the
         // sheet step's internal preview/busy state (same element position).
-        key={step}
+        // camEpoch: and after "Keep reporting" on a Cancel (see leaveGuard).
+        key={`${step}:${camEpoch}`}
         title={isSheet ? i18nT('n.app.report.result.photo-1-of-2-the-result') : i18nT('n.app.report.result.photo-2-of-2-the-surroundings')}
         frameGuide={isSheet}
         venueGuide={isSheet ? undefined : i18nT("n.app.report.result.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
-            ? 'Fit the EC8A inside the frame. Every figure must be readable.'
+            ? i18nT('n.app.report.result.fit-the-ec8a-in-the-frame')
             : i18nT("n.app.report.result.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
@@ -1764,13 +1989,17 @@ export default function ReportResult() {
             setStep('review');
           } else if (isSheet) {
             // The sheet is the FIRST step now, so there is no earlier screen to
-            // fall back to — backing out of the camera leaves the report.
+            // fall back to — backing out of the camera leaves the report. With
+            // a photo already taken (the venue step's Cancel lands here), the
+            // leave guard asks before anything is dropped.
             router.back();
           } else {
             setStep('sheet');
           }
         }}
       />
+      {leaveGuard}
+      </>
     );
   }
 
@@ -1780,7 +2009,9 @@ export default function ReportResult() {
         {/* Hawkeye mark (tap → Home), matching the shared ScreenHeader
             convention; the rest of this bar is bespoke to the wizard. */}
         <Pressable
-          onPress={() => router.navigate('/(tabs)' as never)}
+          // Asks first while there is evidence — this navigate is not seen by
+          // the stack's removal guard (components/leave-guard.tsx).
+          onPress={() => confirmLeave(() => router.navigate('/(tabs)' as never))}
           hitSlop={8}
           className="mr-1.5"
           accessibilityRole="button"
@@ -1909,6 +2140,40 @@ export default function ReportResult() {
             {!unit && !sheetGuess && sheetMiss ? (
               <Text className="pt-3 text-sm text-muted">{sheetMiss}</Text>
             ) : null}
+
+            {/* THE SAVED UNIT, one tap — and the one route that needs no signal
+                at all, since it is kept on the phone. Offered, never chosen:
+                plenty of observers report from a unit that is not their own.
+                No location badge: /my-unit carries no coordinates, and "not
+                mapped" would be a claim about the unit, not about this row. */}
+            {savedUnit && !searchBusyHiding ? (() => {
+              const on = unit?.pu_code === savedUnit.pu_code;
+              return (
+                <View className="pt-3">
+                  <Text className="pb-1.5 text-xs font-bold text-muted">{i18nT('n.app.report.result.your-saved-unit')}</Text>
+                  <Pressable
+                    className={`flex-row items-center rounded-2xl px-4 py-3 ${on ? 'bg-hawk-green' : 'bg-card'}`}
+                    onPress={() => chooseUnit(savedUnit)}
+                  >
+                    <View className="flex-1 pr-2">
+                      <Text className={`text-base font-semibold ${on ? 'text-white' : 'text-ink'}`}>{savedUnit.name}</Text>
+                      <Text className={`text-xs ${on ? 'text-emerald-100' : 'text-muted'}`}>
+                        {`${savedUnit.pu_code} · ${savedUnit.ward}, ${savedUnit.lga}`}
+                      </Text>
+                    </View>
+                    {on ? (
+                      <Pressable
+                        className="flex-row items-center rounded-xl bg-hawk-gold px-3 py-2 active:opacity-80"
+                        onPress={continueFromUnit}
+                      >
+                        <Text className="pr-1 text-sm font-bold text-hawk-ink">{i18nT('n.app.practice.continue')}</Text>
+                        <Feather name="arrow-right" size={14} color={BRAND.ink} />
+                      </Pressable>
+                    ) : null}
+                  </Pressable>
+                </View>
+              );
+            })() : null}
 
             {/* Only for the two failures the settings app is actually the cure
                 for. The "Find units near me" button above IS the retry, so a
@@ -2058,7 +2323,11 @@ export default function ReportResult() {
                       />
                     ))}
                     {units.length === 0 ? (
-                      <Text className="pt-2 text-sm text-muted">{i18nT('n.app.report.result.no-units-in-the-register-for')}</Text>
+                      <Text className="pt-2 text-sm text-muted">
+                        {unitsMissing
+                          ? i18nT('n.app.report.result.unit-list-not-on-phone')
+                          : i18nT('n.app.report.result.no-units-in-the-register-for')}
+                      </Text>
                     ) : null}
                   </>
                 ) : null}
@@ -2115,67 +2384,11 @@ export default function ReportResult() {
                 flow where the app knows both who they are and where they are.
                 The unit sent is the one they are REPORTING FROM, not the one
                 they were assigned: the coordinator needs to know where they
-                actually are, and the server compares the two. */}
-            {rooms && rooms.length > 0 ? (
-              <View className="mb-3 rounded-2xl border border-line bg-card p-3">
-                {checkInState === 'verified'
-                  || rooms.every((r) => r.checkedIn && r.checkedIn.standing === 'verified') ? (
-                    <Text className="text-xs font-semibold text-good-ink">
-                      {i18nT('n.app.report.result.checked-in-ok')}
-                    </Text>
-                  ) : checkInState === 'weak' ? (
-                    <Text className="text-xs font-semibold text-warn-ink">
-                      {i18nT('n.app.report.result.checked-in-weak')}
-                    </Text>
-                  ) : (
-                    <>
-                      <Text className="pb-2 text-xs text-muted">
-                        {(() => {
-                          const away = rooms.find((r) => r.assigned && r.assigned.pu_code !== unit.pu_code);
-                          /* Being sent somewhere else is ORDINARY — agents get
-                             moved, gates get closed — so this states what will
-                             be recorded instead of warning them off it. */
-                          return away
-                            ? i18nT('n.app.report.result.check-in-different-unit').replace('{unit}', away.assigned!.name)
-                            : i18nT('n.app.report.result.check-in-sub');
-                        })()}
-                      </Text>
-                      <Pressable
-                        disabled={checkInState === 'working'}
-                        onPress={async () => {
-                          setCheckInState('working');
-                          const fix = await trySubmitFix();
-                          if (!fix.ok) return setCheckInState('failed');
-                          const r = await checkIn(unit.pu_code, fix.fix);
-                          /* SAY WHAT WAS RECORDED, not "done": a check-in the
-                             location could not stand behind is worth less to
-                             the coordinator, and the agent is the only person
-                             who can still do something about it. */
-                          setCheckInState(!r.ok ? 'failed' : r.standing === 'verified' ? 'verified' : 'weak');
-                          if (r.ok) setRooms(await myRooms());
-                        }}
-                        /* The only thing on this card there is to DO, so it
-                           carries the brand CTA surface rather than reading as
-                           the outlined chrome it sat in before. bg-hawk-gold is
-                           a fixed surface: its label must be the fixed hawk ink,
-                           because text-ink flips near-white and dies in gold. */
-                        className="items-center rounded-xl bg-hawk-gold py-2.5 active:opacity-80"
-                      >
-                        <Text className="text-sm font-bold text-hawk-ink">
-                          {checkInState === 'working'
-                            ? i18nT('n.app.report.result.check-in-locating')
-                            : i18nT('n.app.report.result.check-in')}
-                        </Text>
-                      </Pressable>
-                      {checkInState === 'failed' ? (
-                        <Text className="pt-2 text-xs text-warn-ink">
-                          {i18nT('n.app.report.result.check-in-failed')}
-                        </Text>
-                      ) : null}
-                    </>
-                  )}
-              </View>
-            ) : null}
+                actually are, and the server compares the two. The same card
+                is offered on arrival, at the ASSIGNED unit, in the Report sheet
+                (components/check-in-card.tsx). */}
+            <CheckInCard key={unit.pu_code} rooms={rooms} unit={unit} chosen onRooms={setRooms} className="mb-3" />
+
             <Pressable
               onPress={continueFromUnit}
               className="items-center rounded-2xl bg-hawk-green py-4 active:opacity-80"
@@ -2224,6 +2437,8 @@ export default function ReportResult() {
               value={race}
               onSelect={selectRace}
               lockedState={unit ? (unit.state as StateName) : undefined}
+              // The unit decides its Senate / House seat — confirmed, not asked.
+              unitSeats={unit}
               allowClosed={false}
             />
           </ScrollView>
@@ -2370,7 +2585,7 @@ export default function ReportResult() {
                     <Image source={{ uri: s.uri }} style={{ width: '100%', height: 110 }} contentFit="cover" />
                     <View className="flex-row items-center justify-between px-3 py-2">
                       <Text className="text-xs font-semibold text-muted">
-                        {i === 0 ? 'Result sheet' : 'Venue'}
+                        {i === 0 ? i18nT('n.app.practice.result-sheet') : i18nT('n.app.practice.venue')}
                       </Text>
                       <Text className="text-xs font-bold text-good-ink">{i18nT('n.app.report.collation.retake')}</Text>
                     </View>
@@ -2644,6 +2859,7 @@ export default function ReportResult() {
       {/* The one-action notices — the same failures that used to open the
           OS dialog, in the app's own sheet. */}
       <NoticeSheet {...notice.props} />
+      {leaveGuard}
     </SafeScreen>
   );
 }

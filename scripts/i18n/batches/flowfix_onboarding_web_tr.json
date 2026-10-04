@@ -1,0 +1,102 @@
+{
+  "auth.no-password-yet": {
+    "ha": "Wannan asusun ba shi da kalmar sirri tukuna. Shiga da lamba ka saita ɗaya yanzu.",
+    "ig": "Akaụntụ a enwebeghị okwuntughe. Jiri koodu banye ma hazie otu ugbu a.",
+    "yo": "Àkàǹtì yìí kò tíì ní ọ̀rọ̀ ìpamọ́. Wọlé pẹ̀lú kóòdù kí o sì ṣètò ọ̀kan báyìí."
+  },
+  "auth.pw-save-continue": {
+    "ha": "Ajiye kalmar sirri ka ci gaba",
+    "ig": "Chekwaa okwuntughe ma gaa n'ihu",
+    "yo": "Fi ọ̀rọ̀ ìpamọ́ pamọ́ kí o sì tẹ̀síwájú"
+  },
+  "auth.pw-reset-title": {
+    "ha": "Zaɓi Sabuwar Kalmar Sirri",
+    "ig": "Họrọ Okwuntughe Ọhụrụ",
+    "yo": "Yan Ọ̀rọ̀ Ìpamọ́ Tuntun"
+  },
+  "auth.pw-set-title": {
+    "ha": "Saita Kalmar Sirrinka",
+    "ig": "Hazie Okwuntughe Gị",
+    "yo": "Ṣètò Ọ̀rọ̀ Ìpamọ́ Rẹ"
+  },
+  "auth.pw-create-title": {
+    "ha": "Ƙirƙiri Kalmar Sirrinka",
+    "ig": "Mepụta Okwuntughe Gị",
+    "yo": "Ṣẹ̀dá Ọ̀rọ̀ Ìpamọ́ Rẹ"
+  },
+  "auth.pw-reset-body": {
+    "ha": "An tabbatar da lambarka. Zaɓi sabuwar kalmar sirri — aƙalla haruffa 8.",
+    "ig": "E nyochaala nọmba gị. Họrọ okwuntughe ọhụrụ — opekempe mkpụrụedemede 8.",
+    "yo": "A ti fìdí nọ́mbà rẹ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ tuntun — ó kéré tán àmì-ìkọ 8."
+  },
+  "auth.pw-set-body": {
+    "ha": "An tabbatar da lambarka. Zaɓi kalmar sirri — aƙalla haruffa 8 — kuma ka yi amfani da ita don shiga a kowace na'ura daga yanzu.",
+    "ig": "E nyochaala nọmba gị. Họrọ okwuntughe — opekempe mkpụrụedemede 8 — ma jiri ya banye na ngwaọrụ ọ bụla site ugbu a gawa.",
+    "yo": "A ti fìdí nọ́mbà rẹ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ kan — ó kéré tán àmì-ìkọ 8 — kí o sì máa lò ó láti wọlé lórí ẹ̀rọ èyíkéyìí láti ìsinsìnyí lọ."
+  },
+  "auth.pw-create-body": {
+    "ha": "An tabbatar. Zaɓi kalmar sirri — aƙalla haruffa 8.",
+    "ig": "E nyochaala ya. Họrọ okwuntughe — opekempe mkpụrụedemede 8.",
+    "yo": "A ti fìdí rẹ̀ múlẹ̀. Yan ọ̀rọ̀ ìpamọ́ kan — ó kéré tán àmì-ìkọ 8."
+  },
+  "auth.pw-not-now-sign-out": {
+    "ha": "Ba yanzu ba — fita",
+    "ig": "Ọ bụghị ugbu a — pụọ",
+    "yo": "Kì í ṣe báyìí — jáde"
+  },
+  "auth.pw-keep-current": {
+    "ha": "Riƙe kalmar sirrina ta yanzu",
+    "ig": "Jigide okwuntughe m ugbu a",
+    "yo": "Pa ọ̀rọ̀ ìpamọ́ mi mọ́"
+  },
+  "auth.exists-title": {
+    "ha": "Wannan asusun yana nan riga",
+    "ig": "Akaụntụ a adịlarị",
+    "yo": "Àkàǹtì yìí ti wà tẹ́lẹ̀"
+  },
+  "auth.exists-body-after": {
+    "ha": "An riga an yi rijistar {phone} a matsayin mai lura, kuma tana da kalmar sirri. Ba a ƙirƙiri sabon abu ba — rahotanninka da ID ɗinka na mai lura suna nan yadda ka bar su.",
+    "ig": "E debanyelarị {phone} aha dị ka onye na-ekiri ihe, o nweelarịkwa okwuntughe. E mepụtaghị ihe ọhụrụ ọ bụla — akụkọ gị na ID onye na-ekiri ihe gị dị ka i si hapụ ha.",
+    "yo": "{phone} ti forúkọsílẹ̀ gẹ́gẹ́ bí olùwòran tẹ́lẹ̀, ó sì ní ọ̀rọ̀ ìpamọ́ nísinsìnyí. A kò ṣẹ̀dá ohunkóhun tuntun — àwọn ìròyìn rẹ àti ID olùwòran rẹ wà bí o ti fi wọ́n sílẹ̀."
+  },
+  "auth.exists-body-before": {
+    "ha": "An riga an yi rijistar {phone} a matsayin mai lura. Shiga da kalmar sirrinka — ba a aika lamba ba, kuma ba a ƙirƙiri sabon abu ba.",
+    "ig": "E debanyelarị {phone} aha dị ka onye na-ekiri ihe. Jiri okwuntughe gị banye — e zigaghị koodu, e mepụtaghịkwa ihe ọhụrụ ọ bụla.",
+    "yo": "{phone} ti forúkọsílẹ̀ gẹ́gẹ́ bí olùwòran tẹ́lẹ̀. Wọlé pẹ̀lú ọ̀rọ̀ ìpamọ́ rẹ — a kò fi kóòdù kankan ránṣẹ́, a kò sì ṣẹ̀dá ohunkóhun tuntun."
+  },
+  "auth.exists-continue": {
+    "ha": "Ci gaba zuwa Hawkeye",
+    "ig": "Gaa n'ihu na Hawkeye",
+    "yo": "Tẹ̀síwájú sí Hawkeye"
+  },
+  "auth.exists-sign-in": {
+    "ha": "Shiga maimakon haka",
+    "ig": "Banye kama",
+    "yo": "Wọlé dípò"
+  },
+  "auth.exists-sign-out": {
+    "ha": "Ba lambarka ba ce? Fita ka sake farawa",
+    "ig": "Ọ bụghị nọmba gị? Pụọ wee malite ọzọ",
+    "yo": "Kì í ṣe nọ́mbà rẹ? Jáde kí o sì bẹ̀rẹ̀ lẹ́ẹ̀kan sí i"
+  },
+  "auth.err.code-window-passed": {
+    "ha": "Hakan ya ɗauki lokaci mai tsawo — nemi sabuwar lamba ka sake gwadawa.",
+    "ig": "Nke ahụ were ogologo oge — rịọ koodu ọhụrụ wee nwaa ọzọ.",
+    "yo": "Ìyẹn ti pẹ́ jù — béèrè fún kóòdù tuntun kí o sì tún gbìyànjú."
+  },
+  "auth.resend-in": {
+    "ha": "Sake aikawa cikin daƙiƙa {n}",
+    "ig": "Zipughachi n'ime {n}s",
+    "yo": "Tún rán an lẹ́yìn {n}s"
+  },
+  "auth.exists-set-new": {
+    "ha": "Ka manta kalmar sirri? Saita sabuwa",
+    "ig": "Chefuru okwuntughe? Hazie nke ọhụrụ",
+    "yo": "Ṣé o gbàgbé ọ̀rọ̀ ìpamọ́? Ṣètò tuntun kan"
+  },
+  "auth.exists-reset": {
+    "ha": "Ka manta kalmar sirri? Sake saita ta",
+    "ig": "Chefuru okwuntughe? Hazie ya ọhụrụ",
+    "yo": "Ṣé o gbàgbé ọ̀rọ̀ ìpamọ́? Tún un ṣe"
+  }
+}

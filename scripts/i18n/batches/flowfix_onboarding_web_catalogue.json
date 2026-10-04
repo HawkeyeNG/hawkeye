@@ -1,0 +1,22 @@
+{
+  "auth.no-password-yet": "This account has no password yet. Sign in with a code and set one now.",
+  "auth.pw-save-continue": "Save password and continue",
+  "auth.pw-reset-title": "Choose a New Password",
+  "auth.pw-set-title": "Set Your Password",
+  "auth.pw-create-title": "Create Your Password",
+  "auth.pw-reset-body": "Your number is verified. Pick a new password — at least 8 characters.",
+  "auth.pw-set-body": "Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.",
+  "auth.pw-create-body": "Verified. Choose a password — at least 8 characters.",
+  "auth.pw-not-now-sign-out": "Not now — sign out",
+  "auth.pw-keep-current": "Keep my current password",
+  "auth.exists-title": "This account already exists",
+  "auth.exists-body-after": "{phone} is already registered as an observer, and it already has a password. Nothing new was created — your reports and your observer ID are as you left them.",
+  "auth.exists-body-before": "{phone} is already registered as an observer. Sign in with your password — no code was sent, and nothing new was created.",
+  "auth.exists-continue": "Continue to Hawkeye",
+  "auth.exists-sign-in": "Sign in instead",
+  "auth.exists-sign-out": "Not your number? Sign out and start again",
+  "auth.err.code-window-passed": "That took too long — request a new code and try again.",
+  "auth.resend-in": "Resend in {n}s",
+  "auth.exists-set-new": "Forgot your password? Set a new one",
+  "auth.exists-reset": "Forgot your password? Reset it"
+}

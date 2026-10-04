@@ -1,7 +1,13 @@
 // Practice / mock-election sandbox — a self-contained teaching flow. It never
 // calls the real /api/submissions, never signs, never touches the ledger. The
-// only network calls are GET /api/practice (config) and POST /api/practice/submit
-// (writes to the disposable practice_submissions table). No sign-in required.
+// only write is POST /api/practice/submit (the practice chain); the reads are
+// GET /api/practice (config) and, for step 2, the same read-only unit lookups
+// the real report uses (near me, search). No sign-in required.
+//
+// THE SAME FIVE STEPS AS observe.html (flow walkthrough REP-PRAC-01): capture,
+// which polling unit, which election, counts + Verify counts, sign. The fold
+// and lock rules are app.js's (stepLock / setStepDone), ported rather than
+// shared — app.js is the whole observer app, sign-in included.
 (function () {
   /* Same helper as app.js: the English literal stays in the source, so this
      file still reads as English and still renders with no bundle loaded. */
@@ -77,16 +83,198 @@
     return canvas;
   }
 
+  // ---- the step cards: same lock and fold as app.js ----
+  const STEP_FOLDS = ['photo-fold', 'unit-fold', 'race-fold', 'counts-fold'];
+  const stepDone = [false, false, false, false];
+  STEP_FOLDS.forEach((id) => {
+    const el = $(id);
+    if (el) el.addEventListener('toggle', () => { if (el.open && el.classList.contains('locked')) el.open = false; });
+  });
+  function stepLock() {
+    STEP_FOLDS.forEach((id, i) => {
+      const el = $(id);
+      if (!el) return;
+      const reachable = i === 0 || stepDone[i - 1];
+      el.classList.toggle('locked', !reachable);
+      el.classList.toggle('done', stepDone[i]);
+      if (!reachable && el.open) el.open = false;
+    });
+  }
+  /** Mark a step confirmed (or not), fold it, and open the next unlocked one. */
+  function setStepDone(i, done, label) {
+    const was = stepDone[i];
+    stepDone[i] = done;
+    if (!done) for (let j = i + 1; j < stepDone.length; j++) stepDone[j] = false;
+    const state = $(`${STEP_FOLDS[i]}-state`);
+    if (state) state.textContent = done ? (label || '✔') : '';
+    const el = $(STEP_FOLDS[i]);
+    if (done && !was && el) {
+      el.open = false;
+      const next = $(STEP_FOLDS[i + 1]);
+      if (next) {
+        next.open = true;
+        requestAnimationFrame(() => next.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+      }
+    }
+    stepLock();
+    refreshSubmit();
+  }
+
   function refreshSubmit() {
-    $('btn-submit').disabled = !(shots.sheet && shots.venue);
+    $('btn-submit').disabled = !(shots.sheet && shots.venue && stepDone.every(Boolean));
   }
   function markSlot(slot) {
     shots[slot] = true;
     const badge = $(`status-${slot}`);
     keyed(badge, 'common.captured', 'Captured ✔');
     badge.classList.add('done');
+    // Step 1's confirmer is the second photo, as in the real report.
+    if (shots.sheet && shots.venue && !stepDone[0]) setStepDone(0, true, '✔ ' + T('report.both-captured', 'Both captured'));
     refreshSubmit();
   }
+
+  // ---- step 2: which polling unit ----
+  /* The chosen unit: a real register row (practice accepts a real code as a
+     plain string — it is never joined to the register), or the sample unit.
+     null until the observer picks one, exactly like the real step. */
+  let CHOSEN = null;
+  let CFG_UNIT = {};
+  function paintFacts() {
+    const box = $('submit-facts');
+    if (!box) return;
+    if (!CHOSEN) { box.hidden = true; return; }
+    if (CHOSEN.practice) {
+      if (UNIT_NAME && !Object.prototype.hasOwnProperty.call(SAMPLE, UNIT_NAME)) {
+        $('prac-unit-name').removeAttribute('data-i18n');
+        $('prac-unit-name').textContent = UNIT_NAME;
+      } else keyed($('prac-unit-name'), 'practice.practice-polling-unit', 'Practice Polling Unit');
+      $('prac-unit-scope').textContent = [CFG_UNIT.ward, CFG_UNIT.lga, CFG_UNIT.state].filter(Boolean).map(sample).join(', ');
+    } else {
+      // Register data, not UI: the unit's own name, never a key.
+      $('prac-unit-name').removeAttribute('data-i18n');
+      $('prac-unit-name').textContent = CHOSEN.name || CHOSEN.code;
+      $('prac-unit-scope').textContent = [CHOSEN.ward, CHOSEN.lga, CHOSEN.state].filter(Boolean).join(', ');
+    }
+    const sel = $('sel-contest');
+    $('prac-race').textContent = sel && sel.value ? (sel.options[sel.selectedIndex] || {}).textContent || '' : '';
+    box.hidden = false;
+  }
+  function chooseUnit(u, isPractice) {
+    const next = isPractice
+      ? { practice: true, code: CFG_UNIT.code || null, name: CFG_UNIT.name || null, state: CFG_UNIT.state || '' }
+      : { practice: false, code: u.pu_code || u.puCode || u.code, name: u.name, ward: u.ward || '', lga: u.lga || '', state: u.state || '' };
+    const changed = !CHOSEN || CHOSEN.code !== next.code || CHOSEN.practice !== next.practice;
+    CHOSEN = next;
+    UNIT_CODE = next.code;
+    if (!isPractice) UNIT_NAME = next.name;
+    else UNIT_NAME = CFG_UNIT.name || null;
+    // A different unit can hold different races, and counts belong to a race.
+    if (changed) { stepDone[2] = false; stepDone[3] = false; $('race-fold-state').textContent = ''; $('counts-fold-state').textContent = ''; }
+    fillRaces();
+    paintFacts();
+    stepDone[1] = false; // force the fold/advance, as app.js does
+    setStepDone(1, true, `✔ ${isPractice ? $('prac-unit-name').textContent : next.name || next.code}`);
+  }
+  $('btn-prac-unit').onclick = () => chooseUnit(null, true);
+
+  /* Near me: the real step's two lookups, read-only. Every failure ends on a
+     line and the other two ways in, never a status that just stops. */
+  $('btn-locate').onclick = async () => {
+    const say = (m) => { $('locate-status').textContent = m; };
+    $('pu-list').innerHTML = '';
+    if (!navigator.geolocation) { say(T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')); return; }
+    say(T('observe.getting-your-location', 'Getting your location…'));
+    let pos;
+    try {
+      pos = await new Promise((res, rej) => navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 }));
+    } catch (err) {
+      say(window.HAWKEYE_GEO && window.HAWKEYE_GEO.line ? window.HAWKEYE_GEO.line(err) : T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.'));
+      return;
+    }
+    const { latitude: lat, longitude: lng } = pos.coords;
+    const get = (p) => fetch(p).then((r) => r.json()).catch(() => null);
+    const [reg, near] = await Promise.all([
+      get(`/api/polling-units?lat=${lat}&lng=${lng}`),
+      get(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
+    ]);
+    if (!reg && !near) {
+      say(navigator.onLine
+        ? T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')
+        : T('observe.near-me-offline', 'No connection for near me. Search or browse the register below.'));
+      return;
+    }
+    const rows = [];
+    const seen = new Set();
+    for (const u of [...((reg && reg.units) || []), ...((near && near.units) || [])]) {
+      const code = u.pu_code || u.puCode || u.code;
+      if (!code || seen.has(code)) continue;
+      seen.add(code);
+      rows.push({ ...u, pu_code: code, ward: u.ward || '', lga: u.lga || '', state: u.state || '' });
+    }
+    rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
+    if (!rows.length) { say(T('practice.no-units-near', 'No units found near you. Search below, or use the practice unit.')); return; }
+    say(T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:'));
+    for (const u of rows) {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'pu-option';
+      const name = document.createElement('strong');
+      name.textContent = u.name || u.pu_code;
+      const sub = document.createElement('small');
+      sub.textContent = [u.pu_code, [u.ward, u.lga].filter(Boolean).join(', '),
+        u.distanceM != null ? T('common.m-away', '{v0} m away', { v0: u.distanceM }) : ''].filter(Boolean).join(' · ');
+      b.append(name, document.createElement('br'), sub);
+      b.onclick = () => chooseUnit(u, false);
+      $('pu-list').appendChild(b);
+    }
+    keyed($('btn-locate'), 'observe.search-near-me-again', 'Search Near Me Again');
+  };
+
+  // ---- step 3: which election ----
+  /* Every race is open in practice (the chain takes any code), so the list is
+     the real five, scoped to the unit the way the server scopes it — the FCT
+     has no governorship and no state assembly. */
+  const RACES_FALLBACK = [
+    { code: 'PRES', name: 'Presidency', key: 'race.presidency' },
+    { code: 'GOV', name: 'Governorship', key: 'race.governorship' },
+    { code: 'SEN', name: 'Senate', key: 'race.senate' },
+    { code: 'REP', name: 'House of Reps', key: 'race.house-of-reps' },
+    { code: 'SHA', name: 'State Assembly', key: 'race.state-assembly' },
+  ];
+  function fillRaces() {
+    const sel = $('sel-contest');
+    if (!sel) return;
+    const prev = sel.value;
+    const order = (window.HAWKEYE_RACES && window.HAWKEYE_RACES.ORDER) || RACES_FALLBACK;
+    const fct = CHOSEN && !CHOSEN.practice && CHOSEN.state === 'FCT';
+    const list = order.filter((r) => !(fct && (r.code === 'GOV' || r.code === 'SHA')));
+    sel.innerHTML = `<option value="">${esc(T('race.select-election', '— select election —'))}</option>`
+      + list.map((r) => `<option value="${esc(r.code)}">${esc(T(r.key, r.name))}</option>`).join('');
+    if (prev && list.some((r) => r.code === prev)) sel.value = prev;
+  }
+  $('sel-contest').onchange = () => {
+    const sel = $('sel-contest');
+    const label = sel.value ? (sel.options[sel.selectedIndex] || {}).textContent || '' : '';
+    setStepDone(2, Boolean(sel.value), `✔ ${label}`);
+    paintFacts();
+  };
+
+  // ---- step 4: counts — "Verify counts" is the confirmer, as in the real flow ----
+  $('btn-verify-counts').onclick = () => {
+    const n = [...document.querySelectorAll('#vote-inputs input')]
+      .filter((i) => i.value !== '' && Number(i.value) >= 0).length;
+    if (!n) {
+      if (window.HAWKEYE_ALERT) {
+        window.HAWKEYE_ALERT(T('observe.no-counts-entered', 'No counts entered'),
+          T('observe.no-counts-entered-body', 'Type the votes each party was announced to have, then tap Verify counts again.'));
+      } else $('submit-status').textContent = T('observe.enter-at-least-one-party-count', 'Enter at least one party count.');
+      return;
+    }
+    $('submit-status').textContent = '';
+    setStepDone(3, true, n === 1
+      ? T('observe.one-party-entered', '✔ 1 party entered')
+      : T('collation.parties-entered', '✔ {v0} parties entered', { v0: n }));
+  };
 
   // ---- lightweight camera (practice only; no GPS, no upload) ----
   let stream = null; let target = null;
@@ -163,8 +351,15 @@
       const r = await fetch('/api/practice/submit', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-device-id': await getDeviceId() },
-        // The server's own name, never the translated label on screen.
-        body: JSON.stringify({ votes, puName: UNIT_NAME || $('prac-unit-name').textContent, puCode: UNIT_CODE }),
+        // The server's own name, never the translated label on screen. The
+        // race goes too, as the real report sends it: a plain string on the
+        // practice chain, never joined to anything.
+        body: JSON.stringify({
+          votes,
+          puName: UNIT_NAME || $('prac-unit-name').textContent,
+          puCode: UNIT_CODE,
+          ...($('sel-contest').value ? { contest: $('sel-contest').value } : {}),
+        }),
       });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || !d.ok) {
@@ -278,8 +473,11 @@
     // cfg.note is deliberately dropped: it restated "nothing is published" a
     // third time, after the phase banner and the receipt already say it.
     const u = cfg.unit || {};
-    UNIT_CODE = u.code || null;
-    UNIT_NAME = u.name || null;
+    CFG_UNIT = u;
+    // Nothing is chosen until step 2 is answered — the sample unit is one of
+    // the answers now, not a given.
+    UNIT_CODE = null;
+    UNIT_NAME = null;
     $('vote-inputs').innerHTML = PARTIES.map((p) => `
       <div class="vote-row">
         <label><span class="swatch" style="background:${esc(p.color || '#888')}"></span><span class="party-name" data-code="${esc(p.code)}">${esc(p.code)}</span></label>
@@ -293,11 +491,16 @@
     const paintCfg = () => {
       $('prac-title').firstChild.textContent = `${sample(cfg.name)} `;
       $('prac-sub').textContent = T('practice.office-practice-contest', '{v0} — a practice contest.', { v0: sample(cfg.office) });
+      // The practice unit, as an answer to step 2.
+      const pb = $('btn-prac-unit').querySelector('strong');
       if (u.name && !Object.prototype.hasOwnProperty.call(SAMPLE, u.name)) {
-        $('prac-unit-name').removeAttribute('data-i18n');
-        $('prac-unit-name').textContent = u.name;
-      } else keyed($('prac-unit-name'), 'practice.practice-polling-unit', 'Practice Polling Unit');
-      $('prac-unit-scope').textContent = [u.ward, u.lga, u.state].filter(Boolean).map(sample).join(', ');
+        pb.removeAttribute('data-i18n');
+        pb.textContent = u.name;
+      } else keyed(pb, 'practice.practice-polling-unit', 'Practice Polling Unit');
+      $('prac-unit-sub').textContent = [u.ward, u.lga, u.state].filter(Boolean).map(sample).join(', ');
+      // Race names are painted text: repaint them in the new language.
+      if (CHOSEN) fillRaces();
+      paintFacts();
       document.querySelectorAll('#vote-inputs .party-name').forEach((el) => { el.textContent = partyLabel(el.dataset.code); });
       if (lastVotes && !$('done').hidden) {
         renderPreview(lastVotes);
@@ -306,6 +509,31 @@
     };
     paintCfg();
     document.addEventListener('hawkeye-lang', paintCfg);
-    $('flow').hidden = false;
+    stepLock();
+    $('flow').hidden = false; // paint now; the saved unit below arrives when it does
+    // The real step 2's search box (pu-search.js), choosing into this run.
+    if (window.puSearch && $('pu-search-host')) window.puSearch.mount($('pu-search-host'), { onSelect: (row) => chooseUnit(row, false) });
+    // Signed in with a saved unit? Offer it first, as the real step 2 does.
+    try {
+      const IU = window.HawkeyeInviteUnit;
+      const mine = IU && IU.myUnit ? await Promise.race([IU.myUnit(), new Promise((r) => setTimeout(() => r(undefined), 5000))]) : undefined;
+      if (mine && mine.pu_code) {
+        const head = document.createElement('p');
+        head.className = 'hint';
+        head.style.margin = '0 0 6px';
+        head.textContent = T('observe.your-saved-unit', 'Your polling unit');
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'pu-option';
+        const name = document.createElement('strong');
+        name.textContent = `⭐ ${mine.name || mine.pu_code}`;
+        const sub = document.createElement('small');
+        sub.textContent = [mine.pu_code, [mine.ward, mine.lga].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+        b.append(name, document.createElement('br'), sub);
+        b.onclick = () => chooseUnit(mine, false);
+        $('pu-saved').append(head, b);
+        $('pu-saved').style.margin = '0 0 12px';
+      }
+    } catch { /* signed out or offline: near me, search and the practice unit remain */ }
   })();
 })();

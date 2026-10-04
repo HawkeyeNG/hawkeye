@@ -1,0 +1,15 @@
+{
+  "profile.none-saved": "None Saved",
+  "n.lib.races.seat-pres": "President",
+  "n.lib.races.seat-gov": "Governor",
+  "n.lib.races.seat-sen": "Senator",
+  "n.lib.races.seat-rep": "Member (Rep)",
+  "n.lib.races.seat-sha": "Member (State)",
+  "n.components.contest-picker.seats-nationwide": "{v0} · {v1} nationwide",
+  "n.components.contest-picker.n-open": "{v0} open",
+  "n.app.map-unit.you-are-alerted-here": "You are alerted for every result report and approved incident here.",
+  "n.app.map-unit.alerts-you-at-this-unit": "Alerts you to every result report and approved incident at this unit.",
+  "n.components.capture-camera.no-document-scanner": "This build has no document scanner, so the sheet will be a plain photo. Fill the frame and keep it flat.",
+  "n.components.capture-camera.scanner-could-not-start": "The scanner could not start — Google Play services downloads it the first time it runs, so it needs a connection once. Taking a plain photo instead.",
+  "n.lib.location.location-is-turned-off": "Location is turned off on this phone — turn on Location in your phone's settings, then try again"
+}

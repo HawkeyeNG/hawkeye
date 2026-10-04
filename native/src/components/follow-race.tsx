@@ -1,12 +1,14 @@
 import Feather from '@expo/vector-icons/Feather';
 import { router } from 'expo-router';
-import * as SecureStore from '@/lib/secure-store';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 
+import { ConfirmSheet } from '@/components/confirm-sheet';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { BRAND } from '@/lib/api';
-import { authedGet, getToken, useAuth } from '@/lib/auth';
+import { authedGet, expireSession, getToken, useAuth } from '@/lib/auth';
+import { authedSend } from '@/lib/authed-send';
+import { humanError } from '@/lib/errors';
 import { bust, fresh } from '@/lib/signed-in-cache';
 import { useUi } from '@/lib/theme';
 import { getIdentity } from '@/lib/identity';
@@ -110,6 +112,8 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
   const [subs, setSubs] = useState<Sub[]>([]);
   const [busy, setBusy] = useState(false);
   const [closed, setClosed] = useState(false);
+  /** The session ended under a Follow tap: offer sign-in rather than an error. */
+  const [signedOutAsk, setSignedOutAsk] = useState(false);
 
   /**
    * A FINISHED RACE IS NOT SOMETHING TO FOLLOW.
@@ -181,28 +185,40 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
     // Unfollow removes the exact row that is doing the following; follow adds
     // one scoped to what this control says it is about.
     const state = following ? (followed?.state ?? '') : scope;
+    const title = following
+      ? i18nT('n.components.follow-race.could-not-unfollow')
+      : i18nT('n.components.follow-race.could-not-follow');
     setBusy(true);
     try {
-      const token = await SecureStore.getItemAsync('hawkeye.auth.token');
       const id = await getIdentity();
-      const res = await fetch(`${BASE}/api/subscriptions`, {
-        method: following ? 'DELETE' : 'POST',
-        headers: {
-          'content-type': 'application/json',
-          authorization: `Bearer ${token}`,
-          'x-device-id': id.deviceId,
-        },
-        body: JSON.stringify({ contest, state }),
+      // authedSend renews an expired token once and retries, so a week-old
+      // session follows instead of failing (lib/authed-send.ts).
+      const res = await authedSend(following ? 'DELETE' : 'POST', '/api/subscriptions', { contest, state }, {
+        'x-device-id': id.deviceId,
       });
-      // 409 = declared while this screen was open. The control is not broken,
-      // it is obsolete, so it leaves instead of reporting a failure the reader
-      // can do nothing about.
+      /**
+       * 409 = declared while this screen was open. The control is obsolete, so
+       * it leaves — but SAYS WHY first (flow walkthrough FA-FOLLOW-3): a button
+       * vanishing under your thumb with no word reads as a fault.
+       */
       if (res.status === 409) {
+        notice.show(i18nT('n.components.follow-race.declared-title'), i18nT('n.components.follow-race.declared-body'));
         setClosed(true);
         return;
       }
-      if (!res.ok) {
-        notice.show(i18nT('n.components.follow-race.could-not-update'), i18nT('n.components.follow-race.try-again-http', { v0: res.status }));
+      /**
+       * PLAIN WORDS AND THE NEXT STEP (FA-FOLLOW-2). These said "Try again.
+       * (HTTP 500)" and "Failed to fetch (hawkeye.com.ng)"; a 401 said "Try
+       * again" to someone whose session had ended, which no retry fixes.
+       */
+      if (res.status === 401) {
+        setSignedOutAsk(true);
+        return;
+      }
+      if (res.status < 200 || res.status >= 300) {
+        notice.show(title, res.status >= 500
+          ? i18nT('n.lib.errors.the-server-had-a-problem')
+          : i18nT('n.lib.errors.that-request-was-refused-try-again'));
         return;
       }
       bust('/api/observers/me');
@@ -212,13 +228,35 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
           : [...s, { contest, state }],
       );
     } catch (e) {
-      notice.show(i18nT('n.components.follow-race.could-not-update'), e instanceof Error ? e.message : String(e));
+      notice.show(title, humanError(e));
     } finally {
       setBusy(false);
     }
   }, [auth.status, contest, followed, following, notice, scope]);
 
-  if (!contest || closed) return null;
+  const sheets = (
+    <>
+      <NoticeSheet {...notice.props} />
+      <ConfirmSheet
+        visible={signedOutAsk}
+        icon="log-in"
+        title={i18nT('n.components.follow-race.session-ended-title')}
+        body={i18nT('n.components.follow-race.session-ended-body')}
+        confirmLabel={i18nT('index.sign-in')}
+        onConfirm={async () => {
+          setSignedOutAsk(false);
+          // The token was refused even after a renew: end it, so sign-in starts clean.
+          await expireSession();
+          router.push('/sign-in');
+        }}
+        onCancel={() => setSignedOutAsk(false)}
+      />
+    </>
+  );
+
+  if (!contest) return null;
+  // Closed: no control — but the notice that said why must outlive it.
+  if (closed) return sheets;
 
   const subject = followSubject(contest, scope);
   /**
@@ -289,7 +327,21 @@ export function FollowRace({ contest, scope }: { contest: string | null; scope: 
           </Text>
         </View>
       </Pressable>
-      <NoticeSheet {...notice.props} />
+      {/* WHERE THE ALERTS GO (flow walkthrough FA-FOLLOW-4). "Alerts on" said
+          they were on, never where: this app's Alerts, this phone's
+          notifications, the Telegram channel. Profile lists the three; this is
+          the way there, for as long as you follow. Web: follow.js alertsOn(). */}
+      {following ? (
+        <Pressable
+          onPress={() => router.push('/profile' as never)}
+          hitSlop={6}
+          className="-mt-1 mb-3 self-start px-1 py-1 active:opacity-70"
+          accessibilityRole="link"
+        >
+          <Text className="text-xs font-semibold text-good-ink">{i18nT('n.components.follow-race.how-they-reach-you')}</Text>
+        </Pressable>
+      ) : null}
+      {sheets}
     </>
   );
 }

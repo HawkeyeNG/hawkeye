@@ -504,11 +504,34 @@
   // with no translations, no language prompt and no error reporting. The
   // scripts strip_web_assets.sh removes (tesseract, opencv) are referenced
   // relatively and the shell uses ML Kit instead, so no script needed it.
+  //
+  // NOR ARE LINKS TO PAGES THIS BUNDLE CARRIES (flow walkthrough). An inserted
+  // <a href="/race.html?…"> was rewritten to the live host, so tapping it left
+  // the app for the system browser — signed out, a different session. A page
+  // the bundle ships resolves to the bundled copy as written. What the bundle
+  // does NOT ship still goes live: the room (/room/<slug>, which my-groups.html
+  // links with a leading slash on purpose) and the tool pages
+  // mobile/scripts/strip_web_assets.sh removes; /uploads/, /training/ and the
+  // rest are not pages at all.
+  const NOT_IN_APP = /^\/(room\/|(situation-room|admin|post|bench|meta|preview)\.html)/;
+  const bundledPage = (p) => !NOT_IN_APP.test(p) && /^\/(([\w-]+\.html)|open\/(index\.html)?)?$/.test(p);
+  // A tapped push's url → where the shell should go (initPush below). Only a
+  // page the bundle carries goes local; anything else on the site stays live.
+  const pushTarget = (u) => {
+    try {
+      const x = new URL(u, location.href);
+      const p = x.pathname === '/incidents.html' ? '/incident-reports.html' : x.pathname;
+      if (!/(^|\.)hawkeye\.com\.ng$/.test(x.hostname) || !bundledPage(p)) return x.href;
+      return p + x.search + x.hash;
+    } catch { return u; }
+  };
   const fixEl = (el) => {
     if (!el.getAttribute || el.tagName === 'SCRIPT') return;
     for (const a of ['src', 'href']) {
       const v = el.getAttribute(a);
-      if (v && v[0] === '/' && v[1] !== '/') el.setAttribute(a, BASE + v);
+      if (!v || v[0] !== '/' || v[1] === '/') continue;
+      if (a === 'href' && el.tagName === 'A' && bundledPage(v.split(/[?#]/)[0])) continue;
+      el.setAttribute(a, BASE + v);
     }
   };
   const scan = (root) => root.querySelectorAll
@@ -845,8 +868,16 @@
          * unless one was entered, so that is the ORDINARY case, not an edge.
          * Alerts is where the tapped notification is a durable row, so it is
          * the honest destination.
+         *
+         * AND A URL MEANS THE BUNDLED PAGE (flow walkthrough). Push urls are
+         * absolute (https://hawkeye.com.ng/…) because Telegram and the website
+         * need them so; followed as-is, the tap left the app for the system
+         * browser, signed out. Same-site → root-relative, exactly as
+         * notifications.html's localUrl() does for the same rows — including
+         * the old incidents.html (the filing form) → the published list, and
+         * NOT_IN_APP (the room) staying on the live site.
          */
-        location.href = url || 'notifications.html';
+        location.href = url ? pushTarget(url) : 'notifications.html';
       });
       await Push.register();
     };

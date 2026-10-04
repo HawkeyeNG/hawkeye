@@ -1,8 +1,9 @@
 import Feather from '@expo/vector-icons/Feather';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NetInfo from '@react-native-community/netinfo';
 import { FlashList } from '@shopify/flash-list';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, Text, View } from 'react-native';
 
 import { HeaderControls } from '@/components/header-controls';
@@ -12,10 +13,13 @@ import { Tour } from '@/components/tour';
 import { useHideOnScrollList } from '@/hooks/use-hide-on-scroll';
 import { useForegroundInterval } from '@/hooks/use-foreground-interval';
 import { BRAND, api, electionTitle, type Contest, type IntegritySummary } from '@/lib/api';
-import { authedGet, useAuth } from '@/lib/auth';
+import { authedGet, getToken, useAuth } from '@/lib/auth';
+import { onMyUnitSaved, type SavedUnit } from '@/lib/my-unit';
+import { markRead, openNotificationTarget, refreshUnread } from '@/lib/push';
+import { bust, fresh } from '@/lib/signed-in-cache';
 import { useUi, type Tone } from '@/lib/theme';
 import { dayMonth, longDate } from '@/lib/dates';
-import { t as i18nT, lazyT, useT } from '@/lib/i18n';
+import { t as i18nT, lazyT, useI18n, useT } from '@/lib/i18n';
 import { flagLabel } from '@/lib/flags';
 import { KIND_LABEL } from '@/lib/incident-kinds';
 
@@ -319,6 +323,194 @@ function PracticeNudgeCard({ onDismiss }: { onDismiss: () => void }) {
   );
 }
 
+/** The observer's own record, as /api/observers/me sends the parts Home reads. */
+type Me = {
+  observerId: number;
+  unit?: SavedUnit | null;
+  reports?: unknown[];
+  collation?: unknown[];
+  incidents?: unknown[];
+  subscriptions?: unknown[];
+};
+type Note = { id: number; title: string; url: string | null; read: 0 | 1; created_at: number };
+
+/** Today in Lagos, as the ISO date the catalogue writes. */
+const lagosToday = () => new Date(Date.now() + 3_600_000).toISOString().slice(0, 10);
+
+/**
+ * 1. THE NEXT STEP — the practice nudge's shape, without the ×: these are not
+ * suggestions to dismiss, they are what the observer has to do (choose a unit,
+ * or report now while the polls are open). The web's #home-next twin.
+ */
+function NextStepCard({ icon, title, sub, go, onPress }: {
+  icon: keyof typeof Feather.glyphMap;
+  title: string;
+  sub: string;
+  go: string;
+  onPress: () => void;
+}) {
+  const ui = useUi();
+  return (
+    <Pressable
+      className="mb-3 rounded-2xl border-l-4 border-hawk-gold bg-card px-4 py-4 active:opacity-90"
+      onPress={onPress}
+      accessibilityRole="button"
+    >
+      <View className="flex-row items-center">
+        <Feather name={icon} size={16} color={ui.tint.good.ink} />
+        <Text className="flex-1 pl-2 text-[15px] font-bold text-ink">{title}</Text>
+      </View>
+      <Text className="pt-2 text-[14px] leading-5 text-ink">{sub}</Text>
+      <View className="flex-row pt-3">
+        <View className="rounded-full bg-hawk-gold px-4 py-2.5">
+          <Text className="text-sm font-bold text-hawk-green">{go}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+/**
+ * 2. GREETING + UNIT — the web hero's two lines and its unit chip. The chip
+ * opens the chooser (/choose-unit), the same page Profile's row opens.
+ */
+function Greeting({ me }: { me: Me | null | undefined }) {
+  const ui = useUi();
+  const u = me?.unit ?? null;
+  const where = u ? [u.name || u.pu_code, [u.lga, u.state].filter(Boolean).join(', ')].filter(Boolean).join(' · ') : '';
+  return (
+    <View className="mb-3 px-1">
+      <Text className="text-2xl font-bold text-ink">
+        {me ? i18nT('index.welcome-back-observer', { id: me.observerId }) : i18nT('index.welcome-back')}
+      </Text>
+      <Text className="pt-1 text-sm leading-5 text-muted">
+        {u ? i18nT('index.alerts-are-on-for-your-unit') : i18nT('index.your-polling-unit-is-your-post')}
+      </Text>
+      <Pressable
+        onPress={() => router.push({ pathname: '/choose-unit', params: u ? { current: u.pu_code } : {} } as never)}
+        className="mt-3 flex-row items-center self-start rounded-full border border-line bg-card px-3.5 py-2 active:opacity-80"
+        accessibilityRole="button"
+      >
+        <Feather name="map-pin" size={14} color={ui.tint.good.ink} />
+        <Text className="shrink pl-2 text-sm text-ink" numberOfLines={2}>
+          {u ? where : i18nT('n.app.tabs.index.save-your-unit')}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}
+
+/** A card heading with its "All … →" pill — the web .home-card h2 shape. */
+function CardHead({ title, link, onPress }: { title: string; link?: string; onPress?: () => void }) {
+  return (
+    <View className="flex-row items-center justify-between pb-1">
+      <Text className="flex-1 pr-2 text-[15px] font-bold text-ink">{title}</Text>
+      {link && onPress ? (
+        <Pressable onPress={onPress} hitSlop={8} className="rounded-full bg-surface px-3 py-1.5 active:opacity-70" accessibilityRole="button">
+          <Text className="text-xs font-bold text-good-ink">{link}</Text>
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
+/**
+ * 4. UNREAD ALERTS, at most three — the web's Latest Alerts. Opening one marks
+ * it read and goes straight to what it is about (the Alerts tab keeps the full
+ * text); a failed receipt is caught up by the next read of the feed.
+ */
+function AlertsCard({ notes, failed, onOpen }: { notes: Note[] | null; failed: boolean; onOpen: (n: Note) => void }) {
+  const ui = useUi();
+  const unread = (notes ?? []).filter((n) => !n.read).slice(0, 3);
+  return (
+    <View className="mb-3 rounded-2xl bg-card px-4 pb-1.5 pt-3.5">
+      <CardHead title={i18nT('index.latest-alerts')} link={i18nT('index.all-alerts')} onPress={() => router.push('/alerts' as never)} />
+      {notes === null ? (
+        failed ? (
+          <Text className="py-2 text-sm text-muted">{i18nT('n.app.tabs.index.could-not-reach')}</Text>
+        ) : (
+          <ActivityIndicator className="py-2" color={ui.tint.good.ink} />
+        )
+      ) : unread.length === 0 ? (
+        <Text className="py-2 text-sm text-muted">
+          {notes.length ? i18nT('n.app.tabs.index.all-caught-up') : i18nT('index.nothing-yet-alerts')}
+        </Text>
+      ) : (
+        unread.map((n, i) => (
+          <Pressable
+            key={n.id}
+            onPress={() => onOpen(n)}
+            className={`flex-row items-center py-2.5 active:opacity-70 ${i ? 'border-t border-line' : ''}`}
+            accessibilityRole="button"
+          >
+            <View className="h-2 w-2 rounded-full bg-hawk-gold" />
+            <Text className="flex-1 px-2.5 text-sm text-ink" numberOfLines={2}>{n.title}</Text>
+            <Text className="text-[11px] text-faint">{ago(n.created_at)}</Text>
+          </Pressable>
+        ))
+      )}
+    </View>
+  );
+}
+
+/**
+ * 5. REPORT ACTIONS — the web's four quick actions, same words, same places:
+ * result (primary), incident, collation, and the unit (Map a Polling Unit,
+ * which also saves it — the web tile opens map-unit.html).
+ */
+const ACTIONS: { href: string; icon: keyof typeof Feather.glyphMap; title: string; sub: string; primary?: boolean }[] = [
+  { href: '/report/result', icon: 'camera', title: 'common.report-a-result', sub: 'index.photograph-the-ec8a-sheet-at-your', primary: true },
+  { href: '/report/incident', icon: 'alert-triangle', title: 'common.report-an-incident', sub: 'index.violence-vote-buying-bvas-failure' },
+  { href: '/report/collation', icon: 'layers', title: 'index.collation-result', sub: 'index.ward-lga-or-state-collation-ec8b' },
+  { href: '/map-unit', icon: 'map-pin', title: 'index.my-polling-unit', sub: 'index.save-or-map-your-unit-for' },
+];
+
+function ReportActions() {
+  const ui = useUi();
+  return (
+    <View className="mb-3" style={{ gap: 12 }}>
+      {[ACTIONS.slice(0, 2), ACTIONS.slice(2)].map((row, r) => (
+        <View key={r} className="flex-row" style={{ gap: 12 }}>
+          {row.map((a) => (
+            <Pressable
+              key={a.href}
+              onPress={() => router.push(a.href as never)}
+              className={`flex-1 rounded-2xl px-4 py-3.5 active:opacity-80 ${a.primary ? 'bg-hawk-green' : 'bg-card'}`}
+              accessibilityRole="button"
+            >
+              <Feather name={a.icon} size={22} color={a.primary ? BRAND.gold : ui.tint.good.ink} />
+              <Text className={`pt-2 text-[15px] font-bold ${a.primary ? 'text-white' : 'text-ink'}`}>{i18nT(a.title)}</Text>
+              <Text className={`pt-1 text-xs leading-4 ${a.primary ? 'text-emerald-100' : 'text-muted'}`}>{i18nT(a.sub)}</Text>
+            </Pressable>
+          ))}
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/** 6. MY ACTIVITY — the web card's three counts; the card opens Profile. */
+function ActivityCard({ me }: { me: Me }) {
+  const stats: [number, string][] = [
+    [(me.reports?.length ?? 0) + (me.collation?.length ?? 0), 'index.result-reports'],
+    [me.incidents?.length ?? 0, 'index.incidents'],
+    [me.subscriptions?.length ?? 0, 'index.races-followed'],
+  ];
+  return (
+    <Pressable onPress={() => router.push('/profile' as never)} className="mb-3 rounded-2xl bg-card px-4 pb-3 pt-3.5 active:opacity-90" accessibilityRole="button">
+      <CardHead title={i18nT('n.app.profile.my-activity')} />
+      <View className="flex-row pt-1">
+        {stats.map(([n, k], i) => (
+          <View key={k} className={`flex-1 items-center py-1.5 ${i ? 'border-l border-line' : ''}`}>
+            <Text className="text-xl font-bold text-good-ink">{n}</Text>
+            <Text className="text-center text-[11px] text-muted">{i18nT(k)}</Text>
+          </View>
+        ))}
+      </View>
+    </Pressable>
+  );
+}
+
 async function jget<T>(path: string): Promise<T | null> {
   try {
     const r = await fetch(`${BASE}${path}`, { headers: { accept: 'application/json' } });
@@ -359,10 +551,42 @@ export default function Home() {
    *  entirely below the fold on a phone. */
   const [allElections, setAllElections] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /* A FLAG, NOT A SENTENCE: the words are resolved at paint, so a language
+     change repaints them (a stored translation is stale the moment it lands). */
+  const [offline, setOffline] = useState(false);
+  const [retrying, setRetrying] = useState(false);
   const [practiceNudge, dismissPracticeNudge] = usePracticeNudge();
+  const auth = useAuth();
+  const signedIn = auth.status === 'signedIn';
+  const { lang } = useI18n();
+  /* The observer's own record and unread alerts (signed in only).
+     undefined = not asked yet, null = the read failed. */
+  const [me, setMe] = useState<Me | null | undefined>(undefined);
+  const [notes, setNotes] = useState<Note[] | null>(null);
+  const [notesFailed, setNotesFailed] = useState(false);
 
-  const load = useCallback(async () => {
+  /**
+   * The account side: /me (greeting, unit, next step, My Activity) and the
+   * alerts feed. D6: through the 120 s signed-in cache (lib/signed-in-cache.ts),
+   * which a push ends early, so the 30 s poll does not re-read the account each
+   * time — and two callers at once (mount + focus) share one request.
+   */
+  const loadMine = useCallback(async (force = false) => {
+    if (!signedIn) return;
+    const [m, n] = await Promise.all([
+      fresh('/api/observers/me', getToken(), () => authedGet<Me>('/api/observers/me'), { force }).catch(() => null),
+      fresh(`/api/notifications?lang=${lang}`, getToken(),
+        () => authedGet<{ items: Note[] }>(`/api/notifications?lang=${encodeURIComponent(lang)}`, { signOutOn401: false }),
+        { force }).catch(() => null),
+    ]);
+    // A failed read keeps what was already on screen; only a first failure is null.
+    setMe((prev) => m ?? (prev === undefined ? null : prev));
+    if (n) setNotes(n.items ?? []);
+    setNotesFailed(!n);
+  }, [signedIn, lang]);
+
+  const load = useCallback(async (force = false) => {
+    const mine = loadMine(force);
     const [c, i, ledger, incidents, flags, docket] = await Promise.all([
       api.contests().catch(() => null),
       api.integrity().catch(() => null),
@@ -412,13 +636,24 @@ export default function Home() {
 
     if (c) setContests(c);
     if (i) setIntegrity(i);
-    // Every source failing at once means the network is gone, not that nothing
-    // is happening — the two look identical otherwise.
+    await mine;
+    /**
+     * Every source failing at once means the network is gone, not that nothing
+     * is happening — the two look identical otherwise.
+     *
+     * AND THE SPINNER STOPS (flow walkthrough FA-X8-1). This returned before
+     * setItems, so with no signal the feed's ActivityIndicator spun forever
+     * under the error line, and the only retry was a pull-to-refresh nobody
+     * knows about. Now the feed settles (empty, or what it already showed),
+     * the line carries a Try again, and coming back online retries by itself
+     * (the NetInfo effect below).
+     */
     if (!c && !ledger && !incidents) {
-      setError(i18nT('n.app.tabs.index.could-not-reach'));
+      setOffline(true);
+      setItems((prev) => prev ?? []);
       return;
     }
-    setError(null);
+    setOffline(false);
 
     const merged: Item[] = [];
 
@@ -472,11 +707,65 @@ export default function Home() {
 
     merged.sort((a, b) => b.at - a.at);
     setItems(merged.slice(0, 80));
-  }, []);
+  }, [loadMine]);
 
   // Six requests every 30 s — only while the app is in the foreground
   // (hooks/use-foreground-interval). Tabs stay mounted in a pocket.
   useForegroundInterval(load, REFRESH_MS);
+
+  /* Signed out (or a different account): nothing of the last one stays up. */
+  useEffect(() => {
+    if (signedIn) return;
+    setMe(undefined);
+    setNotes(null);
+  }, [signedIn]);
+
+  /* Back from the chooser, Home's unit line and next step update at once. */
+  useEffect(() => onMyUnitSaved((unit) => {
+    bust('/api/observers/me');
+    setMe((m) => (m ? { ...m, unit } : m));
+  }), []);
+
+  /* Coming back to Home (from Alerts, a report, Profile) re-reads the account
+     side through the cache — the alerts read there are not unread here. */
+  useFocusEffect(useCallback(() => {
+    void loadMine();
+  }, [loadMine]));
+
+  const retry = useCallback(async () => {
+    if (retrying) return;
+    setRetrying(true);
+    try { await load(true); } finally { setRetrying(false); }
+  }, [load, retrying]);
+
+  /* RECONNECTING RETRIES BY ITSELF (FA-X8-1): the offline -> online edge only.
+     `offlineNow` is read through a ref so the listener is not re-subscribed on
+     every failure. A build without the NetInfo module keeps Try again and the
+     30 s poll. */
+  const offlineNow = useRef(false);
+  offlineNow.current = offline;
+  useEffect(() => {
+    let up = true;
+    let unsub: (() => void) | undefined;
+    try {
+      unsub = NetInfo.addEventListener((s) => {
+        const now = s.isConnected !== false && s.isInternetReachable !== false;
+        if (now && !up && offlineNow.current) void load(true);
+        up = now;
+      });
+    } catch {
+      /* no native module in this build */
+    }
+    return () => unsub?.();
+  }, [load]);
+
+  /* Opening an alert from Home: read on screen now, then where it points. */
+  const openNote = useCallback((n: Note) => {
+    setNotes((list) => list?.map((x) => (x.id === n.id ? { ...x, read: 1 as const } : x)) ?? list);
+    bust(`/api/notifications?lang=${lang}`);
+    markRead(n.id).catch(() => refreshUnread());
+    openNotificationTarget(n.url);
+  }, [lang]);
 
   const shown = useMemo(
     () => (filter === 'all' ? items : (items ?? []).filter((x) => x.kind === filter)),
@@ -491,6 +780,46 @@ export default function Home() {
      would have offered to expand nothing. */
   const ordered = useMemo(() => orderedContests(contests), [contests]);
 
+  /**
+   * 1. THE NEXT STEP, most urgent first — and only one (FA-HOME-2: this screen
+   * never told a new observer to choose a unit):
+   *   polls open today        → Report now
+   *   no polling unit saved   → Choose your polling unit
+   *   otherwise the practice nudge, or the Practice Day card.
+   * "No unit" waits for /me: an unknown unit is not a missing one.
+   */
+  const liveContest = useMemo(() => {
+    const today = lagosToday();
+    return (contests ?? []).find((c) => c.open && c.date === today) ?? null;
+  }, [contests]);
+  const nextStep = liveContest ? (
+    <NextStepCard
+      icon="camera"
+      title={i18nT('index.next-report-title')}
+      sub={i18nT('index.next-report-sub')}
+      go={i18nT('index.next-report-go')}
+      onPress={() => router.push(`/report/result?contest=${encodeURIComponent(liveContest.code)}` as never)}
+    />
+  ) : signedIn && me && !me.unit ? (
+    <NextStepCard
+      icon="map-pin"
+      title={i18nT('index.next-unit-title')}
+      sub={i18nT('index.next-unit-sub')}
+      go={i18nT('index.next-unit-go')}
+      onPress={() => router.push('/choose-unit' as never)}
+    />
+  ) : null;
+
+  /**
+   * ONE ORDER ON EVERY SURFACE (flow walkthrough FA-HOME-1). This screen was a
+   * public feed while the web and Lite Home was a personal dashboard; all three
+   * now read, top to bottom:
+   *   1 the next step   2 greeting + unit   3 the two soonest elections
+   *   4 unread alerts   5 report actions   6 My Activity
+   *   7 the live feed (stats, filters, rows)   8 Chat (the list's footer)
+   * Web twin: app/index.html, same order. The account parts (2, 4, 6) show
+   * signed in only.
+   */
   const header = (
     <View className="px-4">
 
@@ -499,11 +828,33 @@ export default function Home() {
           without the office appended this screen showed two identical cards and
           no way to tell which was which. */}
 
-      {error ? (
-        <View className="mb-3 rounded-2xl bg-warn px-4 py-3">
-          <Text className="text-sm text-ink">{error}</Text>
+      {offline ? (
+        <View className="mb-3 flex-row items-center rounded-2xl bg-warn px-4 py-3">
+          <Text className="flex-1 pr-3 text-sm text-ink">{i18nT('n.app.tabs.index.could-not-reach')}</Text>
+          <Pressable
+            onPress={retry}
+            disabled={retrying}
+            className="min-h-[40px] items-center justify-center rounded-full bg-hawk-green px-4 active:opacity-80"
+            accessibilityRole="button"
+          >
+            {retrying ? (
+              <ActivityIndicator size="small" color={BRAND.gold} />
+            ) : (
+              <Text className="text-sm font-bold text-hawk-gold">{i18nT('common.try-again')}</Text>
+            )}
+          </Pressable>
         </View>
       ) : null}
+
+      {/* 1 — at most one card. The nudge only shows when the server says no
+          Practice Day is near, so on and around its day that card wins.
+          PracticeDayCard renders nothing when there is no day to show. */}
+      {nextStep ?? (practiceNudge ? <PracticeNudgeCard onDismiss={dismissPracticeNudge} /> : <PracticeDayCard />)}
+
+      {/* 2 */}
+      {signedIn ? <Greeting me={me} /> : null}
+
+      {/* 3 */}
 
       {(allElections ? ordered : ordered.slice(0, CARDS_SHOWN)).map((c) => (
         <Pressable
@@ -573,11 +924,16 @@ export default function Home() {
         </Pressable>
       ) : null}
 
-      {/* At most one practice card. The nudge only shows when the server says
-          no Practice Day is near, so on and around its day that card wins.
-          PracticeDayCard renders nothing when there is no day to show. */}
-      {practiceNudge ? <PracticeNudgeCard onDismiss={dismissPracticeNudge} /> : <PracticeDayCard />}
+      {/* 4 */}
+      {signedIn ? <AlertsCard notes={notes} failed={notesFailed} onOpen={openNote} /> : null}
 
+      {/* 5 */}
+      <ReportActions />
+
+      {/* 6 */}
+      {signedIn && me ? <ActivityCard me={me} /> : null}
+
+      {/* 7 — the live feed: the public counts, then the filters, then the rows. */}
       <View className="flex-row gap-3">
         <Pressable
           className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
@@ -594,22 +950,6 @@ export default function Home() {
           <Text className="text-xs text-muted">{i18nT('n.app.tabs.index.units-flagged')}</Text>
         </Pressable>
       </View>
-
-      {/* A person, one tap away: the full-screen support chat (app/chat.tsx). */}
-      <Pressable
-        className="mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-80"
-        onPress={() => router.push('/chat' as never)}
-        accessibilityRole="button"
-      >
-        <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-hawk-green">
-          <Feather name="message-square" size={20} color={BRAND.gold} />
-        </View>
-        <View className="flex-1">
-          <Text className="text-[15px] font-bold text-ink">{i18nT('n.app.tabs.index.chat-card-title')}</Text>
-          <Text className="pt-0.5 text-[13px] leading-[18px] text-muted">{i18nT('n.app.tabs.index.chat-card-sub')}</Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={ui.faint} />
-      </Pressable>
 
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         {i18nT('n.app.tabs.index.live-activity')}
@@ -659,13 +999,33 @@ export default function Home() {
             tintColor={ui.tint.good.ink}
             onRefresh={async () => {
               setRefreshing(true);
-              await load();
+              await load(true);
               setRefreshing(false);
             }}
           />
         }
+        /* 8 — a person, one tap away: the full-screen support chat (app/chat.tsx).
+           Last, as on the web; More carries it too. */
+        ListFooterComponent={
+          <Pressable
+            className="mx-4 mt-3 flex-row items-center rounded-2xl bg-card px-4 py-3.5 active:opacity-80"
+            onPress={() => router.push('/chat' as never)}
+            accessibilityRole="button"
+          >
+            <View className="mr-3 h-10 w-10 items-center justify-center rounded-full bg-hawk-green">
+              <Feather name="message-square" size={20} color={BRAND.gold} />
+            </View>
+            <View className="flex-1">
+              <Text className="text-[15px] font-bold text-ink">{i18nT('n.app.tabs.index.chat-card-title')}</Text>
+              <Text className="pt-0.5 text-[13px] leading-[18px] text-muted">{i18nT('n.app.tabs.index.chat-card-sub')}</Text>
+            </View>
+            <Feather name="chevron-right" size={18} color={ui.faint} />
+          </Pressable>
+        }
         ListEmptyComponent={
-          items === null ? (
+          // No signal: the line above says so and carries Try again; the feed
+          // says nothing rather than "nothing has come in yet", which is false.
+          offline && !items?.length ? null : items === null ? (
             <ActivityIndicator className="pt-6" color={ui.tint.good.ink} />
           ) : (
             <View className="px-4 pt-2">

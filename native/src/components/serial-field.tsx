@@ -40,7 +40,10 @@ export function SerialField({
   proposed,
   editable = true,
   label = i18nT('n.components.serial-field.sheet-serial-number'),
-  where = 'top right of the EC8A',
+  // Keyed too: this phrase is spliced into a translated sentence, and the
+  // English default left "An buga ta a top right of the EC8A" (REP-LANG-02).
+  // Resolved per render — a default parameter is evaluated on every call.
+  where = i18nT('n.components.serial-field.where-ec8a'),
 }: {
   value: string;
   onChange: (v: string) => void;

@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
@@ -90,6 +90,8 @@
     #push-detail { display: block; margin-top: 3px; font-size: 0.72rem; line-height: 1.45;
                    color: var(--muted); white-space: normal; word-break: break-word; }
     .signout { width: auto; padding: 8px 16px; min-height: 44px; }
+    /* Arriving at #alerts lands the heading below the sticky header, not under it. */
+    #alerts { scroll-margin-top: 84px; }
     /* Hero identity card — native parity. */
     .phero { display: flex; align-items: center; gap: 14px; background: linear-gradient(160deg, #00251a, #00482b); border-radius: 16px; padding: 18px; color: #fff; margin: 8px 0 14px; }
     .phero-av { flex: none; width: 46px; height: 46px; border-radius: 50%; background: rgba(245, 179, 1, 0.18); color: #f5b301; display: flex; align-items: center; justify-content: center; }
@@ -113,7 +115,7 @@
       background: var(--bg, #0d1f17); color: inherit;
     }
 </style>
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 </head>
 <body>
   <header class="gov-header">
@@ -227,6 +229,37 @@
           <span class="prow-v" data-i18n="profile.turn-off-if-your-phone-may">Turn off if your phone may be inspected.</span>
           <input type="checkbox" class="prow-c" id="save-media" checked />
         </label>
+      </div>
+
+      <!-- SIGN OUT, UP WITH THE ACCOUNT (flow walkthrough). It sat at the very
+           bottom, 2.3 screens down below the activity folds; it is the one
+           routine account action, so it follows the account rows. Deleting
+           stays last — it should be the harder of the two to reach. -->
+      <div class="pcard">
+        <h2 data-i18n="profile.session">Session</h2>
+        <button data-i18n="profile.sign-out-on-this-device" class="secondary signout" id="btn-signout">Sign Out on This Device</button>
+      </div>
+
+      <!-- HOW ALERTS REACH YOU (flow walkthrough FA-FOLLOW-4). Following a race
+           said nothing about where its alerts go, and no screen did. There is
+           no per-race channel choice on the server — every alert goes to all
+           of these at once — so this states the three and links to where each
+           one is switched on. The race page's "Alerts on · How they reach
+           you →" lands here (#alerts). Native: the same section on Profile. -->
+      <h2 data-i18n="profile.alerts-reach-you" class="sec-label" id="alerts">How Alerts Reach You</h2>
+      <div class="pcard prows">
+        <a class="prow" href="notifications.html">
+          <span data-i18n="profile.alerts-in-app" class="prow-k prow-stack">In Hawkeye</span>
+          <span data-i18n="profile.alerts-in-app-sub" class="prow-v">Every alert lands in Alerts.</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </a>
+        <!-- This browser's notifications (website). The switch itself lives on
+             the Alerts page (#push-card); this row says where it stands. -->
+        <a class="prow" href="notifications.html" id="p-push-web" hidden>
+          <span data-i18n="profile.alerts-this-device" class="prow-k prow-stack">This Device</span>
+          <span class="prow-v" id="p-push-web-v"></span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </a>
         <!-- PUSH STATUS, in the app only.
              Lite received no push for six builds and the app could not say why:
              every failure path returned silently, so the only way to tell a
@@ -239,6 +272,15 @@
           <span data-i18n-html="profile.checking" class="prow-v" id="push-state">Checking…<small id="push-detail"></small></span>
           <span class="prow-c" aria-hidden="true">›</span>
         </button>
+        <a class="prow" href="https://t.me/HawkeyeNG_Results" target="_blank" rel="noopener">
+          <span class="prow-k prow-stack">Telegram</span>
+          <span data-i18n="profile.alerts-telegram-sub" class="prow-v">Race results also post in our channel, @HawkeyeNG_Results.</span>
+          <span class="prow-c" aria-hidden="true">›</span>
+        </a>
+      </div>
+      <div class="pcard">
+        <h2 data-i18n="profile.races-you-follow">Races You Follow</h2>
+        <div id="p-subs" class="empty" data-i18n-html="profile.none-yet-follow-a-race">None yet — follow a race from the <a data-i18n="profile.leaderboard" href="results.html">leaderboard</a>.</div>
       </div>
 
       <!-- INVITE OTHERS.
@@ -327,11 +369,6 @@
              coordinate — the link to it stays, worded as the other job. -->
       </div>
 
-      <div class="pcard">
-        <h2 data-i18n="profile.races-you-follow">Races You Follow</h2>
-        <div id="p-subs" class="empty" data-i18n-html="profile.none-yet-follow-a-race">None yet — follow a race from the <a data-i18n="profile.leaderboard" href="results.html">leaderboard</a>.</div>
-      </div>
-
       <h2 data-i18n="profile.my-activity" class="sec-label" style="margin-top:18px">My Activity</h2>
       <details class="fold"><summary><span data-i18n="profile.result-reports">Result Reports</span> <span class="cnt" id="cnt-reports">0</span></summary>
         <div id="p-reports" class="empty" data-i18n="profile.no-result-reports-yet">No result reports yet.</div></details>
@@ -359,11 +396,6 @@
           <span data-i18n="profile.send-the-app-to-someone" class="prow-v">Send the App to Someone</span>
           <span class="prow-c" aria-hidden="true">›</span>
         </a>
-      </div>
-
-      <div class="pcard">
-        <h2 data-i18n="profile.session">Session</h2>
-        <button data-i18n="profile.sign-out-on-this-device" class="secondary signout" id="btn-signout">Sign Out on This Device</button>
       </div>
 
       <div class="pcard danger">
@@ -579,8 +611,18 @@
 
     /* /me, kept, so paintMe() can say it again in another language. */
     let ME = null;
+    /* SIGNED OUT HERE GOES TO SIGN-IN, AND BACK HERE AFTER IT (ONB-08). The
+       in-place "You're not signed in" line linked to observe.html — the SIGN-UP
+       form, with no way back — so a refused token cost the reader the account
+       switch and then landed them on Home, not Profile. The room page and My
+       Groups already do this. #signed-out stays as the fallback if the
+       navigation is blocked. */
+    const toSignIn = () => {
+      $('signed-out').hidden = false;
+      location.replace('observe.html?intent=signin&next=profile.html');
+    };
     async function load() {
-      if (!token()) { $('signed-out').hidden = false; return; }
+      if (!token()) return toSignIn();
       const H = window.HAWKEYE || {};
       // no-store: coming BACK from choose-unit.html, Chrome answers a history
       // navigation's fetches from the HTTP cache without revalidating, so the
@@ -596,8 +638,8 @@
          "could not reach Hawkeye" line with Try again. */
       if (H.authRejected && H.authRejected(r.status, r.body)) {
         localStorage.removeItem('hawkeye_token');
-        $('p-offline').hidden = true; $('profile').hidden = true; $('signed-out').hidden = false;
-        return;
+        $('p-offline').hidden = true; $('profile').hidden = true;
+        return toSignIn();
       }
       let body = r.status === 200 && r.body && r.body.observerId != null ? r.body : null;
       if (body) {
@@ -609,6 +651,13 @@
         if (!body) return;
       }
       $('profile').hidden = false;
+      /* #alerts (the race page's "How they reach you →"): the section did not
+         exist when the browser tried to scroll to it — the profile is hidden
+         until /me answers — so go there now, once. */
+      if (location.hash === '#alerts' && !load.scrolled) {
+        load.scrolled = true;
+        requestAnimationFrame(() => { const a = $('alerts'); if (a) a.scrollIntoView({ block: 'start' }); });
+      }
 
       ME = body;
       $('p-hash').textContent = body.identityHash;
@@ -794,6 +843,32 @@
       };
     })();
 
+    /**
+     * THIS BROWSER'S NOTIFICATIONS, in words (the website; the app has the row
+     * above). Read from the permission, so it says what the browser will do:
+     * allowed, blocked in its settings, not asked yet, or not possible here.
+     * The switch is on the Alerts page, which this row opens. Keyed, and
+     * repainted on a language change.
+     */
+    (function webPushRow() {
+      const H = window.HAWKEYE;
+      if (H && H.native) return;                 // Lite: #btn-push-state covers this phone
+      const row = $('p-push-web');
+      const val = $('p-push-web-v');
+      if (!row || !val) return;
+      const paint = () => {
+        const can = 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window;
+        const p = can ? Notification.permission : 'unsupported';
+        val.textContent = p === 'granted' ? T('profile.push-on', 'On')
+          : p === 'denied' ? T('profile.push-blocked', 'Blocked in your browser settings')
+          : p === 'unsupported' ? T('profile.push-unsupported', 'Not possible in this browser')
+          : T('profile.push-off-turn-on', 'Off — turn on in Alerts');
+        row.hidden = false;
+      };
+      paint();
+      document.addEventListener('hawkeye-lang', paint);
+    })();
+
     // Modal open/close. Fields and message reset on open so a previous attempt's
     // error never greets the next one; backdrop tap and Escape both close.
     const pwOpen = () => {
@@ -896,6 +971,15 @@
     $('pk-list').onclick = async (e) => {
       const b = e.target.closest('button[data-pk]');
       if (!b) return;
+      /* ASK FIRST (flow walkthrough FA-PROF-3). One tap deleted a sign-in key
+         — and the Lite app cannot make one back. */
+      const pk = pkItems.find((p) => String(p.id) === b.dataset.pk);
+      const label = (pk && pk.label) || T('passkey.profile-row', 'Passkeys');
+      const sure = !window.hkConfirm || await window.hkConfirm(
+        T('passkey.remove-confirm-body', 'On that device you will sign in with a code or your password instead.'),
+        { title: Tp('passkey.remove-confirm-title', 'Remove the passkey on {label}?', { label }), ok: T('passkey.remove', 'Remove'), danger: true },
+      );
+      if (!sure) return;
       b.disabled = true;
       const r = await window.HawkeyePasskey.remove(api, b.dataset.pk);
       if (r && r.passkeys) {
@@ -955,7 +1039,7 @@
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=195"></script>
+  <script src="menu.js?v=196"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

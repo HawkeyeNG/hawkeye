@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { BackHandler } from 'react-native';
 
 import { ChooseUnitScreen } from '@/components/choose-unit';
+import { authedGet } from '@/lib/auth';
 import { emitMyUnitSaved } from '@/lib/my-unit';
 
 /**
@@ -12,8 +13,9 @@ import { emitMyUnitSaved } from '@/lib/my-unit';
  *
  *   /choose-unit?onboard=1   the last step of a NEW sign-up (sign-in.tsx
  *                            REPLACES itself with this). Save or Skip for now →
- *                            the tabs, by replace, so nothing behind this page
- *                            is a finished sign-up step to go Back into.
+ *                            the tabs (My Groups when the account is already in
+ *                            one, hasGroup below), by replace, so nothing behind
+ *                            this page is a finished sign-up step to go Back into.
  *   /choose-unit?current=…   from Profile's "My Polling Unit" row. The close
  *                            cross and Save both go back to Profile, which
  *                            updates its row from emitMyUnitSaved in place.
@@ -32,6 +34,23 @@ import { emitMyUnitSaved } from '@/lib/my-unit';
  * modal now, so the navigation is immediate; `leaving` still stops a double
  * tap queueing two of them.
  */
+/**
+ * IN A GROUP ALREADY? THEN MY GROUPS, NOT HOME (flow walkthrough ONB-11).
+ *
+ * An organisation-code sign-up is put in the issuer's room by the server — at
+ * sign-up, or once the unit is saved (backend routes/groups.js autoJoinOrgRoom)
+ * — and Home has no rooms card, so the room they joined was never opened or
+ * named. Any membership (or an invitation waiting) sends the end of sign-up to
+ * My Groups instead. Bounded at 3 s and silent on failure: no answer is Home,
+ * as before. Same rule as the web's choose-unit.html.
+ */
+async function hasGroup(): Promise<boolean> {
+  const ask = authedGet<{ member?: unknown[]; managing?: unknown[] }>('/api/groups', { signOutOn401: false })
+    .then((g) => !!((g.member && g.member.length) || (g.managing && g.managing.length)))
+    .catch(() => false);
+  return Promise.race([ask, new Promise<boolean>((r) => setTimeout(() => r(false), 3000))]);
+}
+
 export default function ChooseUnitRoute() {
   const { onboard, current, unit } = useLocalSearchParams<{ onboard?: string; current?: string; unit?: string }>();
   const isOnboard = onboard === '1';
@@ -40,7 +59,9 @@ export default function ChooseUnitRoute() {
   const leave = (to: 'tabs' | 'back') => {
     if (leaving.current) return;
     leaving.current = true;
-    if (to === 'tabs') router.replace('/(tabs)');
+    if (to === 'tabs' && isOnboard) {
+      void hasGroup().then((yes) => router.replace(yes ? ('/my-groups' as never) : '/(tabs)'));
+    } else if (to === 'tabs') router.replace('/(tabs)');
     else if (router.canGoBack()) router.back();
     else router.replace('/(tabs)');
   };

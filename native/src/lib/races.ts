@@ -113,12 +113,24 @@ export type ElectionTypeCode = 'PRES' | 'GOV' | 'SEN' | 'REP' | 'SHA';
 /** The fields a picker must resolve, in order, to reach a single race. */
 export type NarrowField = 'state' | 'district' | 'constituency' | 'seat';
 
+/**
+ * LABELS ARE ENGLISH HERE; SCREENS SHOW THEIR KEYS (flow walkthrough REP-LANG-04).
+ *
+ * The race picker printed `label` and `seatLabel` as-is, so a Hausa observer
+ * chose from "Presidential, Senate, House of Representatives…". This file
+ * imports nothing — tests/ui/catalogue_totals.mjs transpiles and runs it on its
+ * own — and a translated constant would freeze at import anyway, so each type
+ * carries its KEYS and the screen calls i18nT(labelKey) when it renders.
+ * labelKey is the web's contest.* key (app/menu.js HAWKEYE_RACES, my-groups).
+ */
 export interface ElectionType {
   code: ElectionTypeCode;
-  /** Menu label. */
+  /** Menu label, English. Render i18nT(labelKey). */
   label: string;
-  /** What a single winner of this race holds. */
+  labelKey: string;
+  /** What a single winner of this race holds, English. Render i18nT(seatKey). */
   seatLabel: string;
+  seatKey: string;
   /** Selection path for the picker. [] = the race is the whole nation. */
   narrowBy: NarrowField[];
   /** Total elective seats nationwide. */
@@ -126,11 +138,11 @@ export interface ElectionType {
 }
 
 export const ELECTION_TYPES: readonly ElectionType[] = [
-  { code: 'PRES', label: 'Presidential',              seatLabel: 'President',              narrowBy: [],                        seats: 1 },
-  { code: 'GOV',  label: 'Governorship',              seatLabel: 'Governor',               narrowBy: ['state'],                 seats: 36 },
-  { code: 'SEN',  label: 'Senate',                    seatLabel: 'Senator',                narrowBy: ['state', 'district'],     seats: 109 },
-  { code: 'REP',  label: 'House of Representatives',   seatLabel: 'Member (Rep)',           narrowBy: ['state', 'constituency'], seats: 360 },
-  { code: 'SHA',  label: 'State House of Assembly',    seatLabel: 'Member (State)',         narrowBy: ['state', 'seat'],         seats: 1019 },
+  { code: 'PRES', label: 'Presidential',              labelKey: 'contest.presidential',              seatLabel: 'President',      seatKey: 'n.lib.races.seat-pres', narrowBy: [],                        seats: 1 },
+  { code: 'GOV',  label: 'Governorship',              labelKey: 'contest.governorship',              seatLabel: 'Governor',       seatKey: 'n.lib.races.seat-gov',  narrowBy: ['state'],                 seats: 36 },
+  { code: 'SEN',  label: 'Senate',                    labelKey: 'contest.senate',                    seatLabel: 'Senator',        seatKey: 'n.lib.races.seat-sen',  narrowBy: ['state', 'district'],     seats: 109 },
+  { code: 'REP',  label: 'House of Representatives',  labelKey: 'contest.house-of-representatives',  seatLabel: 'Member (Rep)',   seatKey: 'n.lib.races.seat-rep',  narrowBy: ['state', 'constituency'], seats: 360 },
+  { code: 'SHA',  label: 'State House of Assembly',   labelKey: 'contest.state-house-of-assembly',   seatLabel: 'Member (State)', seatKey: 'n.lib.races.seat-sha',  narrowBy: ['state', 'seat'],         seats: 1019 },
 ] as const;
 
 /** Register spellings — must string-match polling_units.state exactly. */

@@ -9,11 +9,11 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=199" />
-  <script src="native.js?v=125"></script>
+  <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
   <script src="/monitor.js?v=3" defer></script>
   <meta name="robots" content="noindex" />
-  <script src="authgate.js?v=5"></script>
+  <script src="authgate.js?v=6"></script>
 <style>
 .mg { max-width: 560px; margin: 0 auto; padding: 28px 18px 64px; }
 .mg button { display: inline-block; width: auto; margin: 0; box-shadow: none; }
@@ -40,6 +40,10 @@
    at (0,1,1) it outranks styles.css's `.info-i` — whose box, centring and gap
    from the text are what make the dot a circle. Put those three back. */
 .mg .info-i { display: inline-flex; width: 20px; margin: 0 0 0 6px; }
+.mg .paste { margin-top: 22px; }
+.mg .paste input { display: block; width: 100%; box-sizing: border-box; margin: 11px 0 0; padding: 10px 12px; min-height: 44px;
+  background: var(--bg); color: var(--ink); border: 1px solid var(--line); border-radius: 9px; font: inherit; font-size: 0.88rem; }
+.mg .paste .bad-link { color: #c4463a; font-size: 0.8rem; margin: 8px 0 0; }
 </style>
 </head>
 <body>
@@ -118,15 +122,104 @@ async function load() {
 function render() {
   if (!GROUPS.length) {
     $('mg').innerHTML = `<h1>${T('my-groups.your-groups', 'My Groups')}</h1>
-      <p class="none">${T('my-groups.none', 'You have not joined any campaign or observer group.<br />You do not need one — you can report on your own, exactly as you do now.')}</p>`;
+      <p class="none">${T('my-groups.none', 'You have not joined any campaign or observer group.<br />You do not need one — you can report on your own, exactly as you do now.')}</p>
+      ${pasteBox()}`;
+    bindPaste();
     return;
   }
   $('mg').innerHTML = `
     <h1>${T('my-groups.your-groups', 'My Groups')}</h1>
     <p class="lede">${T('my-groups.lede-short', 'Groups see reports you filed since you joined them.')}<button type="button" class="info-i" id="mg-about" aria-label="${esc(T('common.more-information', 'More information'))}"></button></p>
-    ${GROUPS.map(card).join('')}`;
+    ${GROUPS.map(card).join('')}
+    ${pasteBox()}`;
+  /* THE ROOM IS ON THE LIVE SITE, NOT IN THE APP. Hawkeye Lite strips
+     situation-room.html from its bundle (mobile/scripts/strip_web_assets.sh),
+     and a root-relative /room/<slug> resolved INSIDE the shell
+     (https://localhost/room/…), where nothing answers — native.js rewrites
+     only img/video/source, and only on nodes added directly, never an anchor
+     inside a card. Absolute here, so the shell hands it to the browser. The
+     markup keeps href="/room/…": the strip script's gate looks for exactly that. */
+  if (window.HAWKEYE && window.HAWKEYE.native) {
+    const live = window.HAWKEYE_LIVE_ORIGIN || 'https://hawkeye.com.ng';
+    document.querySelectorAll('#mg a[href^="/room/"]').forEach((a) => { a.href = live + a.getAttribute('href'); });
+  }
   $('mg-about').addEventListener('click', about);
   document.querySelectorAll('[data-act]').forEach((b) => b.addEventListener('click', () => act(b)));
+  bindPaste();
+}
+
+/**
+ * JOIN FROM A PASTED LINK — the native My Groups' box, ported (app/my-groups.tsx).
+ *
+ * An invite normally opens by itself. When it did not — a messenger rewrote
+ * the link, or it opened the website in a browser instead of Hawkeye Lite —
+ * Lite has no address bar to paste it into, so the only way in was a browser:
+ * a separate, signed-out session. Same token rules as native's inviteToken()
+ * (lib/web-routes.ts): the whole link, the join.html?t= form, or the bare token.
+ */
+const TOKEN = /^[A-Za-z0-9_-]{16,64}$/;
+let LINK = '';
+let LINK_BAD = false;
+function inviteToken(text) {
+  const s = String(text || '').trim();
+  if (TOKEN.test(s)) return s;
+  let own;
+  const m = /^([a-z][a-z0-9+.-]*):\/\/([^/?#]*)(.*)$/i.exec(s);
+  if (!m) own = s.replace(/^(?:www\.)?hawkeye\.com\.ng(?=[/?]|$)/i, '').replace(/^\/+/, '');
+  else if (/^https?$/i.test(m[1])) {
+    if (!/^(?:www\.)?hawkeye\.com\.ng$/i.test(m[2])) return null;
+    own = m[3].replace(/^\/+/, '');
+  } else if (/^hawkeye$/i.test(m[1])) own = (m[2] + m[3]).replace(/^\/+/, '');
+  else return null;
+  const [pathPart, query = ''] = own.split('#')[0].split('?');
+  const p = pathPart.replace(/\/+$/, '');
+  const j = /^join\/([^/]+)$/i.exec(p);
+  if (j) return TOKEN.test(j[1]) ? j[1] : null;
+  if (p.toLowerCase() !== 'join.html') return null;
+  let tok = '';
+  try { tok = decodeURIComponent((/(?:^|&)t=([^&]+)/.exec(query) || [])[1] || ''); } catch (e) { tok = ''; }
+  return TOKEN.test(tok) ? tok : null;
+}
+function pasteBox() {
+  return `<form class="g paste" id="mg-paste" novalidate>
+    <h2>${T('my-groups.have-link', 'Have an invite link?')}</h2>
+    <div class="sub">${T('my-groups.have-link-sub', 'Paste the link a campaign or observer group sent you.')}</div>
+    <input id="mg-link" type="text" inputmode="url" autocomplete="off" autocapitalize="none" spellcheck="false"
+      value="${esc(LINK)}" placeholder="https://hawkeye.com.ng/join/…" aria-label="${esc(T('my-groups.have-link', 'Have an invite link?'))}" />
+    ${LINK_BAD ? `<p class="bad-link" role="alert">${T('my-groups.bad-link', 'That is not a Hawkeye invite link. Copy the whole link and try again.')}</p>` : ''}
+    <div class="acts"><button class="btn go" type="submit">${T('my-groups.open-link', 'Open invite')}</button></div>
+  </form>`;
+}
+function bindPaste() {
+  const f = $('mg-paste');
+  if (!f) return;
+  $('mg-link').addEventListener('input', (e) => { LINK = e.target.value; });
+  f.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tok = inviteToken($('mg-link').value);
+    if (!tok) { LINK_BAD = true; LINK = $('mg-link').value; repaint(); $('mg-link').focus(); return; }
+    LINK_BAD = false;
+    LINK = '';
+    // The query form: it is a bundled page in Lite, and the form sign-in hands back.
+    location.href = 'join.html?t=' + encodeURIComponent(tok);
+  });
+}
+
+/* THE RACE BY ITS NAME, not its code ("GOV · Lagos") — the same map join.html
+   uses, over the contest.* keys situation-room.html already has. */
+const CONTEST = {
+  PRES: ['contest.presidential', 'Presidential'],
+  SEN: ['contest.senate', 'Senate'],
+  REP: ['contest.house-of-representatives', 'House of Representatives'],
+  GOV: ['contest.governorship', 'Governorship'],
+  SHA: ['contest.state-house-of-assembly', 'State House of Assembly'],
+};
+function contestName(code) {
+  const c = String(code || '');
+  if (CONTEST[c]) return T(CONTEST[c][0], CONTEST[c][1]);
+  const bye = c.match(/^([A-Z]+)_BYE_/);
+  if (bye && CONTEST[bye[1]]) return T('contest.by-election', '{v0} By-Election', { v0: contestName(bye[1]), v1: '' });
+  return c;
 }
 
 /* ONE LINE, AND THE REST BEHIND THE ⓘ. The page used to open with two sentences
@@ -162,7 +255,7 @@ function card(g) {
   const title = `<a href="/room/${esc(g.slug || '')}" style="color:var(--link)">${esc(g.name)}</a>`;
   return `<div class="g">
     <h2>${title}</h2>
-    <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope_label || g.scope) : ''}</div>
+    <div class="sub">${esc(kind)} &middot; ${esc(contestName(g.contest))}${g.scope ? ' &middot; ' + esc(g.scope_label || g.scope) : ''}</div>
     ${g.manages ? `<div class="sub" style="margin-top:3px">${role}</div>` : ''}
     ${g.assigned_pu ? `<div class="unit">
       <div class="lab">${declined ? T('my-groups.unit-declined', 'Unit you declined') : T('my-groups.unit-assigned', 'Unit they have you down for')}</div>
@@ -174,7 +267,7 @@ function card(g) {
       ${/* A HIGHLIGHTED HEADING IS NOT A BUTTON: the room was reachable only by
            tapping the campaign name, and a coloured heading reads as a heading,
            so people who had access never found the room they had access to. */''}<a class="btn go" href="/room/${esc(g.slug || '')}">${T('my-groups.open-room', 'Open situation room')}</a>
-      ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}">${T('my-groups.not-where', 'That is not where I will be')}</button>` : ''}
+      ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.not-where', 'That is not where I will be')}</button>` : ''}
       <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.leave', 'Leave this group')}</button>
     </div>
   </div>`;
@@ -183,7 +276,7 @@ function card(g) {
 function inviteCard(g, kind) {
   return `<div class="g ask">
     <h2>${esc(g.name)}</h2>
-    <div class="sub">${esc(kind)} &middot; ${esc(g.contest)}${g.scope ? ' &middot; ' + esc(g.scope_label || g.scope) : ''}</div>
+    <div class="sub">${esc(kind)} &middot; ${esc(contestName(g.contest))}${g.scope ? ' &middot; ' + esc(g.scope_label || g.scope) : ''}</div>
     <div class="sub" style="margin-top:6px">${T('my-groups.invited-lede',
     'They have asked you to observe with them.')}</div>
     <p class="fine">${T('my-groups.invited-body',
@@ -197,33 +290,52 @@ function inviteCard(g, kind) {
 
 async function act(b) {
   const gid = b.dataset.gid;
-  if (b.dataset.act === 'accept') {
-    const { status } = await api('/api/groups/' + gid + '/accept', { method: 'POST' });
-    // 409: the room's party label is still being verified — it admits nobody yet.
-    if (status === 409) return void hkAlert(T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.'));
-    if (status !== 200) return void hkAlert(T('my-groups.accept-failed', 'Could not accept just now.'));
-    return load();
-  }
+  const verb = b.dataset.act;
+  const name = { name: b.dataset.name };
+  /* Asked BEFORE anything is sent, and outside the busy window below. */
   /* Refusing REMOVES the row rather than marking it refused: a campaign that
      could keep a list of the people who said no would have been handed exactly
      the fact the person withheld. Same endpoint as leaving, for that reason. */
-  if (b.dataset.act === 'refuse') {
-    if (!(await hkConfirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', { name: b.dataset.name }), { ok: T('my-groups.no-thanks', 'No thanks') }))) return;
-    const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
-    if (status !== 200) return void hkAlert(T('my-groups.refuse-failed', 'Could not do that just now.'));
-    return load();
-  }
-  if (b.dataset.act === 'decline') {
-    const { status } = await api('/api/groups/' + gid + '/decline', { method: 'POST' });
-    if (status !== 200) return void hkAlert(T('my-groups.send-failed', 'Could not send that just now.'));
-    return load();
-  }
+  if (verb === 'refuse' && !(await hkConfirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', name), { ok: T('my-groups.no-thanks', 'No thanks') }))) return;
+  /* CONFIRMED, because there is no way back from here: the member has no
+     "un-decline" (the coordinator reassigns), so a mis-tap left them marked
+     declined until somebody noticed. */
+  if (verb === 'decline' && !(await hkConfirm(T('my-groups.decline-confirm', 'Tell {name} you will not be at this unit? They can suggest another one. You cannot undo this here.', name), { ok: T('my-groups.decline-ok', 'Decline this unit') }))) return;
   /* Confirmed, because leaving is not reversible from here — the invite link
      may be spent, revoked, or simply not to hand any more. */
-  if (!(await hkConfirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', { name: b.dataset.name }), { ok: T('my-groups.leave', 'Leave this group'), danger: true }))) return;
-  const { status } = await api('/api/groups/' + gid + '/membership', { method: 'DELETE' });
-  if (status !== 200) return void hkAlert(T('my-groups.leave-failed', 'Could not leave just now.'));
-  load();
+  if (verb === 'leave' && !(await hkConfirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', name), { ok: T('my-groups.leave', 'Leave this group'), danger: true }))) return;
+
+  const req = verb === 'accept' ? ['/accept', 'POST', 'my-groups.accept-failed', 'Could not accept just now.']
+    : verb === 'decline' ? ['/decline', 'POST', 'my-groups.send-failed', 'Could not send that just now.']
+      : verb === 'refuse' ? ['/membership', 'DELETE', 'my-groups.refuse-failed', 'Could not do that just now.']
+        : ['/membership', 'DELETE', 'my-groups.leave-failed', 'Could not leave just now.'];
+  /* ONE REQUEST AT A TIME. With no busy state a double tap on Accept sent two
+     POSTs; the second met 404 nothing_to_accept and said "Could not accept"
+     while the list showed them accepted. */
+  const btns = [...document.querySelectorAll('[data-act]')];
+  btns.forEach((x) => { x.disabled = true; });
+  let status = 0;
+  let body = {};
+  try {
+    ({ status, body } = await api('/api/groups/' + gid + req[0], { method: req[1] }));
+  } catch (e) {
+    // api() is already on its way to the sign-in form: say nothing over it.
+    if (e && e.message === 'signed out') return;
+    /* NO SIGNAL. The fetch rejects, and with no catch the tap looked ignored —
+       no dialog, the card unchanged. status 0 says so below. */
+  }
+  btns.forEach((x) => { x.disabled = false; });
+  // 409 on accept: the room's party label is still being verified — it admits nobody yet.
+  if (verb === 'accept' && status === 409) return void hkAlert(T('join.held-body', 'It is not accepting observers yet. Try the link again later, or ask whoever sent it.'));
+  // Already accepted (a tap that got through before this one): that is done, not failed.
+  const done = status === 200 || (verb === 'accept' && status === 404 && body && body.error === 'nothing_to_accept');
+  if (!done) {
+    return void hkAlert(T(req[2], req[3])
+      + (status === 0 ? ' ' + T('my-groups.check-connection', 'Check your connection and try again.') : ''));
+  }
+  /* The change is made; a list that cannot be re-read right now is stale, not
+     failed — the next visit shows it. */
+  await load().catch(() => {});
 }
 
 /* THE WAY BACK, IN THE APP. menu.js gives every non-tab page in the app shell a

@@ -307,7 +307,7 @@ export function describeFixFailure(f: FixFailure): {
   switch (f.reason) {
     case 'disabled':
       return {
-        lead: "Location is turned off on this phone — turn on Location in your phone's settings, then try again",
+        lead: i18nT('n.lib.location.location-is-turned-off'),
         code: 'location_services_off',
         settings: true,
       };

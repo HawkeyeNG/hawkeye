@@ -443,8 +443,12 @@ const explain = (body) => {
   const own = errorText(code);
   const lang = (window.HawkeyeI18n && window.HawkeyeI18n.current) || chosenLang() || 'en';
   if (own && lang !== 'en') return own;
-  return (body && body.hint) || own || code
-    || T('observe.err.something-went-wrong', 'Something went wrong.');
+  // NEVER THE RAW CODE (ONB-07). A 500 printed "internal_error" under the
+  // field in every language, and a proxy's HTML 502 a bare "Something went
+  // wrong." with no next step. A code we have no sentence for, with no hint,
+  // is the server's trouble: say so, in the reader's language, and what to do.
+  return (body && body.hint) || own
+    || T('observe.server-busy-try-again', 'Hawkeye is busy — try again in a minute.');
 };
 /* /login's too_many_attempts is about PASSWORDS — ten wrong ones in an hour —
    not the code-entry limit ERRORS describes ("tap Resend code"). */
@@ -454,7 +458,9 @@ const explainLogin = (body) => (body && body.error === 'too_many_attempts'
 
 // Mirror of backend/src/services/scope.js — the polling unit determines the race.
 // The FCT has an appointed minister: no governorship, no state assembly.
-const stateLabel = (s) => (s === 'FCT' ? 'the FCT' : `${s} State`);
+/* Keyed (flow walkthrough REP-LANG-01): a Hausa reader saw this whole scope
+   line in English. Resolved when drawn, never at import. */
+const stateLabel = (s) => (s === 'FCT' ? T('observe.the-fct', 'the FCT') : T('observe.state-label', '{state} State', { state: s }));
 // `states` (optional) = a single-state election's allowlist (e.g. Osun 2026
 // pilot); absent/empty ⇒ nationwide. Mirror of backend scope.js.
 const contestApplies = (u, contest, states) =>
@@ -464,18 +470,18 @@ function contestScope(u, contest) {
   switch (contest) {
     case 'SEN':
       return u.senatorial
-        ? `${u.senatorial} Senatorial District, ${stateLabel(u.state)}`
-        : `${stateLabel(u.state)} — senatorial district not on register`;
+        ? T('observe.scope-sen', '{district} Senatorial District, {state}', { district: u.senatorial, state: stateLabel(u.state) })
+        : T('observe.scope-sen-missing', '{state} — senatorial district not on register', { state: stateLabel(u.state) });
     case 'REP':
       return u.federal_constituency
-        ? `${u.federal_constituency} Federal Constituency, ${stateLabel(u.state)}`
-        : `${stateLabel(u.state)} — federal constituency not on register`;
+        ? T('observe.scope-rep', '{district} Federal Constituency, {state}', { district: u.federal_constituency, state: stateLabel(u.state) })
+        : T('observe.scope-rep-missing', '{state} — federal constituency not on register', { state: stateLabel(u.state) });
     case 'GOV':
-      return `${u.state} State Governorship`;
+      return T('observe.scope-gov', '{state} State Governorship', { state: u.state });
     case 'SHA':
-      return `${u.state} State House of Assembly (constituency covering ${u.lga} LGA)`;
+      return T('observe.scope-sha', '{state} State House of Assembly (constituency covering {lga} LGA)', { state: u.state, lga: u.lga });
     default:
-      return 'Presidential — national contest';
+      return T('observe.scope-pres', 'Presidential — national contest');
   }
 }
 // A scheduled election (server sends open:false + opensAt until poll-open on
@@ -492,11 +498,17 @@ function updateScopeNotice() {
     ? ` · ${new Date(c.date + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}`
     : '';
   const notYet = c && c.open === false && c.opensAt
-    ? ` Result reporting opens when polls open — ${new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })}.`
+    ? ' ' + T('observe.reporting-opens-when-polls-open', 'Result reporting opens when polls open — {when}.', { when: new Date(c.opensAt).toLocaleString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' }) })
     : '';
   $('contest-scope').textContent = contest
-    ? `You are reporting: ${contestScope(selectedPu, contest)}${c?.election ? ` — ${c.election}${when}` : ''}.${notYet}`
-    : 'Choose which election you are reporting before continuing.';
+    ? (c?.election
+      ? T('observe.you-are-reporting-election', 'You are reporting: {scope} — {election}{when}.', { scope: contestScope(selectedPu, contest), election: c.election, when })
+      : T('observe.you-are-reporting', 'You are reporting: {scope}.', { scope: contestScope(selectedPu, contest) })) + notYet
+    : !contests.length || [...$('sel-contest').options].some((o) => o.value && !o.disabled)
+      ? T('observe.choose-election-before-continuing', 'Choose which election you are reporting before continuing.')
+      // Every race here is closed (markClosedRaces): say so, rather than ask
+      // for a choice that cannot be made.
+      : T('observe.no-race-open-here', 'No election is open for reporting at this unit yet. Each race shows the day it opens.');
   updateSubmitState();
 }
 
@@ -582,8 +594,26 @@ let logos = null; // party code -> official emblem path (logos/manifest.json)
 const shots = { sheet: null, venue: null }; // { blob, capturedAt }
 
 // ---------- registration (single pane: phone first, then OTP in the same input) ----------
+/* ONE ORDER ON EVERY SURFACE (flow walkthrough ONB-03, R-ORG-CODE-ORDER):
+   number + route (+ an invite or ORG code on sign-up) -> the code -> THEN
+   "Create your password", typed twice -> on. The password used to be asked up
+   front, beside the number and again beside the code, because the free
+   WhatsApp route signs in by itself the moment the message lands. Native has
+   always asked it AFTER the proof, and the server takes it then: /set-password
+   accepts a new password alone for 15 minutes after a phone proof (backend
+   routes/observers.js). Twin of native sign-in.tsx request -> otp | wa-send ->
+   set-password.
+     authMode     the step on screen: 'phone' (number + route), 'password'
+                  (sign-in), 'otp' (the code), 'wa' (send us the code), 'setpw'
+                  (choose a password), 'exists' (already registered)
+     authPurpose  what a code is FOR: 'signup', 'reset' (forgot password) or
+                  'no-password' (an account from before passwords) */
 let authMode = 'phone';
+let authPurpose = 'signup';
 let pendingPhone = '';
+/* The proof that signed this device in, kept for the step after it:
+   { token, isNew, needsUnit, hasPassword, org }. null until a proof lands. */
+let proof = null;
 /* /api/health waInbound: the WhatsApp choice runs in reverse (free). Set by
    revealSmsOptionIfEnabled(); false until the server says otherwise. */
 let WA_INBOUND = false;
@@ -595,8 +625,16 @@ let WA_PAID = false;
 let WA_HEALTH = false;
 /* The free WhatsApp route in progress (startWaSend), or null. Declared up here
    because resetAuthPane() reads it. */
-let wa = null;   // { pollToken, code, link, deadline, delay, timer, busy, fails, newPw, gen }
+let wa = null;   // { pollToken, code, link, number, deadline, delay, timer, busy, fails, gen }
 let waGen = 0;
+/* /api/health callVerify: the free missed-call route (sign-up only) is running.
+   Fail closed, as the WhatsApp switches. The route in progress (startCallSend),
+   or null — declared up here because the pane painter reads both. */
+let CALL_VERIFY = false;
+let call = null;   // { pollToken, number, display, tel, deadline, timer, tick, busy, fails, started, state }
+/* Why the "already exists" step showed BEFORE a proof: '' (a refused code) or
+   'call' (a missed call from a number that has an account). */
+let existsVia = '';
 
 // Why the user is registering, from the CTA (?intent=observe|map|incident).
 // Drives the verification heading and where we send them once verified.
@@ -662,48 +700,155 @@ if (NEXT_DEST) document.addEventListener('click', (e) => {
 // still drives the destination after verifying) doesn't need unpicking.
 function applyIntentCopy() { /* intentionally empty — see note above */ }
 // Sign-in mode (?intent=signin): password field up front for returning observers,
-// OTP still one tap away via #pw-link, and a "Sign up" escape hatch so someone
-// without an account isn't stranded on a password field. Re-applied by
-// resetAuthPane so "use a different number" doesn't silently become sign-up.
+// the code route one tap away via #pw-link, and a "Sign up" escape hatch so
+// someone without an account isn't stranded on a password field. Puts the pane
+// back on that first step; paintAuthStep() draws it.
 function applySignInMode() {
   if (!IS_SIGNIN) return;
   authMode = 'password';
-  document.documentElement.classList.remove('pw-reset');
+  authPurpose = 'reset';
   const title = $('register-title');
   if (title) title.textContent = T('observe.sign-in', 'Sign In');
   // "One number, one observer" is a sign-UP promise; a returning observer has
   // already made it.
   const lede = $('register-lede');
   if (lede) lede.textContent = T('observe.welcome-back-sign-in-to-your-observer', 'Welcome back — sign in to your observer account.');
-  if ($('pw-signin-wrap')) $('pw-signin-wrap').hidden = false;
-  if ($('channel-pick')) $('channel-pick').hidden = true;   // password sign-in sends no code
-  syncChannelGate();
-  $('btn-auth').textContent = T('observe.sign-in', 'Sign In');
-  if ($('pw-link')) {
-    $('pw-link').hidden = false;                            // reset path, sign-in only
-    $('pw-link').textContent = T('observe.forgot-your-password', 'Forgot your password?');
+  paintAuthStep();
+}
+
+/**
+ * EVERY STEP OF THE PANE, DRAWN FROM authMode AND authPurpose: what is on
+ * screen and every line a script writes into it. Idempotent, and it never
+ * touches what was typed, so the language listener simply runs it again.
+ *
+ * One painter, because the toggles were spread over six handlers and two mode
+ * painters — and a language change on the sign-in page's code step re-ran the
+ * sign-in painter, which reset the mode and put the password field back.
+ *
+ * Sign-up: number + route + the invite/ORG field (the sign-in link and the
+ * practice card with it) -> code -> password. Sign-in: number + password, with
+ * "Forgot your password?" into the code route and "Sign up" across. A code in
+ * flight hides every "go somewhere else" link: it is noise by then, and the
+ * practice card above pushed the code field away from the keyboard (ONB-06).
+ */
+function paintAuthStep() {
+  const m = authMode;
+  const up = !IS_SIGNIN;
+  const vis = (id, on) => { const el = $(id); if (el) el.hidden = !on; };
+  const asks = m === 'phone' || m === 'password' || m === 'otp';   // the one input is on screen
+  // styles.css: under .pw-reset the sign-in page's route picker and password
+  // box follow their hidden attributes; without it they are pinned to the
+  // password step (the class is set during parse, by observe.html).
+  document.documentElement.classList.toggle('pw-reset', IS_SIGNIN && m !== 'password');
+  vis('auth-input', asks);
+  vis('auth-input-label', asks);
+  vis('auth-why', m === 'phone' && authPurpose === 'no-password');
+  vis('channel-pick', m === 'phone' && !orgCodeTyped());   // an organisation code sends nothing
+  if (m !== 'phone') vis('channel-need', false);
+  vis('pw-signin-wrap', m === 'password');
+  vis('wa-send', m === 'wa');
+  vis('call-send', m === 'call');
+  vis('pw-set', m === 'setpw');
+  vis('auth-exists', m === 'exists');
+  paintCallRoute();
+  vis('ref-opt', up && m === 'phone');              // the ONE code field: invite or organisation
+  vis('btn-auth', asks || m === 'setpw');
+  vis('pw-set-alt-line', m === 'setpw');
+  vis('pw-link', IS_SIGNIN && (m === 'password' || m === 'phone'));
+  vis('signin-line', up && m === 'phone');
+  vis('signup-line', IS_SIGNIN && m === 'password');
+  // A practice link on every first step: the big card on sign-up, a light line
+  // on sign-in (a returning observer doesn't need the pitch).
+  vis('starter-card', up && m === 'phone');
+  vis('practice-line', IS_SIGNIN && (m === 'password' || m === 'phone'));
+  vis('otp-resend', m === 'otp');
+  vis('auth-reset', m === 'otp' || m === 'wa' || m === 'call');
+  vis('otp-phone', false);
+
+  // The field and its label move with the step: a label still reading
+  // "Nigerian Mobile Number" over an input that wants a code describes the
+  // wrong input, and it is the one thing the reader reads before typing.
+  const input = $('auth-input');
+  const code = m === 'otp';
+  if (input && asks) {
+    input.placeholder = code ? T('observe.enter-otp', 'Enter OTP') : '0803 123 4567';
+    input.inputMode = code ? 'numeric' : 'tel';
+    input.autocomplete = code ? 'one-time-code' : 'tel';
   }
-  if ($('signin-line')) $('signin-line').hidden = true;     // they ARE on sign-in
-  if ($('signup-line')) $('signup-line').hidden = false;
-  if ($('pw-opt')) $('pw-opt').hidden = true;               // creating one is a sign-up job
-  // A returning observer doesn't need the big practice pitch card — but a light
-  // practice link still belongs here (a practice link on every auth screen).
-  if ($('starter-card')) $('starter-card').hidden = true;
-  if ($('practice-line')) $('practice-line').hidden = false;
+  // keyedText, not textContent: the label and #pw-link carry their own
+  // data-i18n, and menu.js sweeps apply() over the page on every language
+  // change — which put "Nigerian Mobile Number" back over the code field.
+  if ($('auth-input-label') && asks) {
+    keyedText($('auth-input-label'), code ? 'observe.enter-otp' : 'observe.nigerian-mobile-number', code ? 'Enter OTP' : 'Nigerian Mobile Number');
+  }
+  if ($('auth-why')) $('auth-why').textContent = T('auth.no-password-yet', 'This account has no password yet. Sign in with a code and set one now.');
+  if ($('btn-auth')) {
+    $('btn-auth').textContent = code ? T('observe.verify-otp', 'Verify OTP')
+      : m === 'password' ? T('observe.sign-in', 'Sign In')
+        : m === 'setpw' ? T('auth.pw-save-continue', 'Save password and continue')
+          : orgCodeTyped() ? T('auth.org-create-account', 'Create account')
+            : T('observe.send-code', 'Send Code');
+  }
+  if ($('pw-link') && IS_SIGNIN) {
+    if (m === 'password') keyedText($('pw-link'), 'observe.forgot-your-password', 'Forgot your password?');
+    else keyedText($('pw-link'), 'observe.sign-in-with-password-instead', 'Sign in with your password instead');
+  }
+  paintResend();
+  if ($('auth-reset')) $('auth-reset').textContent = T('observe.use-a-different-number', '← Use a Different Number');
+
+  if (m === 'setpw') {
+    const p = authPurpose;
+    $('pw-set-title').textContent = p === 'reset' ? T('auth.pw-reset-title', 'Choose a New Password')
+      : p === 'no-password' ? T('auth.pw-set-title', 'Set Your Password')
+        : T('auth.pw-create-title', 'Create Your Password');
+    $('pw-set-body').textContent = p === 'reset' ? T('auth.pw-reset-body', 'Your number is verified. Pick a new password — at least 8 characters.')
+      : p === 'no-password' ? T('auth.pw-set-body', 'Your number is verified. Choose a password — at least 8 characters — and use it to sign in on any device from now on.')
+        : T('auth.pw-create-body', 'Verified. Choose a password — at least 8 characters.');
+    $('pw-set-alt').textContent = mustSetPw()
+      ? T('auth.pw-not-now-sign-out', 'Not now — sign out')
+      : T('auth.pw-keep-current', 'Keep my current password');
+  }
+  if (m === 'exists') {
+    // BEFORE a code nobody is signed in; AFTER a proof the session is live —
+    // different offers, and getting it wrong would put "Continue" in front of
+    // someone who is not signed in.
+    const after = !!proof;
+    const phone = pendingPhone;
+    $('exists-title').textContent = T('auth.exists-title', 'This account already exists');
+    $('exists-body').textContent = after
+      ? T('auth.exists-body-after', '{phone} is already registered as an observer, and it already has a password. Nothing new was created — your reports and your observer ID are as you left them.', { phone })
+      // A missed call only ever CREATES an account (caller ID can be forged),
+      // so the server issued nothing; said in the call's own words.
+      : existsVia === 'call'
+        ? T('auth.call-has-account', 'This number already has an account — sign in instead. Nothing new was created.')
+        : T('auth.exists-body-before', '{phone} is already registered as an observer. Sign in with your password — no code was sent, and nothing new was created.', { phone });
+    $('exists-go').textContent = after ? T('auth.exists-continue', 'Continue to Hawkeye') : T('auth.exists-sign-in', 'Sign in instead');
+    $('exists-reset').textContent = after ? T('auth.exists-set-new', 'Forgot your password? Set a new one') : T('auth.exists-reset', 'Forgot your password? Reset it');
+    $('exists-back').textContent = after
+      ? T('auth.exists-sign-out', 'Not your number? Sign out and start again')
+      : T('observe.use-a-different-number', '← Use a Different Number');
+  }
+  // Waiting on a WhatsApp message: the panel's own lines, in this language.
+  if (m === 'wa' && wa) {
+    $('wa-body').textContent = WA_BODY();
+    if (wa.number) $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: wa.number });
+    if (wa.deadline) waStatus(WA_WAITING(), true);
+    else waStatus(T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
+  }
+  // Waiting on a missed call: the same, plus the line that names both numbers.
+  if (m === 'call' && call) {
+    $('call-body').textContent = T('auth.call-body', 'Call {number} from {phone}.', { number: call.display, phone: pendingPhone });
+    $('call-number').textContent = call.display;
+    $('call-desk').textContent = T('auth.call-desktop', 'Dial it from the phone with {phone}, not from this computer.', { phone: pendingPhone });
+    $('call-sim').textContent = T('auth.call-dual-sim', 'On a two-SIM phone, call from the SIM with {phone}.', { phone: pendingPhone });
+    paintCallLive();
+  }
+  syncChannelGate();
   paintPasskeySignIn();
 }
-// Sign-up mode (everything that isn't ?intent=signin). Mirror image of the above:
-// no "have a password?" toggle (a new observer can't have one), a link across to
-// sign-in instead, and the create-a-password option offered up front rather than
-// only appearing once a code has been sent.
-function applySignUpMode() {
-  if (IS_SIGNIN) return;
-  if ($('pw-link')) $('pw-link').hidden = true;
-  if ($('signup-line')) $('signup-line').hidden = true;
-  if ($('signin-line')) $('signin-line').hidden = false;
-  if ($('pw-opt')) $('pw-opt').hidden = false;
-  if ($('ref-opt')) $('ref-opt').hidden = false;   // the ONE code field: invite or organisation
-}
+/* Only a reset of an account KNOWN to have a password may keep it; a sign-up,
+   a rescue, or an account with none must leave this pane with a password. */
+const mustSetPw = () => !(authPurpose === 'reset' && proof && proof.hasPassword === true);
 
 /* ---------- Invite or organisation code (sign-up only) ----------
  * ONE field for two kinds of code, told apart by FORMAT (owner decision,
@@ -795,10 +940,9 @@ function paintCodeKind() {
 const orgCodeTyped = () => !IS_SIGNIN && authMode === 'phone' && !!$('ref-input') && squashCode($('ref-input').value).startsWith('ORG');
 function syncOrgMode() {
   if (IS_SIGNIN || authMode !== 'phone' || !$('ref-input')) return;
-  const on = orgCodeTyped();
-  if ($('channel-pick')) $('channel-pick').hidden = on;   // nothing is sent with a code
-  $('btn-auth').textContent = on ? T('auth.org-create-account', 'Create account') : T('observe.send-code', 'Send Code');
-  syncChannelGate();
+  // The picker goes (nothing is sent with a code) and the button says
+  // "Create account": both drawn by the one painter.
+  paintAuthStep();
 }
 const ORG_ERRORS = {
   org_code_invalid: ['auth.org-code-unknown', 'That organisation code is not valid. Check it with your organisation, or leave the box empty to sign up with a one-time code.'],
@@ -836,14 +980,15 @@ function clearAuthErr() {
   if (p && !p.hidden) { p.hidden = true; p.textContent = ''; }
   document.querySelectorAll('#auth-card [aria-invalid="true"]').forEach((el) => el.removeAttribute('aria-invalid'));
 }
-['auth-input', 'pw-opt-input', 'pw-signin-input'].forEach((id) => { const el = $(id); if (el) el.addEventListener('input', clearAuthErr); });
+['auth-input', 'pw-set-input', 'pw-set-input2', 'pw-signin-input'].forEach((id) => { const el = $(id); if (el) el.addEventListener('input', clearAuthErr); });
 
 async function orgSignUp(phone) {
   const code = typedOrgCode($('ref-input').value);
   if (!code) { if ($('ref-err')) $('ref-err').hidden = false; $('ref-input').focus(); return; }
   if (!phone) return void authErr(T('auth.enter-your-phone-number', 'Enter your phone number.'));
-  const newPw = $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (newPw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
+  // NO PASSWORD HERE (R-ORG-CODE-ORDER): the account first, then "Create your
+  // password" typed twice — the same step and order as a code sign-up, and as
+  // native's onOrgSignup -> set-password.
   // No code comes back to prove the number, so the number is the one thing to
   // get right: the code is tied to it for good. Native's sheet uses the same
   // two answers (native sign-in.tsx, n.auth.org-confirm-yes / -no).
@@ -862,20 +1007,10 @@ async function orgSignUp(phone) {
     const m = ORG_ERRORS[body && body.error];
     return void authErr(m ? T(m[0], m[1]) : explain(body || {}));
   }
-  localStorage.setItem('hawkeye_token', body.token);
-  clearSignedOutElsewhere();
-  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
-  const r = await api('/api/observers/set-password', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
-    body: JSON.stringify({ password: newPw }),
-  });
-  // Awaited: afterVerified() below navigates, and would take the notice with it.
-  if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
+  pendingPhone = phone;
   $('ref-input').value = '';
   paintCodeKind();
-  resetAuthPane();
-  afterVerified(body.isNew === true || body.needsUnit === true);
+  adoptProof(body, { org: true });
 }
 
 /* ---------- Signed out because the account signed in elsewhere (D3) ----------
@@ -934,71 +1069,302 @@ function afterVerified(isNew) {
   location.href = 'index.html';
 }
 
-function resetAuthPane() {
+/* Back to this page's first step (sign-up: number + route; sign-in: number +
+   password) — after a sign-in, a "Not now — sign out", a failed fallback.
+   THE NUMBER AND THE ROUTE STAY (ONB-14) unless told otherwise: both were the
+   reader's own, so keeping them is no default, and a one-digit typo stays a
+   one-digit fix. NO DEFAULT CHANNEL still holds — nothing here ever picks one. */
+function resetAuthPane({ keepNumber = true } = {}) {
   clearAuthErr();
-  // Leaving a WhatsApp send-us-the-code wait: that code stops working.
+  // Leaving a WhatsApp send-us-the-code wait (or a missed-call wait): that code
+  // stops working.
   waStop(true);
-  showWaPane(false);
-  authMode = 'phone';
-  pendingPhone = '';
+  callStop(true);
+  stopResendCooldown();
+  clearPendingCode();
+  clearPendingPassword();
   const input = $('auth-input');
-  input.value = '';
-  input.placeholder = T('observe.enter-phone-number', 'Enter Phone Number');
-  input.type = 'tel';
-  input.inputMode = 'tel';
-  // The OTP step retitles this to "Enter OTP"; a new number wants its own label back.
-  if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.nigerian-mobile-number', 'Nigerian Mobile Number');
-  $('btn-auth').textContent = T('observe.send-code', 'Send Code');
-  $('otp-hint').textContent = '';
-  $('auth-reset').hidden = true;
-  if ($('otp-resend')) $('otp-resend').hidden = true;
-  if ($('otp-phone')) $('otp-phone').hidden = true;
-  if ($('channel-pick')) {
-    $('channel-pick').hidden = false;
-    // NO DEFAULT CHANNEL: a pre-selected route meant a mistap could send on a
-    // channel the user never chose (and cost us a paid message). Clear every
-    // radio and keep Request OTP disabled until one is picked.
-    for (const r of document.querySelectorAll('input[name="otp-channel"]')) r.checked = false;
-    syncChannelGate();
-  }
+  const typed = authMode === 'phone' || authMode === 'password' ? input.value : '';
+  input.value = keepNumber ? (pendingPhone || typed) : '';
+  pendingPhone = '';
   pendingChannel = '';
-  if ($('pw-signin-wrap')) {
-    $('pw-signin-wrap').hidden = true;
-    $('pw-signin-input').value = '';
-  }
-  if ($('pw-opt-input')) $('pw-opt-input').value = '';
-  // Whichever mode this visit is in owns the links and the password controls —
-  // exactly one of these two does anything.
-  applySignUpMode();
-  applySignInMode();   // keep a sign-in visit in sign-in mode after a reset
-  syncOrgMode();       // a typed organisation code keeps the picker hidden
+  proof = null;
+  existsVia = '';
+  $('otp-hint').textContent = '';
+  for (const id of ['pw-signin-input', 'pw-set-input', 'pw-set-input2']) if ($(id)) $(id).value = '';
+  authMode = 'phone';
+  authPurpose = 'signup';
+  if (IS_SIGNIN) applySignInMode(); else paintAuthStep();
 }
 
-// Password (#pw-opt-input) is REQUIRED and shown whenever a code is in flight —
-// no checkbox to toggle. It's applied right after a successful OTP verify (fresh
-// phone proof, so no current password is needed), on both sign-up and reset.
+/* "← Use a different number": back to the number step of the SAME errand
+   (sign-up, reset or rescue — native's setStep('request')), the number still in
+   the box and the route still picked (ONB-14). */
+function backToNumber() {
+  clearAuthErr();
+  waStop(true);
+  callStop(true);   // a call from the old number stops counting (/call-cancel)
+  existsVia = '';
+  stopResendCooldown();
+  clearPendingCode();
+  const input = $('auth-input');
+  input.value = pendingPhone || input.value;
+  pendingPhone = '';
+  // The route stays picked too — also after a reload resumed the code step,
+  // which brings the number and the route back but not the radio (found by
+  // the onboarding walker: "Use a different number" there lost the route).
+  if (/^[a-z]+$/.test(pendingChannel) && !pickedChannel()) {
+    const r = document.querySelector(`input[name="otp-channel"][value="${pendingChannel}"]`);
+    if (r && !(r.parentElement && r.parentElement.hidden)) r.checked = true;   // never a route that is switched off
+  }
+  $('otp-hint').textContent = '';
+  authMode = 'phone';
+  paintAuthStep();
+  try { input.focus(); } catch { /* not focusable */ }
+}
 
-// SIGN-IN ONLY (the link is hidden on sign-up): "Forgot your password?" flips the
-// pane into the OTP flow, which then forces a NEW password on verify — a proper
-// reset. OTP is thus only ever a sign-up or password-reset tool, never a way to
-// sign in around a password.
+/* Into the code route on the sign-in page — "Forgot your password?" (reset),
+   or an account from before passwords (no-password, ONB-12) — keeping the
+   number typed. Number + route -> code -> a NEW password: OTP is only ever a
+   sign-up or reset tool here, never a way to sign in around a password. */
+function startCodeRoute(why) {
+  clearAuthErr();
+  authPurpose = why;
+  authMode = 'phone';
+  if ($('pw-signin-input')) $('pw-signin-input').value = '';
+  $('otp-hint').textContent = '';
+  paintAuthStep();
+}
+
+// SIGN-IN ONLY (the link is hidden on sign-up): "Forgot your password?" into
+// the code route, and the same link reads "Sign in with your password instead"
+// to come back.
 if ($('pw-link')) $('pw-link').onclick = (e) => {
   e.preventDefault();
-  const toPw = authMode !== 'password';
-  authMode = toPw ? 'password' : 'phone';
-  document.documentElement.classList.toggle('pw-reset', !toPw); // styles.css: un-hides the reset fields
-  if ($('pw-opt')) $('pw-opt').hidden = toPw;               // the new password, chosen up front as on sign-up
-  $('pw-signin-wrap').hidden = !toPw;
-  if (!toPw) $('pw-signin-input').value = '';
-  if ($('channel-pick')) $('channel-pick').hidden = toPw; // password sign-in sends no code
-  syncChannelGate();
-  $('btn-auth').textContent = toPw ? T('observe.sign-in', 'Sign In') : T('observe.send-code', 'Send Code');
-  $('pw-link').textContent = toPw
-    ? T('observe.forgot-your-password', 'Forgot your password?')
-    : T('observe.sign-in-with-password-instead', 'Sign in with your password instead');
+  if (authMode === 'password') return void startCodeRoute('reset');
+  clearAuthErr();
+  authMode = 'password';
+  authPurpose = 'reset';
   $('otp-hint').textContent = '';
-  paintPasskeySignIn();   // the passkey button belongs to the password step only
+  paintAuthStep();
 };
+
+/* ---------- After the proof: the password step (ONB-03) ----------
+ * THE PHONE IS PROVED — a typed code (/verify), the observer's own WhatsApp
+ * message (/wa-status) or an organisation code (/org-signup). ONE tail for all
+ * three, as native's afterProof(), so the routes cannot drift: the session is
+ * kept at once (the password step needs it), then the step for the purpose
+ * they came with. */
+function adoptProof(body, { org = false } = {}) {
+  localStorage.setItem('hawkeye_token', body.token);
+  clearSignedOutElsewhere();
+  // Register for push NOW. initPush ran once at launch and never again,
+  // so signing in afterwards left this install permanently unregistered —
+  // no token, no server row, and nothing anywhere said so.
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
+  stopResendCooldown();
+  clearPendingCode();
+  callStop(false);
+  proof = { token: body.token, isNew: body.isNew === true, needsUnit: body.needsUnit === true, hasPassword: body.hasPassword, org };
+  clearAuthErr();
+  $('otp-hint').textContent = '';
+  $('auth-input').value = '';
+  // A SIGN-UP ON A NUMBER THAT ALREADY HAS A PASSWORD was not a sign-up
+  // (ONB-04). A phone number IS the identity, so /verify handed back the same
+  // observer with all its history — saying so is the honest outcome, and its
+  // password is left alone. Reached only past the pre-send refusal: the free
+  // WhatsApp route answers every number alike, by design.
+  if (authPurpose === 'signup' && body.isNew === false && body.hasPassword === true) {
+    authMode = 'exists';
+    paintAuthStep();
+    return;
+  }
+  showSetPassword();
+}
+function showSetPassword() {
+  authMode = 'setpw';
+  $('pw-set-input').value = '';
+  $('pw-set-input2').value = '';
+  clearAuthErr();
+  keepPendingPassword();
+  paintAuthStep();
+  try { $('pw-set-input').focus(); } catch { /* not focusable */ }
+}
+/* Typed twice: a typo in a blind field would lock the account out of its own
+   password until another code. Fresh phone proof, so no current password. */
+async function savePassword() {
+  const pw = $('pw-set-input').value;
+  if (pw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-set-input'));
+  if (pw !== $('pw-set-input2').value) return void authErr(T('profile.passwords-do-not-match', 'Passwords do not match.'), $('pw-set-input2'));
+  if (!proof) return void resetAuthPane();
+  const r = await api('/api/observers/set-password', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', authorization: `Bearer ${proof.token}` },
+    body: JSON.stringify({ password: pw }),
+  });
+  if (r.status !== 200) {
+    // Past the proof's 15 minutes the server wants the OLD password — exactly
+    // what a reset does not have.
+    return void authErr(r.body && r.body.error === 'current_password_wrong'
+      ? T('auth.err.code-window-passed', 'That took too long — request a new code and try again.')
+      : explain(r.body), $('pw-set-input'));
+  }
+  await finishProof();
+}
+/* Out of the pane, for the purpose they came in with. */
+async function finishProof() {
+  const p = proof;
+  if (!p) return;
+  clearPendingPassword();
+  // AN ORGANISATION-CODE AGENT LANDS IN THE ROOM THE CODE JOINED (ONB-11). The
+  // server puts them in their issuer's room at sign-up when it has one
+  // (backend routes/groups.js autoJoinOrgRoom), so My Groups — the room, named
+  // — instead of the chooser and then a Home that never mentions it. A room
+  // per area waits for the unit, so the chooser stays for that.
+  if (p.org && !NEXT_DEST && await orgRoomJoined(p.token)) { location.replace('my-groups.html'); return; }
+  resetAuthPane();
+  // A returning sign-in may first be offered a passkey (inline, skippable).
+  offerPasskeyThen(p.isNew === true, () => afterVerified(p.isNew === true || p.needsUnit === true));
+}
+/* Any doubt (offline, an error) says no: the chooser, as before. */
+async function orgRoomJoined(token) {
+  const r = await apiTry('/api/groups', { tries: 1, timeoutMs: 8000, headers: { authorization: `Bearer ${token}` } });
+  return r.status === 200 && !!r.body && Array.isArray(r.body.member) && r.body.member.length > 0;
+}
+/* "Not now — sign out" / "Not your number?": this proof's session ends, on the
+   server too (best effort, as Profile's sign-out). */
+function dropProof() {
+  const tk = proof && proof.token;
+  if (tk) api('/api/observers/sign-out', { method: 'POST', headers: { authorization: `Bearer ${tk}` } }).catch(() => {});
+  try { localStorage.removeItem('hawkeye_token'); } catch { /* storage blocked */ }
+  clearPendingPassword();
+  proof = null;
+}
+if ($('pw-set-alt')) $('pw-set-alt').onclick = (e) => {
+  e.preventDefault();
+  if (!mustSetPw()) return void finishProof();   // "Keep my current password"
+  dropProof();                                   // "Not now — sign out"
+  resetAuthPane();
+};
+/* "Sign in instead" / "Reset it" from sign-up's "already exists" step: over to
+   the sign-in page, the number carried in THIS TAB (never in the address), and
+   the destination with it. */
+const K_CARRY = 'hawkeye_auth_number';
+function goSignIn(reset) {
+  try { sessionStorage.setItem(K_CARRY, pendingPhone); } catch { /* typed again */ }
+  const q = new URLSearchParams({ intent: 'signin' });
+  if (reset) q.set('reset', '1');
+  if (NEXT_DEST) q.set('next', NEXT_DEST);
+  location.assign('observe.html?' + q.toString());
+}
+function takeCarriedNumber() {
+  let n = '';
+  try { n = sessionStorage.getItem(K_CARRY) || ''; sessionStorage.removeItem(K_CARRY); } catch { n = ''; }
+  if (n && $('auth-input') && !$('auth-input').value) $('auth-input').value = n;
+}
+if ($('exists-go')) $('exists-go').onclick = () => {
+  if (proof) return void finishProof();          // after a proof: they are signed in
+  goSignIn(false);
+};
+if ($('exists-reset')) $('exists-reset').onclick = (e) => {
+  e.preventDefault();
+  if (proof) { authPurpose = 'reset'; return void showSetPassword(); }
+  goSignIn(true);
+};
+if ($('exists-back')) $('exists-back').onclick = (e) => {
+  e.preventDefault();
+  // Someone else's number typed by mistake: do not leave that session here.
+  if (proof) dropProof();
+  pendingPhone = '';
+  resetAuthPane({ keepNumber: false });
+  try { $('auth-input').focus(); } catch { /* not focusable */ }
+};
+
+/* ---------- A code in flight survives a reload or a trip away (ONB-15) ----------
+ * Back from Telegram or SMS — or Back and forward again, or a reload — lands
+ * on the code step with the number, not an empty form that would need a second
+ * code. This tab only (sessionStorage), ten minutes, and only on the page it
+ * was sent from (sign-up or sign-in). */
+const K_PENDING = 'hawkeye_auth_code';
+function keepPendingCode(at = Date.now()) {
+  try {
+    sessionStorage.setItem(K_PENDING, JSON.stringify({
+      phone: pendingPhone, channel: pendingChannel, purpose: authPurpose, signin: IS_SIGNIN, at,
+      ref: $('ref-input') ? $('ref-input').value : '',
+    }));
+  } catch { /* a courtesy */ }
+}
+function clearPendingCode() { try { sessionStorage.removeItem(K_PENDING); } catch { /* nothing kept */ } }
+function resumePendingCode() {
+  let v = null;
+  try { v = JSON.parse(sessionStorage.getItem(K_PENDING) || 'null'); } catch { v = null; }
+  if (!v || v.signin !== IS_SIGNIN || !v.phone || !(Date.now() - Number(v.at || 0) < 10 * 60_000)) {
+    clearPendingCode();
+    return false;
+  }
+  authPurpose = v.purpose || authPurpose;
+  if (v.ref && $('ref-input') && !$('ref-input').value) { $('ref-input').value = v.ref; paintCodeKind(); }
+  enterOtpMode(v.phone, v.channel || '', {}, { at: Number(v.at) });
+  return true;
+}
+/* The same for the PASSWORD step: the session is already stored when it shows,
+   so a reload there used to walk straight past it into the app — a new account
+   with no password, whose only way back in is another code. Kept for the
+   server's 15-minute window; the token itself stays where it always is. */
+const K_SETPW = 'hawkeye_auth_setpw';
+function keepPendingPassword() {
+  if (!proof) return;
+  try {
+    sessionStorage.setItem(K_SETPW, JSON.stringify({
+      purpose: authPurpose, signin: IS_SIGNIN, phone: pendingPhone, at: Date.now(),
+      isNew: proof.isNew, needsUnit: proof.needsUnit, hasPassword: proof.hasPassword, org: proof.org,
+    }));
+  } catch { /* a courtesy */ }
+}
+function clearPendingPassword() { try { sessionStorage.removeItem(K_SETPW); } catch { /* nothing kept */ } }
+function resumePasswordStep() {
+  let v = null;
+  try { v = JSON.parse(sessionStorage.getItem(K_SETPW) || 'null'); } catch { v = null; }
+  const token = localStorage.getItem('hawkeye_token');
+  if (!v || !token || v.signin !== IS_SIGNIN || !(Date.now() - Number(v.at || 0) < 15 * 60_000)) {
+    clearPendingPassword();
+    return false;
+  }
+  authPurpose = v.purpose || 'signup';
+  pendingPhone = v.phone || '';
+  proof = { token, isNew: v.isNew === true, needsUnit: v.needsUnit === true, hasPassword: v.hasPassword, org: v.org === true };
+  showSetPassword();
+  show('screen-register');
+  return true;
+}
+
+/* ---------- "Resend code" waits 30 s (ONB-13) ----------
+ * Two quick taps sent two codes — the second invalidating the first, and on
+ * SMS each one paid. Native's cooldown, with its countdown on the link. */
+let resendAt = 0;
+let resendTimer = 0;
+function paintResend() {
+  const a = $('otp-resend');
+  if (!a) return;
+  const left = Math.ceil((resendAt - Date.now()) / 1000);
+  const wait = left > 0;
+  a.textContent = wait ? T('auth.resend-in', 'Resend in {n}s', { n: left }) : T('observe.resend-code', 'Resend Code');
+  a.setAttribute('aria-disabled', String(wait));
+  a.style.opacity = wait ? '.55' : '';
+  a.style.pointerEvents = wait ? 'none' : '';
+  if (!wait && resendTimer) { clearInterval(resendTimer); resendTimer = 0; }
+}
+function startResendCooldown(from = Date.now()) {
+  resendAt = from + 30_000;
+  clearInterval(resendTimer);
+  resendTimer = setInterval(paintResend, 1000);
+  paintResend();
+}
+function stopResendCooldown() {
+  clearInterval(resendTimer);
+  resendTimer = 0;
+  resendAt = 0;
+}
 
 // The delivery channel picked on the form ('telegram' | 'whatsapp'; 'sms' is
 // retired until a sender ID is approved); remembered for "Resend code". Radios
@@ -1036,11 +1402,15 @@ function revealSmsOptionIfEnabled(tries = 2) {
       if (h && h.waInbound === true) WA_INBOUND = true;
       if (h && h.waPaidOtp === true) WA_PAID = true;
       if (h) WA_HEALTH = true;
+      // The free missed-call route (sign-up only): same fail-closed contract.
+      if (h && h.callVerify === true) CALL_VERIFY = true;
       paintWaRoutes();
+      paintCallRoute();
       paintPasskeySignIn();
       if (h && h.smsOtp === true) {
         opt.hidden = false;
         if ($('wa-sms-line')) $('wa-sms-line').hidden = false;
+        fitRoutes();   // a fourth chip: does "(paid)" still fit the line?
         return;
       }
       // A null body means the request completed but said nothing useful; only a
@@ -1102,6 +1472,10 @@ function syncChannelGate() {
   const pick = document.getElementById('channel-pick');
   const need = document.getElementById('channel-need');
   paintResetNudge();
+  // The sign-up chips draw the picked route (observe.html .on): no :has() in
+  // older Lite WebViews, so the class is set here, on every change.
+  if (pick) for (const r of pick.querySelectorAll('input[name="otp-channel"]')) if (r.parentElement) r.parentElement.classList.toggle('on', r.checked);
+  fitRoutes();
   if (!btn) return;
   // No picker on screen (password sign-in sends no code, or an organisation
   // code replaces it) => nothing to gate.
@@ -1114,6 +1488,39 @@ function syncChannelGate() {
   btn.setAttribute('aria-disabled', String(none));
   if (need && !none) need.hidden = true;
 }
+/**
+ * SIGN-UP'S ROUTES ON ONE LINE (owner, 2026-10-04): WhatsApp, Telegram, Call,
+ * SMS. "SMS (paid)" only while all of them still fit one line in this language
+ * at this width; otherwise plain "SMS". Measured, not guessed per language: put
+ * the long label in, and if the visible chips no longer share a top, the short
+ * one. Run with every paint, on resize, and after the language changes.
+ * Sign-in's reset list keeps "SMS (paid)".
+ */
+function fitRoutes() {
+  const pick = $('channel-pick');
+  const sms = document.querySelector('#otp-sms-opt span');
+  if (IS_SIGNIN || !pick || !sms || pick.hidden) return;
+  const tops = () => [...pick.querySelectorAll(':scope > label')]
+    .filter((l) => !l.hidden && l.getBoundingClientRect().width > 0)
+    .map((l) => Math.round(l.getBoundingClientRect().top));
+  const oneLine = () => { const t = tops(); return t.length < 2 || Math.max(...t) - Math.min(...t) <= 4; };
+  if (sms.getAttribute('data-i18n') !== 'auth.sms-paid') keyedText(sms, 'auth.sms-paid', 'SMS (paid)');
+  if ($('otp-sms-opt').hidden || oneLine()) return;
+  keyedText(sms, 'observe.sms', 'SMS');
+}
+window.addEventListener('resize', () => fitRoutes());
+/* A focus ring on a chip only for the KEYBOARD — a tap focuses the radio too,
+   and a ring after every tap reads as a stuck state. */
+document.addEventListener('focusin', (e) => {
+  const r = e.target;
+  if (!r || r.name !== 'otp-channel' || !r.parentElement) return;
+  let kbd = false;
+  try { kbd = r.matches(':focus-visible'); } catch { kbd = false; }
+  r.parentElement.classList.toggle('kbd', kbd);
+});
+document.addEventListener('focusout', (e) => {
+  if (e.target && e.target.name === 'otp-channel' && e.target.parentElement) e.target.parentElement.classList.remove('kbd');
+});
 /* KEYBOARD UP ON A SMALL PHONE (owner, 2026-10-03): when the on-screen keyboard
    shrinks the visible area while a field of the sign-in form has focus, scroll
    just enough that Request OTP sits above the keyboard — never so far that the
@@ -1170,16 +1577,52 @@ function showOtpPhone() {
 // Re-issue the code on a chosen channel — powers both "Resend code" and the
 // "get it on WhatsApp instead" switch shown under a Telegram send.
 async function resendVia(channel) {
+  // Another ROUTE is not a resend: no wait in front of it (native's paidCode),
+  // but the 30 s starts again for "Resend code" (ONB-13).
   pendingChannel = channel;
   $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
+  startResendCooldown();
   try {
-    const { status, body } = await api('/api/observers/register', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone: pendingPhone, channel, lang: chosenLang() }),
-    });
-    if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
+    const { status, body } = await api('/api/observers/register', registerReq(pendingPhone, channel));
+    if (status !== 200) {
+      if (body && body.error === 'account_exists') return void codeRefused(pendingPhone, body);
+      $('otp-hint').textContent = explain(body);
+      return;
+    }
     renderOtpSent(body);
+    keepPendingCode();
   } catch { $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'); }
+}
+/* /register's request. `intent: 'signup'` lets the server refuse a number that
+   already has a password BEFORE a code goes out (ONB-04, as native's
+   requestOtp): a code costs money, and that sign-up has one possible outcome.
+   A reset and the no-password rescue leave it off — they need a code on a
+   registered number. */
+function registerReq(phone, channel) {
+  return {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone, channel, lang: chosenLang(), intent: authPurpose === 'signup' ? 'signup' : undefined }),
+  };
+}
+/* A refused send. "Already registered" is a step of its own (native's
+   'exists'), not a line under the field: it offers the two ways in. */
+function codeRefused(phone, body) {
+  const callRefused = body && body.error === 'call_signup_only';
+  if (body && (body.error === 'account_exists' || callRefused) && authPurpose === 'signup') {
+    waStop(true);
+    callStop(false);   // already spent on the server
+    stopResendCooldown();
+    clearPendingCode();
+    pendingPhone = phone;
+    proof = null;
+    existsVia = callRefused ? 'call' : '';
+    clearAuthErr();
+    authMode = 'exists';
+    paintAuthStep();
+    return;
+  }
+  authErr(explain(body));
 }
 
 // How the code was delivered — shared by the first send and "Resend code".
@@ -1230,174 +1673,160 @@ function renderOtpSent(body) {
 }
 
 /* From a Telegram send to the free WhatsApp route, keeping the number. The
-   sign-in completes by itself when the message lands, so the password (sign-up
-   or reset) is chosen first, exactly as on the first screen. */
+   sign-in completes by itself when the message lands, and the password step
+   follows it (adoptProof) — nothing to choose first any more. */
 async function switchToFreeWa() {
-  const pw = $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (pw.length < 8) {
-    if ($('pw-opt')) $('pw-opt').hidden = false;
-    if ($('pw-opt-input')) $('pw-opt-input').focus();
-    return void authErr(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'), $('pw-opt-input'));
-  }
   try {
-    if (!(await startWaSend(pendingPhone, pw))) authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
+    if (!(await startWaSend(pendingPhone))) authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
   } catch {
     authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
   }
 }
 
 // A code that never arrived or expired is recoverable in place — the server
-// happily re-issues on a fresh /register call for the same number.
-if ($('otp-resend')) $('otp-resend').onclick = async (e) => {
+// happily re-issues on a fresh /register call for the same number. DELEGATED,
+// as is "← Use a different number": a handler on the element itself was lost
+// whenever the link was rebuilt.
+document.addEventListener('click', async (e) => {
+  const a = e.target && e.target.closest && e.target.closest('#otp-resend, #auth-reset');
+  if (!a) return;
   e.preventDefault();
+  if (a.id === 'auth-reset') return void backToNumber();
+  if (Date.now() < resendAt) return;   // the 30 s wait (ONB-13)
   $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
+  startResendCooldown();
   try {
-    const { status, body } = await api('/api/observers/register', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone: pendingPhone, channel: pendingChannel, lang: chosenLang() }),
-    });
-    if (status !== 200) { $('otp-hint').textContent = explain(body); return; }
+    const { status, body } = await api('/api/observers/register', registerReq(pendingPhone, pendingChannel));
+    if (status !== 200) {
+      if (body && body.error === 'account_exists') return void codeRefused(pendingPhone, body);
+      $('otp-hint').textContent = explain(body);
+      return;
+    }
     renderOtpSent(body);
+    keepPendingCode();
   } catch {
     $('otp-hint').textContent = T('observe.network-problem-check-your-connection-and-tap', 'Network problem — check your connection and tap Resend code again.');
   }
-};
+});
 
+/* The one button does the step on screen. Busy across the round trip: no
+   double-sends that self-invalidate codes (a flag, not `disabled`, which the
+   route gate re-enables whenever the pane is painted). */
+let authBusy = false;
 $('btn-auth').onclick = async () => {
-  const input = $('auth-input');
-  const btn = $('btn-auth');
-  if (btn.disabled) return;
-  btn.disabled = true; // busy state — no double-sends that self-invalidate codes
+  if (authBusy) return;
+  authBusy = true;
+  $('btn-auth').disabled = true;
   try {
-
-  if (authMode === 'phone') {
-    const phone = input.value.trim();
-    if (orgCodeTyped()) { await orgSignUp(phone); return; }
-    const channel = pickedChannel();
-    if (!channel) {
-      // Nothing is sent: the prompt shows under the routes.
-      if ($('channel-need')) $('channel-need').hidden = false;
-      return;
-    }
-    if (!inviteFieldOk()) return;
-    // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
-    // the code. Tried whenever paid codes are off too (the server decides: 503
-    // if it cannot receive) — a server that sends paid codes and cannot
-    // receive drops through to the paid code below, as before; one that sends
-    // neither says so, and nothing is sent.
-    if (channel === 'whatsapp' && (WA_INBOUND || !WA_PAID)) {
-      const pw = $('pw-opt-input') ? $('pw-opt-input').value : '';
-      if ($('pw-opt') && $('pw-opt').hidden) {
-        // Forgotten-password route: the new password is chosen BEFORE the
-        // sign-in, because the sign-in completes by itself when the message lands.
-        $('pw-opt').hidden = false;
-        $('pw-opt-input').focus();
-        return void authErr(T('auth.wa-password-first', 'First choose a password (at least 8 characters) in the box above, then continue.'), $('pw-opt-input'));
-      }
-      if (pw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
-      if (await startWaSend(phone, pw)) return;
-      if (!WA_PAID) return void authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
-    }
-    const { status, body } = await api('/api/observers/register', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone, channel, lang: chosenLang() }),
-    });
-    if (status !== 200) return void authErr(explain(body));
-    enterOtpMode(phone, channel, body);
-    return;
-  }
-
-  // A password is REQUIRED whenever we finish via OTP — a sign-up OR a forgotten-
-  // password reset. Validate BEFORE burning the OTP attempt. Password sign-in
-  // (authMode 'password') sets nothing; it uses the existing password.
-  const settingPw = authMode !== 'password';
-  const newPw = settingPw && $('pw-opt-input') ? $('pw-opt-input').value : '';
-  if (settingPw && newPw.length < 8) return void authErr(T('auth.password-too-short', 'Your password must be at least 8 characters.'), $('pw-opt-input'));
-  if (authMode !== 'password' && !inviteFieldOk()) return;
-
-  if (authMode === 'password') {
-    if (!input.value.trim()) return void authErr(T('auth.enter-your-phone-number', 'Enter your phone number.'));
-    if (!$('pw-signin-input').value) return void authErr(T('auth.enter-your-password', 'Enter your password.'), $('pw-signin-input'));
-  }
-
-  const pair = await ensureKeys();
-  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
-  const endpoint = authMode === 'password' ? '/api/observers/login' : '/api/observers/verify';
-  /* WHO BROUGHT THEM. Sent on every sign-in attempt and used by the server only
-     when the account is genuinely NEW — attribution on a returning sign-in would
-     let anyone claim an existing observer by routing them through a link. Absent
-     is fine and never blocks the request. On sign-up it is the invite field. */
-  const referralCode = referralForVerify();
-  const payload = authMode === 'password'
-    ? { phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk, referralCode }
-    : { phone: pendingPhone, otp: input.value.trim(), publicKeyJwk, referralCode };
-  const { status, body } = await api(endpoint, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (status !== 200) return void authErr(authMode === 'password' ? explainLogin(body) : explain(body));
-  localStorage.setItem('hawkeye_token', body.token);
-  clearSignedOutElsewhere();
-  // Register for push NOW. initPush ran once at launch and never again,
-  // so signing in afterwards left this install permanently unregistered —
-  // no token, no server row, and nothing anywhere said so.
-  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
-  if (settingPw) {
-    const r = await api('/api/observers/set-password', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
-      body: JSON.stringify({ password: newPw }),
-    });
-    // Awaited: afterVerified() below navigates, and would take the notice with it.
-    if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
-  }
-  resetAuthPane();
-  // /login has no isNew, so a password sign-in can never be taken for a sign-up.
-  // A returning sign-in may first be offered a passkey (inline, skippable).
-  offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
-
+    if (authMode === 'phone') await sendCode();
+    else if (authMode === 'otp') await verifyCode();
+    else if (authMode === 'password') await passwordSignIn();
+    else if (authMode === 'setpw') await savePassword();
   } catch {
     authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.'));
   } finally {
+    authBusy = false;
     $('btn-auth').disabled = false;
   }
 };
 
-$('auth-reset').onclick = (e) => {
-  e.preventDefault();
+/* Step 1 — the number and the route, or an organisation code that replaces the
+   code. No password here any more (ONB-03): it comes after the proof. */
+async function sendCode() {
+  const phone = $('auth-input').value.trim();
+  if (orgCodeTyped()) { await orgSignUp(phone); return; }
+  const channel = pickedChannel();
+  if (!channel) {
+    // Nothing is sent: the prompt shows under the routes.
+    if ($('channel-need')) $('channel-need').hidden = false;
+    return;
+  }
+  if (!inviteFieldOk()) return;
+  // MISSED CALL, FREE (sign-up only): nothing is sent, and nothing falls back
+  // to a paid route — a server that cannot take calls says so (startCallSend).
+  if (channel === 'call') {
+    if (!callRouteOn()) return void authErr(T('auth.call-unavailable', 'Missed-call sign-up is not available right now. Choose Telegram or WhatsApp instead.'));
+    return void await startCallSend(phone);
+  }
+  // WHATSAPP, FREE: when the server runs it in reverse, the observer sends US
+  // the code. Tried whenever paid codes are off too (the server decides: 503
+  // if it cannot receive) — a server that sends paid codes and cannot
+  // receive drops through to the paid code below, as before; one that sends
+  // neither says so, and nothing is sent. THE PROOF FIRST, THEN THE PASSWORD,
+  // as on every route: the sign-in completes when the message lands and the
+  // password step follows it (waFinish -> adoptProof), as native's does.
+  if (channel === 'whatsapp' && (WA_INBOUND || !WA_PAID)) {
+    if (await startWaSend(phone)) return;
+    if (!WA_PAID) return void authErr(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
+  }
+  const { status, body } = await api('/api/observers/register', registerReq(phone, channel));
+  if (status !== 200) return void codeRefused(phone, body);
+  enterOtpMode(phone, channel, body);
+}
+
+/* Step 2 — the code. The invite field was checked before the code went out
+   (and is off screen now); it rides along as the referral. */
+async function verifyCode() {
+  const pair = await ensureKeys();
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+  /* WHO BROUGHT THEM. Sent on every sign-in attempt and used by the server only
+     when the account is genuinely NEW — attribution on a returning sign-in would
+     let anyone claim an existing observer by routing them through a link. Absent
+     is fine and never blocks the request. On sign-up it is the invite field. */
+  const { status, body } = await api('/api/observers/verify', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone: pendingPhone, otp: $('auth-input').value.trim(), publicKeyJwk, referralCode: referralForVerify() }),
+  });
+  if (status !== 200) return void authErr(explain(body));
+  adoptProof(body);
+}
+
+/* Sign-in with the password the account already has. */
+async function passwordSignIn() {
+  const input = $('auth-input');
+  if (!input.value.trim()) return void authErr(T('auth.enter-your-phone-number', 'Enter your phone number.'));
+  if (!$('pw-signin-input').value) return void authErr(T('auth.enter-your-password', 'Enter your password.'), $('pw-signin-input'));
+  const pair = await ensureKeys();
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+  const { status, body } = await api('/api/observers/login', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone: input.value.trim(), password: $('pw-signin-input').value, publicKeyJwk, referralCode: referralForVerify() }),
+  });
+  if (status !== 200) {
+    // AN ACCOUNT FROM BEFORE PASSWORDS (ONB-12): straight into the code route
+    // for it, the number kept — as native does — instead of a sentence telling
+    // the reader to go and find that route.
+    if (body && body.error === 'password_login_unavailable') return void startCodeRoute('no-password');
+    return void authErr(explainLogin(body));
+  }
+  localStorage.setItem('hawkeye_token', body.token);
+  clearSignedOutElsewhere();
+  // Register for push NOW (see adoptProof).
+  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
   resetAuthPane();
-};
+  // /login has no isNew, so a password sign-in can never be taken for a sign-up.
+  // A returning sign-in may first be offered a passkey (inline, skippable).
+  offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
+}
 
 /* The pane flips to code entry once a code has gone out: the same input now
-   takes the code, and the links that lead elsewhere step aside. Shared by
-   "Request OTP" and the WhatsApp-reverse fallbacks below. */
-function enterOtpMode(phone, channel, body) {
+   takes the code (paintAuthStep moves its label and the links). Shared by
+   "Send Code", the WhatsApp-reverse fallbacks and a resumed code (`at` = when
+   that code was sent). */
+function enterOtpMode(phone, channel, body, { at } = {}) {
   const input = $('auth-input');
   pendingPhone = phone;
   pendingChannel = channel;
   authMode = 'otp';
   input.value = '';
-  input.placeholder = T('observe.enter-otp', 'Enter OTP');
-  input.inputMode = 'numeric';
-  // The LABEL has to move with the field. It kept saying "Nigerian Mobile
-  // Number" over an input that now wants a code, which is the one thing on
-  // this screen the observer reads before typing.
-  if ($('auth-input-label')) $('auth-input-label').textContent = T('observe.enter-otp', 'Enter OTP');
-  $('btn-auth').textContent = T('observe.verify-otp', 'Verify OTP');
-  $('auth-reset').hidden = false;
-  if ($('otp-resend')) $('otp-resend').hidden = false;
-  // A code is in flight — every "go somewhere else to sign in" link is noise
-  // now. The create-a-password option stays (it applies on verify).
-  if ($('pw-link')) $('pw-link').hidden = true;
-  if ($('signin-line')) $('signin-line').hidden = true;
-  if ($('signup-line')) $('signup-line').hidden = true;
-  if ($('pw-opt')) $('pw-opt').hidden = false;
-  if ($('channel-pick')) $('channel-pick').hidden = true;
-  paintPasskeySignIn();
+  clearAuthErr();
+  startResendCooldown(at || Date.now());
+  keepPendingCode(at || Date.now());
+  paintAuthStep();
   renderOtpSent(body);
+  try { input.focus(); } catch { /* not focusable */ }
 }
 
 /* ---------- WhatsApp, free: "send us the code" ----------
@@ -1411,16 +1840,6 @@ function enterOtpMode(phone, channel, body) {
  * into view (the observer returning from WhatsApp). One poll in flight at a
  * time. SMS (when the server sends it) stays one tap away, and a paid WhatsApp
  * code only while /api/health says waPaidOtp (paintWaRoutes). */
-function showWaPane(on) {
-  if ($('wa-send')) $('wa-send').hidden = !on;
-  for (const id of ['auth-input', 'auth-input-label', 'btn-auth']) if ($(id)) $(id).hidden = on;
-  if (on) {
-    for (const id of ['channel-pick', 'pw-opt', 'ref-opt', 'otp-resend', 'pw-link', 'signin-line', 'signup-line']) if ($(id)) $(id).hidden = true;
-    if ($('otp-hint')) $('otp-hint').textContent = '';
-    if ($('auth-reset')) $('auth-reset').hidden = false;
-  }
-  paintPasskeySignIn();
-}
 /** The live line under the button; `spin` shows the small spinner (waiting, verified). */
 function waStatus(text, spin = false) {
   const line = $('wa-status-text') || $('wa-status');
@@ -1439,7 +1858,7 @@ function waStop(cancelOnServer) {
   wa = null;
 }
 /** Start (or restart) the free WhatsApp route. False = not available: send the paid code instead. */
-async function startWaSend(phone, newPw) {
+async function startWaSend(phone) {
   waStop(true);
   $('otp-hint').textContent = T('auth.wa-starting', 'Getting your code…');
   const pair = await ensureKeys();
@@ -1461,8 +1880,11 @@ async function startWaSend(phone, newPw) {
   pendingPhone = phone;
   pendingChannel = 'whatsapp';
   authMode = 'wa';
+  stopResendCooldown();
+  clearPendingCode();   // a poll token cannot outlive this page; a reload starts again
+  clearAuthErr();
   wa = {
-    pollToken: body.pollToken, code: body.code, link: body.waLink, newPw, gen: ++waGen,
+    pollToken: body.pollToken, code: body.code, link: body.waLink, gen: ++waGen,
     deadline: Date.now() + (Number(body.expiresInS) || 600) * 1000,
     delay: Number(body.pollAfterMs) || 2000, timer: 0, busy: false, fails: 0,
   };
@@ -1475,8 +1897,9 @@ async function startWaSend(phone, newPw) {
   $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: body.waNumber });
   if ($('wa-again-line')) $('wa-again-line').hidden = true;
   if ($('wa-open')) $('wa-open').hidden = false;
+  if ($('otp-hint')) $('otp-hint').textContent = '';
   waStatus(WA_WAITING(), true);
-  showWaPane(true);
+  paintAuthStep();
   waSchedule(wa.delay);
   return true;
 }
@@ -1525,42 +1948,23 @@ function waExpired() {
   if ($('wa-again-line')) $('wa-again-line').hidden = false;
 }
 async function waFinish(body) {
-  const newPw = wa && wa.newPw;
   waStop(false);
   waStatus(T('auth.wa-verified', 'Verified — signing you in…'), true);
-  localStorage.setItem('hawkeye_token', body.token);
-  clearSignedOutElsewhere();
-  try { window.HAWKEYE && window.HAWKEYE.initPush && window.HAWKEYE.initPush().catch(() => {}); } catch {}
-  // Every phone-proof sign-in on this page ends with a password (sign-up or
-  // reset); it was chosen before the code went out. The WhatsApp proof is
-  // fresh phone proof, so no current password is needed.
-  if (newPw) {
-    const r = await api('/api/observers/set-password', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json', authorization: `Bearer ${body.token}` },
-      body: JSON.stringify({ password: newPw }),
-    });
-    if (r.status !== 200) await hkAlert(T('auth.password-save-failed', 'Signed in, but saving your password failed ({v0}). Set one on My Profile so you can sign in with it next time.', { v0: explain(r.body) }));
-  }
-  resetAuthPane();
-  offerPasskeyThen(body.isNew === true, () => afterVerified(body.isNew === true || body.needsUnit === true));
+  // The WhatsApp message is fresh phone proof: the same tail as a typed code —
+  // the password step next (ONB-03), with no current password needed.
+  adoptProof(body);
 }
 /* Leave the free route for a code sent TO the observer (paid). */
 async function waFallback(channel) {
   const phone = pendingPhone;
   waStop(true);
-  showWaPane(false);
-  if (!IS_SIGNIN && $('ref-opt')) $('ref-opt').hidden = false;
   $('otp-hint').textContent = T('observe.sending-a-fresh-code', 'Sending a fresh code…');
   try {
-    const { status, body } = await api('/api/observers/register', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phone, channel, lang: chosenLang() }),
-    });
+    const { status, body } = await api('/api/observers/register', registerReq(phone, channel));
     if (status !== 200) {
       $('otp-hint').textContent = '';
-      resetAuthPane();
-      return void authErr(explain(body));
+      backToNumber();
+      return void codeRefused(phone, body);
     }
     enterOtpMode(phone, channel, body);
   } catch {
@@ -1631,8 +2035,7 @@ if ($('wa-copy')) $('wa-copy').onclick = async (e) => {
   } catch { /* the code is selectable on screen */ }
 };
 if ($('wa-again')) $('wa-again').onclick = () => {
-  const pw = wa && wa.newPw;
-  startWaSend(pendingPhone, pw || ($('pw-opt-input') ? $('pw-opt-input').value : '')).then((started) => {
+  startWaSend(pendingPhone).then((started) => {
     if (started) return;
     if (WA_PAID) waFallback('whatsapp');
     else waStatus(T('auth.wa-unavailable', 'WhatsApp sign-in is not available right now. Use Telegram instead.'));
@@ -1650,6 +2053,176 @@ function waWake() {
 document.addEventListener('visibilitychange', waWake);
 window.addEventListener('focus', waWake);
 window.addEventListener('pageshow', waWake);
+
+/* ---------- Missed call, free: "give us a missed call" (SIGN-UP ONLY) ----------
+ * The server shows our number; the observer rings it FROM the phone being
+ * verified; our gateway phone rejects the call (free to the caller) and the
+ * server marks that number proved; this page collects the session with a poll
+ * token only it holds. backend services/callVerify.js has the rules.
+ *
+ * SIGN-UP ONLY, because caller ID can be forged: a call never enters an
+ * existing account. /call-start answers every number alike (the enumeration
+ * rule); /call-status says 409 call_signup_only for a number that has an
+ * account, only AFTER a call from it — and issues nothing. The session a call
+ * makes is phone proof for this new account's FIRST password alone, so the
+ * password step follows exactly as on the other routes (adoptProof).
+ *
+ * Offered only while /api/health says callVerify, only on the sign-up page's
+ * number step, and never beside an ORG code (paintCallRoute). Polling as the
+ * WhatsApp route: after pollAfterMs, then at the server's retryAfterMs, never
+ * past the expiry, at once when the page comes back into view (back from the
+ * dialler), and stopped — with /call-cancel — by every way off the step.
+ * Twin of native sign-in.tsx step 'call-send'. */
+// Declarations, not consts: the pane painter can run before this line has.
+function callRouteOn() { return CALL_VERIFY && !IS_SIGNIN && authPurpose === 'signup' && !orgCodeTyped(); }
+function paintCallRoute() {
+  const opt = $('otp-call-opt');
+  if (!opt) return;
+  const on = callRouteOn();
+  opt.hidden = !on;
+  // The label's inline display outranks the UA's [hidden] (as #otp-wa-opt).
+  opt.style.display = on ? 'flex' : 'none';
+  const radio = opt.querySelector('input');
+  if (!on && radio && radio.checked) radio.checked = false;
+}
+/* A phone dials from here (tel:); a computer is told to dial from the phone. */
+function callDialHere() { return waOnPhone(); }
+function callStop(cancelOnServer) {
+  if (!call) return;
+  clearTimeout(call.timer);
+  clearInterval(call.tick);
+  if (cancelOnServer && call.state !== 'verified') {
+    const pollToken = call.pollToken;
+    api('/api/observers/call-cancel', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pollToken }) }).catch(() => {});
+  }
+  call = null;
+}
+async function startCallSend(phone) {
+  callStop(true);
+  waStop(true);
+  $('otp-hint').textContent = T('auth.call-starting', 'Getting our number…');
+  const pair = await ensureKeys();
+  const publicKeyJwk = await crypto.subtle.exportKey('jwk', pair.publicKey);
+  const { status, body } = await api('/api/observers/call-start', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ phone, publicKeyJwk, intent: 'signup', lang: chosenLang(), referralCode: referralForVerify() }),
+  });
+  $('otp-hint').textContent = '';
+  const usable = status === 200 && body && body.pollToken && /^tel:\+?\d{6,15}$/.test(String(body.telLink || ''));
+  if (status === 503 || (status === 200 && !usable)) {
+    // The server cannot take calls right now: the choice goes, nothing is sent.
+    CALL_VERIFY = false;
+    paintAuthStep();
+    return void authErr(T('auth.call-unavailable', 'Missed-call sign-up is not available right now. Choose Telegram or WhatsApp instead.'));
+  }
+  if (status === 429) return void authErr(T('auth.wa-too-many-free', 'Too many tries for this number. Wait an hour, or use Telegram instead.'));
+  if (status !== 200) return void authErr(explain(body));
+  pendingPhone = phone;
+  pendingChannel = 'call';
+  authMode = 'call';
+  stopResendCooldown();
+  clearPendingCode();   // a poll token cannot outlive this page; a reload starts again
+  clearAuthErr();
+  const now = Date.now();
+  call = {
+    pollToken: body.pollToken, number: body.callNumber, display: body.callNumberDisplay || body.callNumber, tel: body.telLink,
+    deadline: now + (Number(body.expiresInS) || 600) * 1000, timer: 0, tick: 0, busy: false, fails: 0, started: now, state: 'waiting',
+  };
+  call.tick = setInterval(paintCallLive, 1000);
+  paintAuthStep();
+  callSchedule(Number(body.pollAfterMs) || 2000);
+}
+/* The live part of the step: the status line, the countdown, the hint after a
+   minute with nothing, Start again once it has expired. */
+function paintCallLive() {
+  if (!call || !$('call-send')) return;
+  const left = Math.max(0, Math.ceil((call.deadline - Date.now()) / 1000));
+  if (!left && (call.state === 'waiting' || call.state === 'offline')) { clearTimeout(call.timer); call.state = 'expired'; }
+  const st = call.state;
+  const live = st === 'waiting' || st === 'offline';
+  $('call-status-text').textContent = st === 'verified' ? T('auth.call-verified', 'Number verified')
+    : st === 'expired' ? T('auth.call-expired', 'Time is up. Start again to call once more.')
+      : st === 'offline' ? T('auth.wa-offline', "Can't reach Hawkeye — check your connection. We'll keep checking.")
+        : T('auth.call-waiting', 'Waiting for your call…');
+  if ($('call-spin')) $('call-spin').hidden = st !== 'waiting';
+  // A clear success: ✓ "Number verified", for a moment, before the password.
+  if ($('call-tick')) $('call-tick').hidden = st !== 'verified';
+  $('call-status').style.color = st === 'verified' ? 'var(--green)' : '';
+  $('call-status').style.fontWeight = st === 'verified' ? '700' : '';
+  $('call-ends').hidden = !live;
+  $('call-sim').hidden = !live;
+  // Nothing to leave for once the number is proved: the password is next.
+  if ($('auth-reset')) $('auth-reset').hidden = st === 'verified';
+  $('call-left').textContent = live
+    ? T('auth.call-expires-in', 'Expires in {time}', { time: `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}` })
+    : '';
+  $('call-slow').hidden = !(live && Date.now() - call.started >= 60_000);
+  $('call-again-line').hidden = st !== 'expired';
+  $('call-open').hidden = !live || !callDialHere();
+  $('call-desk').hidden = !live || callDialHere();
+  if (st === 'expired') clearInterval(call.tick);
+}
+function callSchedule(ms) {
+  if (!call) return;
+  clearTimeout(call.timer);
+  const left = call.deadline - Date.now();
+  call.timer = setTimeout(callPoll, Math.max(0, Math.min(ms, left + 250)));
+}
+async function callPoll() {
+  if (!call || call.busy || call.state === 'expired' || call.state === 'verified') return;
+  const mine = call;
+  if (Date.now() > mine.deadline) return void paintCallLive();
+  mine.busy = true;
+  let r = null;
+  try {
+    r = await api('/api/observers/call-status', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ pollToken: mine.pollToken, phone: pendingPhone }),
+    });
+  } catch { r = null; }
+  mine.busy = false;
+  if (call !== mine) return;                     // left or restarted meanwhile
+  if (!r || r.status === 0 || r.status === 429 || r.status >= 500) {
+    mine.fails += 1;
+    if (mine.fails >= 2) { mine.state = 'offline'; paintCallLive(); }
+    return callSchedule(Math.min(10000, 3000 * mine.fails));
+  }
+  mine.fails = 0;
+  if (r.status === 410) { mine.state = 'expired'; clearTimeout(mine.timer); return void paintCallLive(); }
+  // A number that already has an account: nothing was issued. The same two
+  // ways in as a refused code (ONB-04), in the call's own words.
+  if (r.status === 409 && r.body && r.body.error === 'call_signup_only') return void codeRefused(pendingPhone, r.body);
+  if (r.status === 200 && r.body && r.body.status === 'verified' && r.body.token) {
+    // ✓ "Number verified" for about a second — the reader has just come back
+    // from a call that dropped at once, and needs to see it worked — then the
+    // password step (adoptProof keeps the session).
+    mine.state = 'verified';
+    clearTimeout(mine.timer);
+    clearInterval(mine.tick);
+    paintCallLive();
+    await new Promise((res) => setTimeout(res, 1000));
+    if (call !== mine) return;
+    return void adoptProof(r.body);
+  }
+  if (mine.state === 'offline') { mine.state = 'waiting'; paintCallLive(); }
+  callSchedule(Number(r.body && r.body.retryAfterMs) || 3000);
+}
+if ($('call-open')) $('call-open').onclick = () => {
+  if (!call || !/^tel:\+?\d{6,15}$/.test(call.tel)) return;
+  location.href = call.tel;   // the dialler; this page keeps waiting underneath
+};
+if ($('call-again')) $('call-again').onclick = () => {
+  startCallSend(pendingPhone).catch(() => authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.')));
+};
+// Back from the dialler: ask at once instead of waiting out the interval.
+function callWake() {
+  if (!call || document.hidden || call.state === 'expired' || call.state === 'verified') return;
+  clearTimeout(call.timer);
+  callPoll();
+}
+document.addEventListener('visibilitychange', callWake);
+window.addEventListener('focus', callWake);
+window.addEventListener('pageshow', callWake);
 
 /* ---------- Passkeys (passkey.js) ----------
  * Sign-in: one ordinary button on the password step, only where a passkey can
@@ -1687,7 +2260,9 @@ function paintResetNudge() {
   const el = $('reset-nudge');
   if (!el) return;
   const until = Date.parse('2027-01-09T00:00:00+01:00');
-  el.hidden = !(IS_SIGNIN && authMode !== 'password' && Date.now() < until);
+  // On the number step of a reset only (native: purpose === 'reset') — not over
+  // the code, the password, or the no-password rescue, which is no reset.
+  el.hidden = !(IS_SIGNIN && authMode === 'phone' && authPurpose === 'reset' && Date.now() < until);
 }
 if ($('pk-signin')) $('pk-signin').onclick = async () => {
   const btn = $('pk-signin');
@@ -1876,8 +2451,13 @@ $('btn-locate').onclick = async () => {
     // /units with no bundle fallback and genuinely cannot work offline. Same
     // sentence there, different and stronger reason. Closing that gap is the
     // post-election "native browse offline" item.
-    $('locate-status').textContent =
-      T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.');
+    // OFFLINE, SAY SO (flow walkthrough REP-OFF-02): near me needs the server,
+    // and the saved unit above, search and the register all answer from the
+    // phone — "search by name" alone sent an observer with no signal to a box
+    // that, until this batch, always failed.
+    $('locate-status').textContent = navigator.onLine
+      ? T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')
+      : T('observe.near-me-offline', 'No connection for near me. Search or browse the register below.');
     $('browse-block').open = true;
     $('btn-locate').textContent = T('observe.try-searching-near-me-again', 'Try Searching Near Me Again');
     return;
@@ -2009,10 +2589,46 @@ function registerFromPacks(path) {
   return null;
 }
 
+/**
+ * The state pack, loaded into memory if this phone holds it (or can fetch it).
+ * Resolves the 2-digit code once loaded, else null. Never throws.
+ */
+async function loadStatePack(stateName) {
+  const st = regStore();
+  if (!st || !stateName) return null;
+  await loadRegisterIndex();
+  const code = st.stateCode(stateName);
+  if (!code) return null;
+  if (!st.isLoaded(code)) await st.loadState(code).catch(() => null);
+  return st.isLoaded(code) ? code : null;
+}
+
 async function refApi(path) {
   await loadRegisterIndex();
   const local = registerFromPacks(path);
   if (refUsable(local)) return { status: 200, body: local };
+  /* A WARD'S UNITS NEED THE STATE PACK, AND IT MAY ALREADY BE ON THE PHONE
+     (flow walkthrough REP-OFF-02). registerFromPacks() only kicks the load off
+     and answers null, so offline the first ward pick went to a dead network and
+     listed 0 units — and only a SECOND pick, after IndexedDB had answered,
+     listed 62. Wait for the pack when there is no network to wait for instead
+     (IndexedDB is milliseconds); online, the server still answers first. */
+  const url = new URL(path, location.origin);
+  if (url.pathname.endsWith('/units')) {
+    const state = url.searchParams.get('state');
+    if (!navigator.onLine && await loadStatePack(state)) {
+      const held = registerFromPacks(path);
+      if (refUsable(held)) return { status: 200, body: held };
+    }
+    const r = await apiTry(path);
+    if (!r.error) return r;
+    // navigator.onLine lies on a dead cell; a failed request is the real signal.
+    if (await loadStatePack(state)) {
+      const held = registerFromPacks(path);
+      if (refUsable(held)) return { status: 200, body: held };
+    }
+    return r;
+  }
   return apiTry(path);
 }
 
@@ -2025,23 +2641,50 @@ $('browse-block').addEventListener('toggle', async () => {
 });
 $('sel-state').onchange = async () => {
   $('register-units').innerHTML = '';
-  fillSelect($('sel-ward'), [], '— select —');
+  fillSelect($('sel-ward'), [], T('common.select', '— select —'));
+  // The ward step needs this state's unit list (~32 KB): start it now, while
+  // the observer is still choosing an LGA, so it is on the phone by then.
+  void loadStatePack($('sel-state').value);
   const { body } = await refApi(`/api/register/lgas?state=${encodeURIComponent($('sel-state').value)}`);
-  fillSelect($('sel-lga'), body, '— select LGA —');
+  fillSelect($('sel-lga'), body, T('common.select-lga', '— select LGA —'));
 };
 $('sel-lga').onchange = async () => {
   $('register-units').innerHTML = '';
   const { body } = await refApi(
     `/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`,
   );
-  fillSelect($('sel-ward'), body, '— select ward —');
+  fillSelect($('sel-ward'), body, T('common.select-ward', '— select ward —'));
 };
 $('sel-ward').onchange = async () => {
-  const { body } = await refApi(
+  const { body, error, status } = await refApi(
     `/api/register/units?state=${encodeURIComponent($('sel-state').value)}` +
       `&lga=${encodeURIComponent($('sel-lga').value)}&ward=${encodeURIComponent($('sel-ward').value)}`,
   );
   $('register-units').innerHTML = '';
+  /* AN EMPTY WARD SAYS WHY. Offline with no unit list for this state, the ward
+     used to list nothing at all — 0 units, no message — which reads as "my unit
+     is not in the register". */
+  if (!(body && body.units && body.units.length) && $('sel-ward').value) {
+    const p = document.createElement('p');
+    p.className = 'hint';
+    p.textContent = error
+      ? T('observe.unit-list-not-on-phone', 'Unit list not on this phone yet. Connect once to download it, then this works offline.')
+      : status !== 200
+        ? T('observe.could-not-load-units', 'Could not load this ward’s units.')
+        : T('observe.no-units-in-this-ward', 'No units are listed for this ward.');
+    $('register-units').appendChild(p);
+    // Re-picking the same ward fires no `change`, so the retry is a button.
+    if (error || status !== 200) {
+      const again = document.createElement('button');
+      again.type = 'button';
+      again.className = 'secondary';
+      again.style.cssText = 'width:auto;margin:4px 0 0';
+      again.textContent = T('common.try-again', 'Try again');
+      again.onclick = () => $('sel-ward').onchange();
+      $('register-units').appendChild(again);
+    }
+    return;
+  }
   for (const u of body.units || []) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';
@@ -2240,14 +2883,41 @@ function fillContests() {
   // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
   const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
   if (window.HAWKEYE_RACES) {
-    window.HAWKEYE_RACES.fill(sel, applicableContests, { placeholder: '— Select election —' });
+    window.HAWKEYE_RACES.fill(sel, applicableContests, { placeholder: T('race.select-election', '— select election —') });
   } else {
-    sel.innerHTML = '<option value="">— Select election —</option>'
+    sel.innerHTML = `<option value="">${T('race.select-election', '— select election —')}</option>`
       + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
   }
+  markClosedRaces(sel, applicableContests);
   applyRaceProposal(sel);
   updateScopeNotice();
   updateSubmitState();
+}
+
+/**
+ * A RACE THAT IS NOT OPEN IS NOT AN OPTION (flow walkthrough REP-RES-03).
+ *
+ * HAWKEYE_RACES.fill() makes every CONFIGURED contest a normal option, open or
+ * not. On election day Governorship and State Assembly (opening weeks later)
+ * sat in the list exactly like the open races; choosing one folded step 3 at
+ * once, so the "opens when polls open" note under it was never seen, and the
+ * refusal came only at Sign & submit — after both photos and a full tally.
+ * Native's picker marks them "Opens 6 Feb" and never lets them through; so
+ * does this now, before the work. The submit-time refusal stays as the floor.
+ */
+function markClosedRaces(sel, list) {
+  if (!sel) return;
+  const by = new Map((list || []).map((c) => [c.code, c]));
+  for (const o of sel.options) {
+    const c = by.get(o.value);
+    if (!c || c.open !== false || o.disabled) continue;
+    const at = c.opensAt || (c.date ? `${c.date}T00:00:00` : null);
+    const d = at ? new Date(at) : null;
+    const when = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
+    o.disabled = true;
+    o.textContent = `${o.textContent} — ${when ? T('results.opens-on', 'Opens {v0}', { v0: when }) : T('race.not-open-yet', 'not open yet')}`;
+    if (sel.value === o.value) sel.value = '';
+  }
 }
 
 /**
@@ -2289,11 +2959,263 @@ function bindUnit(u) {
   $('tier-notice').hidden = tier === 'verified';
   $('tier-notice').textContent =
     tier === 'crowd'
-      ? '◌ This unit\'s location is crowd-confirmed, not yet officially verified.'
-      : '⚠ This unit has no verified location. Your GPS position will be recorded with your report, and the result stays marked "location unverified" until independent reports from the same spot corroborate it.';
+      ? T('observe.tier-notice-crowd', '◌ This unit\'s location is crowd-confirmed, not yet officially verified.')
+      : T('observe.tier-notice-unverified', '⚠ This unit has no verified location. Your GPS position will be recorded with your report, and the result stays marked "location unverified" until independent reports from the same spot corroborate it.');
   fillContests();
   updateScopeNotice();
   updateSubmitState();
+}
+
+/** The signed-in observer's id (the token's `sub`), or '' — scopes what this
+ *  phone keeps for an account, so another account never reads it. */
+function tokenSub() {
+  try {
+    const p = (localStorage.getItem('hawkeye_token') || '').split('.')[1] || '';
+    return String(JSON.parse(atob(p.replace(/-/g, '+').replace(/_/g, '/'))).sub || '');
+  } catch { return ''; }
+}
+
+/**
+ * THE SAVED UNIT, OFFERED IN STEP 2 — AND ITS STATE'S UNIT LIST FETCHED WHILE
+ * THERE IS SIGNAL (flow walkthrough REP-OFF-02, P1).
+ *
+ * An observer with no signal at their unit took both photos and then could not
+ * get past "Which polling unit?": near me needs the server, search and the
+ * ward list needed a state pack that only an earlier ONLINE browse had ever
+ * fetched, and the unit they had saved as theirs was not offered at all. The
+ * signed report could never reach the outbox that exists for exactly this.
+ *
+ * So, on entering the flow: the saved unit (kept on this phone, per account,
+ * from the last time there was signal) goes at the top of step 2, and its
+ * state's pack (~32 KB) is pulled into IndexedDB now — which is also what
+ * search and the ward list read with no signal. Every unit chosen does the same
+ * for its own state (selectUnit).
+ */
+const K_MY_UNIT = 'hk_my_unit1';
+let savedUnit = null;
+function cachedSavedUnit() {
+  try {
+    const v = JSON.parse(localStorage.getItem(K_MY_UNIT) || 'null');
+    if (v && v.sub === tokenSub() && v.unit && typeof v.unit.pu_code === 'string') return v;
+  } catch { /* unreadable — fetch again */ }
+  // Home and Profile keep the last /api/observers/me (native.js); it names the
+  // saved unit too, so an observer who never opened the report flow online
+  // still gets it offered here.
+  try {
+    const me = window.HAWKEYE && window.HAWKEYE.lastMe && window.HAWKEYE.lastMe();
+    if (me && me.unit && me.unit.pu_code) return { sub: tokenSub(), at: 0, unit: me.unit };
+  } catch { /* no shell helpers on this page */ }
+  return null;
+}
+function paintSavedUnit() {
+  const fold = $('unit-fold');
+  const locate = $('btn-locate');
+  if (!fold || !locate) return;
+  let box = $('pu-saved');
+  const u = savedUnit;
+  if (!u || !u.pu_code) { if (box) box.remove(); return; }
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'pu-saved';
+    box.style.margin = '0 0 12px';
+    locate.parentNode.insertBefore(box, locate);
+  }
+  box.textContent = '';
+  const head = document.createElement('p');
+  head.className = 'hint';
+  head.style.margin = '0 0 6px';
+  head.textContent = T('observe.your-saved-unit', 'Your polling unit');
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'pu-option';
+  const name = document.createElement('strong');
+  name.textContent = `⭐ ${u.name || u.pu_code}`;
+  const sub = document.createElement('small');
+  sub.textContent = [u.pu_code, [u.ward, u.lga].filter(Boolean).join(', ')].filter(Boolean).join(' · ');
+  btn.append(name, document.createElement('br'), sub);
+  btn.onclick = () => selectUnit(u);
+  box.append(head, btn);
+}
+async function loadSavedUnit() {
+  const kept = cachedSavedUnit();
+  savedUnit = kept ? kept.unit : null;
+  paintSavedUnit();
+  const token = localStorage.getItem('hawkeye_token');
+  if (token && navigator.onLine) {
+    const r = await apiTry('/api/observers/my-unit', { tries: 1, timeoutMs: 8000, headers: { authorization: `Bearer ${token}` } });
+    if (r.status === 200 && r.body) {
+      const u = r.body.unit;
+      if (!u || !u.pu_code) {
+        savedUnit = null;
+        try { localStorage.removeItem(K_MY_UNIT); } catch { /* nothing kept */ }
+      } else if (!kept || kept.unit.pu_code !== u.pu_code || Date.now() - (kept.at || 0) > 86400000) {
+        /* The whole register row, once a day: my-unit names the unit, but the
+           race step reads its senatorial district and constituency, and the tier
+           notice its location — the same row search and browse hand selectUnit(). */
+        const full = await apiTry(`/api/register/unit?pu_code=${encodeURIComponent(u.pu_code)}`, { tries: 1, timeoutMs: 8000 });
+        savedUnit = (full.status === 200 && full.body && full.body.unit) || u;
+        try { localStorage.setItem(K_MY_UNIT, JSON.stringify({ sub: tokenSub(), at: Date.now(), unit: savedUnit })); } catch { /* quota */ }
+      }
+      paintSavedUnit();
+    }
+  }
+  if (savedUnit && savedUnit.state) {
+    // Search answers from this state's pack offline from now on, unless the
+    // observer has since picked a unit somewhere else.
+    try {
+      const S = window.puSearch;
+      if (S && S.rememberedState && !S.rememberedState()) S.rememberState(savedUnit.state);
+    } catch { /* search still asks the server */ }
+    await loadStatePack(savedUnit.state);
+    // Known only by the slim my-unit fields (from Home's copy)? The pack holds
+    // the whole row — district and constituency included.
+    const st = regStore();
+    if (st && st.unit && savedUnit.senatorial === undefined) {
+      const row = st.unit(savedUnit.pu_code);
+      if (row) { savedUnit = { ...row, ...savedUnit, senatorial: row.senatorial, federal_constituency: row.federal_constituency }; paintSavedUnit(); }
+    }
+  }
+}
+
+/**
+ * THE REPORT IN PROGRESS SURVIVES A RELOAD (flow walkthrough REP-RES-01/02).
+ *
+ * Everything lived in memory, so one Back, a reload, or Android killing a
+ * backgrounded WebView (low-memory phones do it constantly) threw away both
+ * photos, the unit, the race and every typed count — with nothing asking first.
+ *
+ * Cheap enough to keep instead of warn: two compressed photos are a few
+ * hundred KB, and IndexedDB already holds the signing key and the outbox. The
+ * draft is written after every step (debounced), offered back on the next
+ * entry to the flow for SIX HOURS (past the server's photo window a report is
+ * refused anyway), scoped to the account, and cleared the moment the report is
+ * handed off (accepted or parked) or the observer chooses Start again. Nothing
+ * is signed until Sign & submit, so a draft carries no signature to go stale.
+ *
+ * A browser that cannot store it (private mode) gets the unload warning
+ * instead — beforeunload, the one guard every browser honours.
+ */
+const DRAFT_KEY = 'report-draft';
+const DRAFT_MAX_AGE_MS = 6 * 3600 * 1000;
+let draftTimer = null;
+let draftRestoring = false;
+let draftSaved = false;
+let reportUIReady = Promise.resolve();
+function draftSnapshot() {
+  if (!shots.sheet && !shots.venue) return null;
+  const counts = {};
+  for (const i of document.querySelectorAll('#vote-inputs input[data-party]')) {
+    if (i.value !== '') counts[i.dataset.party] = i.value;
+  }
+  return {
+    v: 1,
+    sub: tokenSub(),
+    savedAt: Date.now(),
+    sheet: shots.sheet,
+    venue: shots.venue,
+    unit: selectedPu,
+    contest: ($('sel-contest') && $('sel-contest').value) || '',
+    counts,
+    verified: !!stepDone[3],
+    serial: ($('sheet-serial') && $('sheet-serial').value) || '',
+  };
+}
+async function saveDraftNow() {
+  if (draftRestoring) return;
+  const snap = draftSnapshot();
+  if (!snap) return;
+  try { await kvSet(DRAFT_KEY, snap); draftSaved = true; } catch { draftSaved = false; }
+}
+function saveDraft() {
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(saveDraftNow, 400);
+}
+function clearDraft() {
+  clearTimeout(draftTimer);
+  draftSaved = false;
+  const card = $('draft-card');
+  if (card) card.remove();
+  kvSet(DRAFT_KEY, null).catch(() => {});
+}
+window.addEventListener('beforeunload', (e) => {
+  if ((shots.sheet || shots.venue) && !draftSaved && $('screen-submit') && !$('screen-submit').hidden) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+async function restoreDraft(d) {
+  draftRestoring = true;
+  try {
+    await reportUIReady; // vote rows and the race list must exist first
+    for (const t of ['sheet', 'venue']) {
+      if (!d[t] || !d[t].blob) continue;
+      shots[t] = d[t];
+      const img = $(`preview-${t}`);
+      img.src = URL.createObjectURL(d[t].blob);
+      img.hidden = false;
+      keyedText($(`btn-cam-${t}`), 'observe.retake-photo', 'Retake photo');
+      if (t === 'sheet') showSheetReference(img.src);
+    }
+    updateSubmitState(); // folds step 1 when both photos are back
+    if (d.unit && d.unit.pu_code) selectUnit(d.unit);
+    const sel = $('sel-contest');
+    const opt = sel && d.contest && [...sel.options].find((o) => o.value === d.contest && !o.disabled);
+    if (opt) {
+      sel.value = d.contest;
+      sel.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    for (const [party, v] of Object.entries(d.counts || {})) {
+      const i = document.querySelector(`#vote-inputs input[data-party="${CSS.escape(party)}"]`);
+      if (i) i.value = v;
+    }
+    if (d.serial && $('sheet-serial')) $('sheet-serial').value = d.serial;
+    if (d.verified && stepDone[2] && $('btn-verify-counts')) $('btn-verify-counts').onclick();
+  } finally {
+    draftRestoring = false;
+  }
+  draftSaved = true;
+}
+async function offerDraft() {
+  let d = null;
+  try { d = await kvGet(DRAFT_KEY); } catch { return; }
+  if (!d) return;
+  if (!(d.sheet || d.venue) || d.sub !== tokenSub() || Date.now() - (d.savedAt || 0) > DRAFT_MAX_AGE_MS) {
+    clearDraft();
+    return;
+  }
+  // A photo taken in the meantime IS starting again.
+  if (shots.sheet || shots.venue || $('draft-card')) return;
+  const card = document.createElement('div');
+  card.id = 'draft-card';
+  card.className = 'card';
+  card.style.cssText = 'border-left:4px solid var(--accent);padding:16px 18px';
+  const title = document.createElement('b');
+  title.style.cssText = 'display:block;margin-bottom:4px';
+  title.textContent = T('observe.draft-title', 'You have an unfinished report');
+  const line = document.createElement('p');
+  line.className = 'hint';
+  line.style.margin = '0';
+  const at = new Date(d.savedAt).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  line.textContent = d.unit && d.unit.name
+    ? T('observe.draft-line-unit', '{unit}, started at {time}. Your photos are still on this phone.', { time: at, unit: d.unit.name })
+    : T('observe.draft-line', 'Started at {time}. Your photos are still on this phone.', { time: at });
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:10px;flex-wrap:wrap;margin-top:12px';
+  const go = document.createElement('button');
+  go.type = 'button';
+  go.style.cssText = 'flex:1;min-width:140px;margin:0';
+  go.textContent = T('observe.draft-continue', 'Continue this report');
+  const fresh = document.createElement('button');
+  fresh.type = 'button';
+  fresh.className = 'secondary';
+  fresh.style.cssText = 'flex:1;min-width:110px;margin:0';
+  fresh.textContent = T('observe.draft-start-again', 'Start again');
+  go.onclick = () => { card.remove(); void restoreDraft(d); };
+  fresh.onclick = () => clearDraft();
+  row.append(go, fresh);
+  card.append(title, line, row);
+  const host = $('checkin-host') || $('photo-fold');
+  host.parentNode.insertBefore(card, host);
 }
 
 /**
@@ -2308,12 +3230,17 @@ function enterReportFlow() {
   // the sign-in screen is a prompt with no context, before the observer has any
   // reason to grant it. This is the first moment it is actually needed.
   startLocationKeeper();
-  void prepareReportUI(); // parties, contests, logos, vote rows — fills in behind
+  reportUIReady = prepareReportUI().catch(() => {}); // parties, contests, logos, vote rows — fills in behind
   /* CHECK IN ON ARRIVAL, before the photos: a roster member with a unit they
      are down for gets the card at the top of the report. Never awaited, never
      scrolled to — the camera card stays where the eye is. */
   checkInOfferedEarly = false;
   void renderCheckIn().then((actionable) => { checkInOfferedEarly = actionable; }).catch(() => {});
+  void loadSavedUnit().catch(() => {});
+  // A Telegram handoff is its own report; never offer an older draft over it.
+  const oldCard = $('draft-card');
+  if (oldCard) oldCard.remove();
+  if (!PREFILL) void offerDraft();
 }
 
 /**
@@ -2428,28 +3355,40 @@ async function doFlowCheckIn(btn) {
     const pos = await getPosition();
     const unit = checkInUnit(myRooms);
     if (!unit) { btn.disabled = false; return say(T('common.something-went-wrong', 'Something went wrong. Try again.')); }
-    const { status, body } = await api('/api/my/check-in', {
-      method: 'POST',
-      /* BOTH headers matter. Without the Bearer this is a 401; without the
-         content-type express.json() never parses the body and the server
-         answers "no fix" to a perfectly good one. api() adds only
-         x-device-id. */
-      headers: {
-        authorization: `Bearer ${localStorage.getItem('hawkeye_token') || ''}`,
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        pu_code: unit.pu_code,
-        lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
-      }),
-    });
+    /* THE REQUEST FAILS ON ITS OWN TERMS (flow walkthrough
+       R-CHECKIN-OFFLINE-BLAMES-GPS). One catch used to cover the fix AND the
+       request, so no signal on election morning read "Could not read your
+       location. Move into the open" — after a perfectly good fix. */
+    let status, body;
+    try {
+      ({ status, body } = await api('/api/my/check-in', {
+        method: 'POST',
+        /* BOTH headers matter. Without the Bearer this is a 401; without the
+           content-type express.json() never parses the body and the server
+           answers "no fix" to a perfectly good one. api() adds only
+           x-device-id. */
+        headers: {
+          authorization: `Bearer ${localStorage.getItem('hawkeye_token') || ''}`,
+          'content-type': 'application/json',
+        },
+        body: JSON.stringify({
+          pu_code: unit.pu_code,
+          lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy,
+        }),
+      }));
+    } catch {
+      btn.disabled = false;
+      return say(T('observe.check-in-offline', 'Could not reach Hawkeye. Check your connection and try again.'));
+    }
     if (status !== 200) {
       btn.disabled = false;
       return say({
         no_rooms: T('observe.check-in-not-member', 'You are not on anybody\u2019s roster.'),
         no_such_unit: T('observe.check-in-no-such-unit', 'That polling unit is not in the register.'),
         no_fix: T('observe.check-in-no-fix', 'Your device did not return a usable location.'),
-      }[body?.error] || T('common.something-went-wrong', 'Something went wrong. Try again.'));
+      }[body?.error] || (status >= 500 || status === 429
+        ? T('observe.check-in-server-busy', 'Hawkeye could not record it just now. Try again in a minute.')
+        : T('common.something-went-wrong', 'Something went wrong. Try again.')));
     }
     /* SAY WHAT WAS RECORDED, not "done". A check-in the location could not
        stand behind is worth less to the coordinator than one it could, and the
@@ -2489,6 +3428,14 @@ function selectUnit(u) {
   // Choosing a unit IS step 2's confirmer: it folds and step 3 opens.
   stepDone[1] = false; // force the transition so the fold/advance fires again
   setStepDone(1, true, `✔ ${u.name}`);
+  /* This unit's state is where the next search and the next ward list happen,
+     so its unit list goes onto the phone now, while there may be signal
+     (REP-OFF-02) — and search remembers it (REP-UNIT-02). */
+  if (u.state) {
+    try { if (window.puSearch && window.puSearch.rememberState) window.puSearch.rememberState(u.state); } catch { /* search asks the server */ }
+    void loadStatePack(u.state);
+  }
+  saveDraft();
   /* Named after the unit is bound, so the card can say where it will check
      them in. Still never AWAITED — a roster lookup must not delay the flow —
      but it now owns where the page lands.
@@ -2720,7 +3667,7 @@ function tessReady() {
 async function webOcrSheet(blob) {
   if (window.HAWKEYE && window.HAWKEYE.native) return; // app shell: ML Kit already handles this
   try {
-    ocrHint('📖 Reading the numbers off your sheet photo… you can keep going — this fills in below when done.');
+    ocrHint(T('observe.ocr-reading', '📖 Reading the numbers off your sheet photo… you can keep going — this fills in below when done.'));
     await tessReady();
     const { data } = await tessWorker.recognize(blob, {}, { text: true, blocks: true });
     const lines = [];
@@ -2734,7 +3681,7 @@ async function webOcrSheet(blob) {
     }
     const text = data.text || '';
     const tokens = text.match(/\d+/g) || [];
-    if (!tokens.length) { ocrHint('📖 Could not read numbers off the photo — enter the counts from your sheet.'); return; }
+    if (!tokens.length) { ocrHint(T('observe.ocr-no-numbers', '📖 Could not read numbers off the photo — enter the counts from your sheet.')); return; }
     // Mirror native.js: park the read on window.HAWKEYE so the exact recognised
     // string can be inspected after the fact on web too, instead of being
     // reconstructed from guesses when the parser misses.
@@ -2743,7 +3690,7 @@ async function webOcrSheet(blob) {
     window.dispatchEvent(new CustomEvent('hawkeye-sheet-ocr', { detail: read }));
   } catch {
     // best-effort — never blocks capture, but don't leave "reading…" up forever
-    try { ocrHint('📖 Could not read the photo here — enter the counts from your sheet.'); } catch { /* no inputs yet */ }
+    try { ocrHint(T('observe.ocr-failed', '📖 Could not read the photo here — enter the counts from your sheet.')); } catch { /* no inputs yet */ }
   }
 }
 
@@ -2887,14 +3834,20 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
     input.classList.add('ocr-filled');
     filled.push(code);
   }
+  // One whole sentence per count, never an English "s" (REP-LANG-01).
   ocrHint(filled.length
-    ? `✨ ${filled.length} count${filled.length === 1 ? '' : 's'} auto-filled from your sheet photo (highlighted) — check each against the sheet and edit anything that's off.`
-    : `📖 Numbers read off your sheet photo (verify yourself): ${d.tokens.slice(0, 30).join(', ')}`);
+    ? (filled.length === 1
+      ? T('observe.ocr-filled-one', '✨ 1 count auto-filled from your sheet photo (highlighted) — check it against the sheet and edit it if it is off.')
+      : T('observe.ocr-filled-n', '✨ {n} counts auto-filled from your sheet photo (highlighted) — check each against the sheet and edit anything that\'s off.', { n: filled.length }))
+    : T('observe.ocr-numbers-read', '📖 Numbers read off your sheet photo (verify yourself): {list}', { list: d.tokens.slice(0, 30).join(', ') }));
+  saveDraft();
 });
 // Editing a highlighted input = the observer verified/corrected it.
 $('vote-inputs').addEventListener('input', (e) => {
   if (e.target && e.target.classList) e.target.classList.remove('ocr-filled');
+  saveDraft();
 });
+if ($('sheet-serial')) $('sheet-serial').addEventListener('input', () => saveDraft());
 // btn-capture / btn-cancel-camera are wired inside capture.js.
 const useNativeCam = () => window.HAWKEYE_CAPTURE.native();
 
@@ -3012,6 +3965,11 @@ async function finalizeShot(target, blob) {
   // Key with the text: the button's markup key is "Take photo", and apply()
   // re-runs on every language change.
   keyedText($(`btn-cam-${target}`), 'observe.retake-photo', 'Retake photo');
+  // A new photo IS starting this report: an older draft is no longer on offer,
+  // and this one is kept from here (see saveDraft).
+  const staleDraft = $('draft-card');
+  if (staleDraft) staleDraft.remove();
+  saveDraft();
   updateSubmitState();
   return true;
 }
@@ -3191,6 +4149,7 @@ $('btn-submit').onclick = async () => {
     try {
       await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob, ...(notBefore ? { notBefore } : {}) });
       keepCopies(); // here, not when the outbox flushes it later
+      clearDraft(); // handed off — the outbox holds it now
     } catch { /* ignore */ }
     shots.sheet = null; shots.venue = null;
     const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
@@ -3292,6 +4251,7 @@ $('btn-submit').onclick = async () => {
   }
 
   keepCopies();
+  clearDraft(); // on the ledger — nothing left to resume
   const r = body.result;
   // KEPT, NOT COUNTED (backend services/deviceClaims.js): another account
   // already reported from this phone this election. The report is on the
@@ -3328,11 +4288,11 @@ $('btn-submit').onclick = async () => {
   $('result-summary').innerHTML = `
     <p><strong>${selectedPu.name}</strong> — ${contestName}</p>
     ${r.scope ? `<p class="hint">${r.scope}</p>` : ''}
-    <p>Status: <strong class="status-${r.status}">${r.status.toUpperCase()}</strong>
-       · Confidence: <strong>${r.confidence}%</strong>
-       (${r.matchingReports} of ${r.totalReports} reports match)</p>
+    <p>${T('observe.result-status-line', 'Status: {status} · Confidence: {pct} ({m} of {n} reports match)', {
+    status: `<strong class="status-${r.status}">${String(r.status).toUpperCase()}</strong>`,
+    pct: `<strong>${r.confidence}%</strong>`, m: r.matchingReports, n: r.totalReports })}</p>
     <p>${locLabel}${venueLabel}</p>
-    ${body.ocr && body.ocr.total ? `<p class="hint">🔎 OCR cross-check: ${body.ocr.matched}/${body.ocr.total} of your counts were read on the sheet photo.</p>` : ''}
+    ${body.ocr && body.ocr.total ? `<p class="hint">${T('observe.ocr-cross-check', '🔎 OCR cross-check: {m}/{n} of your counts were read on the sheet photo.', { m: body.ocr.matched, n: body.ocr.total })}</p>` : ''}
     ${body.photosOnDevice ? `<p class="hint">${T('observe.photos-kept-as-evidence', 'Your photos were kept on this phone as evidence.')}</p>` : ''}
     <ul>${r.votes.filter((v) => v.count > 0).map((v) => `<li>${v.party}: ${v.count}</li>`).join('')}</ul>`;
   $('receipt-wrap').hidden = true;
@@ -3440,6 +4400,7 @@ $('sel-contest').onchange = () => {
   const sel = $('sel-contest');
   const label = sel.options[sel.selectedIndex]?.textContent || '';
   setStepDone(2, Boolean(sel.value), `✔ ${label}`);
+  saveDraft();
 };
 // Counts have no natural confirmer, so this button is it.
 $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
@@ -3458,18 +4419,35 @@ $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
   // Any OCR-proposed value the observer has now looked at is theirs.
   document.querySelectorAll('#vote-inputs input.ocr-filled')
     .forEach((i) => i.classList.remove('ocr-filled'));
-  setStepDone(3, true, `✔ ${n} part${n === 1 ? 'y' : 'ies'} entered`);
+  // One whole phrase per count, never an English "-ies" (REP-LANG-01).
+  setStepDone(3, true, n === 1
+    ? T('observe.one-party-entered', '✔ 1 party entered')
+    : T('collation.parties-entered', '✔ {v0} parties entered', { v0: n }));
   // Submit now DEPENDS on stepDone[3], and setStepDone does not recompute it —
   // without this the button stays disabled for ever, which is a worse bug than
   // the one the gate was added to fix.
   updateSubmitState();
+  saveDraft();
 });
 if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) navigator.serviceWorker.register('sw.js');
 (async () => {
+  /* The first paint puts the pane on this page's first step — or back on the
+     code a reload interrupted (ONB-15), or straight into a reset when the
+     sign-up page's "already exists" step sent the reader here for one. Only
+     ONCE: this runs again after the background resume, and by then the reader
+     may have moved on (tapped "Forgot your password?"). The button is painted
+     here too, from the step (ONB-21): in Hausa it read "Send Code" whenever the
+     bundle had landed before this screen showed. */
+  let firstPaint = true;
   const paintRegister = () => {
     applyIntentCopy();
-    applySignUpMode();
-    applySignInMode();
+    if (firstPaint) {
+      firstPaint = false;
+      if (IS_SIGNIN) applySignInMode();
+      takeCarriedNumber();
+      if (!resumePendingCode() && IS_SIGNIN && QP.get('reset') === '1') startCodeRoute('reset');
+    }
+    paintAuthStep();
     show('screen-register');
     paintElsewhere();
   };
@@ -3477,34 +4455,14 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
      Without this, switching language on this page moves every keyed element in
      the markup and leaves the sign-in title, lede, button and hint in the old
      one. i18n.js dispatches 'hawkeye-lang' immediately after its apply() pass,
-     so re-running the painters here always wins. */
+     so re-running the painter here always wins. It repaints the step the pane
+     is ON — never a mode painter, which reset the sign-in page to its password
+     step mid-code — and touches nothing typed. */
   document.addEventListener('hawkeye-lang', () => {
     if (document.getElementById('screen-register')?.hidden === false) {
       applyIntentCopy();
-      applySignUpMode();
-      applySignInMode();
-      /* The primary button is painted by resetAuthPane(), which this listener
-         must NOT call — it clears the number the reader has already typed. So
-         repaint just the button, from the mode it is already in. */
-      const b = $('btn-auth');
-      if (b) {
-        b.textContent = authMode === 'otp'
-          ? T('observe.verify-otp', 'Verify OTP')
-          : authMode === 'password'
-            ? T('observe.sign-in', 'Sign In')
-            : orgCodeTyped()
-              ? T('auth.org-create-account', 'Create account')
-              : T('observe.send-code', 'Send Code');
-      }
-      // Waiting on a WhatsApp code: the mode painters above re-showed the
-      // sign-up fields, so hide them again and repaint the panel's own lines.
-      if (authMode === 'wa' && wa) {
-        showWaPane(true);
-        $('wa-body').textContent = WA_BODY();
-        if (wa.number) $('wa-number').textContent = T('auth.wa-number', 'Or send the code yourself to {number}.', { number: wa.number });
-        if (wa.deadline) waStatus(WA_WAITING(), true);
-        else waStatus(T('auth.wa-expired', 'This code has expired. Start again for a new one.'));
-      }
+      if (IS_SIGNIN && authMode === 'password') applySignInMode();
+      else paintAuthStep();
       paintElsewhere();
     }
   });
@@ -3512,6 +4470,10 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
   // Expired/corrupt tokens are dropped BEFORE deciding which screen to show —
   // never let a dead session masquerade as signed-in (resume re-mints silently).
   if (!tokenFresh()) {
+    // A dead token still says this device HAD an account: authgate.js sends a
+    // first launch to sign-up and everyone else to sign-in (ONB-05), so keep
+    // that answer once the token itself is gone.
+    try { if (localStorage.getItem('hawkeye_token')) localStorage.setItem('hawkeye_had_account', '1'); } catch { /* a courtesy */ }
     localStorage.removeItem('hawkeye_token');
     // PAINT FIRST, resume in the background.
     //
@@ -3530,7 +4492,13 @@ if ('serviceWorker' in navigator && !(window.HAWKEYE && window.HAWKEYE.native)) 
     paintRegister();
     await Promise.race([tryResume().catch(() => {}), new Promise((r) => setTimeout(r, 4000))]);
   }
+  // A proof that landed while the resume was out (a resumed code typed fast)
+  // has its own next step — the password — and must not be walked past.
+  if (proof) return;
   if (localStorage.getItem('hawkeye_token')) {
+    // Signed in, but the password step was interrupted (a reload, the app
+    // closed): that step first, not the app (ONB-03, ONB-15).
+    if (resumePasswordStep()) return;
     // Already registered — honour the CTA intent instead of re-verifying.
     if (NEXT_DEST) location.href = NEXT_DEST;
     else if (PREFILL) applyPrefill();

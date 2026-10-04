@@ -20,9 +20,30 @@
   'use strict';
 
   /**
+   * EVERY WORD THROUGH THE DICTIONARY, AT THE MOMENT IT IS PAINTED (flow
+   * walkthrough FA-FOLLOW-5). The button and its messages were English
+   * literals, so a Hausa race page showed "🔔 Follow this race" — this file
+   * repainted the translated label race.js had just written. This loads in
+   * <head>, before i18n.js, so nothing is resolved at load: paint() and say()
+   * look words up when they run, and run again on 'hawkeye-lang'.
+   * {name} placeholders are filled after the lookup, in one pass.
+   */
+  function T(k, en, p) {
+    var s = String(window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    return p ? s.replace(/\{(\w+)\}/g, function (m, a) { return a in p ? String(p[a]) : m; }) : s;
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
+  /**
    * How each contest reads in "Follow all ___ races". Short forms on purpose:
    * "House of Representatives" is the contest's formal name and makes a button
-   * that wraps to three lines on a phone.
+   * that wraps to three lines on a phone. The English stays a plain map
+   * (tests/follow_scope_test.mjs reads it against native's); each word is
+   * looked up under its key when it is painted.
    */
   var CONTEST_PLURAL = {
     GOV: 'governorship',
@@ -30,6 +51,7 @@
     REP: 'House of Reps',
     SHA: 'State Assembly',
   };
+  var PLURAL_KEY = { GOV: 'follow.plural-gov', SEN: 'follow.plural-sen', REP: 'follow.plural-rep', SHA: 'follow.plural-sha' };
 
   /**
    * What is being followed, in words. MUST match
@@ -39,9 +61,16 @@
    * empty region there IS the single race, not a shortcut for many.
    */
   function followSubject(contest, scope) {
-    if (scope) return 'this race';
-    if (!contest || contest === 'PRES') return 'this race';
-    return 'all ' + (CONTEST_PLURAL[contest] || contest) + ' races';
+    if (scope) return T('follow.this-race', 'this race');
+    if (!contest || contest === 'PRES') return T('follow.this-race', 'this race');
+    var w = CONTEST_PLURAL[contest];
+    return T('follow.all-races', 'all {v0} races', { v0: w ? T(PLURAL_KEY[contest], w) : contest });
+  }
+
+  /** Sign in, then come back to THIS page (authgate.js reads ?next= the same way). */
+  function signInHref() {
+    var here = (location.pathname.replace(/^\//, '') || 'index.html') + location.search;
+    return 'observe.html?intent=signin&next=' + encodeURIComponent(here);
   }
 
   function token() {
@@ -139,7 +168,6 @@
 
     var followed = null; // the row doing the following, or null
     var busy = false;
-    var subject = followSubject(contest, scope);
 
     /**
      * A BUTTON IS LABELLED WITH WHAT IT DOES, NOT WITH HOW THINGS ARE.
@@ -157,20 +185,42 @@
      * job here.) Twin: native components/follow-race.tsx.
      */
     function paint() {
-      btn.textContent = (followed ? '🔕 Unfollow ' : '🔔 Follow ') + subject;
+      var subject = followSubject(contest, scope);
+      btn.textContent = followed
+        ? '🔕 ' + T('follow.unfollow', 'Unfollow {v0}', { v0: subject })
+        : '🔔 ' + T('follow.follow', 'Follow {v0}', { v0: subject });
       btn.setAttribute('aria-pressed', followed ? 'true' : 'false');
       // Once subscribed this is the only control that can undo it, so it stops
       // being a quiet tertiary link and takes the outlined treatment the rest
       // of the row's secondary actions use.
       btn.classList.toggle('btn-following', !!followed);
     }
-    function say(html) {
+    /* A message is kept as the FUNCTION that writes it, not as its text, so a
+       language change says it again in the new language instead of leaving
+       the old one on a repainted page. */
+    var saying = null;
+    function say(fn) {
+      saying = fn || null;
       if (!msg) return;
-      msg.innerHTML = html || '';
+      var html = saying ? saying() : '';
+      msg.innerHTML = html;
       msg.hidden = !html;
+    }
+    /**
+     * "ALERTS ON · HOW THEY REACH YOU" — the one thing the label cannot say
+     * (FA-FOLLOW-4). "Unfollow this race" proves you follow it; it does not
+     * say where the alerts go, and there are three places (this app's Alerts,
+     * this device's notifications, the Telegram channel). Profile lists them
+     * (#alerts); this line is the way there, shown for as long as you follow.
+     * Native shows the same line under its button (follow-race.tsx).
+     */
+    function alertsOn() {
+      return esc(T('follow.alerts-on', 'Alerts on.')) + ' <a href="profile.html#alerts">'
+        + esc(T('follow.how-they-reach-you', 'How they reach you →')) + '</a>';
     }
 
     paint();
+    document.addEventListener('hawkeye-lang', function () { paint(); say(saying); });
 
     /**
      * A FINISHED RACE IS NOT SOMETHING TO FOLLOW.
@@ -190,7 +240,7 @@
     closedRaces().then(function (list) {
       if (isClosed(list, contest, scope)) {
         btn.hidden = true;
-        say('');
+        say(null);
       }
     });
 
@@ -200,12 +250,19 @@
       if (!subs) return;
       followed = coveredBy(subs, contest, scope);
       paint();
+      if (followed && !btn.hidden) say(alertsOn);
     });
 
     btn.addEventListener('click', function () {
       if (busy) return;
+      // SIGNED OUT: sign in, and come straight back here (?next=). It said
+      // "verify your phone", which is the sign-UP step, to people who already
+      // have an account.
       if (!token()) {
-        say('To follow a race, first <a href="observe.html">verify your phone</a>, then return here.');
+        say(function () {
+          return esc(T('follow.signed-out', 'To follow a race, sign in first.'))
+            + ' <a href="' + esc(signInHref()) + '">' + esc(T('follow.sign-in', 'Sign in →')) + '</a>';
+        });
         return;
       }
       busy = true;
@@ -217,37 +274,57 @@
         headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token() },
         body: JSON.stringify({ contest: contest, state: state }),
       })
-        .then(function (r) { return r ? r.status : 0; })
-        .catch(function () { return 0; })
-        .then(function (status) {
+        .then(function (r) {
+          // The body's `error` code is what tells a dead session (401
+          // unknown_observer) from any other refusal — native.js's rule.
+          return r.json().catch(function () { return null; })
+            .then(function (b) { return { status: r.status, error: b && b.error }; });
+        })
+        .catch(function () { return { status: 0, error: null }; })
+        .then(function (res) {
+          var status = res.status;
           busy = false;
           btn.disabled = false;
-          // 409 = the race was declared while this page was open (or the page
-          // was served from cache after it closed). The control is not broken,
-          // it is obsolete — so it leaves rather than reporting a failure the
-          // reader can do nothing about.
+          /**
+           * 409 = the race was declared while this page was open (or the page
+           * was served from cache after it closed). The control is obsolete, so
+           * it leaves — but SAYS WHY first (FA-FOLLOW-3): a button vanishing
+           * under your thumb with no word reads as a fault.
+           */
           if (status === 409) {
             btn.hidden = true;
-            say('');
-            return;
-          }
-          if (!(status >= 200 && status < 300)) {
-            say('Could not update following — make sure your phone is verified.');
+            say(function () { return esc(T('follow.declared', 'This race has been declared — there is nothing more to follow.')); });
             return;
           }
           /**
-           * NO CONFIRMATION LINE. The button's own label is the confirmation:
-           * it now reads "Unfollow this race", which can only be true if you are
-           * following it. A paragraph repeating that, plus a list of the
-           * channels it might arrive on, was three lines of text under a control
-           * whose new label said the same thing in two words.
-           *
-           * ERRORS STILL SPEAK (below and above) — those are the cases where
-           * nothing visible changed and the reader needs telling why.
+           * EACH FAILURE SAYS WHAT HAPPENED (FA-FOLLOW-1). Every one of these
+           * used to say "make sure your phone is verified" — to signed-in,
+           * verified observers whose real problem was a dropped connection or
+           * an expired session, neither of which that sentence helps with.
+           *   401  the session is over: sign in again, and come back here
+           *   else no signal, or our server failed: try again
            */
+          if (status === 401) {
+            var H = window.HAWKEYE;
+            var dead = H && H.authRejected ? H.authRejected(status, res.error) : true;
+            if (dead) { try { localStorage.removeItem('hawkeye_token'); } catch (e) { /* signed out either way */ } }
+            say(function () {
+              return esc(T('follow.session-ended', 'Your session has ended.'))
+                + ' <a href="' + esc(signInHref()) + '">' + esc(T('follow.sign-in-again', 'Sign in again →')) + '</a>';
+            });
+            return;
+          }
+          if (!(status >= 200 && status < 300)) {
+            say(on
+              ? function () { return esc(T('follow.could-not-follow', 'Could not follow — check your connection and try again.')); }
+              : function () { return esc(T('follow.could-not-unfollow', 'Could not unfollow — check your connection and try again.')); });
+            return;
+          }
+          // The label is the confirmation ("Unfollow this race"); the line under
+          // it says where the alerts go (alertsOn above). Unfollowing clears it.
           followed = on ? { contest: contest, state: state } : null;
-          say('');
           paint();
+          say(followed ? alertsOn : null);
         });
     });
   }

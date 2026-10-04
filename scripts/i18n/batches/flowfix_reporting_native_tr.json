@@ -1,0 +1,132 @@
+{
+  "n.lib.check-in.signed-out": {
+    "ha": "An fitar da kai. Sake shiga domin yin rajistar isowa.",
+    "ig": "Ị pụọla. Banyeghachi ka e dekọọ na ị bịara.",
+    "yo": "O ti jáde. Tún wọlé kí o lè forúkọ ìdé rẹ sílẹ̀."
+  },
+  "n.lib.check-in.server-failed": {
+    "ha": "Hawkeye bai iya yin rajistar isowarka ba. Sake gwadawa nan da ɗan lokaci.",
+    "ig": "Hawkeye enweghị ike idekọ na ị bịara. Nwaa ọzọ n'oge na-adịghị anya.",
+    "yo": "Hawkeye kò lè kọ ìdé rẹ sílẹ̀. Tún gbìyànjú láìpẹ́."
+  },
+  "n.components.check-in-card.at-assigned": {
+    "ha": "Wannan zai yi maka rajistar isowa a {unit}, rumfar da aka sanya ka. Kana wata rumfa daban? Zaɓe ta bayan hotunan.",
+    "ig": "Nke a na-edebanye na ị nọ na {unit}, ebe ntuli aka e kenyere gị. Ị nọ n'ebe ọzọ? Họrọ ya mgbe foto ndị ahụ gasịrị.",
+    "yo": "Èyí yóò forúkọ rẹ sílẹ̀ pé o ti dé {unit}, ibùdó tí a yàn fún ọ. Ṣé o wà ní ibùdó mìíràn? Yàn án lẹ́yìn àwọn fọ́tò náà."
+  },
+  "n.components.report-sheet.waiting-one": {
+    "ha": "Rahoto 1 yana jiran aikawa. Zai aika kansa da zarar ka dawo kan layi.",
+    "ig": "Akụkọ 1 na-eche ka e zipu ya. Ọ ga-ezipu onwe ya ozugbo ị laghachiri n'ịntanetị.",
+    "yo": "Ìròyìn 1 ń dúró láti lọ. Yóò fi ara rẹ̀ ránṣẹ́ ní kété tí o bá padà sórí ìtakùn."
+  },
+  "n.components.report-sheet.waiting-many": {
+    "ha": "Rahotanni {v0} suna jiran aikawa. Za su aika kansu da zarar ka dawo kan layi.",
+    "ig": "Akụkọ {v0} na-eche ka e zipu ha. Ha ga-ezipu onwe ha ozugbo ị laghachiri n'ịntanetị.",
+    "yo": "Ìròyìn {v0} ń dúró láti lọ. Wọn yóò fi ara wọn ránṣẹ́ ní kété tí o bá padà sórí ìtakùn."
+  },
+  "n.components.leave-guard.title": {
+    "ha": "A watsar da wannan rahoton?",
+    "ig": "Tụfuo akụkọ a?",
+    "yo": "Ṣé kí a pa ìròyìn yìí tì?"
+  },
+  "n.components.leave-guard.body": {
+    "ha": "Hotunan da duk abin da ka shigar za su ɓace.",
+    "ig": "Foto ndị ahụ na ihe niile i tinyere ga-efu.",
+    "yo": "Àwọn fọ́tò náà àti gbogbo ohun tí o tẹ̀ sí i yóò sọnù."
+  },
+  "n.components.leave-guard.discard": {
+    "ha": "Watsar",
+    "ig": "Tụfuo",
+    "yo": "Pa á tì"
+  },
+  "n.components.leave-guard.keep": {
+    "ha": "Ci gaba da rahoto",
+    "ig": "Gaa n'ihu n'akụkọ",
+    "yo": "Máa bá ìròyìn lọ"
+  },
+  "n.app.report.result.could-not-check-nearby-browse": {
+    "ha": "An kasa duba rukunan da ke kusa. Bincika rijistar a ƙasa.",
+    "ig": "Enweghị ike ịlele ngalaba ndị dị nso. Chọgharịa ndekọ n'okpuru.",
+    "yo": "A kò lè ṣàyẹ̀wò àwọn ẹ̀ka tí ó wà nítòsí. Wá inú ìwé ìforúkọsílẹ̀ nísàlẹ̀."
+  },
+  "n.app.report.result.unit-list-not-on-phone": {
+    "ha": "Jerin rukunan wannan jihar bai shigo wannan wayar ba tukuna. Haɗa da intanet sau ɗaya domin saukar da shi.",
+    "ig": "Ndepụta ngalaba nke steeti a adịbeghị n'ekwentị a. Jikọọ n'ịntanetị otu ugboro ka i budata ya.",
+    "yo": "Àkójọ àwọn ẹ̀ka ìpínlẹ̀ yìí kò tíì sí lórí fóònù yìí. Sopọ̀ mọ́ ìtakùn lẹ́ẹ̀kan láti gbà á sílẹ̀."
+  },
+  "n.app.report.result.your-saved-unit": {
+    "ha": "Rumfar zaɓenka da ka ajiye",
+    "ig": "Ebe ntuli aka gị i chekwara",
+    "yo": "Ibùdó ìdìbò rẹ tí o fi pamọ́"
+  },
+  "n.app.report.result.draft-title": {
+    "ha": "Ci gaba da rahotonka na {v0}?",
+    "ig": "Gaa n'ihu n'akụkọ gị nke {v0}?",
+    "yo": "Tẹ̀síwájú pẹ̀lú ìròyìn rẹ ti {v0}?"
+  },
+  "n.app.report.result.draft-body": {
+    "ha": "Hotunanka da abin da ka shigar suna nan a wannan wayar.",
+    "ig": "Foto gị na ihe i tinyere ka dị n'ekwentị a.",
+    "yo": "Àwọn fọ́tò rẹ àti ohun tí o tẹ̀ sí i ṣì wà lórí fóònù yìí."
+  },
+  "n.app.report.result.draft-start-again": {
+    "ha": "Sake farawa",
+    "ig": "Malite ọzọ",
+    "yo": "Tún bẹ̀rẹ̀"
+  },
+  "n.app.report.result.fit-the-ec8a-in-the-frame": {
+    "ha": "Saka EC8A cikin firam ɗin. Dole kowace lamba ta zama mai karantuwa.",
+    "ig": "Tinye EC8A n'ime okpokolo ahụ. Ọnụọgụ ọ bụla ga-agụrịrị nke ọma.",
+    "yo": "Fi EC8A sínú férémù náà. Gbogbo nọ́ńbà gbọ́dọ̀ ṣeé kà."
+  },
+  "n.components.unit-search.offline-browse": {
+    "ha": "Babu haɗin intanet. Bincika rijistar a ƙasa maimakon haka.",
+    "ig": "Enweghị njikọ. Chọgharịa ndekọ n'okpuru kama.",
+    "yo": "Kò sí ìsopọ̀. Wá inú ìwé ìforúkọsílẹ̀ nísàlẹ̀ dípò bẹ́ẹ̀."
+  },
+  "n.components.unit-search.offline-no-pack": {
+    "ha": "Jerin rukunan {v0} bai shigo wannan wayar ba tukuna. Haɗa da intanet sau ɗaya domin saukar da shi, sannan bincike zai yi aiki ba tare da intanet ba.",
+    "ig": "Ndepụta ngalaba {v0} adịbeghị n'ekwentị a. Jikọọ n'ịntanetị otu ugboro ka i budata ya, mgbe ahụ ọchụchọ ga-arụ ọrụ na-enweghị ịntanetị.",
+    "yo": "Àkójọ àwọn ẹ̀ka {v0} kò tíì sí lórí fóònù yìí. Sopọ̀ mọ́ ìtakùn lẹ́ẹ̀kan láti gbà á sílẹ̀, lẹ́yìn náà ìwádìí yóò ṣiṣẹ́ láìsí ìtakùn."
+  },
+  "n.components.choose-unit.could-not-check-nearby-browse": {
+    "ha": "An kasa duba rukunan da ke kusa — bincika rijistar maimakon haka.",
+    "ig": "Enweghị ike ịlele ngalaba ndị dị nso — chọgharịa ndekọ kama.",
+    "yo": "A kò lè ṣàyẹ̀wò àwọn ẹ̀ka nítòsí — wá inú ìwé ìforúkọsílẹ̀ dípò bẹ́ẹ̀."
+  },
+  "n.app.report.incident.signed-out-saved": {
+    "ha": "An fitar da kai. An ajiye rahotonka a wannan wayar, kuma zai aika da zarar ka sake shiga.",
+    "ig": "Ị pụọla. E chekwara akụkọ gị n'ekwentị a, ọ ga-eziga mgbe ị banyeghachiri.",
+    "yo": "O ti jáde. A ti fi ìròyìn rẹ pamọ́ sórí fóònù yìí, yóò sì lọ nígbà tí o bá tún wọlé."
+  },
+  "n.app.report.incident.server-busy-saved": {
+    "ha": "Hawkeye bai iya karɓa a yanzu ba. An ajiye rahotonka a wannan wayar, kuma zai aika kansa.",
+    "ig": "Hawkeye enweghị ike ịnara ya ugbu a. E chekwara akụkọ gị n'ekwentị a, ọ ga-ezipu onwe ya.",
+    "yo": "Hawkeye kò lè gbà á lọ́wọ́lọ́wọ́. A ti fi ìròyìn rẹ pamọ́ sórí fóònù yìí, yóò sì fi ara rẹ̀ ránṣẹ́."
+  },
+  "n.app.report.collation.fit-the-whole-form-in-frame": {
+    "ha": "Saka dukan fom ɗin cikin firam. Dole kowace lamba ta zama mai karantuwa.",
+    "ig": "Tinye fọm ahụ niile n'ime okpokolo. Ọnụọgụ ọ bụla ga-agụrịrị nke ọma.",
+    "yo": "Fi gbogbo fọ́ọ̀mù náà sínú férémù. Gbogbo nọ́ńbà gbọ́dọ̀ ṣeé kà."
+  },
+  "n.app.report.collation.serial-where": {
+    "ha": "saman fom ɗin tattarawa",
+    "ig": "elu fọm nchịkọta",
+    "yo": "òkè fọ́ọ̀mù àkójọpọ̀"
+  },
+  "n.app.report.collation.level-collation": {
+    "ha": "Tattarawar {v0}",
+    "ig": "Nchịkọta {v0}",
+    "yo": "Àkójọpọ̀ {v0}"
+  },
+  "n.app.report.collation.collation-form": {
+    "ha": "Fom ɗin tattarawa",
+    "ig": "Fọm nchịkọta",
+    "yo": "Fọ́ọ̀mù àkójọpọ̀"
+  },
+  "n.components.serial-field.where-ec8a": {
+    "ha": "saman dama na EC8A",
+    "ig": "akụkụ aka nri n'elu EC8A",
+    "yo": "òkè ọ̀tún EC8A"
+  }
+}

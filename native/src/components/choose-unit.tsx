@@ -34,6 +34,7 @@ import { getIdentity } from '@/lib/identity';
 import { inviteAfterSave, isUnitCode, shareInviteUnit } from '@/lib/invite-unit';
 import { describeFixFailure, DISCOVERY_RADIUS_M, locationAlreadyAllowed, tryQuickFix, type Fix } from '@/lib/location';
 import { regFetch } from '@/lib/register-fetch';
+import { registerReady, rememberedStateNow, rememberState } from '@/lib/register';
 import * as SecureStore from '@/lib/secure-store';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
@@ -542,10 +543,8 @@ export function ChooseUnitScreen({
       ]);
 
       if (!located?.ok && !envelope?.ok) {
-        // POINT AT SEARCH, NOT THE REGISTER DRILL. This is the network-failure
-        // case, and browsing is itself network-backed once the packs run out;
-        // search answers from the register bundled into the app.
-        say(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'), true);
+        // The network-failure case: see nearFailedLine.
+        say(nearFailedLine(), true);
         return;
       }
 
@@ -681,7 +680,7 @@ export function ChooseUnitScreen({
         say(
           m != null
             ? i18nT('n.components.choose-unit.no-unit-found-within-m-search', { v0: m })
-            : i18nT('n.components.choose-unit.could-not-check-nearby-units-search'),
+            : nearFailedLine(),
           true,
         );
         return;
@@ -693,11 +692,23 @@ export function ChooseUnitScreen({
         false,
       );
     } catch {
-      say(i18nT('n.components.choose-unit.could-not-check-nearby-units-search'), true);
+      say(nearFailedLine(), true);
     } finally {
       setNearBusy(false);
     }
   };
+
+  /**
+   * Where to send someone whose near-me lookup could not reach the server.
+   * Search above, when it can answer without one — the remembered state's pack
+   * is decoded on this phone (lib/register.ts, REP-UNIT-02). Otherwise search
+   * cannot answer either, and the line points at Browse the register, whose
+   * state/LGA/ward lists come from the index every install holds.
+   */
+  const nearFailedLine = () =>
+    registerReady(rememberedStateNow())
+      ? i18nT('n.components.choose-unit.could-not-check-nearby-units-search')
+      : i18nT('n.components.choose-unit.could-not-check-nearby-browse');
 
   /**
    * A unit only /api/mapping/nearby knew about carries no ward, LGA or state, so
@@ -817,6 +828,9 @@ export function ChooseUnitScreen({
       }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       saved = true;
+      // The saved unit's state is the one to search offline from now on — its
+      // pack starts downloading while there is signal (REP-UNIT-02).
+      void rememberState(unit.state);
       const url = await inviteAfterSave(unit.pu_code, invited);
       if (url) {
         setAfter({ unit, url });

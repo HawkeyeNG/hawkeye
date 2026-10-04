@@ -926,14 +926,11 @@ export default function Home() {
         </Pressable>
       ) : null}
 
-      {/* 4 */}
-      {signedIn ? <AlertsCard notes={notes} failed={notesFailed} onOpen={openNote} /> : null}
-
-      {/* 5 */}
+      {/* 4 — "Latest alerts" and "My Activity" REMOVED from native Home (owner,
+          2026-10-04: the screen was cluttered; the Alerts tab and Profile carry
+          them, and native need not mirror Lite). AlertsCard / ActivityCard stay
+          defined below in case either comes back. */}
       <ReportActions />
-
-      {/* 6 */}
-      {signedIn && me ? <ActivityCard me={me} /> : null}
 
       {/* 7 — the live feed: the public counts, then the filters, then the rows. */}
       <View className="flex-row gap-3">

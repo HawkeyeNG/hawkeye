@@ -1300,4 +1300,5 @@ export default {
   "n.lib.races.seat-rep": "Onye nnọchiteanya (Reps)",
   "n.lib.races.seat-sen": "Sineto",
   "n.lib.races.seat-sha": "Onye omeiwu steeti",
+  "n.app.sign-in.number-never-stored": "Anaghị echekwa nọmba gị.",
 };

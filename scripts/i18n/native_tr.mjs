@@ -1301,5 +1301,6 @@ export default {
     "n.lib.races.seat-rep": "Ɗan Majalisar Wakilai",
     "n.lib.races.seat-sen": "Sanata",
     "n.lib.races.seat-sha": "Ɗan Majalisar Jiha",
+    "n.app.sign-in.number-never-stored": "Ba a taɓa adana lambarka ba.",
   },
 };

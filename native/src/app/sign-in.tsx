@@ -1258,7 +1258,7 @@ export default function SignIn() {
                 </Pressable>
               ) : null}
               <Text className="pb-4 pt-1 text-sm text-muted">
-                {i18nT('n.app.sign-in.your-phone-number-and-password-your')}
+                {i18nT('n.app.sign-in.number-never-stored')}
               </Text>
               <TextInput
                 className="rounded-2xl bg-card px-4 py-4 text-lg text-ink"

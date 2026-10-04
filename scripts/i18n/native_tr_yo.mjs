@@ -1300,4 +1300,5 @@ export default {
   "n.lib.races.seat-rep": "Aṣojú (Reps)",
   "n.lib.races.seat-sen": "Sẹ́nétọ̀",
   "n.lib.races.seat-sha": "Aṣòfin Ìpínlẹ̀",
+  "n.app.sign-in.number-never-stored": "A kì í tọ́jú nọ́mbà rẹ.",
 };

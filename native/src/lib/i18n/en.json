@@ -1055,6 +1055,7 @@
   "n.app.sign-in.no-password-on-this-account": "No Password on This Account",
   "n.app.sign-in.not-now-sign-out": "Not now — sign out",
   "n.app.sign-in.not-your-number-sign-out-and": "Not your number? Sign out and start again",
+  "n.app.sign-in.number-never-stored": "Your number is never stored.",
   "n.app.sign-in.open-telegram": "Open Telegram",
   "n.app.sign-in.open-telegram-tap-start-then-share": "Open Telegram, tap Start, then Share my phone number.",
   "n.app.sign-in.password-too-long": "That password is too long (200 characters max).",

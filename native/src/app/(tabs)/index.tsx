@@ -926,29 +926,11 @@ export default function Home() {
         </Pressable>
       ) : null}
 
-      {/* 4 — "Latest alerts" and "My Activity" REMOVED from native Home (owner,
-          2026-10-04: the screen was cluttered; the Alerts tab and Profile carry
-          them, and native need not mirror Lite). AlertsCard / ActivityCard stay
-          defined below in case either comes back. */}
-      <ReportActions />
-
-      {/* 7 — the live feed: the public counts, then the filters, then the rows. */}
-      <View className="flex-row gap-3">
-        <Pressable
-          className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
-          onPress={() => router.push('/reports-log')}
-        >
-          <Text className="text-2xl font-bold text-ink">{integrity?.reports ?? '—'}</Text>
-          <Text className="text-xs text-muted">{i18nT('n.app.tabs.index.accepted-reports')}</Text>
-        </Pressable>
-        <Pressable
-          className="flex-1 rounded-2xl bg-card px-4 py-4 active:opacity-80"
-          onPress={() => router.push('/integrity')}
-        >
-          <Text className="text-2xl font-bold text-ink">{integrity?.unitsFlagged ?? '—'}</Text>
-          <Text className="text-xs text-muted">{i18nT('n.app.tabs.index.units-flagged')}</Text>
-        </Pressable>
-      </View>
+      {/* REMOVED from native Home (owner, 2026-10-04: the screen was cluttered;
+          native need not mirror Lite): "Latest alerts", "My Activity", the four
+          report-action cards (the Report tab does that job) and the "Accepted
+          reports" / "Units flagged" counts. AlertsCard / ActivityCard /
+          ReportActions stay defined below in case any comes back. */}
 
       <Text className="pb-2 pt-5 text-[11px] font-bold uppercase tracking-wider text-faint">
         {i18nT('n.app.tabs.index.live-activity')}

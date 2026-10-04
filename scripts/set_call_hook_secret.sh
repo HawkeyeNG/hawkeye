@@ -31,8 +31,9 @@ say() { echo "set_call_hook_secret: $*"; }
 
 # Optional: the gateway SIM's number, shown to observers (public, not a secret).
 #   scripts/set_call_hook_secret.sh +2347042248544
+#   scripts/set_call_hook_secret.sh +234XXXXXXXXXX,+234XXXXXXXXXX   (several gateway SIMs)
 NUMBER="${1:-}"
-if [ -n "$NUMBER" ]; then [[ "$NUMBER" =~ ^\+234[789][01][0-9]{8}$ ]] || die "number must look like +234XXXXXXXXXX"; fi
+if [ -n "$NUMBER" ]; then [[ "$NUMBER" =~ ^\+234[789][01][0-9]{8}(,\+234[789][01][0-9]{8})*$ ]] || die "numbers must look like +234XXXXXXXXXX, comma-separated"; fi
 
 [ -t 0 ] && [ -t 1 ] || die "run this in your own terminal (it asks before replacing, and prints the secret once)"
 [ -r "$ENVF" ] || die "no $ENVF (the GO54 login lives there)"

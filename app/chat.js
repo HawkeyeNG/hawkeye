@@ -30,6 +30,14 @@
   // ?chat=1&embed=1): the page itself is hidden — the screen is only the chat —
   // and closing the messenger tells the app to close the modal.
   const embed = new URLSearchParams(location.search).get('embed') === '1';
+  // NO FOCUS ZOOM IN THE APPS. iOS zooms the whole page when an input under
+  // 16 px takes focus — Intercom's email field did, and the chat stayed zoomed
+  // and cut off (owner, 2026-10-04). maximum-scale=1 stops that zoom. Only in
+  // the native chat screen (embed) and Lite: the website keeps pinch-zoom.
+  if (embed || document.documentElement.classList.contains('native-app') || (window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())) {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (vp && !/maximum-scale/.test(vp.content)) vp.content += ', maximum-scale=1';
+  }
   if (embed) {
     const es = document.createElement('style');
     es.textContent = 'body>:not([id^="intercom"]):not([class*="intercom"]):not(script):not(style){display:none!important}'

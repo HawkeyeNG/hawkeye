@@ -129,7 +129,7 @@
 }
 .sr-hdr-actions button:hover { filter: none; border-color: var(--accent); color: var(--sr-btn-ink); }
 .sr-hdr-actions button:active { transform: none; }
-.sr-hdr-actions button[disabled] { opacity: 0.4; cursor: not-allowed; }
+.sr-hdr-actions button[disabled] { opacity: 0.7; filter: saturate(0.7); cursor: not-allowed; }
 /* `display: inline-block` above is an AUTHOR rule and beats the user agent's
    [hidden] { display: none }, so a hidden button still drew its box: in the
    installed app — where beforeinstallprompt never fires — the Install button
@@ -278,7 +278,7 @@
 .sr-btn:hover { filter: brightness(1.07); } /* gold on gold: the border no longer shows a hover */
 .sr-btn.primary { background: var(--accent); border-color: var(--accent); color: #06231a; font-weight: 600; }
 .sr-btn.mini { padding: 3px 9px; font-size: 0.76rem; }
-.sr-btn:disabled, .sr-btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.sr-btn:disabled, .sr-btn[disabled] { opacity: 0.7; filter: saturate(0.7); cursor: not-allowed; } /* still reads as yellow; 0.45 went olive on the dark ground */
 .sr-acts { display: flex; gap: 6px; justify-content: flex-end; }
 
 /* --- tabs --- */

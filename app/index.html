@@ -331,7 +331,6 @@
       <div class="wrap">
         <!-- 1. GREETING + UNIT -->
         <h1 id="home-greet" data-i18n="index.welcome-back">Welcome Back</h1>
-        <p class="sub" id="home-sub" data-i18n="index.your-polling-unit-is-your-post">Your polling unit is your post — here's today's picture.</p>
         <!-- CHOOSE, not map: choose-unit.html is the page that saves "my unit"
              (Profile's row opens it too); Map a Polling Unit is a surveying job
              and stays on the My Polling Unit action below. -->
@@ -808,15 +807,12 @@
         if (me.unit) {
           const u = me.unit;
           const chip = document.getElementById('home-unit-chip');
-          const sub = document.getElementById('home-sub');
           chip.removeAttribute('data-i18n-html');
-          sub.removeAttribute('data-i18n');
-          // A saved unit IS the alerts subscription: the chip says so, and the
-          // subtext line goes (owner, 2026-10-04 — cleaner than a second line).
+          // A saved unit IS the alerts subscription, so the chip says so. NO subtext
+          // line under the greeting at all (owner, 2026-10-04).
           chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''} · ${tt('index.alerts-on', 'Alerts on')}`;
           // The chooser marks the saved one when it knows it (Profile's row does the same).
           chip.setAttribute('href', 'choose-unit.html?current=' + encodeURIComponent(u.pu_code || ''));
-          sub.hidden = true; sub.style.display = 'none'; // an author display rule would beat [hidden]
         }
       };
       paintHome();

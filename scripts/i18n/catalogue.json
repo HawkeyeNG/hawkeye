@@ -88,6 +88,7 @@
   "auth.exists-sign-out": "Not your number? Sign out and start again",
   "auth.exists-title": "This account already exists",
   "auth.no-password-yet": "This account has no password yet. Sign in with a code and set one now.",
+  "auth.number-never-stored": "Your number is never stored.",
   "auth.org-code-number-taken": "An organisation code can only create a new account, and this code is now used up. If this number already has an account, sign in with a one-time code. If you deleted your account, signing in that way restores it.",
   "auth.org-code-revoked": "This organisation code has been withdrawn. Ask your organisation for another one, or sign up with a one-time code.",
   "auth.org-code-too-many": "Too many attempts from this network. Wait an hour and try again.",

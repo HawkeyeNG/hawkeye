@@ -712,7 +712,7 @@ function applySignInMode() {
   // "One number, one observer" is a sign-UP promise; a returning observer has
   // already made it.
   const lede = $('register-lede');
-  if (lede) lede.textContent = T('observe.welcome-back-sign-in-to-your-observer', 'Welcome back — sign in to your observer account.');
+  if (lede) lede.textContent = T('auth.number-never-stored', 'Your number is never stored.');
   paintAuthStep();
 }
 

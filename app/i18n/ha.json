@@ -2965,5 +2965,6 @@
   "situation-room.codes-col-batch": "Rukuni",
   "results.following-subject": "Kana bin {v0}.",
   "index.alerts-on-short": "An kunna faɗakarwa don rukuninka",
-  "index.alerts-on": "Faɗakarwa a kunne"
+  "index.alerts-on": "Faɗakarwa a kunne",
+  "auth.number-never-stored": "Ba a taɓa adana lambarka ba."
 }

@@ -387,9 +387,6 @@ function Greeting({ me }: { me: Me | null | undefined }) {
       <Text className="text-2xl font-bold text-ink">
         {me ? i18nT('index.welcome-back-observer', { id: me.observerId }) : i18nT('index.welcome-back')}
       </Text>
-      {u ? null : (
-        <Text className="pt-1 text-sm leading-5 text-muted">{i18nT('index.your-polling-unit-is-your-post')}</Text>
-      )}
       <Pressable
         onPress={() => router.push({ pathname: '/choose-unit', params: u ? { current: u.pu_code } : {} } as never)}
         className="mt-3 flex-row items-center self-start rounded-full border border-line bg-card px-3.5 py-2 active:opacity-80"

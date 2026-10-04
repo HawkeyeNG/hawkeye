@@ -328,6 +328,11 @@
     .cap-adm-compose textarea { width: 100%; min-height: 72px; resize: vertical; font: inherit; }
     .cap-adm-compose button, .cap-adm-item .cap-adm-msg { width: auto; margin: 6px 8px 0 0; }
     .cap-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    /* THE DEFAULT GREEN BUTTON IN THE APPS' LEMON GREEN (owner, 2026-10-04), as in
+       the situation room. (0,0,2) beats the site's bare `button` but loses to
+       every classed rule, so gold/yellow buttons, tab pills and chips keep theirs. */
+    main button { background: #6edba0; color: #06231a; box-shadow: none; }
+    main button:disabled { opacity: 0.45; cursor: not-allowed; }
   </style>
   <script src="authgate.js?v=6"></script>
 </head>

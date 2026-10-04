@@ -2964,5 +2964,6 @@
   "situation-room.codes-updated": "An sabunta {v0}",
   "situation-room.codes-col-batch": "Rukuni",
   "results.following-subject": "Kana bin {v0}.",
-  "index.alerts-on-short": "An kunna faɗakarwa don rukuninka"
+  "index.alerts-on-short": "An kunna faɗakarwa don rukuninka",
+  "index.alerts-on": "Faɗakarwa a kunne"
 }

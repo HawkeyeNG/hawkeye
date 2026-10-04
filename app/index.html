@@ -811,10 +811,12 @@
           const sub = document.getElementById('home-sub');
           chip.removeAttribute('data-i18n-html');
           sub.removeAttribute('data-i18n');
-          chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''}`;
+          // A saved unit IS the alerts subscription: the chip says so, and the
+          // subtext line goes (owner, 2026-10-04 — cleaner than a second line).
+          chip.textContent = `📍 ${u.name || u.pu_code} · ${u.lga || ''}${u.state ? ', ' + u.state : ''} · ${tt('index.alerts-on', 'Alerts on')}`;
           // The chooser marks the saved one when it knows it (Profile's row does the same).
           chip.setAttribute('href', 'choose-unit.html?current=' + encodeURIComponent(u.pu_code || ''));
-          sub.textContent = tt('index.alerts-on-short', 'Alerts are on for your unit');
+          sub.hidden = true; sub.style.display = 'none'; // an author display rule would beat [hidden]
         }
       };
       paintHome();

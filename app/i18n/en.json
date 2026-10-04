@@ -2937,5 +2937,6 @@
   "situation-room.codes-updated": "Updated {v0}",
   "situation-room.codes-col-batch": "Batch",
   "results.following-subject": "Following {v0}.",
-  "index.alerts-on-short": "Alerts are on for your unit"
+  "index.alerts-on-short": "Alerts are on for your unit",
+  "index.alerts-on": "Alerts on"
 }

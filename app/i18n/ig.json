@@ -2963,5 +2963,6 @@
   "situation-room.codes-updated": "E meliteere {v0}",
   "situation-room.codes-col-batch": "Ngwugwu",
   "results.following-subject": "Ị na-eso {v0}.",
-  "index.alerts-on-short": "Ọkwa gbanyere maka ngalaba gị"
+  "index.alerts-on-short": "Ọkwa gbanyere maka ngalaba gị",
+  "index.alerts-on": "Ọkwa gbanyere"
 }

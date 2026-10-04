@@ -2696,3 +2696,19 @@ label:has(> input[type="checkbox"]), label:has(> input[type="radio"]) { min-heig
 .field-err { margin: 6px 0 0; color: var(--chip-req-ink); font-size: 0.9rem; font-weight: 600; line-height: 1.35; }
 .field-err[hidden] { display: none; }
 input[aria-invalid="true"] { border-color: var(--chip-req-ink) !important; }
+
+/* ── TOUCH TARGETS ≥ 44 PX (design audit X7, re-measured on the live pages 2026-10-04).
+   Rows and buttons a few px short get min-height. Small controls inside text or
+   a fixed layout keep their look and get an invisible, centred 44 px hit box on
+   ::after (none of these use ::after already; summaries do, so they take padding). */
+a.alert-line, .home-card .pday-go, #cu-close, #btn-camera, #btn-video, .pcard .prow { min-height: 44px; }
+details.fold > summary, details[class^="rc-"] > summary { min-height: 44px; box-sizing: border-box; padding-block: 12px; }
+.desktop-primary a { min-width: 44px; text-align: center; }
+:is(.auth-alt a, #pw-link, .mg .info-i, .mg .g h2 a, .phero-copy, #btn-pw-open, #btn-delete, .rc-filter label, .home-card h2 a) { position: relative; }
+:is(.auth-alt a, #pw-link, .mg .info-i, .mg .g h2 a, .phero-copy, #btn-pw-open, #btn-delete, .rc-filter label, .home-card h2 a)::after {
+  content: ''; position: absolute; left: 50%; top: 50%;
+  width: max(100%, 44px); height: max(100%, 44px); transform: translate(-50%, -50%);
+}
+/* Check boxes in the incident form: a 20 px box in a 44 px row. */
+label:has(> #use-gps), label:has(> #attach-pu) { display: flex; align-items: center; gap: 10px; min-height: 44px; }
+#use-gps, #attach-pu { width: 20px !important; height: 20px; flex: none; margin: 0; }

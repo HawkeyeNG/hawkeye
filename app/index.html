@@ -32,14 +32,25 @@
   <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
-    /* ---- Hero store badges + "Smaller phone? Get the Lite App." ----
-       .dl-badges centres its row (right on /download); in this hero the text is
-       left-aligned on wide screens, so the badges line up with it there, and the
-       portrait rule styles.css gives .hero-fold .install-row centres them again.
-       The line takes the "Already an observer? Sign in" colours: the hero is the
-       same dark green in both themes, and the default link green vanished on it. */
-    .hero .hero-badges { justify-content: flex-start; margin-top: 4px; }
+    /* ---- Hero store buttons + "Smaller phone? Get the Lite App." ----
+       TWO BUTTONS OF ONE SIZE (owner, 2026-10-05). The official badges cannot be:
+       Google's artwork is 3.4:1 and Apple's 3.0:1, so at one height Play is ~12%
+       wider. Sites that show them equal (smartballotapp.com: two redrawn 238x71
+       images; piggyvest.com: custom buttons) make their own, as here — each
+       store's own logo (store-play.png cropped from Google's badge, store-apple.svg
+       from Apple's) in identical black buttons. Left-aligned with the hero text on
+       wide screens; centred on portrait phones like the CTAs above.
+       The line under them takes the "Already an observer? Sign in" colours: the
+       hero is the same dark green in both themes. */
+    .hero .hero-badges { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 18px; }
     @media (max-width: 900px) and (orientation: portrait) { .hero-fold .hero-badges { justify-content: center; } }
+    .store-btn { display: inline-flex; align-items: center; gap: 10px; box-sizing: border-box; width: 156px; height: 50px; padding: 0 14px;
+      background: #000; border: 1px solid #a6a6a6; border-radius: 10px; color: #fff; text-decoration: none; line-height: 1; box-shadow: none; }
+    .store-btn img { height: 24px; width: auto; flex: none; }
+    .store-btn span { display: flex; flex-direction: column; gap: 3px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; white-space: nowrap; }
+    .store-btn small { font-size: 10px; font-weight: 500; letter-spacing: 0.02em; }
+    .store-btn:hover { border-color: #fff; color: #fff; }
+    .store-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .hero .hero-get-sub { color: #a9c3b4; }
     .hero .hero-get-sub a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
     .hero .hero-get-sub a:hover { color: var(--accent); }
@@ -468,9 +479,9 @@
                browser) live on download.html, which the "Lite App" link opens —
                it has room to say how the apps differ. Same markup and classes as
                download.html's own badges, so the sizing rules there apply. -->
-          <div class="install-row dl-badges hero-badges">
-            <a class="play-badge-link" rel="noopener" target="_blank" href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img src="play-badge.png" alt="Get Hawkeye on Google Play" width="145" height="56" decoding="async"></a>
-            <a class="play-badge-link" rel="noopener" target="_blank" href="https://apps.apple.com/app/id6804218478"><img class="dl-badge-ios" src="app-store-badge.svg" alt="Download Hawkeye on the App Store" width="114" height="38" decoding="async"></a>
+          <div class="hero-badges">
+            <a class="store-btn" rel="noopener" target="_blank" href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer" aria-label="Get Hawkeye on Google Play"><img src="store-play.png" alt="" width="21" height="24"><span><small>GET IT ON</small>Google Play</span></a>
+            <a class="store-btn" rel="noopener" target="_blank" href="https://apps.apple.com/app/id6804218478" aria-label="Download Hawkeye on the App Store"><img src="store-apple.svg" alt="" width="20" height="24"><span><small>Download on the</small>App Store</span></a>
           </div>
           <p data-i18n-html="index.smaller-phone-lite-app" class="hint hero-get-sub">Smaller phone? Get the <a href="https://hawkeye.com.ng/download.html">Lite App</a>.</p>
         </div>

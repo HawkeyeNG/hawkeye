@@ -150,17 +150,19 @@ console.log('\n=== the homepage offers the FULL app on Play, and Lite via /downl
   await p.goto(`${base}/index.html`, { waitUntil: 'load' });
   await p.waitForTimeout(300);
   const h = await p.evaluate(() => {
-    const img = document.querySelector('.hero-badges a[href*="play.google.com"] img');
-    const r = img && img.getBoundingClientRect();
+    // ONE SIZE FOR BOTH (owner): the two store buttons render identically sized,
+    // and neither logo is missing (a broken image would still leave the box).
+    const box = (sel) => { const e = document.querySelector(sel); const r = e && e.getBoundingClientRect(); return r ? [Math.round(r.width * 10) / 10, Math.round(r.height * 10) / 10] : null; };
+    const play = box('.hero-badges a[href*="play.google.com"]'), apple = box('.hero-badges a[href*="apps.apple.com"]');
     return {
       playHrefs: [...document.querySelectorAll('a[href*="play.google.com"]')].filter((a) => a.getClientRects().length > 0).map((a) => a.getAttribute('href')),
-      // The badge artwork keeps its 145:56 shape — a squashed badge is a policy breach.
-      ratio: r ? Math.abs(r.width / r.height - 145 / 56) < 0.05 : false,
+      ratio: !!play && !!apple && play[0] === apple[0] && play[1] === apple[1] && play[1] >= 44
+        && [...document.querySelectorAll('.hero-badges img')].every((i) => i.complete && i.naturalWidth > 0),
       liteHref: document.querySelector('.hero-get-sub a')?.getAttribute('href') ?? null,
     };
   });
   check('exactly one Play badge, and it is the full app (not Lite)', h.playHrefs, ['https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer']);
-  check('and it is not squashed', h.ratio, true);
+  check('both store buttons are the same size (>= 44px tall), logos loaded', h.ratio, true);
   check('"Lite App" goes to the download page', h.liteHref, 'https://hawkeye.com.ng/download.html');
   await ctx.close();
 }

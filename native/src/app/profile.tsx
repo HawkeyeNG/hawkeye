@@ -392,7 +392,9 @@ export default function Profile() {
     try {
       const { status, body } = await authed('/api/observers/me');
       if (status !== 200) {
-        setErr(i18nT('n.app.profile.could-not-load-your-profile-http', { v0: status }));
+        // One plain sentence, never the status code (ONB-20): "(HTTP 500)" told
+        // the reader nothing they could act on. humanError maps 5xx / 4xx.
+        setErr(humanError(new Error(`HTTP ${status}`)));
         return;
       }
       setMe(body as unknown as Me);
@@ -647,10 +649,32 @@ export default function Profile() {
           />
         }
       >
+        {/* A failed load says so with a Try again, as Home's offline row does —
+            and ABOVE the profile, not instead of it (ONB-20): a failed refresh
+            used to blank a profile that had already loaded, Sign out included. */}
         {err ? (
-          <Text className="pt-2 text-sm font-semibold text-warn-ink">{err}</Text>
-        ) : !me ? (
-          <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
+          <View className="mb-3 flex-row items-center rounded-2xl bg-warn px-4 py-3">
+            <Text className="flex-1 pr-3 text-sm text-ink">{err}</Text>
+            <Pressable
+              onPress={async () => {
+                setRefreshing(true);
+                await load();
+                setRefreshing(false);
+              }}
+              disabled={refreshing}
+              className="min-h-[44px] items-center justify-center rounded-full bg-hawk-green px-4 active:opacity-80"
+              accessibilityRole="button"
+            >
+              {refreshing ? (
+                <ActivityIndicator size="small" color={BRAND.gold} />
+              ) : (
+                <Text className="text-sm font-bold text-hawk-gold">{i18nT('common.try-again')}</Text>
+              )}
+            </Pressable>
+          </View>
+        ) : null}
+        {!me ? (
+          err ? null : <ActivityIndicator className="pt-8" color={ui.tint.good.ink} />
         ) : (
           <>
             {/* Hero identity card. bg-hawk-green is a fixed brand surface, so
@@ -1149,8 +1173,9 @@ export default function Profile() {
 
       {/* Sign out is pinned below the scroll: the four activity accordions
           expand on tap and push everything under them off-screen, so the one
-          routine control here has to stay reachable regardless. */}
-      {me && !err ? (
+          routine control here has to stay reachable regardless — a failed
+          refresh included. */}
+      {me ? (
         <View
           className="border-t border-line bg-surface px-4 pt-3"
           style={{ paddingBottom: insets.bottom + 12 }}

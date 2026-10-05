@@ -23,11 +23,14 @@ import { getPages } from '@/lib/content';
 import RAW_PAGES from '@/lib/pages.json';
 import { translateContent } from '@/lib/content';
 
+import { t as i18nT } from '@/lib/i18n';
+
 /* pages.json is prose, and it is translated the same way content.ts is:
    keyed by the English string, walked at render. Without this the FAQ's
-   questions and answers stayed English while the screen around them did not. */
-const RAW = translateContent(RAW_PAGES);
-import { t as i18nT } from '@/lib/i18n';
+   questions and answers stayed English while the screen around them did not.
+   AT RENDER, NOT AT IMPORT (faqPairs() runs in the component body): this was a
+   module-scope `translateContent(RAW_PAGES)`, which read the language before
+   AsyncStorage had answered and froze the FAQ in English for good. */
 
 /** Screens that carry "Chat with us" — the same two pages as the website. */
 const CHAT_SLUGS = new Set(['faq', 'about']);
@@ -43,8 +46,9 @@ const WEB: Record<string, string> = {
 /** The FAQ is already question-shaped, so its extracted copy still serves —
  *  folded into heading + following paragraphs. */
 function faqPairs() {
-  const blocks = (RAW as { faq: { blocks: { type: string; text?: string; items?: string[] }[] } })
-    .faq.blocks;
+  const blocks = translateContent(
+    (RAW_PAGES as { faq: { blocks: { type: string; text?: string; items?: string[] }[] } }).faq.blocks,
+  );
   const out: { q: string; a: string[] }[] = [];
   let intro = '';
   for (const b of blocks) {

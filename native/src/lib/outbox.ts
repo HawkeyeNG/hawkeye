@@ -135,6 +135,7 @@ export function useOutbox(): OutboxState {
       return () => listeners.delete(l);
     },
     () => snapshot,
+    () => snapshot, // server snapshot, web export only — see lib/auth.ts useAuth()
   );
 }
 

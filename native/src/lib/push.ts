@@ -77,6 +77,7 @@ export function useUnread(): number {
       return () => listeners.delete(l);
     },
     () => unread,
+    () => unread, // server snapshot, web export only — see lib/auth.ts useAuth()
   );
 }
 

@@ -133,6 +133,24 @@ for (const lang of ['ha', 'ig', 'yo']) {
     priv.filter(({ v, t }) => t === v).slice(0, 4).map((s) => `${s.p}: ${s.v.slice(0, 50)}`));
 }
 
+/* THE FAQ — native/src/lib/pages.json, folded into question rows by page.tsx.
+   It goes through the same dictionary, but no extractor read it until
+   2026-10-04, so a re-extract silently dropped every question; and page.tsx
+   translated it at IMPORT, before the stored language was known. */
+console.log('\n=== the FAQ (pages.json) ===');
+{
+  const RAW = JSON.parse(fs.readFileSync(`${NATIVE}/lib/pages.json`, 'utf8'));
+  const faq = (RAW.faq?.blocks ?? []).filter((b) => (b.type === 'heading' || b.type === 'text') && b.text).map((b) => b.text);
+  check(`the FAQ has questions to check (${faq.length} strings)`, faq.length >= 20, faq.length);
+  check('  ...including "How do I report a result?"', faq.includes('How do I report a result?'));
+  for (const lang of ['ha', 'ig', 'yo']) {
+    const stuck = faq.filter((s) => !DICT[lang][s] || DICT[lang][s] === s);
+    check(`  every FAQ string has a ${lang} translation`, stuck.length === 0, stuck.slice(0, 4).map((s) => s.slice(0, 50)));
+  }
+  check('page.tsx translates the FAQ at render, not at import',
+    !/^const \w+ = translateContent\(/m.test(pageSrc) && /function faqPairs\(\)[\s\S]{0,200}translateContent\(/.test(pageSrc));
+}
+
 /**
  * CONTROL: an empty dictionary must leave the tree completely unchanged, and the
  * check above must then report it. Without this, a dictionary that failed to

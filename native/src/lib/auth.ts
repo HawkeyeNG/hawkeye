@@ -43,6 +43,7 @@ export function useSignedOutElsewhere(): boolean {
       return () => elsewhereListeners.delete(l);
     },
     () => elsewhere,
+    () => elsewhere, // server snapshot — see useAuth()
   );
 }
 async function markSignedOutElsewhere(): Promise<void> {
@@ -88,6 +89,11 @@ export function useAuth(): AuthState {
       listeners.add(l);
       return () => listeners.delete(l);
     },
+    () => state,
+    /* THE SERVER SNAPSHOT, for the web export only (a phone never server-renders,
+       so React never calls it there). Without it the static render of EVERY
+       route threw "Missing getServerSnapshot" from RootShell, the root Suspense
+       boundary was shipped empty, and hydration logged React #419 on every page. */
     () => state,
   );
 }

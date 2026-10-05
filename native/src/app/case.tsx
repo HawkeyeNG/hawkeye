@@ -107,7 +107,13 @@ export default function CaseScreen() {
       });
       const d = (await res.json()) as CaseFile;
       setC(d);
-      setErr(d.error ?? (res.ok ? null : `HTTP ${res.status}`));
+      // 'no_such_case' is the one code the screen words itself; any other
+      // failure is humanError's sentence, never a code (FA-PUB-3).
+      setErr(
+        d.error === 'no_such_case' || res.status === 404 ? 'no_such_case'
+        : d.error || !res.ok ? humanError(new Error(`HTTP ${res.status}`))
+        : null,
+      );
     } catch (e) {
       setErr(humanError(e));
     }
@@ -194,12 +200,20 @@ export default function CaseScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surface px-8">
         <Feather name="file-text" size={26} color={ui.tint.good.ink} />
-        <Text className="pt-3 text-center text-base font-semibold text-ink">
-          {i18nT('n.app.case.case-not-found')}
-        </Text>
-        <Text className="pt-1 text-center text-sm text-muted">
-          This case doesn&apos;t exist, or the link is out of date. ({c?.error ?? err})
-        </Text>
+        {/* The web's sentence, and never the raw code (FA-PUB-3): "(no_such_case)"
+            was English in every language and meant nothing to the reader. A load
+            that failed for another reason says only that (humanError) — no
+            "Case Not Found" heading over a server error. */}
+        {err && err !== 'no_such_case' ? (
+          <Text className="pt-3 text-center text-sm text-muted">{err}</Text>
+        ) : (
+          <>
+            <Text className="pt-3 text-center text-base font-semibold text-ink">
+              {i18nT('n.app.case.case-not-found')}
+            </Text>
+            <Text className="pt-1 text-center text-sm text-muted">{i18nT('case.case-not-found-body')}</Text>
+          </>
+        )}
         <Pressable
           className="mt-5 rounded-2xl bg-hawk-green px-8 py-3 active:opacity-80"
           onPress={() => router.back()}

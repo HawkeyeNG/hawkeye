@@ -715,7 +715,8 @@ export default function SignIn() {
       setLine(
         r.error === 'too_many_requests' ? (waPaid ? i18nT('n.auth.wa-too-many') : i18nT('auth.wa-too-many-free'))
         : r.error === 'invalid_phone' ? i18nT('n.auth.wa-invalid-phone')
-        : i18nT('n.app.sign-in.could-not-send-a-code-check'),
+        // The server's trouble, not the number's — same fallback as send() (ONB-16).
+        : i18nT('n.app.sign-in.server-busy-try-again'),
       );
     } catch {
       setLine(i18nT('n.app.sign-in.network-error-try-again'));

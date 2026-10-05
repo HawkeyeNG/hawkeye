@@ -1,5 +1,6 @@
 /**
- * Extract the translatable prose out of native/src/lib/content.ts.
+ * Extract the translatable prose out of native/src/lib/content.ts (plus the
+ * terms screen's TERMS and the FAQ in native/src/lib/pages.json — see below).
  *
  * WHY THIS FILE GETS ITS OWN MECHANISM. content.ts is not a flat catalogue of
  * labels; it is a nested typed content tree — pages of blocks of items of
@@ -25,8 +26,11 @@ import fs from 'node:fs';
 const SRC = '/home/elrio/hawkeye/native/src/lib/content.ts';
 const src = fs.readFileSync(SRC, 'utf8');
 
-/** Fields that hold prose. Everything else — icon, href, url, kind, tone — is machinery. */
-const TEXT_FIELDS = new Set(['text', 'title', 'body', 'cta', 'kicker', 'label']);
+/** Fields that hold prose. Everything else — icon, href, url, kind, tone — is machinery.
+ *  `governing` is the legal pages' "the English version applies" sentence: it is
+ *  rendered (page.tsx, terms.tsx) and translated, so it has to be extracted, or
+ *  its translation reads as stale and the build refuses. */
+const TEXT_FIELDS = new Set(['text', 'title', 'body', 'cta', 'kicker', 'label', 'governing']);
 
 /**
  * Parse by evaluating the object literal, not by regex: the tree is nested five
@@ -97,6 +101,22 @@ for (const [slug, page] of Object.entries(PAGES)) {
   walk(page, null);
 }
 
+/* THE FAQ IS A THIRD SOURCE: native/src/lib/pages.json. page.tsx folds its
+   `faq` blocks into question rows and translates them through the same
+   English-keyed dictionary (74af638f), but this extractor never read the file —
+   its 21+ strings were merged into tmp/native_content_en.json by hand, so every
+   re-run dropped them and the build refused with "STALE" for the whole FAQ.
+   ONLY faq, and only what faqPairs() renders (heading and text blocks): the
+   other pages in pages.json are an older extraction that nothing renders any
+   more (content.ts carries them), and translating dead copy is wasted review. */
+const PSRC = '/home/elrio/hawkeye/native/src/lib/pages.json';
+const faqBlocks = JSON.parse(fs.readFileSync(PSRC, 'utf8')).faq?.blocks ?? [];
+let faqN = 0;
+for (const b of faqBlocks) {
+  if ((b.type === 'heading' || b.type === 'text') && typeof b.text === 'string') { out.add(b.text); faqN++; }
+}
+console.log(`parsed the FAQ in pages.json as a third source (${faqN} strings)`);
+
 /** Not worth a translator's time, and not safe to hand one. */
 const keep = [...out].filter((s) => s.trim().length > 1 && /[A-Za-z]{2}/.test(s) && !/^https?:|^native:|^mailto:|^tel:/.test(s));
 
@@ -108,6 +128,8 @@ console.log(`${keep.length} prose strings, ${keep.join(' ').split(/\s+/).length}
 // CONTROL: the walker must have reached every depth of the tree, not just the top.
 const deepest = keep.some((s) => s.length > 120);
 const shallow = keep.includes('How Hawkeye Works');
+const faqFound = faqN >= 10 && keep.includes('Who can be an observer?');
 console.log(`${shallow ? 'PASS' : 'FAIL'}  CONTROL a top-level page title was found`);
 console.log(`${deepest ? 'PASS' : 'FAIL'}  CONTROL a long nested body was found (the walker went deep)`);
-if (!shallow || !deepest) process.exit(1);
+console.log(`${faqFound ? 'PASS' : 'FAIL'}  CONTROL the FAQ's questions were found (pages.json)`);
+if (!shallow || !deepest || !faqFound) process.exit(1);

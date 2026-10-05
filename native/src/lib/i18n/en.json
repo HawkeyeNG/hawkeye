@@ -92,6 +92,7 @@
   "captain.volunteers": "How many volunteers could you bring?",
   "captain.your-application": "Your application",
   "captain.your-ward": "Your ward",
+  "case.case-not-found-body": "This case doesn’t exist, or the link is out of date.",
   "case.evidence": "Evidence",
   "cert.card-check": "Check it at {url}",
   "cert.card-code": "Verification code {code}",

@@ -13,8 +13,14 @@
  *   node scripts/i18n/build_native_content_i18n.mjs
  */
 import fs from 'node:fs';
+import { execFileSync } from 'node:child_process';
 
 const ROOT = '/home/elrio/hawkeye';
+/* EXTRACT FIRST, EVERY TIME. tmp/native_content_en.json used to be whatever the
+   last person left there — the FAQ strings had been merged into it by hand, so
+   the next honest re-run of the extractor dropped them and this build refused.
+   Re-extracting here means the English is always the source as it stands. */
+execFileSync(process.execPath, [`${ROOT}/scripts/i18n/extract_native_content.mjs`], { stdio: 'inherit' });
 const EN = JSON.parse(fs.readFileSync(`${ROOT}/tmp/native_content_en.json`, 'utf8'));
 // content_tr_legal.json is the terms and privacy text. It stays a SEPARATE
 // source rather than being merged into a or b: it came through a different
@@ -45,7 +51,7 @@ for (const s of english) {
   }
 }
 const stale = Object.keys(TR).filter((k) => !(k in EN));
-for (const s of stale) console.log(`STALE (no longer in content.ts): ${JSON.stringify(s.slice(0, 76))}`);
+for (const s of stale) console.log(`STALE (no longer in content.ts, terms.tsx or the pages.json FAQ): ${JSON.stringify(s.slice(0, 76))}`);
 bad += stale.length;
 
 console.log(`\n${english.length} strings, ${bad} problems`);
@@ -57,7 +63,7 @@ for (const s of english) for (const l of ['ha', 'ig', 'yo']) out[l][s] = TR[s][l
 const body = `/**
  * Translations for the explainer content in lib/content.ts.
  *
- * GENERATED — do not edit. Source: tmp/content_tr_{a,b,legal}.json, built by
+ * GENERATED — do not edit. Source: tmp/content_tr_{a,b,legal,faq}.json, built by
  * scripts/i18n/build_native_content_i18n.mjs.
  *
  * KEYED BY THE ENGLISH STRING. content.ts is a nested typed content tree with

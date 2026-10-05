@@ -200,8 +200,10 @@ console.log('\n=== /download at desktop width, where the badges run full size ==
     r.rows.every((x) => x.iosH > 34), true);
 }
 
-console.log('\n=== the homepage no longer carries a store badge of its own ===');
+console.log('\n=== the homepage offers the FULL app on the App Store, and Lite via /download ===');
 {
+  // Reversed 2026-10-05 at the owner's request: the hero carries the native
+  // app's two badges again, plus "Smaller phone? Get the Lite App." -> /download.
   const ctx = await b.newContext({ userAgent: IPHONE, viewport: { width: 390, height: 780 } });
   const p = await ctx.newPage();
   const errs = [];
@@ -209,18 +211,18 @@ console.log('\n=== the homepage no longer carries a store badge of its own ===')
   await p.goto(`${base}/index.html`, { waitUntil: 'load' });
   await p.waitForTimeout(300);
   const h = await p.evaluate(() => {
-    const get = document.querySelector('.hero-get-btn');
+    const lite = document.querySelector('.hero-get-sub a');
     return {
-      getHref: get?.getAttribute('href') ?? null,
-      getShown: !!get && get.getClientRects().length > 0,
       // Reachable, not merely present: an App Store link nobody can see is not an offer.
-      storeLinks: [...document.querySelectorAll('a[href*="apps.apple.com"]')].filter((a) => a.getClientRects().length > 0).length,
+      storeHrefs: [...document.querySelectorAll('a[href*="apps.apple.com"]')].filter((a) => a.getClientRects().length > 0).map((a) => a.getAttribute('href')),
+      liteHref: lite?.getAttribute('href') ?? null,
+      liteShown: !!lite && lite.getClientRects().length > 0,
       stale: /no App Store version/i.test(document.body.innerText),
     };
   });
-  check('the hero sends people to /download instead', h.getHref, 'download.html');
-  check('and that button renders', h.getShown, true);
-  check('no App Store link is offered on the homepage itself', h.storeLinks, 0);
+  check('exactly one App Store badge, and it is the full app (not Lite)', h.storeHrefs, ['https://apps.apple.com/app/id6804218478']);
+  check('"Lite App" goes to the download page', h.liteHref, 'https://hawkeye.com.ng/download.html');
+  check('and that link renders', h.liteShown, true);
   // Retired by 8fac697/b2fda44: printed beside a live listing it was simply false.
   check('nothing still says there is no App Store version', h.stale, false);
   check('no page error', errs.slice(0, 2), []);

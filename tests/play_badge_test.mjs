@@ -142,18 +142,26 @@ console.log('\n=== the narrowest phone: badges wrap, they never shrink ===');
   check('and still offered', v.bothShown, true);
 }
 
-console.log('\n=== the homepage hands the choice to /download ===');
+console.log('\n=== the homepage offers the FULL app on Play, and Lite via /download ===');
 {
+  // Reversed 2026-10-05 at the owner's request (see app_store_badge_test.mjs).
   const ctx = await b.newContext({ userAgent: ANDROID, viewport: { width: 390, height: 780 } });
   const p = await ctx.newPage();
   await p.goto(`${base}/index.html`, { waitUntil: 'load' });
   await p.waitForTimeout(300);
-  const h = await p.evaluate(() => ({
-    getHref: document.querySelector('.hero-get-btn')?.getAttribute('href') ?? null,
-    playLinks: [...document.querySelectorAll('a[href*="play.google.com"]')].filter((a) => a.getClientRects().length > 0).length,
-  }));
-  check('the hero button goes to /download', h.getHref, 'download.html');
-  check('and the homepage offers no Play badge of its own', h.playLinks, 0);
+  const h = await p.evaluate(() => {
+    const img = document.querySelector('.hero-badges a[href*="play.google.com"] img');
+    const r = img && img.getBoundingClientRect();
+    return {
+      playHrefs: [...document.querySelectorAll('a[href*="play.google.com"]')].filter((a) => a.getClientRects().length > 0).map((a) => a.getAttribute('href')),
+      // The badge artwork keeps its 145:56 shape — a squashed badge is a policy breach.
+      ratio: r ? Math.abs(r.width / r.height - 145 / 56) < 0.05 : false,
+      liteHref: document.querySelector('.hero-get-sub a')?.getAttribute('href') ?? null,
+    };
+  });
+  check('exactly one Play badge, and it is the full app (not Lite)', h.playHrefs, ['https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer']);
+  check('and it is not squashed', h.ratio, true);
+  check('"Lite App" goes to the download page', h.liteHref, 'https://hawkeye.com.ng/download.html');
   await ctx.close();
 }
 

@@ -2943,5 +2943,6 @@
   "profile.sign-out-confirm-title": "Sign out?",
   "profile.sign-out-confirm-body": "You can sign back in with your number and password. Your reports are unaffected.",
   "profile.sign-out-confirm-ok": "Sign Out",
-  "my-groups.undo-decline": "Undo"
+  "my-groups.undo-decline": "Undo",
+  "index.smaller-phone-lite-app": "Smaller phone? Get the <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>."
 }

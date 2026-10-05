@@ -32,6 +32,18 @@
   <script src="native.js?v=126"></script>
   <script src="/monitor.js?v=3" defer></script>
   <style>
+    /* ---- Hero store badges + "Smaller phone? Get the Lite App." ----
+       .dl-badges centres its row (right on /download); in this hero the text is
+       left-aligned on wide screens, so the badges line up with it there, and the
+       portrait rule styles.css gives .hero-fold .install-row centres them again.
+       The line takes the "Already an observer? Sign in" colours: the hero is the
+       same dark green in both themes, and the default link green vanished on it. */
+    .hero .hero-badges { justify-content: flex-start; margin-top: 4px; }
+    @media (max-width: 900px) and (orientation: portrait) { .hero-fold .hero-badges { justify-content: center; } }
+    .hero .hero-get-sub { color: #a9c3b4; }
+    .hero .hero-get-sub a { color: #fff; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+    .hero .hero-get-sub a:hover { color: var(--accent); }
+
     /* ---- Observer Home (signed-in index) ---- */
     .home-obs { display: none; }
     .obs-home .home-obs { display: block; }
@@ -450,21 +462,17 @@
              signed in) the header bell. -->
         <div style="margin-top: 14px">
           <p id="install-hint" hidden class="hint" style="margin: 0 0 8px"></p>
-          <!-- ONE BUTTON, NOT A BADGE WALL. There are now FOUR store listings
-               (Hawkeye and Hawkeye Lite, each on Play and the App Store) plus the
-               web app and the direct APK. Six routes cannot sit in a hero without
-               burying the primary CTA, and the badges here could only ever show
-               two of them. The button hands the whole decision to download.html,
-               which has room to state the difference between the apps.
-
-               This also retires the UA-gating that used to live in the script
-               below: with four listings, "which badge do we show" is a question
-               the download page answers with words instead of a guess about the
-               device someone is holding. -->
-          <p class="hero-get">
-            <a data-i18n="index.get-the-app" class="btn-ghost hero-get-btn" href="download.html">Get the app</a>
-          </p>
-          <p data-i18n="index.android-and-iphone-free-or-run" class="hint hero-get-sub">Android and iPhone, free &mdash; or run it in your browser with no install.</p>
+          <!-- THE NATIVE APP'S TWO STORE BADGES, and one line for everyone else
+               (owner, 2026-10-05). Both platforms, no UA guess: a visitor knows
+               which phone they hold. Lite and every other route (direct APK, the
+               browser) live on download.html, which the "Lite App" link opens —
+               it has room to say how the apps differ. Same markup and classes as
+               download.html's own badges, so the sizing rules there apply. -->
+          <div class="install-row dl-badges hero-badges">
+            <a class="play-badge-link" rel="noopener" target="_blank" href="https://play.google.com/store/apps/details?id=ng.com.hawkeye.observer"><img src="play-badge.png" alt="Get Hawkeye on Google Play" width="145" height="56" decoding="async"></a>
+            <a class="play-badge-link" rel="noopener" target="_blank" href="https://apps.apple.com/app/id6804218478"><img class="dl-badge-ios" src="app-store-badge.svg" alt="Download Hawkeye on the App Store" width="114" height="38" decoding="async"></a>
+          </div>
+          <p data-i18n-html="index.smaller-phone-lite-app" class="hint hero-get-sub">Smaller phone? Get the <a href="https://hawkeye.com.ng/download.html">Lite App</a>.</p>
         </div>
 
         <!-- Manual install steps. Chromium's one-tap prompt covers most Android

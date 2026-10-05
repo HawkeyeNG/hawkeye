@@ -2939,5 +2939,8 @@
   "results.following-subject": "Following {v0}.",
   "index.alerts-on-short": "Alerts are on for your unit",
   "index.alerts-on": "Alerts on",
-  "auth.number-never-stored": "Your number is never stored."
+  "auth.number-never-stored": "Your number is never stored.",
+  "profile.sign-out-confirm-title": "Sign out?",
+  "profile.sign-out-confirm-body": "You can sign back in with your number and password. Your reports are unaffected.",
+  "profile.sign-out-confirm-ok": "Sign Out"
 }

@@ -2039,6 +2039,13 @@ export default function Practice() {
                 <Text className="text-sm font-bold text-hawk-green">{i18nT('n.app.certificate.practice-cta')}</Text>
               </Pressable>
             ) : null}
+            {/* The readiness check, which nothing in the first run pointed to
+                (flow walkthrough ONB-18). Signed in only: /ready is gated. */}
+            {auth.status === 'signedIn' ? (
+              <Pressable className="mt-3 w-full items-center py-2" onPress={() => router.push('/ready' as never)}>
+                <Text className="text-sm font-semibold text-good-ink">{i18nT('ready.title')}</Text>
+              </Pressable>
+            ) : null}
             <Pressable className="mt-3 w-full items-center py-2" onPress={restart}>
               <Text className="text-sm font-semibold text-good-ink">{i18nT('practice.practise-again')}</Text>
             </Pressable>

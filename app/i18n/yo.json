@@ -2965,5 +2965,8 @@
   "results.following-subject": "O ń tẹ̀lé {v0}.",
   "index.alerts-on-short": "Ìkìlọ̀ ti tàn fún ẹ̀ka rẹ",
   "index.alerts-on": "Ìkìlọ̀ ń ṣiṣẹ́",
-  "auth.number-never-stored": "A kì í tọ́jú nọ́mbà rẹ."
+  "auth.number-never-stored": "A kì í tọ́jú nọ́mbà rẹ.",
+  "profile.sign-out-confirm-title": "Jáde?",
+  "profile.sign-out-confirm-body": "O lè wọlé padà pẹ̀lú nọ́mbà rẹ àti ọ̀rọ̀ ìpamọ́ rẹ. Kò sí ohun tí yóò ṣe àwọn ìròyìn rẹ.",
+  "profile.sign-out-confirm-ok": "Jáde"
 }

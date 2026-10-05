@@ -999,7 +999,13 @@
 
     // The server hears first (one phone, one counting account per election:
     // backend services/deviceClaims.js); best effort, keepalive past the navigation.
-    $('btn-signout').onclick = () => {
+    $('btn-signout').onclick = async () => {
+      // Ask first, as the menu and native do (flow walkthrough ONB-17).
+      if (!(await hkConfirm(T('profile.sign-out-confirm-body', 'You can sign back in with your number and password. Your reports are unaffected.'), {
+        title: T('profile.sign-out-confirm-title', 'Sign out?'),
+        ok: T('profile.sign-out-confirm-ok', 'Sign Out'),
+        danger: true,
+      }))) return;
       try {
         const tk = localStorage.getItem('hawkeye_token');
         if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
@@ -1039,7 +1045,7 @@
   <script src="passkey.js?v=1"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=196"></script>
+  <script src="menu.js?v=197"></script>
   <script src="shell.js?v=2" defer></script>
 </body>
 </html>

@@ -1917,8 +1917,23 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         // Sign out clears the token AND the device key so auto-resume can't
         // silently sign back in; sends the user to a fresh sign-up.
         i18nLate(p);
-        add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {
+        add('#', 'Sign out', 'sign-out').addEventListener('click', async (e) => {
           e.preventDefault();
+          // ASK FIRST, as native's sheet does (flow walkthrough ONB-17): one tap
+          // here used to end the session. Most pages never load dialog.js, so
+          // fetch it now; if it cannot load, sign out as before.
+          if (!window.hkConfirm) {
+            await new Promise((res) => {
+              const s = document.createElement('script');
+              s.src = 'dialog.js?v=1'; s.onload = res; s.onerror = res;
+              document.head.appendChild(s);
+            });
+          }
+          const tr = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+          if (window.hkConfirm && !(await window.hkConfirm(
+            tr('profile.sign-out-confirm-body', 'You can sign back in with your number and password. Your reports are unaffected.'),
+            { title: tr('profile.sign-out-confirm-title', 'Sign out?'), ok: tr('profile.sign-out-confirm-ok', 'Sign Out'), danger: true },
+          ))) return;
           // Tell the server first (POST /api/observers/sign-out): until it hears,
           // this account still holds this phone for the one-phone-one-account
           // rule (backend services/deviceClaims.js). keepalive: the page is about

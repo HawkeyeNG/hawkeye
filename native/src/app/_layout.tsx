@@ -246,7 +246,11 @@ function RootShell() {
     // survives the hop; bouncing to welcome here threw the token away and the
     // reader was left with no invitation to accept. It shows only the group's
     // public name and the consent notice, and joining itself needs the session.
-    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice' || top === 'open' || top === 'join';
+    // 'ledger' and 'verify-cert' — public, read-only lookups the website shows
+    // signed out (flow walkthrough FA-PUB-4): a certificate holder's verifier
+    // who has the app met a sign-up wall. Neither screen reads the session.
+    const allowed = top === 'welcome' || top === 'sign-in' || top === 'practice' || top === 'open' || top === 'join'
+      || top === 'ledger' || top === 'verify-cert';
     if (allowed) return;
 
     /**

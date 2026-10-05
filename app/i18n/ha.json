@@ -2966,5 +2966,8 @@
   "results.following-subject": "Kana bin {v0}.",
   "index.alerts-on-short": "An kunna faɗakarwa don rukuninka",
   "index.alerts-on": "Faɗakarwa a kunne",
-  "auth.number-never-stored": "Ba a taɓa adana lambarka ba."
+  "auth.number-never-stored": "Ba a taɓa adana lambarka ba.",
+  "profile.sign-out-confirm-title": "Fita?",
+  "profile.sign-out-confirm-body": "Za ka iya sake shiga da lambar wayarka da kalmar sirri. Rahotanninka ba su shafu ba.",
+  "profile.sign-out-confirm-ok": "Fita"
 }

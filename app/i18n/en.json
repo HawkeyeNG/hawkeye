@@ -2771,7 +2771,7 @@
   "my-groups.bad-link": "That is not a Hawkeye invite link. Copy the whole link and try again.",
   "my-groups.open-link": "Open invite",
   "my-groups.check-connection": "Check your connection and try again.",
-  "my-groups.decline-confirm": "Tell {name} you will not be at this unit? They can suggest another one. You cannot undo this here.",
+  "my-groups.decline-confirm": "Tell {name} you will not be at this unit? They can suggest another one.",
   "my-groups.decline-ok": "Decline this unit",
   "situation-room.codes-download-csv": "Download codes CSV",
   "situation-room.codes-pending": "Organisation codes can be checked here once Hawkeye has verified this room.",
@@ -2942,5 +2942,6 @@
   "auth.number-never-stored": "Your number is never stored.",
   "profile.sign-out-confirm-title": "Sign out?",
   "profile.sign-out-confirm-body": "You can sign back in with your number and password. Your reports are unaffected.",
-  "profile.sign-out-confirm-ok": "Sign Out"
+  "profile.sign-out-confirm-ok": "Sign Out",
+  "my-groups.undo-decline": "Undo"
 }

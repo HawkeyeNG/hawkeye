@@ -268,6 +268,7 @@ function card(g) {
            tapping the campaign name, and a coloured heading reads as a heading,
            so people who had access never found the room they had access to. */''}<a class="btn go" href="/room/${esc(g.slug || '')}">${T('my-groups.open-room', 'Open situation room')}</a>
       ${g.assigned_pu && !declined ? `<button class="btn" data-act="decline" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.not-where', 'That is not where I will be')}</button>` : ''}
+      ${g.assigned_pu && declined ? `<button class="btn" data-act="undecline" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.undo-decline', 'Undo')}</button>` : ''}
       <button class="btn warn" data-act="leave" data-gid="${g.id}" data-name="${esc(g.name)}">${T('my-groups.leave', 'Leave this group')}</button>
     </div>
   </div>`;
@@ -297,16 +298,16 @@ async function act(b) {
      could keep a list of the people who said no would have been handed exactly
      the fact the person withheld. Same endpoint as leaving, for that reason. */
   if (verb === 'refuse' && !(await hkConfirm(T('my-groups.refuse-confirm', 'Tell {name} no? They will not be told who declined, and they can ask again later.', name), { ok: T('my-groups.no-thanks', 'No thanks') }))) return;
-  /* CONFIRMED, because there is no way back from here: the member has no
-     "un-decline" (the coordinator reassigns), so a mis-tap left them marked
-     declined until somebody noticed. */
-  if (verb === 'decline' && !(await hkConfirm(T('my-groups.decline-confirm', 'Tell {name} you will not be at this unit? They can suggest another one. You cannot undo this here.', name), { ok: T('my-groups.decline-ok', 'Decline this unit') }))) return;
+  /* Confirmed, as it posts to the coordinator at once; the declined card now
+     carries an Undo (R-DECLINE-NO-UNDO), so a mis-tap is no longer stuck. */
+  if (verb === 'decline' && !(await hkConfirm(T('my-groups.decline-confirm', 'Tell {name} you will not be at this unit? They can suggest another one.', name), { ok: T('my-groups.decline-ok', 'Decline this unit') }))) return;
   /* Confirmed, because leaving is not reversible from here — the invite link
      may be spent, revoked, or simply not to hand any more. */
   if (verb === 'leave' && !(await hkConfirm(T('my-groups.leave-confirm', 'Leave {name}? They will stop seeing which reports are yours. You will need a fresh invite to rejoin.', name), { ok: T('my-groups.leave', 'Leave this group'), danger: true }))) return;
 
   const req = verb === 'accept' ? ['/accept', 'POST', 'my-groups.accept-failed', 'Could not accept just now.']
     : verb === 'decline' ? ['/decline', 'POST', 'my-groups.send-failed', 'Could not send that just now.']
+    : verb === 'undecline' ? ['/undecline', 'POST', 'my-groups.send-failed', 'Could not send that just now.']
       : verb === 'refuse' ? ['/membership', 'DELETE', 'my-groups.refuse-failed', 'Could not do that just now.']
         : ['/membership', 'DELETE', 'my-groups.leave-failed', 'Could not leave just now.'];
   /* ONE REQUEST AT A TIME. With no busy state a double tap on Accept sent two

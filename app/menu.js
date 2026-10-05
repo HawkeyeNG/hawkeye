@@ -2157,6 +2157,8 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     #hk-form button{display:inline-block;width:auto;margin:0;flex:none;background:var(--green,#004225);color:#fff;border:none;border-radius:10px;padding:0 16px;font-weight:700;cursor:pointer}
     #hk-note{font-size:.72rem;color:var(--muted,#5b6b62);padding:0 14px 10px;background:var(--bg,#f7f8f6)}
     .hk-a.hk-fail{border-color:var(--amber-border,#d4770c)}
+    #hk-panel .hk-acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+    #hk-panel .hk-act{display:inline-flex;align-items:center;min-height:44px;padding:0 16px;border-radius:999px;background:var(--gold,#f5c518);color:#06231a;font-size:.88rem;font-weight:700;text-decoration:none}
     #hk-panel .hk-retry{display:block;width:auto;margin:8px 0 0;padding:7px 14px;border-radius:999px;border:1px solid var(--line,#e3e8e4);background:var(--card,#fff);color:var(--link,#0a6b40);font:inherit;font-size:.85rem;font-weight:700;box-shadow:none;cursor:pointer}
     /* PHONES: a full-screen modal, not a floating card — the card left a strip of
        page around a chat that needs the whole screen and the keyboard. 110 sits
@@ -2250,8 +2252,25 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       try {
         const r = await fetch('/api/assistant', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ question: q }) });
         const j = await r.json().catch(() => ({}));
-        if (j.answer) t.textContent = j.answer;
-        else if (j.error === 'assistant_unconfigured') { fail = i18nT('assistant.unconfigured', "The assistant isn't switched on yet."); retry = false; }
+        if (j.answer) {
+          t.textContent = j.answer;
+          /* A HOW-TO ANSWER COMES WITH ITS BUTTONS (flow walkthrough FA-ASK-2):
+             "tap Report" in plain text left the reader to find Report. The
+             server says which (services/assistant.js splitActions). */
+          const acts = (Array.isArray(j.actions) ? j.actions : []).map((a) => (a === 'report'
+            ? ['observe.html', i18nT('observe.report-a-result', 'Report a result')]
+            : a === 'practice' ? ['practice.html', i18nT('practice.practice-run', 'Practice run')] : null)).filter(Boolean);
+          if (acts.length) {
+            const row = document.createElement('div');
+            row.className = 'hk-acts';
+            for (const [href, label] of acts) {
+              const a = document.createElement('a');
+              a.className = 'hk-act'; a.href = href; a.textContent = label;
+              row.appendChild(a);
+            }
+            t.appendChild(row);
+          }
+        } else if (j.error === 'assistant_unconfigured') { fail = i18nT('assistant.unconfigured', "The assistant isn't switched on yet."); retry = false; }
         else fail = i18nT('assistant.err-service', 'The assistant could not answer that just now.');
       } catch { fail = i18nT('common.cant-reach-hawkeye', 'Could not reach Hawkeye — check your connection.'); }
       asking = false;

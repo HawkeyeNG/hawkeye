@@ -2798,7 +2798,7 @@
   "my-groups.bad-link": "Wannan ba hanyar gayyata ta Hawkeye ba ce. Kwafi hanyar gaba ɗaya ka sake gwadawa.",
   "my-groups.open-link": "Buɗe gayyata",
   "my-groups.check-connection": "Duba haɗin intanet ɗinka sannan ka sake gwadawa.",
-  "my-groups.decline-confirm": "Ka gaya wa {name} cewa ba za ka kasance a wannan rumfar ba? Za su iya ba da shawarar wata. Ba za ka iya janye wannan a nan ba.",
+  "my-groups.decline-confirm": "Ka gaya wa {name} cewa ba za ka kasance a wannan rumfar ba? Za su iya ba da shawarar wata.",
   "my-groups.decline-ok": "Ƙi wannan rumfar",
   "situation-room.codes-download-csv": "Sauke CSV na lambobi",
   "situation-room.codes-pending": "Za a iya duba lambobin ƙungiya a nan da zarar Hawkeye ya tabbatar da wannan ɗakin.",
@@ -2969,5 +2969,6 @@
   "auth.number-never-stored": "Ba a taɓa adana lambarka ba.",
   "profile.sign-out-confirm-title": "Fita?",
   "profile.sign-out-confirm-body": "Za ka iya sake shiga da lambar wayarka da kalmar sirri. Rahotanninka ba su shafu ba.",
-  "profile.sign-out-confirm-ok": "Fita"
+  "profile.sign-out-confirm-ok": "Fita",
+  "my-groups.undo-decline": "Janye"
 }

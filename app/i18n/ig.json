@@ -2797,7 +2797,7 @@
   "my-groups.bad-link": "Nke ahụ abụghị njikọ òkù Hawkeye. Detuo njikọ ahụ niile ma nwaa ọzọ.",
   "my-groups.open-link": "Mepee òkù",
   "my-groups.check-connection": "Lelee njikọ ịntanetị gị wee nwaa ọzọ.",
-  "my-groups.decline-confirm": "Gwa {name} na ị gaghị anọ n'ebe ntuli aka a? Ha nwere ike ịtụ aro ọzọ. Ị nweghị ike ịgbanwe nke a ebe a.",
+  "my-groups.decline-confirm": "Gwa {name} na ị gaghị anọ n'ebe ntuli aka a? Ha nwere ike ịtụ aro ọzọ.",
   "my-groups.decline-ok": "Jụ ebe ntuli aka a",
   "situation-room.codes-download-csv": "Budata CSV koodu",
   "situation-room.codes-pending": "A ga-enwe ike ilele koodu nzukọ ebe a ozugbo Hawkeye nyochachara ọnụ ụlọ a.",
@@ -2968,5 +2968,6 @@
   "auth.number-never-stored": "Anaghị echekwa nọmba gị.",
   "profile.sign-out-confirm-title": "Pụọ?",
   "profile.sign-out-confirm-body": "Ị nwere ike ịbanye ọzọ site na nọmba gị na okwuntughe gị. Ọ dịghị ihe ga-eme akụkọ gị.",
-  "profile.sign-out-confirm-ok": "Pụọ"
+  "profile.sign-out-confirm-ok": "Pụọ",
+  "my-groups.undo-decline": "Weghachi"
 }

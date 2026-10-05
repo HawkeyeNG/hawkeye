@@ -2797,7 +2797,7 @@
   "my-groups.bad-link": "Èyí kì í ṣe ìjápọ̀ ìpè Hawkeye. Ṣe àdàkọ gbogbo ìjápọ̀ náà kí o sì tún gbìyànjú.",
   "my-groups.open-link": "Ṣí ìpè",
   "my-groups.check-connection": "Ṣàyẹ̀wò ìsopọ̀ rẹ kí o sì tún gbìyànjú.",
-  "my-groups.decline-confirm": "Sọ fún {name} pé o kò ní wà ní ibùdó ìdìbò yìí? Wọ́n lè dábàá òmíràn. O kò lè yí èyí padà níbí.",
+  "my-groups.decline-confirm": "Sọ fún {name} pé o kò ní wà ní ibùdó ìdìbò yìí? Wọ́n lè dábàá òmíràn.",
   "my-groups.decline-ok": "Kọ ibùdó ìdìbò yìí",
   "situation-room.codes-download-csv": "Gba CSV kóòdù sílẹ̀",
   "situation-room.codes-pending": "A ó lè ṣàyẹ̀wò kóòdù àjọ níbí nígbà tí Hawkeye bá ti fìdí yàrá yìí múlẹ̀.",
@@ -2968,5 +2968,6 @@
   "auth.number-never-stored": "A kì í tọ́jú nọ́mbà rẹ.",
   "profile.sign-out-confirm-title": "Jáde?",
   "profile.sign-out-confirm-body": "O lè wọlé padà pẹ̀lú nọ́mbà rẹ àti ọ̀rọ̀ ìpamọ́ rẹ. Kò sí ohun tí yóò ṣe àwọn ìròyìn rẹ.",
-  "profile.sign-out-confirm-ok": "Jáde"
+  "profile.sign-out-confirm-ok": "Jáde",
+  "my-groups.undo-decline": "Yí i padà"
 }

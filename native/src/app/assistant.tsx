@@ -18,7 +18,8 @@ import { HEADER_CONTENT_H } from '@/hooks/use-hide-on-scroll';
 import { BRAND } from '@/lib/api';
 import { useUi } from '@/lib/theme';
 import { humanError } from '@/lib/errors';
-import { t as i18nT, lazyT } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth';
+import { t as i18nT } from '@/lib/i18n';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -36,13 +37,18 @@ const GREETING =
  * on tap would put the screen's primary action back inside the scroll. It also
  * lets someone swap "presidential" for the race they actually care about.
  */
-const SUGGESTIONS = lazyT([
+/* Translated at render (i18nT), not via lazyT: lazyT passes anything without
+   the n. prefix through untouched, and the how-to is the web's shared FAQ key. */
+const SUGGESTION_KEYS = [
   'n.app.assistant.what-is-the-presidential-tally-so',
   'n.app.assistant.how-much-of-nigeria-is-mapped',
   'n.app.assistant.which-states-still-have-no-reports',
-]);
+  'faq.how-do-i-report-a-result', // the how-to the greeting never offered (FA-ASK-2)
+];
 
-type Turn = { id: number; q: string; a: string | null };
+/** Buttons the server attaches to a how-to answer (services/assistant.js splitActions). */
+type Act = 'report' | 'practice';
+type Turn = { id: number; q: string; a: string | null; acts?: Act[] };
 
 /**
  * Ask Hawkeye — native twin of the web's floating assistant (app/menu.js).
@@ -58,6 +64,7 @@ type Turn = { id: number; q: string; a: string | null };
  */
 export default function Assistant() {
   const ui = useUi();
+  const auth = useAuth();
   const insets = useSafeAreaInsets();
   // A chat auto-scrolls to the newest turn, so a scroll-hiding header would
   // vanish on the first answer and never come back — this one stays put. It is
@@ -124,9 +131,10 @@ export default function Assistant() {
       // The route answers 200 with {answer} or {error} on purpose — an origin 5xx
       // gets replaced by Cloudflare's HTML error page, so a non-JSON body here
       // means the edge answered, not the app.
-      const j = (await res.json().catch(() => ({}))) as { answer?: string; error?: string };
+      const j = (await res.json().catch(() => ({}))) as { answer?: string; error?: string; actions?: string[] };
       if (j.answer) {
-        setTurns((t) => t.map((x) => (x.id === id ? { ...x, a: j.answer! } : x)));
+        const acts = (Array.isArray(j.actions) ? j.actions : []).filter((a): a is Act => a === 'report' || a === 'practice');
+        setTurns((t) => t.map((x) => (x.id === id ? { ...x, a: j.answer!, acts } : x)));
         return;
       }
       setFailedId(id);
@@ -184,7 +192,7 @@ export default function Assistant() {
               <Text className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
                 {i18nT('n.app.assistant.try-asking')}
               </Text>
-              {SUGGESTIONS.map((s) => (
+              {SUGGESTION_KEYS.map((k) => i18nT(k)).map((s) => (
                 <Pressable
                   key={s}
                   onPress={() => setQ(s)}
@@ -217,6 +225,29 @@ export default function Assistant() {
               {t.a ? (
                 <View className="mb-2 max-w-[88%] self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">
                   <Text className="text-sm leading-5 text-ink">{t.a}</Text>
+                  {/* A HOW-TO ANSWER COMES WITH ITS BUTTONS (flow walkthrough
+                      FA-ASK-2): "tap Report" behind a full-screen modal was not
+                      a way to start. Replace, not push: this screen is a modal,
+                      and both targets are full-screen modals of their own.
+                      Report needs an account; signed out it goes to sign-up. */}
+                  {t.acts?.length ? (
+                    <View className="flex-row flex-wrap gap-2 pt-3">
+                      {t.acts.map((a) => (
+                        <Pressable
+                          key={a}
+                          accessibilityRole="button"
+                          className="min-h-[44px] items-center justify-center rounded-full bg-hawk-gold px-4 active:opacity-80"
+                          onPress={() => router.replace(
+                            (a === 'practice' ? '/practice' : auth.status === 'signedIn' ? '/report/result' : '/sign-in?intent=signup') as never,
+                          )}
+                        >
+                          <Text className="text-sm font-bold text-hawk-green">
+                            {a === 'practice' ? i18nT('n.app.practice.practice-run') : i18nT('observe.report-a-result')}
+                          </Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
                 </View>
               ) : busy && t.id === turns[turns.length - 1]?.id ? (
                 <View className="mb-2 flex-row items-center self-start rounded-2xl rounded-bl-md bg-card px-4 py-3">

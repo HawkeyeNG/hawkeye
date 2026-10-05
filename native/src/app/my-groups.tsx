@@ -180,7 +180,7 @@ export default function MyGroups() {
 
   /** One membership action; on success the list is re-read, as on the web. */
   const act = async (
-    verb: 'accept' | 'decline' | 'leave',
+    verb: 'accept' | 'decline' | 'undecline' | 'leave',
     id: number,
     failKey: string,
   ) => {
@@ -188,6 +188,7 @@ export default function MyGroups() {
     try {
       const r = verb === 'accept' ? await authedSend('POST', `/api/groups/${id}/accept`)
         : verb === 'decline' ? await authedSend('POST', `/api/groups/${id}/decline`)
+        : verb === 'undecline' ? await authedSend('POST', `/api/groups/${id}/undecline`)
           : await authedSend('DELETE', `/api/groups/${id}/membership`);
       // 409 on accept: the room's party label is still being verified — it admits nobody yet.
       if (verb === 'accept' && r.status === 409) {
@@ -351,8 +352,18 @@ export default function MyGroups() {
               label={i18nT('my-groups.not-where')}
               icon="map-pin"
               busy={busy === `decline:${g.id}`}
-              // Asked first: there is no member-side way to take it back.
+              // Asked first: it posts to the coordinator at once.
               onPress={() => setConfirm({ kind: 'decline', id: g.id, name: g.name })}
+            />
+          ) : null}
+          {/* The way back from a mis-tap (flow walkthrough R-DECLINE-NO-UNDO):
+              the unit returns to 'proposed' for the coordinator to confirm. */}
+          {g.assigned_pu && declined ? (
+            <Btn
+              label={i18nT('my-groups.undo-decline')}
+              icon="rotate-ccw"
+              busy={busy === `undecline:${g.id}`}
+              onPress={() => act('undecline', g.id, 'my-groups.send-failed')}
             />
           ) : null}
           <Btn
@@ -476,9 +487,7 @@ export default function MyGroups() {
           confirm?.kind === 'leave'
             ? i18nT('my-groups.leave-confirm', { name: confirm?.name ?? '' })
             : confirm?.kind === 'decline'
-              /* There is no member-side "un-decline" (the coordinator
-                 reassigns), so a mis-tap used to stand until somebody
-                 noticed. Same words as the web. */
+              /* Same words as the web; the declined card carries Undo. */
               ? i18nT('my-groups.decline-confirm', { name: confirm?.name ?? '' })
               : i18nT('my-groups.refuse-confirm', { name: confirm?.name ?? '' })
         }

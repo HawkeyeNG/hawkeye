@@ -33,6 +33,10 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 CONF="${HAWKEYE_STANDBY_CONF:-$HOME/.config/hawkeye/standby.env}"
 ENVF="$REPO/backend/.env"
+# 1Password first (vault Infrastructure, Windows Hello), the files above as fallback.
+. "$REPO/scripts/lib/hk_secrets.sh"
+CONF=$(hk_secret_path standby.env "$CONF")
+ENVF=$(hk_secret_path "Backend .env (server)" "$ENVF")
 die() { echo "standby_env_sync: $*" >&2; exit 2; }
 say() { echo "standby_env_sync: $*"; }
 

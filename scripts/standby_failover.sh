@@ -33,6 +33,12 @@
 # Zone:DNS:Edit + Zone:Zone:Read. Add Zone:Zone Settings:Read and the script also
 # reads the SSL mode. Read in-process by Python; never printed, never in argv.
 set -euo pipefail
+# 1Password first (vault Infrastructure, Windows Hello), the files as fallback.
+# Python reads both paths from these variables; an explicit setting still wins.
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+. "$REPO/scripts/lib/hk_secrets.sh"
+export CF_FAILOVER_TOKEN_FILE="${CF_FAILOVER_TOKEN_FILE:-$(hk_secret_path cf_failover.env "$HOME/.config/hawkeye/cf_failover.env")}"
+export HAWKEYE_STANDBY_CONF="${HAWKEYE_STANDBY_CONF:-$(hk_secret_path standby.env "$HOME/.config/hawkeye/standby.env")}"
 exec python3 - "$@" <<'PY'
 import json, os, random, subprocess, sys, time, urllib.error, urllib.request
 

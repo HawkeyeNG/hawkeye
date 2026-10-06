@@ -21,6 +21,9 @@ set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 CONF="${HAWKEYE_STANDBY_CONF:-$HOME/.config/hawkeye/standby.env}"
+# 1Password first (vault Infrastructure, Windows Hello), the file above as fallback.
+. "$REPO/scripts/lib/hk_secrets.sh"
+CONF=$(hk_secret_path standby.env "$CONF")
 die() { echo "standby_sync: $*" >&2; exit 2; }
 say() { echo "standby_sync: $*"; }
 [ -r "$CONF" ] || die "missing $CONF (STANDBY_HOST, STANDBY_USER, STANDBY_SSH_KEY). The address is never kept in the repo."

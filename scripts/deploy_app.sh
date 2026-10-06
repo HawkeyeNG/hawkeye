@@ -32,8 +32,12 @@ done
 [ ${#FILES[@]} -eq 0 ] && { echo "usage: $0 [--path REMOTE] [--restart] <file>..."; exit 2; }
 
 cd "$(dirname "$0")/.." || exit 1
-U=$(grep '^GO54_USERNAME=' backend/.env | cut -d= -f2- | awk '{print $1}')
-P=$(grep '^GO54_PASSWORD=' backend/.env | sed -e 's/^GO54_PASSWORD=//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]*#.*//')
+# The GO54 login. From 1Password only when asked (HAWKEYE_USE_OP=1): deploys run
+# many times a day, and each run would otherwise raise a Windows Hello prompt.
+ENVF=backend/.env
+if [ -n "${HAWKEYE_USE_OP:-}" ]; then . scripts/lib/hk_secrets.sh; ENVF=$(hk_secret_path "Backend .env (server)" backend/.env); fi
+U=$(grep '^GO54_USERNAME=' "$ENVF" | cut -d= -f2- | awk '{print $1}')
+P=$(grep '^GO54_PASSWORD=' "$ENVF" | sed -e 's/^GO54_PASSWORD=//' -e 's/[[:space:]]*$//' -e 's/[[:space:]]*#.*//')
 API="https://da32.host-ww.net:2222/CMD_API_FILE_MANAGER"
 SITE=https://hawkeye.com.ng
 [ -z "$U" ] || [ -z "$P" ] && { echo "GO54 credentials not readable from backend/.env"; exit 1; }

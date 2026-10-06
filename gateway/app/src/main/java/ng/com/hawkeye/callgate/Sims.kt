@@ -94,6 +94,8 @@ object Sims {
     /** Did this call arrive on the gateway SIM? No SIM chosen, or no way to tell: false. */
     fun isGatewaySim(ctx: Context, h: PhoneAccountHandle?): Boolean {
         val chosen = Store.simSubId(ctx)
+        // A dedicated phone whose every SIM is a gateway number: every call counts.
+        if (chosen == Store.ALL_SIMS) return true
         if (chosen < 0) return false
         // NO HANDLE IS THE NORM, NOT THE EXCEPTION. A screening app that is not
         // the dialer gets Call.Details with accountHandle == null (seen on a Z Fold 5,

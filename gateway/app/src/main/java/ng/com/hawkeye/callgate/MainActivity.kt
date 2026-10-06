@@ -126,12 +126,17 @@ class MainActivity : Activity() {
             Toast.makeText(this, "No active SIM found.", Toast.LENGTH_LONG).show()
             return
         }
-        val items = lines.map { it.label } + "None — reject nothing"
+        // "Every SIM" is for a phone kept only as a gateway, with a gateway number
+        // in each slot: every incoming call is verified, whichever SIM it rings.
+        val items = lines.map { it.label } + "Every SIM in this phone" + "None — reject nothing"
         AlertDialog.Builder(this)
             .setTitle("Which SIM is the gateway?")
             .setItems(items.toTypedArray()) { _, i ->
-                if (i < lines.size) Store.setSim(this, lines[i].subId, lines[i].handleKey, lines[i].label)
-                else Store.setSim(this, -1, "", "")
+                when {
+                    i < lines.size -> Store.setSim(this, lines[i].subId, lines[i].handleKey, lines[i].label)
+                    i == lines.size -> Store.setSim(this, Store.ALL_SIMS, "", "Every SIM in this phone")
+                    else -> Store.setSim(this, -1, "", "")
+                }
                 refreshSim()
             }
             .setNegativeButton("Cancel", null)
@@ -141,7 +146,8 @@ class MainActivity : Activity() {
     private fun refreshSim() {
         val chosen = Store.simSubId(this)
         simStatus.text = when {
-            chosen < 0 -> "✗ Gateway SIM: none chosen — every call rings normally, nothing is rejected"
+            chosen == Store.ALL_SIMS -> "✓ Gateway SIMs: every SIM in this phone (${Sims.list(this)?.size ?: 0} active) — every incoming call is verified"
+            chosen < 0 ->"✗ Gateway SIM: none chosen — every call rings normally, nothing is rejected"
             !Sims.canRead(this) -> "✗ Gateway SIM: ${Store.simLabel(this)} — but the phone permission is off, so nothing is rejected. Tap \"Choose the gateway SIM\"."
             Sims.list(this)?.none { it.subId == chosen } == true ->
                 "✗ Gateway SIM: ${Store.simLabel(this)} is not in this phone now — choose again; until then nothing is rejected"

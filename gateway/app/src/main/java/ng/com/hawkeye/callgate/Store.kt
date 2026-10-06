@@ -60,7 +60,12 @@ object Store {
     /**
      * THE GATEWAY SIM. On a dual-SIM phone only calls arriving on this SIM are
      * rejected and reported; -1 = none chosen, and then nothing is rejected.
+     * ALL_SIMS (-2) = every SIM in this phone is a gateway SIM (a dedicated phone
+     * with two gateway numbers): every incoming call is screened, so there is no
+     * which-SIM question left for Android to answer.
      */
+    const val ALL_SIMS = -2
+
     fun simSubId(ctx: Context): Int = plain(ctx).getInt("simSubId", -1)
     fun simHandle(ctx: Context): String = plain(ctx).getString("simHandle", "") ?: ""
     fun simLabel(ctx: Context): String = plain(ctx).getString("simLabel", "") ?: ""

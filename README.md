@@ -14,6 +14,8 @@ remains INEC's. It works the same way as proven parallel vote tabulation efforts
 
 Live at [hawkeye.com.ng](https://hawkeye.com.ng).
 
+This project is tested with BrowserStack.
+
 ## What is in this repository
 
 | Path | What it is |

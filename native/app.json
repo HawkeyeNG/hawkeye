@@ -92,7 +92,8 @@
         "android.permission.RECORD_AUDIO",
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.POST_NOTIFICATIONS"
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.CALL_PHONE"
       ],
       "blockedPermissions": [
         "android.permission.READ_MEDIA_IMAGES",
@@ -190,6 +191,7 @@
       "react-native-document-scanner-plugin",
       "./plugins/with-mlkit-scanner-prewarm",
       "./plugins/with-allow-backup-override",
+      "./plugins/with-telephony-optional",
       "./plugins/with-release-signing"
     ],
     "experiments": {

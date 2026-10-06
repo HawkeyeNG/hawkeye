@@ -42,6 +42,7 @@ import {
   type RegisterResult,
 } from '@/lib/auth';
 import { BASE, BRAND, api } from '@/lib/api';
+import { askCallPermission, placeCall } from '@/lib/call-phone';
 import { ORG_ERROR_KEYS, authT, codeKind, looksLikeOrgCode, typedOrgCode } from '@/lib/auth-copy';
 import { typedInviteCode } from '@/lib/invite-parse';
 import { clearInviteUnit, pendingInviteCode, takeInviteUnit } from '@/lib/pending-invite';
@@ -1365,6 +1366,9 @@ export default function SignIn() {
                     onPress={() => {
                       setChannel(c.key);
                       setNeedChoice(false);
+                      // Ask for CALL_PHONE now, while "Call" is what was just
+                      // picked — Android's own prompt, no pre-prompt (call-phone.ts).
+                      if (c.key === 'call') void askCallPermission();
                     }}
                     className={`rounded-full px-3 py-2 ${
                       channel === c.key ? 'bg-hawk-green' : 'bg-card'
@@ -1693,10 +1697,9 @@ export default function SignIn() {
                 <Pressable
                   disabled={callWait === 'verified'}
                   onPress={() => {
-                    // Only a tel: link reaches the OS (lib/auth.ts callStart).
-                    // The dialler, not CALL_PHONE: placing the call ourselves
-                    // would need a new permission and a store build.
-                    if (call) Linking.openURL(call.tel).catch(() => {});
+                    // Dials directly where CALL_PHONE was granted (Android, new
+                    // builds); otherwise the dialler with our number typed in.
+                    if (call) void placeCall(call.tel);
                   }}
                   accessibilityRole="button"
                   className="mt-5 flex-row items-center justify-center rounded-2xl bg-hawk-green py-4 active:opacity-80"

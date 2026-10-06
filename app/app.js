@@ -1558,7 +1558,31 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else syncChannelGate();
 document.addEventListener('change', (e) => {
   if (e.target && e.target.name === 'otp-channel') syncChannelGate();
+  // Picking Call is when Hawkeye Lite (Android) asks for CALL_PHONE: Android's
+  // own prompt, while the reason is on screen (callPhonePlugin, below).
+  if (e.target && e.target.name === 'otp-channel' && e.target.value === 'call') askCallPermission();
 });
+
+/* THE MISSED-CALL SIGN-UP PLACES ITS OWN CALL in Hawkeye Lite on Android, via
+   HawkeyeDevicePlugin (callPermission / placeCall) — store builds from
+   2026-10-06 on. Everywhere else, and on any refusal or older build (the method
+   is UNIMPLEMENTED there and rejects), "Call now" stays the tel: link: the
+   dialler with our number typed in. Native's twin: native/src/lib/call-phone.ts. */
+const callPhonePlugin = () => (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.HawkeyeDevice) || null;
+let callAsked = false;
+function askCallPermission() {
+  const p = callPhonePlugin();
+  if (!p || callAsked) return;
+  callAsked = true;
+  try { Promise.resolve(p.callPermission()).catch(() => {}); } catch { /* no such method: older build */ }
+}
+async function placeCall(tel) {
+  const p = callPhonePlugin();
+  if (p) {
+    try { await p.placeCall({ tel }); return; } catch { /* not granted, older build, or failed: the dialler */ }
+  }
+  location.href = tel;
+}
 
 const pickedChannel = () => document.querySelector('input[name="otp-channel"]:checked')?.value || '';
 let pendingChannel = '';
@@ -2209,7 +2233,9 @@ async function callPoll() {
 }
 if ($('call-open')) $('call-open').onclick = () => {
   if (!call || !/^tel:\+?\d{6,15}$/.test(call.tel)) return;
-  location.href = call.tel;   // the dialler; this page keeps waiting underneath
+  // Dials directly where Lite holds CALL_PHONE; otherwise the dialler. Either
+  // way this page keeps waiting underneath.
+  placeCall(call.tel);
 };
 if ($('call-again')) $('call-again').onclick = () => {
   startCallSend(pendingPhone).catch(() => authErr(T('observe.network-problem-check-your-connection-and-try', 'Network problem — check your connection and try again.')));

@@ -1,13 +1,19 @@
 package ng.com.hawkeye.observer;
 
+import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.getcapacitor.annotation.Permission;
+import com.getcapacitor.annotation.PermissionCallback;
 
 /**
  * DEVICE SIGNALS for the server's "count devices, not accounts" rule
@@ -31,10 +37,56 @@ import com.getcapacitor.annotation.CapacitorPlugin;
  * (Lite's signing key, user, phone); an uninstall/reinstall keeps it, a factory
  * reset changes it. No permission needed; the server keeps only a peppered
  * hash. Omitted when Android gives none.
+ *
+ * And `callPermission` / `placeCall`: the missed-call sign-up dials our number
+ * itself once CALL_PHONE is granted (asked when the observer PICKS Call — app.js
+ * — with Android's own prompt, no pre-prompt). Anything short of a grant leaves
+ * the web layer on its tel: link, i.e. the dialler with our number typed in.
  */
-@CapacitorPlugin(name = "HawkeyeDevice")
+@CapacitorPlugin(
+    name = "HawkeyeDevice",
+    permissions = { @Permission(alias = "phone", strings = { Manifest.permission.CALL_PHONE }) }
+)
 public class HawkeyeDevicePlugin extends Plugin {
     private static final String NATIVE_APP = "ng.com.hawkeye.observer";
+
+    @PluginMethod
+    public void callPermission(PluginCall call) {
+        if (getPermissionState("phone") == PermissionState.GRANTED) {
+            callPermissionResult(call);
+            return;
+        }
+        requestPermissionForAlias("phone", call, "callPermissionResult");
+    }
+
+    @PermissionCallback
+    private void callPermissionResult(PluginCall call) {
+        JSObject ret = new JSObject();
+        ret.put("granted", getPermissionState("phone") == PermissionState.GRANTED);
+        call.resolve(ret);
+    }
+
+    /** Dials `tel` (tel:+234…) directly. Rejects without the grant, so the caller falls back to tel:. */
+    @PluginMethod
+    public void placeCall(PluginCall call) {
+        String tel = call.getString("tel", "");
+        if (tel == null || !tel.matches("^tel:\\+?\\d{6,15}$")) {
+            call.reject("bad_number");
+            return;
+        }
+        if (getPermissionState("phone") != PermissionState.GRANTED) {
+            call.reject("not_allowed");
+            return;
+        }
+        try {
+            Intent intent = new Intent(Intent.ACTION_CALL, Uri.parse(tel));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            getContext().startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("failed");
+        }
+    }
 
     @PluginMethod
     public void signals(PluginCall call) {

@@ -376,7 +376,10 @@
          * enough to recognise it; anything that does not fit gets a modal with
          * the whole message and, if it has one, its link.
          */
-        const longBody = (n.body || '').length > ONE_LINE;
+        // An alert that links somewhere opens it in ONE tap (design audit
+        // FA-NOTIF-2: every real alert took three); only a long alert with
+        // nowhere to go gets the full-text panel.
+        const longBody = (n.body || '').length > ONE_LINE && !n.url;
         const inner = `<span class="dot" aria-hidden="true"></span><span class="ic">${ICON[n.kind] || ICON.info}</span>
           <div><h3>${esc(n.title)}</h3>${n.body ? `<p>${esc(n.body)}</p>` : ''}
           <time>${ago(n.created_at)}</time>${longBody ? `<span class="more">${esc(T('nav.more', 'More'))}</span>` : ''}</div>`;
@@ -596,7 +599,7 @@
       markOneRead(n);
 
       if (!btn.dataset.modal) {
-        // Short alert: behave like the link it used to be.
+        // Short, or linked: behave like the link it used to be.
         if (n.url) location.href = localUrl(n.url);
         return;
       }

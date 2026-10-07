@@ -1,0 +1,52 @@
+{
+  "observe.sheet-totals-hint": {
+    "ha": "Ba dole ba: jimillar da ke ƙasan takardar, don duba cewa ƙidayarka ta yi daidai.",
+    "ig": "Ọ bụghị iwu: mgbakọta dị n'ala akwụkwọ ahụ, iji lelee na ọnụọgụgụ gị dakọtara.",
+    "yo": "Kò pọn dandan: àpapọ̀ tó wà nísàlẹ̀ ìwé náà, láti ṣàyẹ̀wò pé ìkà rẹ bá a mu."
+  },
+  "observe.total-valid-votes": {
+    "ha": "Jimillar ƙuri'u masu inganci",
+    "ig": "Mgbakọta votu ndị ziri ezi",
+    "yo": "Àpapọ̀ àwọn ìdìbò tó wúlò"
+  },
+  "observe.rejected-votes": {
+    "ha": "Ƙuri'un da aka ƙi",
+    "ig": "Votu a jụrụ",
+    "yo": "Àwọn ìdìbò tí a kọ̀"
+  },
+  "observe.total-votes-cast": {
+    "ha": "Jimillar ƙuri'un da aka kaɗa",
+    "ig": "Mgbakọta votu a tụrụ",
+    "yo": "Àpapọ̀ àwọn ìdìbò tí a dì"
+  },
+  "observe.totals-dont-add-up": {
+    "ha": "Waɗannan lambobin ba su yi daidai ba",
+    "ig": "Ọnụọgụgụ ndị a adakọtaghị",
+    "yo": "Àwọn nọ́mbà wọ̀nyí kò bá ara wọn mu"
+  },
+  "observe.totals-sum-mismatch": {
+    "ha": "Ƙidayar jam'iyyu ta kai {v0}, amma takardar ta ce ƙuri'u masu inganci {v1} ne.",
+    "ig": "Ọnụọgụgụ otu ndọrọ ndọrọ ọchịchị ruru {v0}, mana akwụkwọ ahụ kwuru na votu ndị ziri ezi bụ {v1}.",
+    "yo": "Ìkà àwọn ẹgbẹ́ òṣèlú jẹ́ {v0}, ṣùgbọ́n ìwé náà sọ pé ìdìbò tó wúlò jẹ́ {v1}."
+  },
+  "observe.totals-cast-mismatch": {
+    "ha": "Ƙuri'u masu inganci ({v0}) da waɗanda aka ƙi ({v1}) sun kai {v2}, amma takardar ta ce an kaɗa ƙuri'u {v3}.",
+    "ig": "Votu ndị ziri ezi ({v0}) gbakwunyere votu a jụrụ ({v1}) ruru {v2}, mana akwụkwọ ahụ kwuru na a tụrụ votu {v3}.",
+    "yo": "Ìdìbò tó wúlò ({v0}) pẹ̀lú èyí tí a kọ̀ ({v1}) jẹ́ {v2}, ṣùgbọ́n ìwé náà sọ pé ìdìbò tí a dì jẹ́ {v3}."
+  },
+  "observe.totals-check-body": {
+    "ha": "Duba kowace lamba da takardar.",
+    "ig": "Lelee ọnụọgụgụ ọ bụla na akwụkwọ ahụ.",
+    "yo": "Ṣàyẹ̀wò nọ́mbà kọ̀ọ̀kan pẹ̀lú ìwé náà."
+  },
+  "observe.check-again": {
+    "ha": "Sake dubawa",
+    "ig": "Lelee ọzọ",
+    "yo": "Ṣàyẹ̀wò lẹ́ẹ̀kan sí i"
+  },
+  "observe.continue-anyway": {
+    "ha": "Ci gaba duk da haka",
+    "ig": "Gaa n'ihu n'agbanyeghị",
+    "yo": "Tẹ̀síwájú bẹ́ẹ̀"
+  }
+}

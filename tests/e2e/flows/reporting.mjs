@@ -637,6 +637,19 @@ async function webResultWalk(page, R, S, { surface, lang, until = 'submit', unit
   await R.step(page, 'counts — keyboard up', 'party counts (typing)', 0, { keyboard: res.keyboard });
   await keyboardDown(page);
   await page.evaluate(() => document.activeElement && document.activeElement.blur()).catch(() => {});
+  // REP-RES-04 probe: a wrong sheet total must warn, and "Check again" must
+  // leave the step open; then the right total goes through with no dialog.
+  res.totalsCheck = { fields: await wVisible(page, '#tot-valid') };
+  if (res.totalsCheck.fields) {
+    await page.fill('#tot-valid', '999');
+    await page.click('#btn-verify-counts');
+    await sleep(700);
+    res.totalsCheck.warned = !!(await wDialog(page));
+    await page.locator('.hk-dlg-cancel').last().click().catch(() => {});
+    await sleep(300);
+    res.totalsCheck.stayedOpen = !(await page.locator('#counts-fold-state').innerText().catch(() => '')).trim();
+    await page.fill('#tot-valid', String(Object.values(counts).reduce((a, b) => a + b, 0)));
+  }
   await page.click('#btn-verify-counts');
   await sleep(900);
   const dlg = await wDialog(page);
@@ -764,6 +777,18 @@ async function nativeResultWalk(page, R, S, { lang, until = 'submit', unitBy = '
   await page.evaluate(() => document.activeElement && document.activeElement.blur()).catch(() => {});
   await sleep(500);
   await R.step(page, 'votes entered', 'party counts', 4, { filled });
+  // REP-RES-04 probe: a wrong sheet total must warn before Review.
+  const tot = page.getByLabel(nt(lang, 'observe.total-valid-votes'), { exact: true }).first();
+  res.totalsCheck = { fields: await tot.isVisible().catch(() => false) };
+  if (res.totalsCheck.fields) {
+    await tot.fill('999').catch(() => {});
+    await nTap(page, nt(lang, 'n.app.report.collation.review-report'));
+    await sleep(800);
+    res.totalsCheck.warned = await nHas(page, nt(lang, 'observe.totals-dont-add-up'));
+    await nTap(page, nt(lang, 'observe.check-again')).catch(() => {});
+    await sleep(400);
+    await tot.fill(String(Object.values(counts).reduce((a, b) => a + b, 0))).catch(() => {});
+  }
   await nTap(page, nt(lang, 'n.app.report.collation.review-report'));
   await sleep(1500);
   await R.step(page, 'review — Confirm and send', 'review', 1);
@@ -1429,7 +1454,7 @@ async function flowResult(surface, lang) {
     R.run.done = !!r.arrived;
     R.run.result = { ...r, text: undefined };
     R.run.posts = S.posts.map((p) => `${p.m} ${p.p}${p.aborted ? ' (net fail)' : ''}`);
-    ob(`result.${surface}.${lang}`, { done: !!r.arrived, queued: !!r.queued, photos: r.photos, unit: r.unit, keyboard: r.keyboard, posts: R.run.posts, status: r.status || null, text: (r.text || '').slice(0, 300) });
+    ob(`result.${surface}.${lang}`, { done: !!r.arrived, queued: !!r.queued, photos: r.photos, unit: r.unit, keyboard: r.keyboard, posts: R.run.posts, status: r.status || null, text: (r.text || '').slice(0, 300), totalsCheck: r.totalsCheck || null });
   } catch (e) { R.run.errors.push(String(e.message || e).slice(0, 300)); }
   R.run.errors.push(...errors);
   await close();
@@ -2117,7 +2142,8 @@ FINDINGS.push({
 FINDINGS.push({
   id: 'REP-RES-04', flow: 'result', severity: 'P3',
   title: 'No totals or consistency check on the counts — Verify passes with any one number',
-  when: (s, O) => !!O(`result.${s}.en`),
+  // Measured: the flow types a wrong sheet total and looks for the warning.
+  when: (s, O) => { const r = O(`result.${s}.en`); return !!r && !(r.totalsCheck && r.totalsCheck.warned); },
   actual: '"Verify counts" (web) / "Review report" (native) only require one party count. There is no total-valid-votes / rejected / accredited field to add up against, so a slipped digit (2120 for 212) goes through unchallenged; the counts step lists all 22 parties in register order.',
   expected: 'The EC8A totals (valid votes, rejected, total cast) are asked and checked against the party sum before sign, or an obviously-off figure is flagged.',
   evidence: (s, shot) => [shot('result', s, 'en', '', /counts verified|votes entered/)],

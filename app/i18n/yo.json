@@ -2970,5 +2970,15 @@
   "profile.sign-out-confirm-body": "O lè wọlé padà pẹ̀lú nọ́mbà rẹ àti ọ̀rọ̀ ìpamọ́ rẹ. Kò sí ohun tí yóò ṣe àwọn ìròyìn rẹ.",
   "profile.sign-out-confirm-ok": "Jáde",
   "my-groups.undo-decline": "Yí i padà",
-  "index.smaller-phone-lite-app": "Fóònù kékeré? Gba <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>."
+  "index.smaller-phone-lite-app": "Fóònù kékeré? Gba <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>.",
+  "observe.sheet-totals-hint": "Kò pọn dandan: àpapọ̀ tó wà nísàlẹ̀ ìwé náà, láti ṣàyẹ̀wò pé ìkà rẹ bá a mu.",
+  "observe.total-valid-votes": "Àpapọ̀ àwọn ìdìbò tó wúlò",
+  "observe.rejected-votes": "Àwọn ìdìbò tí a kọ̀",
+  "observe.total-votes-cast": "Àpapọ̀ àwọn ìdìbò tí a dì",
+  "observe.totals-dont-add-up": "Àwọn nọ́mbà wọ̀nyí kò bá ara wọn mu",
+  "observe.totals-sum-mismatch": "Ìkà àwọn ẹgbẹ́ òṣèlú jẹ́ {v0}, ṣùgbọ́n ìwé náà sọ pé ìdìbò tó wúlò jẹ́ {v1}.",
+  "observe.totals-cast-mismatch": "Ìdìbò tó wúlò ({v0}) pẹ̀lú èyí tí a kọ̀ ({v1}) jẹ́ {v2}, ṣùgbọ́n ìwé náà sọ pé ìdìbò tí a dì jẹ́ {v3}.",
+  "observe.totals-check-body": "Ṣàyẹ̀wò nọ́mbà kọ̀ọ̀kan pẹ̀lú ìwé náà.",
+  "observe.check-again": "Ṣàyẹ̀wò lẹ́ẹ̀kan sí i",
+  "observe.continue-anyway": "Tẹ̀síwájú bẹ́ẹ̀"
 }

@@ -2971,5 +2971,15 @@
   "profile.sign-out-confirm-body": "Za ka iya sake shiga da lambar wayarka da kalmar sirri. Rahotanninka ba su shafu ba.",
   "profile.sign-out-confirm-ok": "Fita",
   "my-groups.undo-decline": "Janye",
-  "index.smaller-phone-lite-app": "Ƙaramar waya? Sami <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>."
+  "index.smaller-phone-lite-app": "Ƙaramar waya? Sami <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>.",
+  "observe.sheet-totals-hint": "Ba dole ba: jimillar da ke ƙasan takardar, don duba cewa ƙidayarka ta yi daidai.",
+  "observe.total-valid-votes": "Jimillar ƙuri'u masu inganci",
+  "observe.rejected-votes": "Ƙuri'un da aka ƙi",
+  "observe.total-votes-cast": "Jimillar ƙuri'un da aka kaɗa",
+  "observe.totals-dont-add-up": "Waɗannan lambobin ba su yi daidai ba",
+  "observe.totals-sum-mismatch": "Ƙidayar jam'iyyu ta kai {v0}, amma takardar ta ce ƙuri'u masu inganci {v1} ne.",
+  "observe.totals-cast-mismatch": "Ƙuri'u masu inganci ({v0}) da waɗanda aka ƙi ({v1}) sun kai {v2}, amma takardar ta ce an kaɗa ƙuri'u {v3}.",
+  "observe.totals-check-body": "Duba kowace lamba da takardar.",
+  "observe.check-again": "Sake dubawa",
+  "observe.continue-anyway": "Ci gaba duk da haka"
 }

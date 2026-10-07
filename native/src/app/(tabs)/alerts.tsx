@@ -40,6 +40,8 @@ type Notification = {
  * client and a row on the other.
  */
 const ONE_LINE = 40;
+const needsPanel = (n: { body?: string | null; url?: string | null }) =>
+  (n.body ?? '').length > ONE_LINE && !n.url;
 
 function ago(ts: number) {
   const m = Math.max(1, Math.round((Date.now() - ts) / 60000));
@@ -219,7 +221,10 @@ export default function Alerts() {
      * modal carries the whole message and, if the alert has a url, offers it as
      * a button — so a long alert is never less reachable than a short one.
      */
-    if ((n.body ?? '').length > ONE_LINE) {
+    // An alert that links somewhere opens it in ONE tap (design audit
+    // FA-NOTIF-2: every real alert took three); only a long alert with
+    // nowhere to go gets the panel.
+    if (needsPanel(n)) {
       setDetail(n);
       return;
     }
@@ -410,7 +415,7 @@ export default function Alerts() {
                       <Text className="flex-1 pt-0.5 text-sm text-muted" numberOfLines={1}>
                         {item.body}
                       </Text>
-                      {item.body.length > ONE_LINE ? (
+                      {needsPanel(item) ? (
                         <Text className="pl-2 text-xs font-bold text-good-ink">{i18nT('nav.more')}</Text>
                       ) : null}
                     </View>

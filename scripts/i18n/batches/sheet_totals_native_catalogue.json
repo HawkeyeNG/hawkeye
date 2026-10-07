@@ -1,0 +1,12 @@
+{
+  "observe.sheet-totals-hint": "Optional: the totals at the bottom of the sheet, to check your counts add up.",
+  "observe.total-valid-votes": "Total valid votes",
+  "observe.rejected-votes": "Rejected votes",
+  "observe.total-votes-cast": "Total votes cast",
+  "observe.totals-dont-add-up": "These numbers do not add up",
+  "observe.totals-sum-mismatch": "The party counts add up to {v0}, but the sheet says {v1} valid votes.",
+  "observe.totals-cast-mismatch": "Valid votes ({v0}) plus rejected votes ({v1}) make {v2}, but the sheet says {v3} votes cast.",
+  "observe.totals-check-body": "Check each figure against the sheet.",
+  "observe.check-again": "Check again",
+  "observe.continue-anyway": "Continue anyway"
+}

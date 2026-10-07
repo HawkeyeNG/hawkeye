@@ -2763,6 +2763,7 @@ function resetReportState() {
   // A new report has no sheet yet, so the counts step must not still be offering
   // the PREVIOUS report's — the worst possible thing to type figures from.
   showSheetReference(null);
+  for (const id of Object.values(totalIds())) if ($(id)) $(id).value = '';
   // Empty, not 'Report a result': the page header already says that, so a
   // matching h1 was the same words twice. .is-empty collapses the element so
   // nothing reserves space for a heading that has not arrived.
@@ -3144,6 +3145,7 @@ function draftSnapshot() {
     counts,
     verified: !!stepDone[3],
     serial: ($('sheet-serial') && $('sheet-serial').value) || '',
+    totals: readTotals(),
   };
 }
 async function saveDraftNow() {
@@ -3195,6 +3197,7 @@ async function restoreDraft(d) {
       if (i) i.value = v;
     }
     if (d.serial && $('sheet-serial')) $('sheet-serial').value = d.serial;
+    for (const [k, id] of Object.entries(totalIds())) if (d.totals && d.totals[k] && $(id)) $(id).value = d.totals[k];
     if (d.verified && stepDone[2] && $('btn-verify-counts')) $('btn-verify-counts').onclick();
   } finally {
     draftRestoring = false;
@@ -4428,8 +4431,36 @@ $('sel-contest').onchange = () => {
   setStepDone(2, Boolean(sel.value), `✔ ${label}`);
   saveDraft();
 };
+/* THE SHEET'S OWN TOTALS (design audit REP-RES-04). A slipped digit (2120 for
+   212) used to pass unchallenged; the EC8A prints the totals to check against.
+   Optional fields, so only what was typed is checked. Twin of native
+   report/result.tsx totalsMismatch. */
+// A function, not a const: resetReportState and the draft code run before this line.
+function totalIds() { return { valid: 'tot-valid', rejected: 'tot-rejected', cast: 'tot-cast' }; }
+function readTotals() {
+  const out = {};
+  for (const [k, id] of Object.entries(totalIds())) out[k] = ($(id) && $(id).value.trim()) || '';
+  return out;
+}
+function totalsMismatch() {
+  const t = readTotals();
+  const num = (v) => (v === '' ? null : Number(v));
+  const valid = num(t.valid), rejected = num(t.rejected), cast = num(t.cast);
+  const sum = [...document.querySelectorAll('#vote-inputs input')]
+    .reduce((s, i) => s + (i.value === '' ? 0 : Number(i.value) || 0), 0);
+  const out = [];
+  if (valid != null && sum !== valid) {
+    out.push(T('observe.totals-sum-mismatch', 'The party counts add up to {v0}, but the sheet says {v1} valid votes.', { v0: sum, v1: valid }));
+  }
+  if (valid != null && rejected != null && cast != null && valid + rejected !== cast) {
+    out.push(T('observe.totals-cast-mismatch', 'Valid votes ({v0}) plus rejected votes ({v1}) make {v2}, but the sheet says {v3} votes cast.',
+      { v0: valid, v1: rejected, v2: valid + rejected, v3: cast }));
+  }
+  return out;
+}
+for (const id of Object.values(totalIds())) if ($(id)) $(id).addEventListener('input', () => saveDraft());
 // Counts have no natural confirmer, so this button is it.
-$('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
+$('btn-verify-counts') && ($('btn-verify-counts').onclick = async () => {
   const n = [...document.querySelectorAll('#vote-inputs input')]
     .filter((i) => i.value !== '' && Number(i.value) >= 0).length;
   if (!n) {
@@ -4441,6 +4472,14 @@ $('btn-verify-counts') && ($('btn-verify-counts').onclick = () => {
     } else { $('submit-status').textContent = T('observe.enter-at-least-one-party-count', 'Enter at least one party count.'); }
     return;
   }
+  // Warn, never block: the observer may be copying a sheet that is itself wrong.
+  // Not while a draft is being restored — it was checked when first verified.
+  const off = draftRestoring ? [] : totalsMismatch();
+  if (off.length && !(await hkConfirm(`${off.join('\n\n')}\n\n${T('observe.totals-check-body', 'Check each figure against the sheet.')}`, {
+    title: T('observe.totals-dont-add-up', 'These numbers do not add up'),
+    ok: T('observe.continue-anyway', 'Continue anyway'),
+    cancel: T('observe.check-again', 'Check again'),
+  }))) return;
   $('submit-status').textContent = '';
   // Any OCR-proposed value the observer has now looked at is theirs.
   document.querySelectorAll('#vote-inputs input.ocr-filled')

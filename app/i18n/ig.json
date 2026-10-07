@@ -2970,5 +2970,15 @@
   "profile.sign-out-confirm-body": "Ị nwere ike ịbanye ọzọ site na nọmba gị na okwuntughe gị. Ọ dịghị ihe ga-eme akụkọ gị.",
   "profile.sign-out-confirm-ok": "Pụọ",
   "my-groups.undo-decline": "Weghachi",
-  "index.smaller-phone-lite-app": "Ekwentị dị obere? Nweta <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>."
+  "index.smaller-phone-lite-app": "Ekwentị dị obere? Nweta <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>.",
+  "observe.sheet-totals-hint": "Ọ bụghị iwu: mgbakọta dị n'ala akwụkwọ ahụ, iji lelee na ọnụọgụgụ gị dakọtara.",
+  "observe.total-valid-votes": "Mgbakọta votu ndị ziri ezi",
+  "observe.rejected-votes": "Votu a jụrụ",
+  "observe.total-votes-cast": "Mgbakọta votu a tụrụ",
+  "observe.totals-dont-add-up": "Ọnụọgụgụ ndị a adakọtaghị",
+  "observe.totals-sum-mismatch": "Ọnụọgụgụ otu ndọrọ ndọrọ ọchịchị ruru {v0}, mana akwụkwọ ahụ kwuru na votu ndị ziri ezi bụ {v1}.",
+  "observe.totals-cast-mismatch": "Votu ndị ziri ezi ({v0}) gbakwunyere votu a jụrụ ({v1}) ruru {v2}, mana akwụkwọ ahụ kwuru na a tụrụ votu {v3}.",
+  "observe.totals-check-body": "Lelee ọnụọgụgụ ọ bụla na akwụkwọ ahụ.",
+  "observe.check-again": "Lelee ọzọ",
+  "observe.continue-anyway": "Gaa n'ihu n'agbanyeghị"
 }

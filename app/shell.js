@@ -54,7 +54,8 @@
        DOCUMENT, and above 900px the document no longer scrolls — so a jump link
        would land nowhere. Re-pointed at the pane that does scroll. */
     const jump = () => {
-      const el = location.hash && document.querySelector(location.hash);
+      // Only a plain `#id`: Telegram's in-app browser puts `#tgWebAppData=…` here.
+      const el = /^#[\w-]+$/.test(location.hash) && document.getElementById(location.hash.slice(1));
       if (!el || getComputedStyle(wrap).overflowY !== 'auto') return;
       wrap.scrollTop += el.getBoundingClientRect().top - wrap.getBoundingClientRect().top - 12;
     };

@@ -29,8 +29,11 @@
   var EMAIL = /[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}/g;
   var LONG = /\b[A-Za-z0-9_-]{24,}\b/g;                 // tokens, keys, hashes
   var QUERY = /(https?:\/\/[^\s?#"']*|\.html|\/)[?#][^\s"')]*/g;
+  // A bare `#key=value` / `?key=value` with no URL in front, e.g. Telegram's
+  // `#tgWebAppData=…` (user id and name, URL-encoded) quoted in a selector error.
+  var PARAM = /([?#&][\w.-]{1,40}=)[^\s"')&]*/g;
   function clean(s) {
-    return s.replace(QUERY, '$1').replace(EMAIL, '[email]')
+    return s.replace(QUERY, '$1').replace(PARAM, '$1[redacted]').replace(EMAIL, '[email]')
       .replace(PHONE, '[phone]').replace(LONG, '[redacted]');
   }
   // Sentry's own ids are 32-hex strings that LONG would destroy; leave them.
@@ -56,15 +59,21 @@
   }
 
   function start() {
+    // Only the live site and the Lite app report (checked here, after load, when
+    // Capacitor is certainly present). Local and test runs (127.0.0.1, hk.test)
+    // feed pages fake data on purpose; their errors buried the real ones.
+    if (!window.Capacitor && location.hostname !== 'hawkeye.com.ng') {
+      early = null; removeEventListener('error', onErr); removeEventListener('unhandledrejection', onErr);
+      return;
+    }
     var s = document.createElement('script');
     s.src = SDK; s.async = true;
     s.onload = function () {
       var S = window.Sentry;
       if (!S || !S.init) return;
-      var host = location.hostname;
       S.init({
         dsn: DSN,
-        environment: window.Capacitor ? 'lite' : (host === 'hawkeye.com.ng' ? 'web' : 'development'),
+        environment: window.Capacitor ? 'lite' : 'web',
         sendDefaultPii: false,
         tracesSampleRate: 0,
         maxBreadcrumbs: 30,
@@ -73,7 +82,9 @@
         integrations: function (d) { return d.filter(function (i) { return i.name !== 'BrowserSession'; }); },
         // + the browser's own cross-page transition being skipped (Safari, not our
         // code: we never call startViewTransition).
-        ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection captured', 'Skipping view transition'],
+        // 'signed out' is thrown on purpose to stop a page while it redirects to sign-in.
+        ignoreErrors: ['ResizeObserver loop', 'Non-Error promise rejection captured', 'Skipping view transition',
+          'Transition was skipped', /^(Error: )?signed out$/],
         denyUrls: [/extensions\//i, /^chrome:\/\//i, /^moz-extension:/i, /^safari-(web-)?extension:/i],
         // Google's renderer (Googlebot's WRS) refuses service workers from its own
         // injected wrsParams shim: a crawler, not a user.

@@ -24,7 +24,7 @@
   <link rel="stylesheet" href="styles.css?v=200" />
   <script src="native.js?v=126"></script>
   <script src="dialog.js?v=1"></script>
-  <script src="/monitor.js?v=3" defer></script>
+  <script src="/monitor.js?v=5" defer></script>
   <meta name="robots" content="noindex" />
   <script src="authgate.js?v=6"></script>
   <script>/*hk-room-forward*/
@@ -1384,7 +1384,8 @@ function disclosureHtml() {
 
 async function loadTab(force) {
   const body = $('sr-body');
-  if (!body) return;
+  // A language repaint can land before the room arrives; loadGroup draws it again.
+  if (!body || !S.group) return;
   if (S.tab === 'overview') {
     /* The ROOT level, always — Overview answers "where do I stand", and a
        manager who drilled into one ward an hour ago did not mean to make that
@@ -4574,6 +4575,6 @@ boot().catch((e) => {
   $('sr').innerHTML = `<div class="sr-msg">${T('situation-room.could-not-load-the-room', 'Could not load the situation room. {error}', { error: esc(e.message) })}</div>`;
 });
 </script>
-  <script src="shell.js?v=2" defer></script>
+  <script src="shell.js?v=4" defer></script>
 </body>
 </html>

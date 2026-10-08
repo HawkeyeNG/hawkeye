@@ -260,7 +260,23 @@
   };
 
   // ---- step 4: counts — "Verify counts" is the confirmer, as in the real flow ----
-  $('btn-verify-counts').onclick = () => {
+  // The sheet's own totals: the same check as app.js totalsMismatch (REP-RES-04).
+  function totalsMismatch() {
+    const num = (id) => { const v = ($(id) && $(id).value.trim()) || ''; return v === '' ? null : Number(v); };
+    const valid = num('tot-valid'), rejected = num('tot-rejected'), cast = num('tot-cast');
+    const sum = [...document.querySelectorAll('#vote-inputs input')]
+      .reduce((s, i) => s + (i.value === '' ? 0 : Number(i.value) || 0), 0);
+    const out = [];
+    if (valid != null && sum !== valid) {
+      out.push(T('observe.totals-sum-mismatch', 'The party counts add up to {v0}, but the sheet says {v1} valid votes.', { v0: sum, v1: valid }));
+    }
+    if (valid != null && rejected != null && cast != null && valid + rejected !== cast) {
+      out.push(T('observe.totals-cast-mismatch', 'Valid votes ({v0}) plus rejected votes ({v1}) make {v2}, but the sheet says {v3} votes cast.',
+        { v0: valid, v1: rejected, v2: valid + rejected, v3: cast }));
+    }
+    return out;
+  }
+  $('btn-verify-counts').onclick = async () => {
     const n = [...document.querySelectorAll('#vote-inputs input')]
       .filter((i) => i.value !== '' && Number(i.value) >= 0).length;
     if (!n) {
@@ -270,6 +286,13 @@
       } else $('submit-status').textContent = T('observe.enter-at-least-one-party-count', 'Enter at least one party count.');
       return;
     }
+    // Warn, never block — as in the real report.
+    const off = totalsMismatch();
+    if (off.length && window.hkConfirm && !(await window.hkConfirm(`${off.join('\n\n')}\n\n${T('observe.totals-check-body', 'Check each figure against the sheet.')}`, {
+      title: T('observe.totals-dont-add-up', 'These numbers do not add up'),
+      ok: T('observe.continue-anyway', 'Continue anyway'),
+      cancel: T('observe.check-again', 'Check again'),
+    }))) return;
     $('submit-status').textContent = '';
     setStepDone(3, true, n === 1
       ? T('observe.one-party-entered', '✔ 1 party entered')

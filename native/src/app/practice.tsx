@@ -1069,6 +1069,22 @@ export default function Practice() {
     [counts],
   );
 
+  /** The sheet's own totals: the same check as report/result.tsx (REP-RES-04). */
+  const [totals, setTotals] = useState({ valid: '', rejected: '', cast: '' });
+  const [totalsOff, setTotalsOff] = useState<string[] | null>(null);
+  const toReview = () => {
+    const num = (v: string) => (v === '' ? null : Number(v));
+    const valid = num(totals.valid), rejected = num(totals.rejected), cast = num(totals.cast);
+    const sum = votes.reduce((s, v) => s + v.count, 0);
+    const off: string[] = [];
+    if (valid != null && sum !== valid) off.push(i18nT('observe.totals-sum-mismatch', { v0: sum, v1: valid }));
+    if (valid != null && rejected != null && cast != null && valid + rejected !== cast) {
+      off.push(i18nT('observe.totals-cast-mismatch', { v0: valid, v1: rejected, v2: valid + rejected, v3: cast }));
+    }
+    if (off.length) setTotalsOff(off);
+    else setStep('review');
+  };
+
   const onSubmit = async () => {
     setBusy(true);
     setLine(null);
@@ -1787,6 +1803,27 @@ export default function Practice() {
                 />
               </View>
             ))}
+            <Text className="mb-2 mt-3 text-sm text-muted">{i18nT('observe.sheet-totals-hint')}</Text>
+            {(
+              [
+                ['valid', 'observe.total-valid-votes'],
+                ['rejected', 'observe.rejected-votes'],
+                ['cast', 'observe.total-votes-cast'],
+              ] as const
+            ).map(([k, key]) => (
+              <View key={k} className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2">
+                <Text className="flex-1 pr-2 text-base font-semibold text-ink">{i18nT(key)}</Text>
+                <TextInput
+                  className="w-24 rounded-xl bg-surface px-3 py-2 text-center text-lg font-bold text-ink"
+                  placeholder="0"
+                  placeholderTextColor={ui.faint}
+                  keyboardType="number-pad"
+                  accessibilityLabel={i18nT(key)}
+                  value={totals[k]}
+                  onChangeText={(t) => setTotals((x) => ({ ...x, [k]: t.replace(/[^0-9]/g, '') }))}
+                />
+              </View>
+            ))}
           </ScrollView>
         ) : null}
 
@@ -1794,7 +1831,7 @@ export default function Practice() {
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             <Pressable
               disabled={votes.length === 0}
-              onPress={() => setStep('review')}
+              onPress={toReview}
               className={`items-center rounded-2xl py-4 ${
                 votes.length ? 'bg-hawk-green active:opacity-80' : 'bg-disabled'
               }`}
@@ -2078,6 +2115,17 @@ export default function Practice() {
         cancelLabel={null}
         onConfirm={() => setFarUnit(null)}
         onCancel={() => setFarUnit(null)}
+      />
+      {/* Warn, never block — as in the real report. */}
+      <ConfirmSheet
+        visible={!!totalsOff}
+        icon="alert-triangle"
+        title={i18nT('observe.totals-dont-add-up')}
+        body={totalsOff ? `${totalsOff.join('\n\n')}\n\n${i18nT('observe.totals-check-body')}` : ''}
+        confirmLabel={i18nT('observe.continue-anyway')}
+        cancelLabel={i18nT('observe.check-again')}
+        onConfirm={() => { setTotalsOff(null); setStep('review'); }}
+        onCancel={() => setTotalsOff(null)}
       />
 
       <NoticeSheet {...notice.props} />

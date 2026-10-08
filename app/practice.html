@@ -184,6 +184,17 @@
         </summary>
         <p data-i18n="practice.type-the-number-of-votes-each" class="hint">Type the number of votes each party was announced to have at the unit.</p>
         <div id="vote-inputs"></div>
+        <!-- The sheet's own totals, as in observe.html (REP-RES-04). Outside
+             #vote-inputs: every input in there is read as a party count. -->
+        <p class="hint" data-i18n="observe.sheet-totals-hint">Optional: the totals at the bottom of the sheet, to check your counts add up.</p>
+        <div id="sheet-totals">
+          <label class="vote-row"><span class="party-label"><strong data-i18n="observe.total-valid-votes">Total valid votes</strong></span>
+            <input id="tot-valid" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></label>
+          <label class="vote-row"><span class="party-label"><strong data-i18n="observe.rejected-votes">Rejected votes</strong></span>
+            <input id="tot-rejected" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></label>
+          <label class="vote-row"><span class="party-label"><strong data-i18n="observe.total-votes-cast">Total votes cast</strong></span>
+            <input id="tot-cast" type="number" min="0" step="1" inputmode="numeric" placeholder="0" /></label>
+        </div>
         <button data-i18n="observe.verify-counts" id="btn-verify-counts" type="button" class="secondary" style="margin-top:12px">Verify counts</button>
       </details>
 
@@ -303,7 +314,7 @@
   <!-- The real step 2's search box, on the same offline packs. -->
   <script src="register-store.js?v=4"></script>
   <script src="pu-search.js?v=10"></script>
-  <script src="practice.js?v=13"></script>
+  <script src="practice.js?v=14"></script>
   <script src="invite-unit.js?v=2"></script>
   <script>
     /* The second-observer card on the completion screen. Not a real report —

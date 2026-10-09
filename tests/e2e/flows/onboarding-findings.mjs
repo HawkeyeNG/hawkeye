@@ -61,7 +61,9 @@ export function buildFindings(checks, steps) {
   /* ---------------------------------------------------------------- P2 */
   add({
     id: 'ONB-03', flow: 'signup', severity: 'P2',
-    surfaces: [...on((s) => s !== 'native' && v('signup', s, 'en', 'pwOnFirstScreen') === true && v('signup', s, 'en', 'pwCheckedBeforeCode')?.verifyCalled === false), ...on((s) => s === 'native' && v('signup', s, 'en', 'pwOnFirstScreen') === false && Array.isArray(v('signup', s, 'en', 'pwStepAsked')))],
+    // Native is the reference order: listed only beside a web/Lite surface that differs.
+    surfaces: ((web) => (web.length ? [...web, ...on((s) => s === 'native' && v('signup', s, 'en', 'pwOnFirstScreen') === false && Array.isArray(v('signup', s, 'en', 'pwStepAsked')))] : []))(
+      on((s) => s !== 'native' && v('signup', s, 'en', 'pwOnFirstScreen') === true && v('signup', s, 'en', 'pwCheckedBeforeCode')?.verifyCalled === false)),
     title: 'Password is asked BEFORE the code is verified on web/Lite, AFTER it on native',
     actual: 'Web/Lite: step 1 asks number + route + "Create a Password" + invite code; step 2 (code screen) still shows the password field; tapping Verify with a code but no password is refused ("Your password must be at least 8 characters.") without the code being checked; on the free WhatsApp route the password must be typed before the code is even issued. One password field, no repeat. Native: step 1 number + route + invite code; step 2 code only; step 3 "Create Your Password" (new + repeat) after the code is verified. Same split for the organisation-code route (web: password before the "is this your number?" sheet; native: after the account exists).',
     expected: 'One order everywhere: number + route (+ code field) -> code -> create password (new + repeat) -> choose unit.',
@@ -163,7 +165,9 @@ export function buildFindings(checks, steps) {
   });
   add({
     id: 'ONB-12', flow: 'signin', severity: 'P2',
-    surfaces: on((s) => s !== 'native' && /one-time code/i.test(v('signin', s, 'en', 'pwUnavailableMsg') || '')) .concat(on((s) => s === 'native' && v('signin', s, 'en', 'pwUnavailableRoutes') === true).length ? ['native'] : []),
+    // Native is the reference: listed only beside a web/Lite surface that still differs.
+    surfaces: ((web) => (web.length ? web.concat(on((s) => s === 'native' && v('signin', s, 'en', 'pwUnavailableRoutes') === true).length ? ['native'] : []) : []))(
+      on((s) => s !== 'native' && /one-time code/i.test(v('signin', s, 'en', 'pwUnavailableMsg') || ''))),
     title: 'No-password account at sign-in: native moves straight into the code step; web/Lite only tell the reader to go find it',
     actual: 'Web/Lite answer password_login_unavailable with a sentence ("Sign in with a one-time code, then set a password…"); the reader must tap "Forgot your password?" (which is broken, ONB-01). Native routes straight into "No password on this account" with the route picker.',
     expected: 'One behaviour: move into the code step for them (native).',

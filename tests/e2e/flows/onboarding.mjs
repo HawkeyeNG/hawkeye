@@ -1597,6 +1597,13 @@ const merge = (a, b) => {
   for (const [k, v] of Object.entries(b)) a[k] = (v && typeof v === 'object' && !Array.isArray(v) && a[k] && typeof a[k] === 'object' && !Array.isArray(a[k]) && !('value' in v)) ? merge(a[k], v) : v;
   return a;
 };
+// A slice this run walked REPLACES the earlier one: a clean run records no
+// `untranslated` entry at all, so merging kept a stale finding alive (ONB-21).
+// Sub-flows are stored under `<flow>-<variant>` (signup-whatsapp, session-401-profile…).
+if (prev?.checks) for (const key of Object.keys(prev.checks)) {
+  if (!FLOWS.some((f) => key === f || key.startsWith(`${f}-`))) continue;
+  for (const surface of SURFACES) for (const lang of LANGS_) if (prev.checks[key]?.[surface]) delete prev.checks[key][surface][lang];
+}
 const ALL_CHECKS = merge(prev?.checks ?? null, CHECKS) || CHECKS;
 const ALL_STEPS = merge(prevSteps, STEPS) || STEPS;
 fs.writeFileSync(path.join(OUT, 'steps.json'), JSON.stringify(ALL_STEPS, null, 1));

@@ -1232,7 +1232,7 @@ async function flowPublic(surface, lang) {
       const R = new Rec('public', surface, lang, 'case');
       await go(P, nat ? '/case?id=999999' : '/case.html?id=999999', 3500);
       const t1 = await bodyText(P.page);
-      res.caseMissing = { text: t1.replace(/\s+/g, ' ').slice(0, 240), loading: isLoading(await loadingState(P)) };
+      res.caseMissing = { url: P.page.url(), text: t1.replace(/\s+/g, ' ').slice(0, 240),loading: isLoading(await loadingState(P)) };
       await R.step(P, 'Case 999999 (does not exist)', { note: res.caseMissing.text.slice(0, 120) });
       await go(P, nat ? '/case' : '/case.html', 3000);
       const t2 = await bodyText(P.page);
@@ -1355,7 +1355,7 @@ async function flowAsk(surface, lang) {
       const lines = b.text.split('\n').map((s) => s.trim());
       res.noAnswer = {
         said: nat ? lines.filter((s) => /HTTP|no_answer|could not|try again/i.test(s)).slice(0, 2).join(' / ') : await lastBubble(),
-        retry: nat ? await visibleText(P, nt(lang, 'n.app.assistant.retry')) : false,
+        retry: nat ? await visibleText(P, nt(lang, 'n.app.assistant.retry')) : await P.page.evaluate(() => !!document.querySelector('#hk-msgs .hk-retry')).catch(() => false),
         inputKept: nat ? null : await P.page.evaluate(() => document.getElementById('hk-in').value).catch(() => null),
       };
       await R.step(P, 'Server could not answer', { note: JSON.stringify(res.noAnswer) });
@@ -1435,7 +1435,11 @@ function buildFindings(O) {
     const w = ord('web', 'populated').join(' > ');
     const n = ord('native', 'populated').join(' > ');
     const l = (ord('lite', 'populated') || []).join(' > ');
-    if (w !== n) add({
+    // Native Home is LEAN by the owner's decision (2026-10-04, kept 2026-10-09): no
+    // alerts / activity / report cards. Only the ORDER of the sections both have is compared.
+    const shared = ord('web', 'populated').filter((x) => ord('native', 'populated').includes(x)).join(' > ');
+    const nShared = ord('native', 'populated').filter((x) => ord('web', 'populated').includes(x)).join(' > ');
+    if (shared !== nShared) add({
       id: 'FA-HOME-1', flow: 'home', surfaces: ['web', 'lite', 'native'], severity: 'P2',
       title: 'Home is two different screens: a personal dashboard on web/Lite, a public feed on native',
       actual: `web: ${w}. Lite: ${l || '(not run)'}. native: ${n}. Native has no greeting, no unit, no Latest Alerts, no My Activity and no report actions on Home; web/Lite have no election cards, no stats and no live feed.`,
@@ -1501,7 +1505,8 @@ function buildFindings(O) {
   {
     const cant = head(wt('en', 'common.cant-reach-hawkeye'));
     // A re-run of single cases (--x8cases) lands in x8.<surface>.partial; a row only counts if the page loaded (greeting).
-    const pick = (s, c) => [...(g(`x8.${s}.partial`) || []), ...(g(`x8.${s}`) || [])].find((r) => r.case === c && r.greeting);
+    // The full run first: a full run re-measures every case, so a leftover partial row is older.
+    const pick = (s, c) => [...(g(`x8.${s}`) || []), ...(g(`x8.${s}.partial`) || [])].find((r) => r.case === c && r.greeting);
     const rows = ['web', 'lite'].map((s) => [s, pick(s, 'menu-js-slow'), pick(s, 'baseline')]);
     const hit = rows.filter(([, r, b]) => r && b && (r.alertsBox || '').includes(cant) && !(b.alertsBox || '').includes(cant) && r.offlineLine === false);
     const natural = ['web', 'lite'].flatMap((s) => ['populated'].flatMap((v) => (g(`home.order.${s}.${v}.en`) || []).includes('could-not-reach line') ? [`${s}/${v}/en`] : []));
@@ -1664,7 +1669,8 @@ function buildFindings(O) {
   // ---- PUBLIC
   {
     const pw = g('public.web.en');
-    if (pw && pw.caseMissing && /sign in/i.test(pw.caseMissing.text)) add({
+    // A bounce lands on observe.html; the words "Sign in" alone are the site header's button.
+    if (pw && pw.caseMissing && (pw.caseMissing.url ? /observe\.html/.test(pw.caseMissing.url) : /sign in/i.test(pw.caseMissing.text))) add({
       id: 'FA-PUB-1', flow: 'public', surfaces: ['web'], severity: 'P2',
       title: 'A public case page asks a signed-out visitor to sign in',
       actual: `case.html?id=… (linked from the public docket) bounces to ${pw.caseNoId ? pw.caseNoId.landed : 'observe.html?intent=signin'}; docket.html, ledger.html and integrity.html are public ("anyone can audit").`,
@@ -1706,7 +1712,8 @@ function buildFindings(O) {
   // ---- ASK / SUPPORT
   {
     const aw = g('ask.web.en'); const an = g('ask.native.en');
-    if (aw && an && aw.noAnswer && an.noAnswer) add({
+    // Measured: the question is gone from the box, or there is no Retry.
+    if (aw && an && aw.noAnswer && an.noAnswer && (aw.noAnswer.inputKept === '' || !aw.noAnswer.retry)) add({
       id: 'FA-ASK-1', flow: 'ask', surfaces: ['web', 'lite'], severity: 'P2',
       title: 'Ask Hawkeye on web/Lite: a failed answer loses the question and says nothing useful',
       actual: `Server cannot answer → "${aw.noAnswer.said}"; offline → "${aw.offline?.said}". The input is cleared ("${aw.noAnswer.inputKept}"), there is no Retry — the question must be retyped. Native keeps the question and offers "${nt('en', 'n.app.assistant.retry')}" (but shows the raw "${an.noAnswer.said}").`,

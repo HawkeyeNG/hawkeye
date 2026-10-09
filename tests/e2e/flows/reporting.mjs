@@ -1601,6 +1601,15 @@ async function resultVariants(surface, lang) {
     await walk(page, R, S, { until: 'counts' });
     await page.reload({ waitUntil: 'load' });
     await sleep(5000);
+    // The apps OFFER the saved draft after a reload; an observer taps Continue.
+    if (native) {
+      o.offered = await nHas(page, nt(lang, 'n.app.practice.continue'));
+      if (o.offered) { await nTap(page, nt(lang, 'n.app.practice.continue')).catch(() => {}); await sleep(2500); }
+    } else {
+      const go = page.getByRole('button', { name: wt(lang, 'observe.draft-continue') });
+      o.offered = await go.isVisible().catch(() => false);
+      if (o.offered) { await go.click().catch(() => {}); await sleep(2500); }
+    }
     if (native) {
       o.after = (await vis(page)).split('\n').filter(Boolean).slice(0, 8);
       o.photosKept = !(await nHas(page, nt(lang, 'n.app.report.result.photo-1-of-2-the-result')));
@@ -1630,6 +1639,10 @@ async function resultVariants(surface, lang) {
       await R.step(page, 'browser Back mid-flow', 'Back', 1, o);
       await page.goForward({ waitUntil: 'load' }).catch(() => {});
       await sleep(3000);
+      // Coming back offers the saved draft (REP-RES-02's fix); take it, as an observer would.
+      const go = page.getByRole('button', { name: wt(lang, 'observe.draft-continue') });
+      o.draftOffered = await go.isVisible().catch(() => false);
+      if (o.draftOffered) { await go.click().catch(() => {}); await sleep(2500); }
       o.forwardKeeps = await page.evaluate(() => ['sheet', 'venue'].map((t) => document.getElementById(`status-${t}`)?.classList.contains('done'))).catch(() => null);
       await R.step(page, 'Forward again — is the report still there?', 'Forward', 1, { photos: o.forwardKeeps });
     }
@@ -1648,6 +1661,14 @@ async function flowCheckin(surface, lang) {
     const o = { rooms };
     try {
       if (native) {
+        // Arrival on native is the Report sheet (components/report-sheet.tsx), not the camera.
+        await page.goto(NBASE + '/', { waitUntil: 'load' }).catch(() => {});
+        await sleep(2000);
+        await page.getByText(nt(lang, 'nav.report'), { exact: true }).last().click().catch(() => {});
+        await sleep(1500);
+        o.cardOnArrival = await nHas(page, nt(lang, 'observe.check-in-title'));
+        await page.goto(NBASE + '/', { waitUntil: 'load' }).catch(() => {}); // sheet closed; the walk opens it again
+        await sleep(1500);
         await nativeResultWalk(page, R, S, { lang, until: 'photos' });
         o.cardBeforeUnit = await nHas(page, nt(lang, 'n.app.report.result.check-in'));
         await waitFor(() => nHas(page, UNIT.name), 15000);
@@ -2079,7 +2100,7 @@ FINDINGS.push({
 FINDINGS.push({
   id: 'REP-CHK-01', flow: 'checkin', severity: 'P2',
   title: 'Check-in is offered at a different point on each surface: before the photos on web/Lite, only after choosing the unit on native',
-  when: (s, O) => { const w = O('checkin.web.en.member'); const n = O('checkin.native.en.member'); return !!(w && n && w.cardOnArrival && !n.cardBeforeUnit && n.cardAfterUnit) && (s === 'native' || !!(O(`checkin.${s}.en.member`) || {}).cardOnArrival); },
+  when: (s, O) => { const w = O('checkin.web.en.member'); const n = O('checkin.native.en.member'); return !!(w && n && w.cardOnArrival && !n.cardOnArrival && !n.cardBeforeUnit && n.cardAfterUnit) && (s === 'native' || !!(O(`checkin.${s}.en.member`) || {}).cardOnArrival); },
   actual: 'Web/Lite: a roster member opening Report sees "Tell your coordinator you are here / I\'m at my unit" at the top, above step 1, checking them in at their ASSIGNED unit before any photo. Native: no card on the camera steps; it appears only on the unit step, after a unit is tapped, beside "Continue — choose the race", and checks in at the CHOSEN unit. Neither gates the report.',
   expected: 'One order on every surface (the brief\'s lockstep rule): either both offer it on arrival or both at unit selection.',
   evidence: (s, shot) => (s === 'native' ? [shot('checkin', 'native', 'en', 'member', /check-in offered/), shot('checkin', 'native', 'en', 'member', /checked in/)] : [shot('checkin', s, 'en', 'member', /check-in card/), shot('checkin', s, 'en', 'member', /checked in on arrival/)]),
@@ -2121,7 +2142,9 @@ FINDINGS.push({
 FINDINGS.push({
   id: 'REP-RES-02', flow: 'result', severity: 'P2',
   title: 'A reload / app restart mid-report loses the photos, the unit and every typed count',
-  when: (s, O) => { const v = O(`resultVariant.${s}.reload`); if (!v) return false; return s === 'native' ? v.photosKept === false : !(v.photosKept || []).some(Boolean) && !v.countsKept; },
+  // Native is NOT judged here: its draft (lib/report-draft.ts) keeps the photo FILES,
+  // which a react-native-web export cannot keep across a reload — needs a device.
+  when: (s, O) => { const v = O(`resultVariant.${s}.reload`); if (!v || s === 'native') return false; return !(v.photosKept || []).some(Boolean) && !v.countsKept; },
   actual: 'After photos + unit + race + four party counts, a reload opens a brand-new report (web/Lite: step 1, both slots "Required", counts empty; native: back at the camera).',
   expected: 'The signed-later draft survives a reload or an OS kill (low-memory Android kills backgrounded WebViews/apps), or the user is warned it will not.',
   evidence: (s, shot) => [shot('result', s, 'en', 'reload', /after reload/)],

@@ -666,9 +666,9 @@ async function typedCode(H, surface, lang) {
       const t2 = await H.text(page);
       const f2 = await R.step(page, 'org-code-typed', { screen: 'sign-in (sign-up, organisation code)', note: `code field found=${typed}; "${nt(lang, 'n.auth.code-kind-org')}" shown=${t2.includes(nt(lang, 'n.auth.code-kind-org'))}`, asked: t2.split('\n').map((x) => x.trim()).filter(Boolean).slice(0, 16).join(' / ').slice(0, 300) });
       const pwFields = await page.locator('input[type="password"]').count();
-      if (H.check(`1:org-code-password-later:native`, { flagged: typed && pwFields === 0, detail: `password fields on the code screen: ${pwFields}`, evidence: [f2] })) {
-        H.finding({ ...ORG_CODE_ORDER, surfaces: ['native'], evidence: [H.ev(f2)] });
-      }
+      // Native's order (password after the account) is the one web/Lite now follow, so
+      // this is recorded, not a finding: the web-side check below flags any mismatch.
+      H.check(`1:org-code-password-later:native`, { flagged: false, detail: `password fields on the code screen: ${pwFields} (typed=${typed})`, evidence: [f2] });
       await page.setViewportSize({ width: 360, height: Math.round(740 * 0.58) });
       await field.focus().catch(() => {});
       await field.scrollIntoViewIfNeeded().catch(() => {});
@@ -897,10 +897,18 @@ async function nativeCheckInReport(H, lang) {
   const { ctx, page } = await H.open('native', { lang, server });
   const R = H.recorder('2-checkin', 'native', lang, 's360', 'report-flow');
   try {
+    // ARRIVAL is the Report sheet (the Report tab), as a real observer reaches the
+    // flow; components/report-sheet.tsx draws the check-in card there, at the
+    // assigned unit. Going straight to /report/result skipped it.
+    await H.gotoNative(page, '/');
+    await H.sleep(2000);
+    await page.getByText(nt(lang, 'nav.report'), { exact: true }).last().click().catch(() => {});
+    await H.sleep(1500);
+    const tSheet = await H.text(page);
     await H.gotoNative(page, '/report/result');
     await H.sleep(2500);
     const t = await H.text(page);
-    const hasCheckIn = t.includes(nt(lang, 'n.app.report.result.check-in'));
+    const hasCheckIn = [tSheet, t].some((x) => x.includes(nt(lang, 'observe.check-in-title')) || x.includes(nt(lang, 'n.app.report.result.check-in')));
     const f1 = await R.step(page, 'report-opens', { screen: 'report/result (step: sheet photo)', asked: nt(lang, 'n.app.report.result.photo-1-of-2-the-result'), note: `check-in offered on arrival: ${hasCheckIn}` });
     if (H.check('2:native-report-checkin-after-photos', { flagged: !hasCheckIn, detail: 'native report flow opens on the result-sheet camera; no check-in', control: 'web report flow shows the card on arrival (2:card-shown)', evidence: [f1] })) {
       H.finding({ id: 'R-NATIVE-CHECKIN-AFTER-PHOTOS', flow: '2-checkin', severity: 'P2', surfaces: ['native'],
@@ -1384,7 +1392,7 @@ const NOTES = (H) => [
   { id: 501, kind: 'group_joined', title: 'You were added to a room', body: 'Kano Volunteers', url: 'https://hawkeye.com.ng/my-groups.html', read: 0, created_at: H.NOW - 1 * H.H, want: 'my-groups', room: 'Kano Volunteers' },
   { id: 502, kind: 'group_invite', title: 'A room asked you to observe', body: 'Kosofe Ward Volunteers', url: 'https://hawkeye.com.ng/my-groups.html', read: 0, created_at: H.NOW - 2 * H.H, want: 'my-groups', room: 'Kosofe Ward Volunteers' },
   { id: 503, kind: 'assignment', title: 'Your coordinator set your unit', body: 'Lagos Citizens Observer Network', url: 'https://hawkeye.com.ng/my-groups.html', read: 0, created_at: H.NOW - 3 * H.H, want: 'my-groups', room: 'Lagos Citizens Observer Network' },
-  { id: 504, kind: 'group_role', title: 'You can now manage a room', body: 'Kano Volunteers', url: 'https://hawkeye.com.ng/situation-room.html', read: 0, created_at: H.NOW - 4 * H.H, want: 'room', room: 'Kano Volunteers' },
+  { id: 504, kind: 'group_role', title: 'You can now manage a room', body: 'Kano Volunteers', url: 'https://hawkeye.com.ng/room/kano-volunteers', read: 0, created_at: H.NOW - 4 * H.H, want: 'room', room: 'Kano Volunteers' },
   { id: 505, kind: 'room_label', title: 'Your room was verified', body: 'Adaeze 2027', url: 'https://hawkeye.com.ng/room/adaeze-2027', read: 0, created_at: H.NOW - 5 * H.H, want: 'room', room: 'Adaeze 2027' },
 ];
 

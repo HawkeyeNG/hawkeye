@@ -782,12 +782,15 @@ function paintAuthStep() {
     keyedText($('auth-input-label'), code ? 'observe.enter-otp' : 'observe.nigerian-mobile-number', code ? 'Enter OTP' : 'Nigerian Mobile Number');
   }
   if ($('auth-why')) $('auth-why').textContent = T('auth.no-password-yet', 'This account has no password yet. Sign in with a code and set one now.');
+  // keyedText too (ONB-21): painted before the bundle landed, textContent stayed
+  // English for good on Lite; a keyed button is fixed by the next apply() pass.
   if ($('btn-auth')) {
-    $('btn-auth').textContent = code ? T('observe.verify-otp', 'Verify OTP')
-      : m === 'password' ? T('observe.sign-in', 'Sign In')
-        : m === 'setpw' ? T('auth.pw-save-continue', 'Save password and continue')
-          : orgCodeTyped() ? T('auth.org-create-account', 'Create account')
-            : T('observe.send-code', 'Send Code');
+    const [k, en] = code ? ['observe.verify-otp', 'Verify OTP']
+      : m === 'password' ? ['observe.sign-in', 'Sign In']
+        : m === 'setpw' ? ['auth.pw-save-continue', 'Save password and continue']
+          : orgCodeTyped() ? ['auth.org-create-account', 'Create account']
+            : ['observe.send-code', 'Send Code'];
+    keyedText($('btn-auth'), k, en);
   }
   if ($('pw-link') && IS_SIGNIN) {
     if (m === 'password') keyedText($('pw-link'), 'observe.forgot-your-password', 'Forgot your password?');

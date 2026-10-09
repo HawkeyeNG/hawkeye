@@ -2,6 +2,7 @@
  * The four flows of group `rooms`. Loaded by rooms.mjs, which owns the browser,
  * the guard and the output. Every function here receives H (the harness).
  */
+import fs from 'node:fs';
 
 const SRC = {
   joinGo: 'app/join.html:212-238',
@@ -487,7 +488,11 @@ async function nativeJoinSignedOut(H, lang) {
     // Where a completed sign-in goes is in the source (no credential is typed here):
     // sign-in.tsx finishReturning() → router.replace('/(tabs)'); a new account →
     // router.replace('/choose-unit?onboard=1'). Neither returns to the invite.
-    H.finding({ id: 'R-NATIVE-SIGNIN-LEAVES-INVITE', flow: '1-join', severity: 'P2', surfaces: ['native'],
+    // No credential is typed here, so the finish is judged from the CURRENT source:
+    // sign-in.tsx leave() pops back onto an invite below it (router.back()).
+    const signInSrc = (() => { try { return fs.readFileSync(new URL('../../../native/src/app/sign-in.tsx', import.meta.url), 'utf8'); } catch { return ''; } })();
+    const returnsToInvite = /inviteBelow\(\)\s*&&\s*router\.canGoBack\(\)/.test(signInSrc) && /router\.back\(\)/.test(signInSrc);
+    if (!returnsToInvite) H.finding({ id: 'R-NATIVE-SIGNIN-LEAVES-INVITE', flow: '1-join', severity: 'P2', surfaces: ['native'],
       title: 'Native: after "Sign in to join", a finished sign-in lands on Home / the unit chooser, not back on the invite',
       actual: 'join/[token] pushes /sign-in expecting to stay underneath, but sign-in ends with router.replace(\'/(tabs)\') (returning) or router.replace(\'/choose-unit?onboard=1\') (new account), so the reader is taken to Home with the invite buried in the stack (reachable only by system Back, if at all). A new account then goes through the chooser to the tabs.',
       expected: 'After sign-in the reader is back on the invite with the button reading "Join this group" (router.back() when the sign-in was pushed from a join, or a returnTo param).',

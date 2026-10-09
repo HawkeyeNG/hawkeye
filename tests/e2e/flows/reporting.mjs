@@ -1662,13 +1662,13 @@ async function flowCheckin(surface, lang) {
     try {
       if (native) {
         // Arrival on native is the Report sheet (components/report-sheet.tsx), not the camera.
-        await page.goto(NBASE + '/', { waitUntil: 'load' }).catch(() => {});
-        await sleep(2000);
-        await page.getByText(nt(lang, 'nav.report'), { exact: true }).last().click().catch(() => {});
+        const nb = await nativeBase(); // starts the export's server (NBASE is null until then)
+        await page.goto(`${nb}/`, { waitUntil: 'load', timeout: 60000 }).catch(() => {});
+        await waitFor(() => nHas(page, nt(lang, 'nav.report')), 20000);
         await sleep(1500);
+        await nTap(page, nt(lang, 'nav.report'), { last: true });
+        await sleep(2500); // myRooms() answers after the sheet opens
         o.cardOnArrival = await nHas(page, nt(lang, 'observe.check-in-title'));
-        await page.goto(NBASE + '/', { waitUntil: 'load' }).catch(() => {}); // sheet closed; the walk opens it again
-        await sleep(1500);
         await nativeResultWalk(page, R, S, { lang, until: 'photos' });
         o.cardBeforeUnit = await nHas(page, nt(lang, 'n.app.report.result.check-in'));
         await waitFor(() => nHas(page, UNIT.name), 15000);

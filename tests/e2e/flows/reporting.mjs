@@ -787,7 +787,10 @@ async function nativeResultWalk(page, R, S, { lang, until = 'submit', unitBy = '
     res.totalsCheck.warned = await nHas(page, nt(lang, 'observe.totals-dont-add-up'));
     await nTap(page, nt(lang, 'observe.check-again')).catch(() => {});
     await sleep(400);
-    await tot.fill(String(Object.values(counts).reduce((a, b) => a + b, 0))).catch(() => {});
+    // Clear it rather than type "the right" total: nFillCounts may not land every
+    // party (it filled 3 of 4), and a guessed total then warns for real and
+    // strands the walk on the warning sheet.
+    await tot.fill('').catch(() => {});
   }
   await nTap(page, nt(lang, 'n.app.report.collation.review-report'));
   await sleep(1500);

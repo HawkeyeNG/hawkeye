@@ -141,10 +141,17 @@ jobs:
           # binary with the same native code keep getting updates while their
           # runtime is listed in native/ota-extra-runtimes.json — empty it once
           # the new binary has replaced the old one on both stores.
+          # The export must SAY that version too: ota_manifest refuses a runtime
+          # that differs from the config's version (and those phones read their
+          # version from this config), so app.json is set to it for the run.
           if [ "$ACTION" = publish ]; then
+            cp native/app.json "$RUNNER_TEMP/app.json.orig"
             for rt in $(node -e 'console.log((require("./native/ota-extra-runtimes.json")||[]).join(" "))'); do
               echo "::group::also runtime $rt"
-              bash scripts/ota_publish_self.sh "${args[@]}" --runtime "$rt"
+              node -e 'const fs=require("fs"),f="native/app.json",j=JSON.parse(fs.readFileSync(f,"utf8"));j.expo.version=process.argv[1];fs.writeFileSync(f,JSON.stringify(j,null,2)+"\n")' "$rt"
+              rc=0; bash scripts/ota_publish_self.sh "${args[@]}" --runtime "$rt" || rc=$?
+              cp "$RUNNER_TEMP/app.json.orig" native/app.json
               echo "::endgroup::"
+              [ "$rc" = 0 ] || exit "$rc"
             done
           fi

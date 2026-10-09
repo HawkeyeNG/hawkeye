@@ -1,0 +1,42 @@
+{
+  "irev.check-title": {
+    "ha": "An duba da IReV na INEC",
+    "ig": "Elelere ya na IReV nke INEC",
+    "yo": "A ṣàyẹ̀wò rẹ̀ pẹ̀lú IReV ti INEC"
+  },
+  "irev.receipt-next": {
+    "ha": "Na gaba, Hawkeye zai kwatanta sakamakon wannan rumfa da takardar da INEC ta ɗora a IReV. Za ka ga sakamakon a ƙarƙashin Rahotannin sakamako a bayananka.",
+    "ig": "Ọzọ, Hawkeye ga-atụnyere nsonaazụ ebe ntuli aka a na mpempe akwụkwọ INEC bulitere na IReV. Ị ga-ahụ ihe ọ chọpụtara n'okpuru Akụkọ nsonaazụ na profaịlụ gị.",
+    "yo": "Lẹ́yìn èyí, Hawkeye yóò fi àbájáde ibùdó ìdìbò yìí wé ìwé tí INEC gbé sí IReV. Wàá rí ohun tí ó rí lábẹ́ Àwọn ìjábọ̀ àbájáde nínú profaili rẹ."
+  },
+  "irev.state.waiting": {
+    "ha": "Ana jiran INEC ta ɗora takardar sakamakon wannan rumfa a IReV.",
+    "ig": "Na-eche ka INEC bulite mpempe akwụkwọ nsonaazụ ebe ntuli aka a na IReV.",
+    "yo": "À ń dúró kí INEC gbé ìwé àbájáde ibùdó ìdìbò yìí sí IReV."
+  },
+  "irev.state.checking": {
+    "ha": "Takardar INEC ta iso. Ana kwatanta ta da sakamakon da aka bayar.",
+    "ig": "Mpempe akwụkwọ INEC abịala. A na-atụnyere ya na nsonaazụ a kọrọ.",
+    "yo": "Ìwé INEC ti dé. À ń fi wé àbájáde tí a jábọ̀."
+  },
+  "irev.state.match": {
+    "ha": "Ya yi daidai da abin da INEC ta ɗora a IReV.",
+    "ig": "Ọ dakọtara na ihe INEC bulitere na IReV.",
+    "yo": "Ó bá ohun tí INEC gbé sí IReV mu."
+  },
+  "irev.state.mismatch": {
+    "ha": "Ya bambanta da abin da INEC ta ɗora a IReV. Ana dubawa.",
+    "ig": "Ọ dị iche na ihe INEC bulitere na IReV. A na-enyocha ya.",
+    "yo": "Ó yàtọ̀ sí ohun tí INEC gbé sí IReV. À ń ṣàyẹ̀wò rẹ̀."
+  },
+  "irev.state.unclear": {
+    "ha": "Ba a iya karanta takardar da INEC ta ɗora sosai ba.",
+    "ig": "Agụghị mpempe akwụkwọ INEC bulitere nke ọma.",
+    "yo": "A kò lè ka ìwé tí INEC gbé sókè dáadáa."
+  },
+  "irev.col-party": { "ha": "Jam'iyya", "ig": "Otu", "yo": "Ẹgbẹ́" },
+  "irev.col-reported": { "ha": "Aka bayar", "ig": "A kọrọ", "yo": "Tí a jábọ̀" },
+  "irev.col-irev": { "ha": "IReV na INEC", "ig": "IReV nke INEC", "yo": "IReV ti INEC" },
+  "irev.total-valid": { "ha": "Jimillar masu inganci", "ig": "Mgbakọta ziri ezi", "yo": "Àpapọ̀ tó wúlò" },
+  "irev.view-sheet": { "ha": "Duba takardar INEC", "ig": "Lee mpempe akwụkwọ INEC", "yo": "Wo ìwé INEC" }
+}

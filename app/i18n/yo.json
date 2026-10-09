@@ -2980,5 +2980,17 @@
   "observe.totals-cast-mismatch": "Ìdìbò tó wúlò ({v0}) pẹ̀lú èyí tí a kọ̀ ({v1}) jẹ́ {v2}, ṣùgbọ́n ìwé náà sọ pé ìdìbò tí a dì jẹ́ {v3}.",
   "observe.totals-check-body": "Ṣàyẹ̀wò nọ́mbà kọ̀ọ̀kan pẹ̀lú ìwé náà.",
   "observe.check-again": "Ṣàyẹ̀wò lẹ́ẹ̀kan sí i",
-  "observe.continue-anyway": "Tẹ̀síwájú bẹ́ẹ̀"
+  "observe.continue-anyway": "Tẹ̀síwájú bẹ́ẹ̀",
+  "irev.check-title": "A ṣàyẹ̀wò rẹ̀ pẹ̀lú IReV ti INEC",
+  "irev.receipt-next": "Lẹ́yìn èyí, Hawkeye yóò fi àbájáde ibùdó ìdìbò yìí wé ìwé tí INEC gbé sí IReV. Wàá rí ohun tí ó rí lábẹ́ Àwọn ìjábọ̀ àbájáde nínú profaili rẹ.",
+  "irev.state.waiting": "À ń dúró kí INEC gbé ìwé àbájáde ibùdó ìdìbò yìí sí IReV.",
+  "irev.state.checking": "Ìwé INEC ti dé. À ń fi wé àbájáde tí a jábọ̀.",
+  "irev.state.match": "Ó bá ohun tí INEC gbé sí IReV mu.",
+  "irev.state.mismatch": "Ó yàtọ̀ sí ohun tí INEC gbé sí IReV. À ń ṣàyẹ̀wò rẹ̀.",
+  "irev.state.unclear": "A kò lè ka ìwé tí INEC gbé sókè dáadáa.",
+  "irev.col-party": "Ẹgbẹ́",
+  "irev.col-reported": "Tí a jábọ̀",
+  "irev.col-irev": "IReV ti INEC",
+  "irev.total-valid": "Àpapọ̀ tó wúlò",
+  "irev.view-sheet": "Wo ìwé INEC"
 }

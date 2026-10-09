@@ -2981,5 +2981,17 @@
   "observe.totals-cast-mismatch": "Ƙuri'u masu inganci ({v0}) da waɗanda aka ƙi ({v1}) sun kai {v2}, amma takardar ta ce an kaɗa ƙuri'u {v3}.",
   "observe.totals-check-body": "Duba kowace lamba da takardar.",
   "observe.check-again": "Sake dubawa",
-  "observe.continue-anyway": "Ci gaba duk da haka"
+  "observe.continue-anyway": "Ci gaba duk da haka",
+  "irev.check-title": "An duba da IReV na INEC",
+  "irev.receipt-next": "Na gaba, Hawkeye zai kwatanta sakamakon wannan rumfa da takardar da INEC ta ɗora a IReV. Za ka ga sakamakon a ƙarƙashin Rahotannin sakamako a bayananka.",
+  "irev.state.waiting": "Ana jiran INEC ta ɗora takardar sakamakon wannan rumfa a IReV.",
+  "irev.state.checking": "Takardar INEC ta iso. Ana kwatanta ta da sakamakon da aka bayar.",
+  "irev.state.match": "Ya yi daidai da abin da INEC ta ɗora a IReV.",
+  "irev.state.mismatch": "Ya bambanta da abin da INEC ta ɗora a IReV. Ana dubawa.",
+  "irev.state.unclear": "Ba a iya karanta takardar da INEC ta ɗora sosai ba.",
+  "irev.col-party": "Jam'iyya",
+  "irev.col-reported": "Aka bayar",
+  "irev.col-irev": "IReV na INEC",
+  "irev.total-valid": "Jimillar masu inganci",
+  "irev.view-sheet": "Duba takardar INEC"
 }

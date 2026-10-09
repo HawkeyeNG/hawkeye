@@ -21,6 +21,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ConfirmSheet } from '@/components/confirm-sheet';
+import { IrevCheck, type IrevCheckData } from '@/components/irev-check';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { PasswordField } from '@/components/password-field';
 import { ScreenHeader } from '@/components/screen-header';
@@ -82,6 +83,8 @@ type Me = {
     state?: string;
     created_at: number;
     entry_hash: string;
+    /** Where the unit's result stands against INEC's IReV upload (server irevCheck). */
+    irev?: IrevCheckData;
   }[];
   collation?: {
     level: string;
@@ -992,6 +995,7 @@ export default function Profile() {
                             {[r.lga, r.state].filter(Boolean).join(', ')} · {dt(r.created_at)} ·{' '}
                             {i18nT('profile.ledger-label')} {String(r.entry_hash).slice(0, 10)}…
                           </Text>
+                          <IrevCheck irev={r.irev} />
                         </View>
                       ))
                     : null}

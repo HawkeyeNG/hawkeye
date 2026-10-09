@@ -8,6 +8,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { InfoDot } from '@/components/info-dot';
+import { IrevNext } from '@/components/irev-check';
 import { ButtonText } from '@/components/button-text';
 import { SafeScreen } from '@/components/safe-screen';
 import { CaptureCamera } from '@/components/capture-camera';
@@ -2780,6 +2781,9 @@ export default function ReportResult() {
                 at: Date.now(),
               }}
             />
+            {/* What happens next: the IReV comparison runs later, once INEC
+                uploads this unit's sheet; Profile → Result reports shows it. */}
+            {receipt.entryHash ? <IrevNext /> : null}
 
             {receipt.result || receipt.locationVerified != null || receipt.ocr ? (
               <View className="mt-3 rounded-2xl bg-card px-4 py-2">

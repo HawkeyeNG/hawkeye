@@ -741,6 +741,13 @@
       </div>
 
       <p class="hint" id="entry-line">Ledger entry: <code id="entry-hash"></code></p>
+      <!-- What happens next: the IReV comparison runs later, once INEC uploads
+           this unit's sheet; Profile → Result reports shows it. Twin of native
+           components/irev-check.tsx IrevNext. -->
+      <div class="card" style="padding:12px 14px">
+        <strong data-i18n="irev.check-title">Checked against INEC's IReV</strong>
+        <p class="hint" style="margin:4px 0 0" data-i18n="irev.receipt-next">Next, Hawkeye checks this unit's result against the sheet INEC uploads to IReV. The outcome appears under Result reports in your profile.</p>
+      </div>
       <a data-i18n="observe.view-the-public-dashboard" class="link" href="dashboard.html">View the Public Dashboard →</a><br /><br />
       <button data-i18n="observe.report-another-unit" id="btn-another" class="secondary">Report another unit</button>
     </section>

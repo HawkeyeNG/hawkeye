@@ -716,10 +716,36 @@
       // source the board and the bot label races from, so the three agree.
       renderList($('p-subs'), body.subscriptions, (s) =>
         `<span class="tag ok">${esc(contestLabel(s.contest))}${s.state ? ' — ' + esc(s.state) : ''}</span>`);
+      /* THE IReV CHECK on each report: where the unit's result stands against
+         the sheet INEC uploaded to IReV (server irevCheck), with both sets of
+         figures once decided. Twin of native components/irev-check.tsx. */
+      const IREV_STATE = {
+        waiting: T('irev.state.waiting', "Waiting for INEC to upload this unit's result sheet to IReV."),
+        checking: T('irev.state.checking', "INEC's sheet is in. Comparing it with the reported result."),
+        match: T('irev.state.match', "Matches INEC's IReV upload."),
+        mismatch: T('irev.state.mismatch', "Differs from INEC's IReV upload. Under review."),
+        unclear: T('irev.state.unclear', "INEC's uploaded sheet could not be read clearly."),
+      };
+      const irevCheckHtml = (v) => {
+        if (!v || !IREV_STATE[v.state]) return '';
+        const mark = v.state === 'match' ? '✓' : v.state === 'mismatch' ? '⚠' : '…';
+        let rows = '';
+        if ((v.state === 'match' || v.state === 'mismatch') && Array.isArray(v.rows) && v.rows.length) {
+          const fmt = (n) => (n == null ? '—' : Number(n).toLocaleString());
+          const tr = (p, a, b, bold) => `<tr${bold ? ' style="font-weight:700"' : ''}><td>${esc(p)}</td><td style="text-align:right">${fmt(a)}</td><td style="text-align:right${a !== b ? ';color:var(--warn,#b45309)' : ''}">${fmt(b)}</td></tr>`;
+          rows = `<table style="width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin-top:6px">
+            <tr class="sub"><td>${esc(T('irev.col-party', 'Party'))}</td><td style="text-align:right">${esc(T('irev.col-reported', 'Reported'))}</td><td style="text-align:right">${esc(T('irev.col-irev', 'INEC IReV'))}</td></tr>
+            ${v.rows.slice(0, 4).map((x) => tr(x.party, x.reported, x.irev)).join('')}
+            ${v.total ? tr(T('irev.total-valid', 'Total valid'), v.total.reported, v.total.irev, true) : ''}</table>`;
+        }
+        const link = v.docUrl && v.state !== 'waiting' && v.state !== 'checking'
+          ? ` <a href="${esc(v.docUrl)}" target="_blank" rel="noopener">${esc(T('irev.view-sheet', "View INEC's sheet"))}</a>` : '';
+        return `<div class="sub" style="margin-top:6px"><strong>${mark} ${esc(IREV_STATE[v.state])}</strong>${link}${rows}</div>`;
+      };
       renderList($('p-reports'), body.reports, (r) =>
         `<div class="item"><strong>${esc(r.name || r.pu_code)}</strong> · ${esc(r.contest)}
          <div class="sub">${esc(r.pu_code)} · ${esc(r.lga || '')}, ${esc(r.state || '')} · ${dt(r.created_at)} ·
-         ${esc(T('profile.ledger-label', 'ledger'))} <span title="${esc(r.entry_hash)}">${esc(String(r.entry_hash).slice(0, 12))}…</span></div></div>`);
+         ${esc(T('profile.ledger-label', 'ledger'))} <span title="${esc(r.entry_hash)}">${esc(String(r.entry_hash).slice(0, 12))}…</span></div>${irevCheckHtml(r.irev)}</div>`);
       renderList($('p-collation'), body.collation, (c) =>
         `<div class="item"><strong>${esc(c.level.toUpperCase())}</strong> · ${esc(c.contest)}
          <div class="sub">${esc([c.ward, c.lga, c.state].filter(Boolean).join(', '))} · ${dt(c.created_at)}</div></div>`);

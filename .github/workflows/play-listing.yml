@@ -1,0 +1,65 @@
+name: Play listing screenshots
+
+# Replace one app's Play phone screenshots with a committed set
+# (store/screenshots/<set>), via scripts/play_listing_images.mjs. Dry run by
+# default. Keyless: Workload Identity Federation, as play-promote.yml.
+
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: 'Which app'
+        required: true
+        type: choice
+        options: [native, lite]
+      set:
+        description: 'Folder under store/screenshots'
+        required: true
+        type: choice
+        options: [native-play, lite-play]
+      dry_run:
+        description: 'Read and check only; change nothing'
+        type: boolean
+        default: true
+      send_for_review:
+        description: 'ONLY after Publishing overview shows nothing else pending'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write        # mints the OIDC token for Workload Identity Federation
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Authenticate to Google — no key, short-lived credentials
+        id: auth
+        uses: google-github-actions/auth@c200f3691d83b41bf9bbd8638997a462592937ed  # v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+          token_format: access_token
+          access_token_scopes: https://www.googleapis.com/auth/androidpublisher
+
+      - name: Replace phone screenshots
+        env:
+          PLAY_ACCESS_TOKEN: ${{ steps.auth.outputs.access_token }}
+          APP: ${{ inputs.app }}
+          SET: ${{ inputs.set }}
+          DRY: ${{ inputs.dry_run }}
+          SEND: ${{ inputs.send_for_review }}
+        run: |
+          set -euo pipefail
+          case "$APP:$SET" in native:native-play|lite:lite-play) ;; *) echo "::error::$SET is not $APP's set"; exit 1 ;; esac
+          ARGS=(--app "$APP" --dir "store/screenshots/$SET")
+          [ "$DRY" = "true" ] && ARGS+=(--dry-run)
+          [ "$SEND" = "true" ] && ARGS+=(--send-for-review)
+          node scripts/play_listing_images.mjs "${ARGS[@]}"

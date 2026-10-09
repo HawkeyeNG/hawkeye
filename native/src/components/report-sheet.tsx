@@ -1,5 +1,5 @@
 import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
-import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import type { BottomSheetBackdropProps, BottomSheetBackgroundProps } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
@@ -64,6 +64,17 @@ const ACTIONS: {
  * are drawn. Memoised per combination below, so the array identity is stable
  * across renders that change neither.
  */
+/**
+ * The sheet's ground, painted from the SAME palette variables as the text on
+ * it (bg-card under text-ink). It used to be `ui.card` from JS, while the
+ * heading took text-ink from the root's theme class; whenever the two disagreed
+ * (measured on the web build: root theme-light, useUi dark) the "Report"
+ * heading came out dark-on-dark. One source cannot disagree with itself.
+ */
+const SheetBackground = ({ style }: BottomSheetBackgroundProps) => (
+  <View pointerEvents="none" className="rounded-3xl bg-card" style={style} />
+);
+
 const BASE_PCT = 42;
 const CHECK_IN_PCT = 26;
 const OUTBOX_PCT = 7;
@@ -181,7 +192,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       // an invisible "Report" heading. The handle follows too: a light grab bar
       // on a light sheet is just as lost as a dark one on a dark sheet.
       handleIndicatorStyle={{ backgroundColor: ui.faint }}
-      backgroundStyle={{ backgroundColor: ui.card, borderRadius: 24 }}
+      backgroundComponent={SheetBackground}
     >
       <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
         <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">{i18nT('nav.report')}</Text>

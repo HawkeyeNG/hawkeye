@@ -502,10 +502,13 @@ const NearbyRow = ({
   loading,
   onChoose,
   onContinue,
+  saved = false,
 }: {
   n: NearRow;
   selected: boolean;
   loading: boolean;
+  /** The observer's saved unit: tagged here instead of offered twice. */
+  saved?: boolean;
   onChoose: (n: NearRow) => void;
   onContinue: () => void;
 }) => {
@@ -549,6 +552,9 @@ const NearbyRow = ({
             </Text>
           </View>
         </View>
+        {saved && !selected ? (
+          <Text className="pr-2 text-[10px] font-bold uppercase text-faint">{i18nT('n.components.choose-unit.saved')}</Text>
+        ) : null}
         {/* Inline Continue on the chosen row: in a dense ward the footer CTA
             can sit far below the unit you just tapped. */}
         {loading ? (
@@ -2171,8 +2177,10 @@ export default function ReportResult() {
                 at all, since it is kept on the phone. Offered, never chosen:
                 plenty of observers report from a unit that is not their own.
                 No location badge: /my-unit carries no coordinates, and "not
-                mapped" would be a claim about the unit, not about this row. */}
-            {savedUnit && !searchBusyHiding ? (() => {
+                mapped" would be a claim about the unit, not about this row.
+                When the unit is also near, its nearby row (with the distance)
+                carries the "Saved" tag instead, so it is not listed twice. */}
+            {savedUnit && !searchBusyHiding && !nearby.some((n) => n.puCode === savedUnit.pu_code) ? (() => {
               const on = unit?.pu_code === savedUnit.pu_code;
               return (
                 <View className="pt-3">
@@ -2276,6 +2284,7 @@ export default function ReportResult() {
                     loading={picking === n.puCode}
                     onChoose={chooseNearby}
                     onContinue={continueFromUnit}
+                    saved={savedUnit?.pu_code === n.puCode}
                   />
                 ))}
               </View>

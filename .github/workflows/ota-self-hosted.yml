@@ -136,3 +136,15 @@ jobs:
             history) args+=(--history) ;;
           esac
           bash scripts/ota_publish_self.sh "${args[@]}"
+          # STILL-LIVE OLDER RUNTIMES. runtimeVersion = appVersion, so the run
+          # above reaches only the CURRENT app version. Phones on an older
+          # binary with the same native code keep getting updates while their
+          # runtime is listed in native/ota-extra-runtimes.json — empty it once
+          # the new binary has replaced the old one on both stores.
+          if [ "$ACTION" = publish ]; then
+            for rt in $(node -e 'console.log((require("./native/ota-extra-runtimes.json")||[]).join(" "))'); do
+              echo "::group::also runtime $rt"
+              bash scripts/ota_publish_self.sh "${args[@]}" --runtime "$rt"
+              echo "::endgroup::"
+            done
+          fi

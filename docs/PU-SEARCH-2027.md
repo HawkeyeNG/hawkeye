@@ -12,6 +12,16 @@ client fetched, parsed and flattened in memory. 2027 is the whole federation:
 **176,846 units across 37 states, 768 LGAs, 8,432 ward names.** The same approach
 scaled 47x does not work.
 
+> **Corrected 10 October 2026.** The count below was the DEVELOPMENT database.
+> Production holds an INEC locator pin on **159,650 of 176,846** units (state
+> shift repaired 29 Sep), which the API already serves as "Verified location".
+> Near-me therefore works, and since 10 Oct it works OFFLINE: one coordinates
+> file per state ships beside the packs (`build_register_packs.mjs --coords`,
+> listed under `manifest.coords`, gated by
+> `native/scripts/verify_register_coords_ts.mjs`). Search stays the route for
+> the ~10% of units with no pin. The paragraph is kept as written, as the
+> reasoning the pack design was made under.
+
 It matters more than it did in 2026, because **near-me is effectively gone**:
 only **8** of 176,846 rows have a real coordinate. 117,159 come from the
 `geocoded_inec.csv` corpus that is ~33% wrong and still live in production

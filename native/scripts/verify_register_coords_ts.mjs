@@ -40,7 +40,14 @@ const DB_PATH = process.env.HAWKEYE_DB || path.join(REPO, 'backend', 'storage', 
 
 const out = mkdtempSync(path.join(tmpdir(), 'regcoords-'));
 let mod;
-try {
+// --web: gate the WEB twin (app/register-store.js) with the same reference.
+// Two implementations of one format must not be allowed to drift apart.
+const WEB = argv.includes('--web');
+if (WEB) {
+  const w = require(path.join(REPO, 'app', 'register-store.js'))._coords;
+  mod = { decodeCoords: w.decode, nearbyFromPacks: w.nearbyFromPacks, decodeState: w.decodeState,
+    REGISTER_RADIUS_M: 500, REGISTER_MAX_ROWS: 40, MAPPING_MAX_ROWS: 200 };
+} else try {
   // register-pack.ts imports '@/lib/i18n' for two error strings, which tsc
   // cannot resolve outside the app: it reports that and STILL emits, so the
   // exit code is ignored and the emitted files are what is checked.

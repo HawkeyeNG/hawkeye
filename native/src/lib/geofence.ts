@@ -150,9 +150,11 @@ export const haversineM = (aLat: number, aLng: number, bLat: number, bLng: numbe
  * is 20,000m, giving 32km. The ward-centroid fallback added to submissions.js
  * alongside this change is 15km. 50km clears both.
  *
- * BELOW THIS, THE SCREEN STILL ONLY WARNS, and that is deliberate. Eight of
- * 176,846 units have an officially verified coordinate; 117,159 carry geocodes
- * recorded as roughly a third wrong. Blocking at the fence itself would turn
+ * BELOW THIS, THE SCREEN STILL ONLY WARNS, and that is deliberate. About 10% of
+ * units have no pin at all, and the bulk geocodes some still carry are recorded
+ * as roughly a third wrong. (This note used to say only eight units had a
+ * verified coordinate: that was the dev database. Production has an INEC
+ * locator pin on 159,650 of 176,846.) Blocking at the fence itself would turn
  * away observers standing exactly where they should be — the failure that
  * caused the 200m -> 500m raise recorded at config.js:242. A thousand-kilometre
  * mismatch carries no such doubt.

@@ -923,10 +923,23 @@
       // way in. Nothing to point at that is not already on screen.
       if (!c) { geoLog('near-me', err); $('pu-status').textContent = geoLine(err); return; }
       try {
-        const r = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`);
-        const { units = [] } = await r.json();
+        // The server gets 8 s; after that, or with no signal, the units saved on
+        // this phone answer instead (register-store.js nearbyOffline).
+        const store = window.registerStore;
+        let viaPacks = false;
+        const sig = store && typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? { signal: AbortSignal.timeout(8000) } : undefined;
+        const got = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`, sig)
+          .then((x) => { if (!x.ok) throw new Error('HTTP ' + x.status); return x.json(); })
+          .catch(async (e) => {
+            const off = store && store.nearbyOffline ? await store.nearbyOffline(c.latitude, c.longitude, 500) : null;
+            if (!off || !off.register.units.length) throw e;
+            viaPacks = true;
+            return off.register;
+          });
+        const { units = [] } = got;
         if (!units.length) { $('pu-near-list').innerHTML = ''; $('pu-status').textContent = T('incidents.no-mapped-units-within-range-you', 'No mapped units within range — you can still submit without one.'); return; }
-        $('pu-status').textContent = T('incidents.near-you-pick-the-one-where', '{v0} near you — pick the one where it happened:').replace('{v0}', units.length);
+        $('pu-status').textContent = (viaPacks ? T('nearme.offline-note', 'Showing units saved on this phone. No connection needed.') + ' ' : '')
+          + T('incidents.near-you-pick-the-one-where', '{v0} near you — pick the one where it happened:').replace('{v0}', units.length);
         $('pu-near-list').innerHTML = units.map((u) => `
           <label class="pu-opt" style="display:flex;gap:8px;align-items:flex-start;padding:8px 0;font-weight:400;border-top:1px solid var(--line)">
             <input type="radio" name="pu-choice" value="${esc(u.pu_code)}" style="width:auto;margin-top:3px" />
@@ -1234,6 +1247,7 @@
       restoreIncidentDraft();
     })();
   </script>
+  <script src="register-store.js?v=5"></script>
   <script src="shell.js?v=4" defer></script>
 </body>
 </html>

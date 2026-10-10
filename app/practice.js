@@ -193,10 +193,15 @@
     }
     const { latitude: lat, longitude: lng } = pos.coords;
     const get = (p) => fetch(p).then((r) => r.json()).catch(() => null);
-    const [reg, near] = await Promise.all([
+    const online = Promise.all([
       get(`/api/polling-units?lat=${lat}&lng=${lng}`),
       get(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
     ]);
+    // Answered from the files on the phone when the server does not (register-store.js).
+    const store = window.registerStore;
+    const [reg, near, viaPacks] = store && store.nearbyOrOffline
+      ? await store.nearbyOrOffline(lat, lng, 800, online)
+      : [...(await online), false];
     if (!reg && !near) {
       say(navigator.onLine
         ? T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')
@@ -213,7 +218,7 @@
     }
     rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
     if (!rows.length) { say(T('practice.no-units-near', 'No units found near you. Search below, or use the practice unit.')); return; }
-    say(T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:'));
+    say((viaPacks ? T('nearme.offline-note', 'Showing units saved on this phone. No connection needed.') + ' ' : '') + T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:'));
     for (const u of rows) {
       const b = document.createElement('button');
       b.type = 'button';

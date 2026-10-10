@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from 'react';
 import { useColorScheme as useSystemColorScheme } from 'react-native';
@@ -82,11 +83,24 @@ export function themeClass(scheme: ResolvedScheme): string {
   return scheme === 'dark' ? 'theme-dark' : 'theme-light';
 }
 
+const subscribeNever = () => () => {};
+
 export function ThemePrefProvider({ children }: { children: ReactNode }) {
   // Default to DARK: follow the phone when it states a theme, but fall back to
   // dark (not light) when the OS reports no preference — dark is Hawkeye's
   // baseline across every platform. Only an explicit OS 'light' yields light.
-  const system: ResolvedScheme = useSystemColorScheme() === 'light' ? 'light' : 'dark';
+  const os = useSystemColorScheme();
+  // WEB EXPORT ONLY. The static export pre-renders with the OS scheme read as
+  // 'light', so its HTML says theme-light. A browser in dark mode then computed
+  // 'dark' on its FIRST client render — and hydration does not patch a
+  // mismatched attribute, so React believed the class was already theme-dark
+  // and never wrote it: a light page with dark sheets and icons on top
+  // (measured 2026-10-09, root class theme-light with pref dark). The first
+  // client render therefore repeats the server's answer, and the real one
+  // follows as an ordinary update. On a phone there is no hydration: `hydrated`
+  // is true from the first frame and nothing changes.
+  const hydrated = useSyncExternalStore(subscribeNever, () => true, () => false);
+  const system: ResolvedScheme = !hydrated || os === 'light' ? 'light' : 'dark';
   /** null = the stored preference has not been read yet. */
   const [pref, setPrefState] = useState<ThemePref | null>(null);
   /** Set once the gate has opened, so a late/slow read cannot re-gate the app. */

@@ -725,6 +725,9 @@ async function flowFollow(surface, lang) {
         await tapText(P, nt(lang, 'profile.my-profile')); R.tap(); await sleep(2500);
         const tp = await bodyText(P.page);
         prefs.profileNotificationsRow = tp.includes(nt(lang, 'profile.notifications'));
+        // The "How alerts reach you" section itself (native/src/app/profile.tsx). The
+        // finding used to look only for a row on More, where it never was.
+        prefs.profileAlertsSection = tp.toLowerCase().includes(nt(lang, 'profile.alerts-reach-you').toLowerCase());
         prefs.profileRacesYouFollow = tp.toLowerCase().includes(nt(lang, 'n.app.profile.races-you-follow').toLowerCase());
         prefs.profileShowsLagos = /Lagos/.test(tp);
         await R.step(P, 'Profile (races you follow / notification settings?)', { note: JSON.stringify(prefs) });
@@ -733,6 +736,7 @@ async function flowFollow(surface, lang) {
         const tp = await bodyText(P.page);
         prefs = {
           profileNotificationsRow: await P.page.evaluate(() => { const b = document.getElementById('btn-push-state'); return !!(b && !b.hidden); }).catch(() => false),
+          profileAlertsSection: await P.page.evaluate(() => { const h = document.getElementById('alerts'); return !!(h && h.offsetParent !== null && h.textContent.trim()); }).catch(() => false),
           profileRacesYouFollow: tp.toLowerCase().includes(wt(lang, 'profile.races-you-follow').toLowerCase()),
           profileShowsLagos: /Lagos/.test(tp),
         };
@@ -1569,9 +1573,14 @@ function buildFindings(O) {
   {
     const hw = g('follow.happy.web.en'); const hn = g('follow.happy.native.en'); const hl = g('follow.happy.lite.en');
     if (hw && hn) {
-      const noPrefs = [hw, hn, hl].filter(Boolean).every((h) => !h.prefs.menuAlertsSettings && !h.prefs.notificationsRow);
-      if (noPrefs) add({
-        id: 'FA-FOLLOW-4', flow: 'follow', surfaces: ['web', 'lite', 'native'], severity: 'P2',
+      // MEASURED PER SURFACE. It was `every surface lacks a menu row`, which the
+      // Profile section (built since, on all three) could never clear: the place
+      // the finding asks for is Profile, and the check never looked there.
+      const lacking = [['web', hw], ['lite', hl], ['native', hn]]
+        .filter(([, h]) => h && !h.prefs.profileAlertsSection && !h.prefs.menuAlertsSettings && !h.prefs.notificationsRow)
+        .map(([name]) => name);
+      if (lacking.length) add({
+        id: 'FA-FOLLOW-4', flow: 'follow', surfaces: lacking, severity: 'P2',
         title: 'Nowhere to see or choose how race alerts reach you (push / Telegram / channel)',
         actual: `After Follow: web shows only "${hw.after}" (no confirmation of where alerts go); the browser-push card exists only on the Alerts page (${hw.pushCard ? 'shown' : 'not shown'}; the harness's Lite shows it too, a phone WebView has no Push API — needs a device); Lite's Profile row "Notifications" is a push diagnostic (stage/token length), not a setting; native has no notification setting at all (push is registered at sign-in, the Telegram row on More only opens the bot). The FAQ promises race alerts in a Telegram channel, which no follow screen mentions.`,
         expected: 'One "How you get alerts" place (Profile): this device push on/off, Telegram linked or not, the results channel — linked from the Follow confirmation.',

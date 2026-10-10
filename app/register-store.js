@@ -734,6 +734,240 @@
     });
   }
 
+  /* ----------------------------------------------------------------- coords */
+
+  /**
+   * OFFLINE NEAR-ME. The per-state coordinates file, and the two server answers
+   * (/api/polling-units, /api/mapping/nearby) rebuilt from it. The twin of
+   * native/src/lib/register-coords.ts — same format, same arithmetic — and both
+   * follow backend/scripts/build_register_packs.mjs (buildCoords): unit i here is
+   * unit i of the state pack named in the header, and which point may be trusted
+   * was decided on the server when the file was built. Nothing here re-judges a pin.
+   */
+  var COORDS_MAGIC = 0x4f434b48; // 'HKCO'
+  var COORDS_VERSION = 1;
+  var F_PIN = 1, F_PIN_CROWD_MAPPED = 2, F_CROWD = 4, F_ENV = 64;
+  var TIERS = ['verified', 'crowd', 'geocoded', 'unverified', 'unmapped'];
+  var REGISTER_RADIUS_M = 500, REGISTER_MAX_ROWS = 40, MAPPING_MAX_ROWS = 200;
+
+  function decodeCoords(bytes) {
+    if (bytes.length < HEADER_BYTES) throw new Error('coords file is truncated');
+    var dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    if (dv.getUint32(0, true) !== COORDS_MAGIC) throw new Error('not a coords file');
+    if (dv.getUint16(4, true) !== COORDS_VERSION) throw new Error('unsupported coords format v' + dv.getUint16(4, true));
+    var n = dv.getUint32(8, true), nPin = dv.getUint32(12, true), nCrowd = dv.getUint32(16, true), nEnv = dv.getUint32(20, true);
+    if (HEADER_BYTES + n + 8 * nPin + 8 * nCrowd + 10 * nEnv !== bytes.length) throw new Error('coords length mismatch');
+    var pack = '';
+    for (var b = 24; b < 32; b++) pack += String.fromCharCode(bytes[b]);
+    var o = HEADER_BYTES;
+    var flags = bytes.subarray(o, o + n); o += n;
+    function col(count) {
+      var a = new Float64Array(count);
+      for (var i = 0; i < count; i++, o += 4) a[i] = dv.getInt32(o, true) / 1e6;
+      return a;
+    }
+    var pLat = col(nPin), pLng = col(nPin), cLat = col(nCrowd), cLng = col(nCrowd), eLat = col(nEnv), eLng = col(nEnv);
+    var eR = new Uint16Array(nEnv);
+    for (var e = 0; e < nEnv; e++, o += 2) eR[e] = dv.getUint16(o, true);
+    var nan = function () { var a = new Float64Array(n); a.fill(NaN); return a; };
+    var out = { stateCode: dv.getUint8(6), pack: pack, unitCount: n, flags: flags,
+      pinLat: nan(), pinLng: nan(), crowdLat: nan(), crowdLng: nan(), envLat: nan(), envLng: nan(), envRadius: new Uint16Array(n) };
+    var ip = 0, ic = 0, ie = 0;
+    for (var i = 0; i < n; i++) {
+      var f = flags[i];
+      if (f & F_PIN) { out.pinLat[i] = pLat[ip]; out.pinLng[i] = pLng[ip]; ip++; }
+      if (f & F_CROWD) { out.crowdLat[i] = cLat[ic]; out.crowdLng[i] = cLng[ic]; ic++; }
+      if (f & F_ENV) { out.envLat[i] = eLat[ie]; out.envLng[i] = eLng[ie]; out.envRadius[i] = eR[ie]; ie++; }
+    }
+    if (ip !== nPin || ic !== nCrowd || ie !== nEnv) throw new Error('coords columns do not match the flags');
+    return out;
+  }
+
+  var RAD = Math.PI / 180;
+  function haversineM(aLat, aLng, bLat, bLng) {
+    var dLat = (bLat - aLat) * RAD, dLng = (bLng - aLng) * RAD;
+    var h = Math.pow(Math.sin(dLat / 2), 2) + Math.cos(aLat * RAD) * Math.cos(bLat * RAD) * Math.pow(Math.sin(dLng / 2), 2);
+    return 2 * 6371000 * Math.asin(Math.sqrt(h));
+  }
+
+  /** The full API row for unit i: the pack's names plus this file's location. */
+  function unitWithLocation(p, c, i, distanceM) {
+    var f = c.flags[i];
+    var tier = TIERS[(f >> 3) & 7] || 'unmapped';
+    var num = function (v) { return v !== v ? null : v; }; // NaN -> null
+    var hasPin = !!(f & F_PIN);
+    var u = materialise(p, i, p.stateName);
+    u.lat = num(c.pinLat[i]); u.lng = num(c.pinLng[i]);
+    u.crowd_lat = num(c.crowdLat[i]); u.crowd_lng = num(c.crowdLng[i]);
+    u.coords_source = hasPin ? ((f & F_PIN_CROWD_MAPPED) ? 'crowd_mapped' : 'inec_locator') : (tier === 'geocoded' ? 'geocoded' : null);
+    u.approx_lat = num(c.envLat[i]); u.approx_lng = num(c.envLng[i]);
+    u.approx_radius_m = (f & F_ENV) ? c.envRadius[i] : null;
+    if (tier === 'unverified') u.pin_unverified = true;
+    u.locationTier = tier;
+    if (distanceM != null) u.distanceM = distanceM;
+    return u;
+  }
+
+  /**
+   * Both near-me answers for one fix, from the packs held on the phone. Sorts
+   * every candidate before cutting, and its box is 2% wider than the radius
+   * (111,320 m per degree is not what the haversine's sphere uses).
+   */
+  function nearbyFromPacks(held, lat, lng, mappingRadiusM) {
+    var radius = Math.min(Number(mappingRadiusM) || 5000, 20000);
+    var reach = Math.max(radius, REGISTER_RADIUS_M);
+    var dLat = (reach * 1.02) / 111320;
+    var dLng = (reach * 1.02) / (111320 * Math.max(Math.cos(lat * RAD), 0.2));
+    var inBox = function (la, ln) { return Math.abs(la - lat) <= dLat && Math.abs(ln - lng) <= dLng; }; // false for NaN
+    var reg = [], map = [];
+    held.forEach(function (h) {
+      var p = h.state, c = h.coords;
+      if (c.unitCount !== p.unitCount) return; // not this pack's file: positions would lie
+      for (var i = 0; i < c.unitCount; i++) {
+        var f = c.flags[i];
+        if (!(f & (F_PIN | F_CROWD | F_ENV))) continue;
+        var hasPin = !!(f & F_PIN);
+        var rLat = hasPin ? c.pinLat[i] : c.crowdLat[i], rLng = hasPin ? c.pinLng[i] : c.crowdLng[i];
+        var mLat = hasPin ? c.pinLat[i] : c.envLat[i], mLng = hasPin ? c.pinLng[i] : c.envLng[i];
+        var rIn = inBox(rLat, rLng), mIn = inBox(mLat, mLng);
+        if (!rIn && !mIn) continue;
+        if (rIn) {
+          var d = Math.round(haversineM(lat, lng, rLat, rLng));
+          if (d <= REGISTER_RADIUS_M) reg.push(unitWithLocation(p, c, i, d));
+        }
+        if (mIn) {
+          var dm = Math.round(haversineM(lat, lng, mLat, mLng));
+          if (dm <= radius) {
+            var row = materialise(p, i, p.stateName);
+            map.push({
+              puCode: row.pu_code, name: row.name, ward: row.ward || '', lat: mLat, lng: mLng, distanceM: dm,
+              status: hasPin ? ((f & F_PIN_CROWD_MAPPED) ? 'crowd' : 'verified') : 'approx',
+              approxRadiusM: hasPin ? null : c.envRadius[i],
+              fixes: 0, // live count of observer fixes: not known offline
+              // More than the server sends: a mapping-only row otherwise needs
+              // /api/register/unit to learn these, which is the request that
+              // cannot be made with no signal.
+              lga: row.lga || '', state: row.state || '',
+            });
+          }
+        }
+      }
+    });
+    reg.sort(function (a, b) { return a.distanceM - b.distanceM; });
+    map.sort(function (a, b) { return a.distanceM - b.distanceM; });
+    var units = reg.slice(0, REGISTER_MAX_ROWS);
+    return {
+      register: { radiusM: REGISTER_RADIUS_M, maxRows: REGISTER_MAX_ROWS, capped: units.length >= REGISTER_MAX_ROWS, units: units },
+      mapping: { units: map.slice(0, MAPPING_MAX_ROWS) },
+    };
+  }
+
+  var loadedCoords = {};  // stateCode -> decoded coords
+  var pendingCoords = {};
+
+  function idbKeys() {
+    return idb().then(function (db) {
+      return new Promise(function (resolve) {
+        try {
+          var req = db.transaction(DB_STORE, 'readonly').objectStore(DB_STORE).getAllKeys();
+          req.onsuccess = function () { resolve(req.result || []); };
+          req.onerror = function () { resolve([]); };
+        } catch (e) { resolve([]); }
+      });
+    }).catch(function () { return []; });
+  }
+
+  /**
+   * The manifest WITHOUT waiting on the network: the last verified copy if there
+   * is one. The offline path must not sit out a 12 s fetch on a stalled link, and
+   * the cached packs are, by construction, the ones that cached manifest names.
+   */
+  function heldManifest() {
+    return idbGet('manifest').then(function (m) { return m || manifest(); }).catch(function () { return manifest(); });
+  }
+
+  function loadCoordsWith(m, state) {
+    if (loadedCoords[state]) return Promise.resolve(loadedCoords[state]);
+    if (pendingCoords[state]) return pendingCoords[state];
+    var entry = m && m.coords && m.coords.states && m.coords.states[state];
+    var st = m && m.states && m.states[state];
+    if (!entry || !st || entry.pack !== st.sha) return Promise.resolve(null);
+    pendingCoords[state] = loadPack('coords:' + state, entry, decodeCoords).then(function (c) {
+      if (c.pack !== st.sha) throw new Error('coords are for a different state pack');
+      loadedCoords[state] = c;
+      return c;
+    }).catch(function (err) {
+      console.warn('[reg] coords for ' + state + ' not usable: ' + err.message);
+      return null;
+    });
+    var done = function () { delete pendingCoords[state]; };
+    pendingCoords[state].then(done, done);
+    return pendingCoords[state];
+  }
+
+  /** Every state whose pack AND coordinates are already in IndexedDB, decoded. No downloads. */
+  function heldStates() {
+    return Promise.all([heldManifest(), idbKeys()]).then(function (r) {
+      var m = r[0], keys = r[1].map(String);
+      var codes = keys.filter(function (k) { return /^state:\d\d$/.test(k) && keys.indexOf('coords:' + k.slice(6)) !== -1; })
+        .map(function (k) { return k.slice(6); });
+      Object.keys(loaded).forEach(function (c) { if (codes.indexOf(c) === -1 && loadedCoords[c]) codes.push(c); });
+      return Promise.all(codes.slice(0, 4).map(function (code) {
+        var entry = m.states && m.states[code];
+        if (!entry) return null;
+        var sp = loaded[code] ? Promise.resolve(loaded[code])
+          : idbGet('state:' + code).then(function (cached) {
+              if (!cached || cached.sha !== entry.sha) return null; // would be a download
+              return loadPack('state:' + code, entry, decodeState).then(function (p) { p.stateName = entry.name; loaded[code] = p; return p; });
+            });
+        return sp.then(function (p) {
+          if (!p) return null;
+          return loadCoordsWith(m, code).then(function (c) { return c && c.unitCount === p.unitCount ? { state: p, coords: c } : null; });
+        }).catch(function () { return null; });
+      }));
+    }).then(function (list) { return list.filter(Boolean); }).catch(function () { return []; });
+  }
+
+  function nearbyOffline(lat, lng, mappingRadiusM) {
+    return heldStates().then(function (held) {
+      return held.length ? nearbyFromPacks(held, lat, lng, mappingRadiusM) : null;
+    }).catch(function (err) {
+      console.warn('[reg] offline near-me failed: ' + (err && err.message));
+      return null;
+    });
+  }
+
+  /**
+   * The near-me screens' two requests, answered from the phone when the server
+   * does not. `online` is the page's own Promise.all of the pair; `good(a, b)`
+   * says whether what came back is usable; `wrap(body)` turns an offline answer
+   * into whatever shape the page's own fetch helper returns. Resolves
+   * [a, b, offline]. The twin of native/src/lib/nearby-offline.ts.
+   */
+  function nearbyOrOffline(lat, lng, mappingRadiusM, online, opts) {
+    opts = opts || {};
+    var good = opts.good || function (a, b) { return !!(a || b); };
+    var wrap = opts.wrap || function (body) { return body; };
+    var graceMs = opts.graceMs || 8000, capMs = opts.capMs || 45000;
+    var box = null;
+    var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var tracked = Promise.resolve(online).then(function (r) { box = r; return r; }, function () { box = [null, null]; return box; });
+    var ok = function () { return !!(box && good(box[0], box[1])); };
+    return Promise.race([tracked, sleep(graceMs)]).then(function () {
+      if (ok()) return [box[0], box[1], false];
+      return nearbyOffline(lat, lng, mappingRadiusM).then(function (off) {
+        if (ok()) return [box[0], box[1], false];
+        // An EMPTY offline answer is not trusted over a server that has not
+        // spoken: the phone may simply hold another state's files.
+        if (off && (off.register.units.length || off.mapping.units.length)) return [wrap(off.register), wrap(off.mapping), true];
+        if (box) return [box[0], box[1], false];
+        return Promise.race([tracked, sleep(Math.max(0, capMs - graceMs))]).then(function () {
+          return box ? [box[0], box[1], false] : [null, null, false];
+        });
+      });
+    });
+  }
+
   var api = {
     fold: fold,
     manifest: manifest,
@@ -842,7 +1076,12 @@
         var n = p.groups.counts[g];
         if (p.groups.lgaCodes[g] === lga && p.groups.wardCodes[g] === ward) {
           for (var k = 0; k < n; k++) {
-            if (p.serials[startIx + k] === serial) return materialise(p, startIx + k, p.stateName);
+            if (p.serials[startIx + k] === serial) {
+              // With the state's coordinates held, the row carries its location
+              // too, as GET /api/register/unit would.
+              var c = loadedCoords[m[1]];
+              return c && c.unitCount === p.unitCount ? unitWithLocation(p, c, startIx + k, null) : materialise(p, startIx + k, p.stateName);
+            }
           }
         }
         startIx += n;
@@ -875,6 +1114,9 @@
           p.stateName = entry.name;
           loaded[state] = p;
           ready(p); // warm the search index while the user is still reading
+          // The coordinates follow the pack: whoever holds a state's unit list
+          // for offline search should hold its near-me list too.
+          idle(function () { loadCoordsWith(m, state); });
           return p;
         });
       });
@@ -888,6 +1130,13 @@
     },
 
     isLoaded: function (state) { return !!loaded[state]; },
+
+    /* Offline near-me (see the coords section above). */
+    loadCoords: function (state) { return manifest().then(function (m) { return loadCoordsWith(m, state); }); },
+    coordsHeld: function (state) { return idbGet('coords:' + state).then(function (c) { return !!c; }).catch(function () { return false; }); },
+    nearbyOffline: nearbyOffline,
+    nearbyOrOffline: nearbyOrOffline,
+    _coords: { decode: decodeCoords, nearbyFromPacks: nearbyFromPacks, decodeState: decodeState }, // for the Node gate
 
     /** Resolves once `state` can answer searches (the fold has been built). */
     searchReady: function (state) {

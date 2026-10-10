@@ -277,6 +277,8 @@
       const T = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
       const L = (k, en, vars) => String(T(k, en)).replace(/\{(v\d+)\}/g, (m, v) => (vars && v in vars ? String(vars[v]) : m));
       const msg = (k, en, vars, bad) => ({ k, en, vars: vars || {}, bad: !!bad });
+      /* The nearby list came from the files on this phone, not the server. */
+      let nearOffline = false;
       const say = (m) => (m ? L(m.k, m.en, resolve(m.vars)) : '');
       // A var may itself be a message (the GPS lead inside "…, or search above").
       const resolve = (vars) => Object.fromEntries(Object.entries(vars).map(([k, v]) => [k, v && v.k ? say(v) : v]));
@@ -361,7 +363,8 @@
         btn.innerHTML = '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>'
           + `<span>${esc(label)}</span>`;
         const line = $('unit-near-status');
-        line.textContent = say(nearLine);
+        line.textContent = (nearOffline && nearLine && !nearLine.bad
+          ? say(msg('nearme.offline-note', 'Showing units saved on this phone. No connection needed.')) + ' ' : '') + say(nearLine);
         line.classList.toggle('bad', !!(nearLine && nearLine.bad));
         $('unit-near-results').innerHTML = near.map((n, i) => {
           const at = [n.pu_code, n.ward].filter(Boolean).join(' · ');
@@ -501,10 +504,16 @@
           const { latitude: lat, longitude: lng } = pos.coords;
           nearLine = msg('choose-unit.looking-up-nearby-units', 'Looking up nearby units…');
           paint();
-          const [located, envelope] = await Promise.all([
+          const online = Promise.all([
             get(`/api/polling-units?lat=${lat}&lng=${lng}`),
             get(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
           ]);
+          // Answered from the files on the phone when the server does not (register-store.js).
+          const store = window.registerStore;
+          const [located, envelope, viaPacks] = store && store.nearbyOrOffline
+            ? await store.nearbyOrOffline(lat, lng, 800, online)
+            : [...(await online), false];
+          nearOffline = viaPacks;
           if (!located && !envelope) {
             nearLine = msg('choose-unit.could-not-check-nearby-units-search', 'Could not check nearby units — search by name above.', null, true);
             return;
@@ -844,7 +853,7 @@
     })();
   </script>
   <script src="device.js"></script>
-  <script src="register-store.js?v=4"></script>
+  <script src="register-store.js?v=5"></script>
   <script src="pu-search.js?v=10"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

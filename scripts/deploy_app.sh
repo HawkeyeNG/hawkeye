@@ -148,9 +148,22 @@ verify() {                                     # verify <localfile>  -> 0 ok
 # an explicit --path puts a file somewhere this mapping cannot describe (backend
 # source, for instance), and guessing a URL for it would purge the wrong thing
 # or nothing at all. Silence is the right answer there.
+#
+# EXCEPT when --path is itself inside the web root: then the URL is not a guess.
+# This used to return nothing for every --path, and on 2026-10-10 that left the
+# register manifest unpurged — uploaded with `--path /hawkeye/app/reg`, so
+# browsers kept getting the OLD manifest.json from the edge beside the NEW
+# manifest.sig and refused it ("manifest signature invalid") for hours. The
+# origin was right and an uncompressed curl said so; the stale copies were the
+# compressed variants (the response carries Vary: Accept-Encoding,User-Agent).
 public_url() {
   local f="$1"
-  [ "$PATH_EXPLICIT" = 1 ] && return
+  if [ "$PATH_EXPLICIT" = 1 ]; then
+    case "$REMOTE_PATH" in
+      /hawkeye/app|/hawkeye/app/*) echo "$SITE${REMOTE_PATH#/hawkeye/app}/$(basename "$f")" ;;
+    esac
+    return
+  fi
   case "$f" in
     app/*) echo "$SITE/${f#app/}" ;;
   esac

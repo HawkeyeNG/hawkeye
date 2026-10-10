@@ -2439,10 +2439,16 @@ $('btn-locate').onclick = async () => {
    * long version of this note and the evidence behind it.
    */
   const merged = async () => {
-    const [reg, near] = await Promise.all([
+    const online = Promise.all([
       apiTry(`/api/polling-units?lat=${lat}&lng=${lng}`),
       apiTry(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
     ]);
+    // Answered from the files on the phone when the server does not
+    // (register-store.js nearbyOrOffline): 8 s of grace, then the offline copy.
+    const store = window.registerStore;
+    const [reg, near, viaPacks] = store && store.nearbyOrOffline
+      ? await store.nearbyOrOffline(lat, lng, 800, online, { good: (a, b) => !(a.error && b.error), wrap: (body) => ({ body }) })
+      : [...(await online), false];
     // A failure on either side is survivable; a failure on both is not, and is
     // reported as one, so the caller's error path still fires.
     if (reg.error && near.error) return reg;
@@ -2465,7 +2471,7 @@ $('btn-locate').onclick = async () => {
       rows.push({ ...u, pu_code: code, ward: u.ward || '', lga: u.lga || '', state: u.state || '' });
     }
     rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
-    return { body: { ...(reg.body || {}), radiusM: 800, units: rows } };
+    return { body: { ...(reg.body || {}), radiusM: 800, units: rows, offline: viaPacks } };
   };
   const r = warm ? { body: warm } : await merged();
   // Every exit from here on leaves the observer somewhere usable — a named
@@ -2498,7 +2504,8 @@ $('btn-locate').onclick = async () => {
     $('browse-block').open = true;
     return;
   }
-  $('locate-status').textContent = T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:');
+  $('locate-status').textContent = (body.offline ? T('nearme.offline-note', 'Showing units saved on this phone. No connection needed.') + ' ' : '')
+    + T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:');
   for (const u of body.units) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';

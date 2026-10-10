@@ -2992,5 +2992,9 @@
   "irev.col-reported": "A kọrọ",
   "irev.col-irev": "IReV nke INEC",
   "irev.total-valid": "Mgbakọta ziri ezi",
-  "irev.view-sheet": "Lee mpempe akwụkwọ INEC"
+  "irev.view-sheet": "Lee mpempe akwụkwọ INEC",
+  "nearme.offline-note": "Na-egosi ebe ntuli aka echekwara na ekwentị a. Njikọ ịntanetị adịghị mkpa.",
+  "nearme.ready-title": "Ebe ntuli aka dị gị nso, na-enweghị ịntanetị",
+  "nearme.ready-yes": "Echekwara maka {v0}. Ịchọta ebe ntuli aka dị gị nso na-arụ ọrụ na-enweghị njikọ ịntanetị.",
+  "nearme.ready-no": "Echekwabeghị ya. Mepee Hawkeye otu ugboro na njikọ ịntanetị, a ga-echekwa ya."
 }

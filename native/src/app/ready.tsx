@@ -16,6 +16,7 @@ import { onMyUnitSaved, type SavedUnit } from '@/lib/my-unit';
 import { registerForPush } from '@/lib/push';
 import { askPhotoLibrary, isSaveToDeviceEnabled, photoLibraryAccess } from '@/lib/save-to-device';
 import { useUi } from '@/lib/theme';
+import { coordsHeld, holdStateOffline } from '@/lib/register';
 
 /**
  * READY FOR ELECTION DAY — one row per thing that has to be in place before
@@ -69,6 +70,8 @@ export default function ReadyScreen() {
   const [cam, requestCam, getCam] = useCameraPermissions();
 
   const [unit, setUnit] = useState<SavedUnit | null | undefined>(undefined); // undefined = not known
+  /** The saved unit's state has its offline near-me list on this phone. null = not checked yet. */
+  const [offlineUnits, setOfflineUnits] = useState<boolean | null>(null);
   const [unitFailed, setUnitFailed] = useState(false);
   const [loc, setLoc] = useState<Location.LocationPermissionResponse | null>(null);
   const [locOn, setLocOn] = useState(true);
@@ -122,6 +125,15 @@ export default function ReadyScreen() {
   }, [check]);
   // The chooser announces a save before this screen is back in focus.
   useEffect(() => onMyUnitSaved((u) => setUnit(u)), []);
+  // Read from storage, so it answers with no signal. Re-read when a row's
+  // action finishes (busy), since tapping this row is what downloads it.
+  const unitState = unit?.state ?? null;
+  useEffect(() => {
+    if (!unitState) return; // the row is not shown without a saved unit
+    let on = true;
+    coordsHeld(unitState).then((h) => { if (on) setOfflineUnits(h); });
+    return () => { on = false; };
+  }, [unitState, busy]);
 
   const run = async (id: string, fn: () => unknown) => {
     if (busy) return;
@@ -281,6 +293,21 @@ export default function ReadyScreen() {
               state: 'todo',
               tap: { hint: allowHint, run: askPhotoLibrary },
             },
+    );
+  }
+
+  // Offline near-me: only once there is a saved unit to say which state.
+  if (unitState) {
+    rows.push(
+      offlineUnits
+        ? { id: 'offline-units', title: i18nT('nearme.ready-title'), state: 'ready', note: i18nT('nearme.ready-yes', { v0: unitState }) }
+        : {
+            id: 'offline-units',
+            title: i18nT('nearme.ready-title'),
+            state: offlineUnits === null ? 'unknown' : 'todo',
+            note: offlineUnits === null ? undefined : i18nT('nearme.ready-no'),
+            tap: { hint: i18nT('common.try-again'), run: () => holdStateOffline(unitState) },
+          },
     );
   }
 

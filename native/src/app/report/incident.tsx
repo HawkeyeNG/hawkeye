@@ -63,6 +63,7 @@ import { ModalCard } from '@/components/modal-card';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
+import { nearbyOrOffline } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -552,6 +553,8 @@ export default function ReportIncident() {
   const [nearby, setNearby] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** The nearby list came from the files on this phone, not the server. */
+  const [nearOffline, setNearOffline] = useState(false);
   const [searched, setSearched] = useState<Searched | null>(null);
   const [fix, setFix] = useState<Fix | null>(null);
   /** Set only when the last GPS failure is one the settings app has to fix
@@ -782,7 +785,8 @@ export default function ReportIncident() {
       setFix(f);
       setNearLine(i18nT('n.app.report.result.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
-      const [located, envelope] = await Promise.all([
+      // Answered from the files on the phone when the server does not (lib/nearby-offline).
+      const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
         // No radius parameter exists on this one — it filters at
         // config.discoveryRadiusM and caps at config.discoveryMaxRows, and
         // reports both back rather than leaving them to be guessed.
@@ -791,7 +795,8 @@ export default function ReportIncident() {
         fetch(
           `${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
         ).catch(() => null),
-      ]);
+      ]));
+      setNearOffline(viaPacks);
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
@@ -1525,6 +1530,9 @@ export default function ReportIncident() {
               )}
             </Pressable>
 
+            {nearOffline ? (
+              <Text className="pt-3 text-xs font-semibold text-muted">{i18nT('nearme.offline-note')}</Text>
+            ) : null}
             {nearLine ? (
               <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
             ) : null}

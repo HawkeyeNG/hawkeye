@@ -79,6 +79,7 @@ import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
 import { ReceiptCopy } from '@/components/receipt-copy';
 import { myRooms, type MyRoom } from '@/lib/check-in';
+import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -701,6 +702,8 @@ export default function ReportResult() {
   const [nearby, setNearby] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** The nearby list came from the files on this phone, not the server. */
+  const [nearOffline, setNearOffline] = useState(false);
   /** What the last run actually searched — the map ring, the empty state and
    *  the truncation note all read from this rather than from the radius the
    *  screen would like to have searched. */
@@ -960,7 +963,8 @@ export default function ReportResult() {
         return null;
       };
       let lastNetErr = '';
-      const [located, envelope] = await Promise.all([
+      // Answered from the files on the phone when the server does not (lib/nearby-offline).
+      const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
         // No radius parameter exists on this one — it filters at
         // config.discoveryRadiusM and caps at config.discoveryMaxRows. Both
         // facts are load-bearing for the copy below, neither can be asked for,
@@ -968,7 +972,8 @@ export default function ReportResult() {
         tryFetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`),
         // This one does take a radius, and would otherwise default to 5km.
         tryFetch(`${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`),
-      ]);
+      ]));
+      setNearOffline(viaPacks);
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
@@ -1241,7 +1246,7 @@ export default function ReportResult() {
       const hit = await local(code);
       if (hit) return hit;
       try {
-        const r = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
+        const r = await unitFetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
         const b = r.ok ? await r.json() : null;
         return b?.unit ?? null;
       } catch { return null; }
@@ -1474,7 +1479,7 @@ export default function ReportResult() {
     setPicking(n.puCode);
     const timer = setTimeout(() => ctl.abort(), PICK_TIMEOUT_MS);
     try {
-      const res = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(n.puCode)}`, {
+      const res = await unitFetch(`${REG}/unit?pu_code=${encodeURIComponent(n.puCode)}`, {
         signal: ctl.signal,
       });
       const body = (await res.json().catch(() => ({}))) as { unit?: Unit; error?: string };
@@ -2136,6 +2141,9 @@ export default function ReportResult() {
               )}
             </Pressable>
 
+            {nearOffline ? (
+              <Text className="pt-3 text-xs font-semibold text-muted">{i18nT('nearme.offline-note')}</Text>
+            ) : null}
             {nearLine ? (
               <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
             ) : null}

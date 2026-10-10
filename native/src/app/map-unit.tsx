@@ -48,6 +48,7 @@ import {
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, lazyT } from '@/lib/i18n';
+import { nearbyOrOffline } from '@/lib/nearby-offline';
 
 type Unit = {
   pu_code: string;
@@ -381,6 +382,8 @@ export default function MapUnit() {
   const [fix, setFix] = useState<Fix | null>(null);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** The nearby list came from the files on this phone, not the server. */
+  const [nearOffline, setNearOffline] = useState(false);
   /** What the last run actually searched — the map ring, the empty state and
    *  the truncation note are all read off this rather than off the radius the
    *  screen would like to have searched. */
@@ -552,7 +555,8 @@ export default function MapUnit() {
       setFix(fix);
       setNearLine(i18nT('n.app.map-unit.location-fixed-m-looking-up-units', { v0: Math.round(fix.accuracy) }));
 
-      const [located, envelope] = await Promise.all([
+      // Answered from the files on the phone when the server does not (lib/nearby-offline).
+      const [located, envelope, viaPacks] = await nearbyOrOffline(fix.lat, fix.lng, MAPPING_RADIUS_M, Promise.all([
         fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`).catch(() => null),
         // Mapping searches 5km on purpose (see MAPPING_RADIUS_M): this screen
         // below draws, and a ring that is not the area actually searched turns
@@ -560,7 +564,8 @@ export default function MapUnit() {
         fetch(
           `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${MAPPING_RADIUS_M}`,
         ).catch(() => null),
-      ]);
+      ]));
+      setNearOffline(viaPacks);
 
       // Either lookup may fail alone; only losing both is fatal. Each sees a
       // population the other cannot — and this screen's whole reason to exist
@@ -1100,6 +1105,9 @@ export default function MapUnit() {
         {/* text-warn-ink, not amber-800: this line sits on bg-surface, and the
             fixed amber failed contrast on the light surface and vanished into
             the dark one. The semantic token is the pair that is legible in both. */}
+        {nearOffline ? (
+          <Text className="pt-3 text-xs font-semibold text-muted">{i18nT('nearme.offline-note')}</Text>
+        ) : null}
         {nearLine ? (
           <Text className="pt-3 text-sm font-semibold text-warn-ink">{nearLine}</Text>
         ) : null}

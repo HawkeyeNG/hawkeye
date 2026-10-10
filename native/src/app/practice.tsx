@@ -61,6 +61,7 @@ import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, lazyT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
+import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -478,6 +479,8 @@ export default function Practice() {
   const [nearby, setNearby] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** The nearby list came from the files on this phone, not the server. */
+  const [nearOffline, setNearOffline] = useState(false);
   /**
    * TIER A: what the sheet said about its own unit — OFFERED, never assumed.
    *
@@ -693,12 +696,14 @@ export default function Practice() {
       setFix(f);
       setNearLine(i18nT('n.app.practice.location-fixed-m-looking-up-nearby', { v0: Math.round(f.accuracy) }));
 
-      const [located, envelope] = await Promise.all([
+      // Answered from the files on the phone when the server does not (lib/nearby-offline).
+      const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
         fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
         fetch(
           `${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
         ).catch(() => null),
-      ]);
+      ]));
+      setNearOffline(viaPacks);
 
       if (!located?.ok && !envelope?.ok) {
         const status = located?.status ?? envelope?.status;
@@ -938,7 +943,7 @@ export default function Practice() {
     setPicking(n.puCode);
     const timer = setTimeout(() => ctl.abort(), PICK_TIMEOUT_MS);
     try {
-      const res = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(n.puCode)}`, {
+      const res = await unitFetch(`${REG}/unit?pu_code=${encodeURIComponent(n.puCode)}`, {
         signal: ctl.signal,
       });
       const body = (await res.json().catch(() => ({}))) as { unit?: Unit; error?: string };
@@ -993,7 +998,7 @@ export default function Practice() {
       const hit = await local(code);
       if (hit) return hit;
       try {
-        const r = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
+        const r = await unitFetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
         const b = r.ok ? await r.json() : null;
         return b?.unit ?? null;
       } catch { return null; }
@@ -1494,6 +1499,9 @@ export default function Practice() {
               )}
             </Pressable>
 
+            {nearOffline ? (
+              <Text className="pt-3 text-xs font-semibold text-muted">{i18nT('nearme.offline-note')}</Text>
+            ) : null}
             {nearLine ? (
               <Text className="pt-3 text-sm font-semibold text-good-ink">{nearLine}</Text>
             ) : null}

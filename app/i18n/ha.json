@@ -2993,5 +2993,9 @@
   "irev.col-reported": "Aka bayar",
   "irev.col-irev": "IReV na INEC",
   "irev.total-valid": "Jimillar masu inganci",
-  "irev.view-sheet": "Duba takardar INEC"
+  "irev.view-sheet": "Duba takardar INEC",
+  "nearme.offline-note": "Ana nuna rumfunan zaɓe da aka ajiye a wannan wayar. Ba a buƙatar haɗin intanet.",
+  "nearme.ready-title": "Rumfunan zaɓe na kusa da kai, ba tare da intanet ba",
+  "nearme.ready-yes": "An ajiye na {v0}. Nemo rumfunan zaɓe na kusa da kai yana aiki ba tare da haɗin intanet ba.",
+  "nearme.ready-no": "Ba a ajiye ba tukuna. Buɗe Hawkeye sau ɗaya da haɗin intanet, za a ajiye."
 }

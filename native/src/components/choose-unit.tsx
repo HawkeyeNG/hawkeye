@@ -38,6 +38,7 @@ import { registerReady, rememberedStateNow, rememberState } from '@/lib/register
 import * as SecureStore from '@/lib/secure-store';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
+import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -372,6 +373,8 @@ export function ChooseUnitScreen({
   const [near, setNear] = useState<NearRow[]>([]);
   const [nearBusy, setNearBusy] = useState(false);
   const [nearLine, setNearLine] = useState<string | null>(null);
+  /** The nearby list came from the files on this phone, not the server. */
+  const [nearOffline, setNearOffline] = useState(false);
   /**
    * Whether nearLine is a failure. Carried beside the line rather than read
    * back out of it: this used to regex the TEXT for "could not|denied|…", which
@@ -534,13 +537,15 @@ export function ChooseUnitScreen({
         }
       };
 
-      const [located, envelope] = await Promise.all([
+      // Answered from the files on the phone when the server does not (lib/nearby-offline).
+      const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
         // No radius parameter exists on this one — it filters at
         // config.discoveryRadiusM and reports that back as `radiusM`.
         get(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`),
         // This one does take a radius, and would otherwise default to 5km.
         get(`${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`),
-      ]);
+      ]));
+      setNearOffline(viaPacks);
 
       if (!located?.ok && !envelope?.ok) {
         // The network-failure case: see nearFailedLine.
@@ -718,7 +723,7 @@ export function ChooseUnitScreen({
    */
   const enrich = async (code: string) => {
     try {
-      const res = await fetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
+      const res = await unitFetch(`${REG}/unit?pu_code=${encodeURIComponent(code)}`);
       const body = res.ok ? ((await res.json()) as { unit?: Row }) : null;
       const u = body?.unit;
       if (!u) return;
@@ -992,6 +997,9 @@ export function ChooseUnitScreen({
               {/* nearLine carries BOTH outcomes — "N found, tap yours" and every
                   GPS failure — so its ink comes from nearBad, set where the line
                   is written, never from the words (which are translated). */}
+              {nearOffline ? (
+                <Text className="pt-3 text-xs font-semibold text-muted">{i18nT('nearme.offline-note')}</Text>
+              ) : null}
               {nearLine ? (
                 <Text className={`pt-2.5 text-sm font-semibold ${gpsSettings || nearBad ? 'text-warn-ink' : 'text-muted'}`}>
                   {nearLine}

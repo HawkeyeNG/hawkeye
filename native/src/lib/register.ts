@@ -26,9 +26,11 @@ import { sha256 } from '@noble/hashes/sha2.js';
 import { BASE } from '@/lib/api';
 import {
   decodeIndex, decodeState, buildSearchIndex, search as packSearch,
-  statesOf, lgasOf, wardsOf, stateCodeOf, unitsOf,
+  statesOf, lgasOf, wardsOf, stateCodeOf, unitsOf, materialise,
   type IndexPack, type StatePack, type RegisterRow,
 } from '@/lib/register-pack';
+
+import { decodeCoords, nearbyFromPacks, unitWithLocation, type CoordsPack, type OfflineNearby } from '@/lib/register-coords';
 
 export type { RegisterRow } from '@/lib/register-pack';
 
@@ -98,12 +100,15 @@ type Manifest = {
   registerVersion: number;
   index: PackEntry;
   states: Record<string, PackEntry & { name: string; units: number }>;
+  /** Offline near-me: one coordinates file per state, positional against that state's pack (`pack` = its sha). */
+  coords?: { states: Record<string, PackEntry & { pack: string }> };
 };
 
 let manifest: Manifest | null = null;
 let indexPack: IndexPack | null = null;
 const loaded: Record<string, StatePack> = {};
 const inflight: Record<string, Promise<unknown>> = {};
+const loadedCoords: Record<string, CoordsPack> = {};
 
 /* ----------------------------------------------------------------- base64 */
 // AsyncStorage stores strings, so the gzip bytes are kept base64. Written out
@@ -139,7 +144,15 @@ function fromBase64(s: string): Uint8Array {
 async function getManifest(force = false): Promise<Manifest | null> {
   if (manifest && !force) return manifest;
   try {
-    const [mRes, sRes] = await Promise.all([fetch(MANIFEST_URL), fetch(MANIFEST_SIG_URL)]);
+    // Bounded: on a link that connects and then stalls, an unbounded fetch never
+    // rejects, and everything waiting on the manifest — including the offline
+    // near-me list, whose whole job is that link — would wait with it.
+    const get = (url: string) => {
+      const ctl = new AbortController();
+      const t = setTimeout(() => ctl.abort(), 6000);
+      return fetch(url, { signal: ctl.signal }).finally(() => clearTimeout(t));
+    };
+    const [mRes, sRes] = await Promise.all([get(MANIFEST_URL), get(MANIFEST_SIG_URL)]);
     if (!mRes.ok) throw new Error(`manifest ${mRes.status}`);
     if (!sRes.ok) throw new Error(`manifest.sig ${sRes.status}`);
     const bytes = new Uint8Array(await mRes.arrayBuffer());
@@ -230,6 +243,9 @@ export async function loadState(code: string): Promise<StatePack | null> {
         const p = decodeState(gunzipSync(gz));
         p.stateName = entry.name;
         loaded[code] = p;
+        // The coordinates follow the pack: whoever holds a state's unit list
+        // for offline search should hold its near-me list too.
+        setTimeout(() => { loadCoords(code).catch(() => null); }, 0);
         // Warm the search index off the interaction path, exactly as the web
         // store does — folding is the expensive step and nothing needs it until
         // somebody types.
@@ -242,6 +258,134 @@ export async function loadState(code: string): Promise<StatePack | null> {
     })().finally(() => { delete inflight[k]; });
   }
   return inflight[k] as Promise<StatePack | null>;
+}
+
+/**
+ * The state's coordinates file (offline near-me). Fetched and verified exactly
+ * like a pack — sha256 from the signed manifest — and additionally bound to the
+ * state pack it is positional against: a file built for another pack would put
+ * every pin on the wrong unit, so it is dropped rather than used.
+ */
+export async function loadCoords(code: string): Promise<CoordsPack | null> {
+  if (loadedCoords[code]) return loadedCoords[code];
+  const k = `coords:${code}`;
+  if (!inflight[k]) {
+    inflight[k] = (async () => {
+      const m = await getManifest();
+      const entry = m?.coords?.states?.[code];
+      const st = m?.states?.[code];
+      if (!entry || !st) return null;
+      try {
+        const gz = await loadBytes(k, entry);
+        if (!gz) return null;
+        const c = decodeCoords(gunzipSync(gz));
+        if (entry.pack !== st.sha || c.pack !== st.sha) throw new Error('coords are for a different state pack');
+        loadedCoords[code] = c;
+        return c;
+      } catch {
+        await dropPack(k);
+        return null;
+      }
+    })().finally(() => { delete inflight[k]; });
+  }
+  return inflight[k] as Promise<CoordsPack | null>;
+}
+
+/** Is the offline near-me list for this state on the phone? (Ready-for-election-day check.) */
+export async function coordsHeld(stateName?: string | null): Promise<boolean> {
+  if (!stateName) return false;
+  try {
+    const ix = await loadIndex();
+    const code = ix ? stateCodeOf(ix, stateName) : null;
+    if (!code) return false;
+    if (loadedCoords[code]) return true;
+    return !!(await AsyncStorage.getItem(KEY(`coords:${code}:sha`)));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * One unit by code, as GET /api/register/unit would return it, from files
+ * ALREADY on the phone — never a download: this is the fallback for a request
+ * that is failing, and must not become a second one. null if the state is not held.
+ */
+export async function unitFromPacks(puCode: string): Promise<RegisterRow | null> {
+  const m = /^(\d{2})-(\d{2})-(\d{2})-(\d{3})$/.exec(puCode || '');
+  if (!m) return null;
+  try {
+    const code = m[1];
+    if (!loaded[code] && !(await AsyncStorage.getItem(KEY(`state:${code}:sha`)))) return null;
+    const p = loaded[code] ?? (await loadState(code));
+    if (!p) return null;
+    const lga = +m[2], ward = +m[3], serial = +m[4];
+    for (let i = 0; i < p.unitCount; i++) {
+      const g = p.gOf[i];
+      if (p.serials[i] !== serial || p.groups.wardCodes[g] !== ward || p.groups.lgaCodes[g] !== lga) continue;
+      const c = loadedCoords[code] ?? ((await AsyncStorage.getItem(KEY(`coords:${code}:sha`))) ? await loadCoords(code) : null);
+      if (c && c.unitCount === p.unitCount) {
+        const { distanceM: _d, ...unit } = unitWithLocation(p, c, i, 0);
+        return unit;
+      }
+      return materialise(p, i);
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Pull (or confirm) everything offline search and near-me need for this state. */
+export async function holdStateOffline(stateName?: string | null): Promise<boolean> {
+  if (!stateName) return false;
+  try {
+    const ix = await loadIndex();
+    const code = ix ? stateCodeOf(ix, stateName) : null;
+    if (!code || !(await loadState(code))) return false;
+    return !!(await loadCoords(code));
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * NEAR-ME WITH NO SERVER: both lookups (/api/polling-units and
+ * /api/mapping/nearby) answered from what is on the phone — every state already
+ * decoded this session, plus the remembered one read back from storage. null
+ * when no state here has both its pack and its coordinates, which is "cannot
+ * say", not "nothing near you".
+ */
+export async function offlineNearby(lat: number, lng: number, mappingRadiusM: number): Promise<OfflineNearby | null> {
+  const attempt = async (): Promise<OfflineNearby | null> => {
+    const ix = await loadIndex();
+    const remembered = await rememberedState();
+    const codes = new Set(Object.keys(loaded));
+    const rc = ix && remembered ? stateCodeOf(ix, remembered) : null;
+    if (rc) codes.add(rc);
+    const held: { state: StatePack; coords: CoordsPack }[] = [];
+    for (const code of codes) {
+      const state = loaded[code] ?? (await loadState(code));
+      const coords = state ? await loadCoords(code) : null;
+      if (state && coords && coords.unitCount === state.unitCount) held.push({ state, coords });
+    }
+    return held.length ? nearbyFromPacks(held, lat, lng, mappingRadiusM) : null;
+  };
+  try {
+    // A lookup can outrun the register: on a screen that has only just mounted,
+    // the saved unit (which is what names the state) may still be on its way out
+    // of storage. Measured in the browser, where the fix and the failed request
+    // both land in milliseconds: nothing was held yet, 300 ms later it all was.
+    // So "nothing held" is asked three times over ~2 s before it is believed.
+    for (let i = 0; i < 3; i++) {
+      const out = await attempt();
+      if (out) return out;
+      await new Promise((r) => setTimeout(r, 900));
+    }
+    return null;
+  } catch (e) {
+    console.warn('[hawkeye] offline near-me failed', e instanceof Error ? e.message : String(e));
+    return null;
+  }
 }
 
 /* ------------------------------------------------------------ public API */

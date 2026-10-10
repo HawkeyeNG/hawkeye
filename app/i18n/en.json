@@ -2966,5 +2966,9 @@
   "irev.col-reported": "Reported",
   "irev.col-irev": "INEC IReV",
   "irev.total-valid": "Total valid",
-  "irev.view-sheet": "View INEC's sheet"
+  "irev.view-sheet": "View INEC's sheet",
+  "nearme.offline-note": "Showing units saved on this phone. No connection needed.",
+  "nearme.ready-title": "Units near you, offline",
+  "nearme.ready-yes": "Saved for {v0}. Finding units near you works without a connection.",
+  "nearme.ready-no": "Not saved yet. Open Hawkeye once with a connection and it will be."
 }

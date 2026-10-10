@@ -1,0 +1,22 @@
+{
+  "nearme.offline-note": {
+    "ha": "Ana nuna rumfunan zaɓe da aka ajiye a wannan wayar. Ba a buƙatar haɗin intanet.",
+    "ig": "Na-egosi ebe ntuli aka echekwara na ekwentị a. Njikọ ịntanetị adịghị mkpa.",
+    "yo": "Ó ń fi àwọn ibùdó ìdìbò tí a fi pamọ́ sórí fóònù yìí hàn. Kò nílò ìsopọ̀ íńtánẹ́ẹ̀tì."
+  },
+  "nearme.ready-title": {
+    "ha": "Rumfunan zaɓe na kusa da kai, ba tare da intanet ba",
+    "ig": "Ebe ntuli aka dị gị nso, na-enweghị ịntanetị",
+    "yo": "Àwọn ibùdó ìdìbò tó wà nítòsí rẹ, láìsí íńtánẹ́ẹ̀tì"
+  },
+  "nearme.ready-yes": {
+    "ha": "An ajiye na {v0}. Nemo rumfunan zaɓe na kusa da kai yana aiki ba tare da haɗin intanet ba.",
+    "ig": "Echekwara maka {v0}. Ịchọta ebe ntuli aka dị gị nso na-arụ ọrụ na-enweghị njikọ ịntanetị.",
+    "yo": "A ti fi pamọ́ fún {v0}. Wíwá àwọn ibùdó ìdìbò tó wà nítòsí rẹ ń ṣiṣẹ́ láìsí ìsopọ̀ íńtánẹ́ẹ̀tì."
+  },
+  "nearme.ready-no": {
+    "ha": "Ba a ajiye ba tukuna. Buɗe Hawkeye sau ɗaya da haɗin intanet, za a ajiye.",
+    "ig": "Echekwabeghị ya. Mepee Hawkeye otu ugboro na njikọ ịntanetị, a ga-echekwa ya.",
+    "yo": "A kò tíì fi pamọ́. Ṣí Hawkeye lẹ́ẹ̀kan pẹ̀lú ìsopọ̀ íńtánẹ́ẹ̀tì, a ó sì fi pamọ́."
+  }
+}

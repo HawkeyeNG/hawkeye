@@ -54,6 +54,8 @@ export type RaceJoin = {
 
 export type Race = {
   asOf?: string;
+  /** A State Assembly screen's seat: its `join.value` is the LGA, so the candidates are looked up by this. */
+  seatName?: string;
   /** The list sentence at the end of `note`, so withFinalList can swap it and keep the lead. */
   noteTail?: string;
   /**
@@ -893,6 +895,7 @@ export function assemblyRace(
   if (!canon) return null;
   const s = table[canon];
   return {
+    seatName: s.seat ?? seat,
     office: i18nT('n.lib.political.state-constituency', { v0: s.seat ?? seat }),
     election: i18nT('n.lib.political.state-house-of-assembly', { v0: s.state }),
     date: contest?.date,
@@ -903,6 +906,7 @@ export function assemblyRace(
           'register does not separate them, so the ward and polling-unit figures on this ' +
           'page cover every seat in that LGA rather than this one alone. '
         : '') + seatNote('race'),
+    noteTail: seatNote('race'),
     candidates: [],
     others: [],
     join: {
@@ -1036,16 +1040,16 @@ const finalState = (v?: string | null) => {
   return k === 'NASSARAWA' ? 'NASARAWA' : k;
 };
 type FinalRow = { name: string; party: string; mate?: string };
-type FinalFile = { asOf?: Record<string, string>; GOV?: FinalRow[]; SEN?: Record<string, FinalRow[]>; REP?: Record<string, FinalRow[]> };
+type FinalFile = { asOf?: Record<string, string>; GOV?: FinalRow[]; SEN?: Record<string, FinalRow[]>; REP?: Record<string, FinalRow[]>; SHA?: Record<string, FinalRow[]> };
 
 export async function withFinalList(race: Race, code: string): Promise<Race> {
   const j = race?.join;
-  if (!j?.state || !['GOV', 'SEN', 'REP'].includes(code)) return race;
+  if (!j?.state || !['GOV', 'SEN', 'REP', 'SHA'].includes(code)) return race;
   try {
     const r = await fetch(`${BASE}/candidates-2027/${finalState(j.state)}.json`);
     if (!r.ok) return race;
     const f = (await r.json()) as FinalFile;
-    const list = code === 'GOV' ? f.GOV : (f[code as 'SEN' | 'REP'] || {})[finalKey(j.value)];
+    const list = code === 'GOV' ? f.GOV : (f[code as 'SEN' | 'REP' | 'SHA'] || {})[finalKey(code === 'SHA' ? race.seatName : j.value)];
     if (!Array.isArray(list) || !list.length) return race;
     const lead = race.noteTail && String(race.note || '').endsWith(race.noteTail)
       ? String(race.note).slice(0, -race.noteTail.length) : '';

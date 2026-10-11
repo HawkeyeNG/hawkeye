@@ -1681,6 +1681,8 @@
   "notifications.time-ago": "{v0} sẹ́yìn",
   "observe.ballot-note": "Àkójọ ìkẹyìn INEC ní ẹgbẹ́ òṣèlú {v0} nínú ìdìbò yìí. A ti fi àwọn yòókù pamọ́.",
   "observe.ballot-note-all": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. Àkójọ ìkẹyìn INEC ní {v0} nínú ìdìbò yìí.",
+  "observe.ballot-note-all-shared": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. {v0} nínú wọn ń díje ní àwọn agbègbè ìdìbò ibí yìí.",
+  "observe.ballot-note-shared": "Ju agbègbè ìdìbò kan lọ ló ń dìbò ní agbègbè yìí. A fi àwọn ẹgbẹ́ òṣèlú {v0} tó ń díje nínú èyíkéyìí wọn hàn.",
   "observe.ballot-show-all": "Fi gbogbo ẹgbẹ́ hàn",
   "observe.ballot-show-listed": "Fi àwọn ẹgbẹ́ inú ìdìbò yìí nìkan hàn",
   "observe.card-saved-with-photos": "A ti fi pamọ́ sínú fóònù rẹ pẹ̀lú àwọn àwòrán ìròyìn rẹ.",

@@ -26,8 +26,8 @@ import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { ReceiptCopy } from '@/components/receipt-copy';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
-import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
-import { loadBallots, placeBallot, type Ballots } from '@/lib/ballots';
+import { api, BRAND, electionName, type Contest, opensLine, type Party } from '@/lib/api';
+import { ballotNoteKey, loadBallots, placeBallot, placeBallotShared, type Ballots } from '@/lib/ballots';
 import { pick, tap } from '@/lib/haptics';
 import { ELECTION_TYPES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
@@ -204,7 +204,7 @@ export default function ReportCollation() {
     if (races.length === 0) {
       notice.show(
         i18nT('n.app.report.result.no-active-election-in', { v0: stateSel }),
-        i18nT('n.app.report.collation.hawkeye-is-covering-the-no-collation', { v0: contests[0].election, v1: stateSel }),
+        i18nT('n.app.report.collation.hawkeye-is-covering-the-no-collation', { v0: electionName(contests[0]), v1: stateSel }),
       );
       return;
     }
@@ -550,7 +550,7 @@ export default function ReportCollation() {
         {step === 'scope' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
-              {contests.length ? contests[0].election : 'Loading election…'}
+              {contests.length ? electionName(contests[0]) : 'Loading election…'}
             </Text>
             <Text className="pb-4 text-sm text-muted">
               {i18nT('n.app.report.collation.which-collation-are-you-reporting')}
@@ -711,7 +711,7 @@ export default function ReportCollation() {
             {ballot ? (
               <View className="mb-3 flex-row flex-wrap items-center">
                 <Text className="text-sm text-muted">
-                  {i18nT(showAllParties ? 'observe.ballot-note-all' : 'observe.ballot-note', { v0: ballot.length })}{' '}
+                  {i18nT(ballotNoteKey(showAllParties, placeBallotShared(ballots, contest?.code, { state: stateSel, lga: lgaSel })), { v0: ballot.length })}{' '}
                 </Text>
                 <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setShowAllFor(showAllParties ? null : ballotId)}>
                   <Text className="text-sm font-semibold text-good-ink underline">
@@ -992,7 +992,7 @@ export default function ReportCollation() {
                       result wizard's review card names too, so the two receipts
                       agree about what was filed. */}
                   <Text className="flex-1 text-right text-sm font-bold text-ink">
-                    {contest.election || contest.name}
+                    {electionName(contest)}
                   </Text>
                 </View>
               ) : null}

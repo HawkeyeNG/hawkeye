@@ -1,0 +1,4 @@
+{
+  "observe.ballot-note-shared": "More than one constituency votes in this area. The {v0} parties standing in any of them are shown.",
+  "observe.ballot-note-all-shared": "Every registered party is shown. {v0} of them stand in the constituencies of this area."
+}

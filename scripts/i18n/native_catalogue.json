@@ -1681,6 +1681,8 @@
   "notifications.time-ago": "{v0} ago",
   "observe.ballot-note": "INEC's final list has {v0} parties in this race. The others are hidden.",
   "observe.ballot-note-all": "Every registered party is shown. INEC's final list has {v0} in this race.",
+  "observe.ballot-note-all-shared": "Every registered party is shown. {v0} of them stand in the constituencies of this area.",
+  "observe.ballot-note-shared": "More than one constituency votes in this area. The {v0} parties standing in any of them are shown.",
   "observe.ballot-show-all": "Show all parties",
   "observe.ballot-show-listed": "Show only the parties in this race",
   "observe.card-saved-with-photos": "Saved to your phone with your report photos.",

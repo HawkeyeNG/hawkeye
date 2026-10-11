@@ -1630,6 +1630,9 @@
    * board rather than listed anywhere: the same treatment the 109 senatorial
    * districts and 362 federal constituencies already get.
    */
+  const ASSEMBLY_NO_LIST = 'INEC has not published the candidate list for this race yet. Candidates appear '
+    + 'here as soon as the official list is out. The seat and map on this page come from '
+    + 'the electoral register and are current.';
   function assemblyRace(seats, state, seat, contest) {
     const table = (seats || {}).SHA || {};
     const key = `${state}|${seat}`;
@@ -1637,6 +1640,7 @@
     if (!canon) return null;
     const s = table[canon];
     return {
+      seatName: s.seat,   // withFinalList looks the candidates up by the seat; `join.value` is the LGA
       office: `${s.seat} State Constituency`,
       election: `${s.state} State · House of Assembly`,
       date: contest && contest.date ? contest.date : undefined,
@@ -1645,10 +1649,8 @@
         ? `${s.lgas.join(', ')} elects more than one state member, and INEC's register `
           + 'does not separate them, so the ward and polling-unit figures on this page cover '
           + 'every seat in that LGA rather than this one alone. '
-        : '')
-        + 'INEC has not published the candidate list for this race yet. Candidates appear '
-        + 'here as soon as the official list is out. The seat and map on this page come from '
-        + 'the electoral register and are current.',
+        : '') + ASSEMBLY_NO_LIST,
+      noteTail: ASSEMBLY_NO_LIST,
       candidates: [],
       others: [],
       join: {
@@ -1712,12 +1714,13 @@
   };
   function withFinalList(race, code) {
     const j = race && race.join;
-    if (!j || !j.state || ['GOV', 'SEN', 'REP'].indexOf(code) < 0) return Promise.resolve(race);
+    if (!j || !j.state || ['GOV', 'SEN', 'REP', 'SHA'].indexOf(code) < 0) return Promise.resolve(race);
     const get = (typeof window !== 'undefined' && window.fetchData) ? window.fetchData : fetch;
     return Promise.resolve(get('candidates-2027/' + CSTATE(j.state) + '.json'))
       .then((r) => (r && r.ok ? r.json() : null))
       .then((f) => {
-        const list = f && (code === 'GOV' ? f.GOV : (f[code] || {})[CK(j.value)]);
+        // A State Assembly page joins the board by LGA, so its seat is carried separately.
+        const list = f && (code === 'GOV' ? f.GOV : (f[code] || {})[CK(code === 'SHA' ? race.seatName : j.value)]);
         if (!Array.isArray(list) || !list.length) return race;
         const lead = race.noteTail && String(race.note || '').endsWith(race.noteTail)
           ? String(race.note).slice(0, -race.noteTail.length) : '';

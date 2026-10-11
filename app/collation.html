@@ -793,7 +793,9 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       const st = bState($('sel-state').value);
       if (!st) return null;
       if (c === 'GOV') return ok((ballots.GOV || {})[st]);
-      if ((c !== 'SEN' && c !== 'REP') || $('sel-level').value === 'state') return null;
+      if ((c !== 'SEN' && c !== 'REP' && c !== 'SHA') || $('sel-level').value === 'state') return null;
+      // State Assembly: filed by LGA — the union of its seats where it elects several.
+      if (c === 'SHA') return ok((ballots.SHA || {})[`${st}|${bKey($('sel-lga').value)}`]);
       const e = (ballots.LGA || {})[`${st}|${bKey($('sel-lga').value)}`];
       if (!Array.isArray(e)) return null;
       if (c === 'SEN') return e[0] ? ok((ballots.SEN || {})[`${st}|${e[0]}`]) : null;
@@ -801,6 +803,17 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       const lists = (e[1] || []).map((k) => (ballots.REP || {})[`${st}|${k}`]);
       if (!lists.length || lists.some((b) => !ok(b))) return null;
       return [...new Set(lists.flat())].sort();
+    }
+    function collationShared() {
+      if (!ballots) return false;
+      const c = $('sel-contest').value;
+      const st = bState($('sel-state').value);
+      const lga = `${st}|${bKey($('sel-lga').value)}`;
+      const marked = ((ballots.SHARED || {})[c]) || [];
+      if (c === 'SHA') return marked.includes(lga);
+      if (c !== 'REP') return false;
+      const seats = ((ballots.LGA || {})[lga] || [])[1] || [];
+      return seats.length > 1 || seats.some((k) => marked.includes(`${st}|${k}`));
     }
     function applyBallot() {
       const b = collationBallot();
@@ -811,9 +824,12 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       }
       $('ballot-note').hidden = !b;
       if (!b) return;
-      $('ballot-note-text').textContent = ballotShowAll
-        ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: b.length })
-        : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: b.length });
+      const shared = collationShared();
+      $('ballot-note-text').textContent = shared
+        ? (ballotShowAll ? T('observe.ballot-note-all-shared', "Every registered party is shown. {v0} of them stand in the constituencies of this area.", { v0: b.length }) : T('observe.ballot-note-shared', "More than one constituency votes in this area. The {v0} parties standing in any of them are shown.", { v0: b.length }))
+        : (ballotShowAll
+          ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: b.length })
+          : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: b.length }));
       $('ballot-toggle').textContent = ballotShowAll
         ? T('observe.ballot-show-listed', 'Show only the parties in this race')
         : T('observe.ballot-show-all', 'Show all parties');

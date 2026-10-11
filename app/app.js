@@ -2852,8 +2852,28 @@ function raceBallot(contest, u) {
     : contest === 'GOV' ? (ballots.GOV || {})[st]
       : contest === 'SEN' ? (ballots.SEN || {})[`${st}|${ballotKey(u.senatorial)}`]
         : contest === 'REP' ? (ballots.REP || {})[`${st}|${ballotKey(u.federal_constituency)}`]
-          : null;
+          // State Assembly: the register records the LGA, not the constituency, so
+          // the list is the LGA's — the union of its seats where it elects several.
+          : contest === 'SHA' ? (ballots.SHA || {})[`${st}|${ballotKey(u.lga)}`]
+            : null;
   return Array.isArray(b) && b.length ? b : null;
+}
+/** Is that list the UNION of several races, because the register cannot tell this unit's seat from its neighbour's? */
+function raceBallotShared(contest, u) {
+  if (!ballots || !u) return false;
+  const st = ballotState(u.state);
+  const key = contest === 'SHA' ? `${st}|${ballotKey(u.lga)}` : contest === 'REP' ? `${st}|${ballotKey(u.federal_constituency)}` : null;
+  return !!key && (((ballots.SHARED || {})[contest]) || []).includes(key);
+}
+function ballotNoteText(n, all, shared) {
+  if (shared) {
+    return all
+      ? T('observe.ballot-note-all-shared', "Every registered party is shown. {v0} of them stand in the constituencies of this area.", { v0: n })
+      : T('observe.ballot-note-shared', "More than one constituency votes in this area. The {v0} parties standing in any of them are shown.", { v0: n });
+  }
+  return all
+    ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: n })
+    : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: n });
 }
 function applyBallot() {
   const wrap = $('vote-inputs');
@@ -2869,9 +2889,7 @@ function applyBallot() {
   if (!note) return;
   note.hidden = !b;
   if (!b) return;
-  $('ballot-note-text').textContent = ballotShowAll
-    ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: b.length })
-    : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: b.length });
+  $('ballot-note-text').textContent = ballotNoteText(b.length, ballotShowAll, raceBallotShared(sel && sel.value, selectedPu));
   $('ballot-toggle').textContent = ballotShowAll
     ? T('observe.ballot-show-listed', 'Show only the parties in this race')
     : T('observe.ballot-show-all', 'Show all parties');

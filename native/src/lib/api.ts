@@ -126,6 +126,15 @@ const CARD_ELECTION: Record<string, string> = lazyT({
   SHA: 'n.lib.api.state-assembly-elections-2027',
 });
 
+/**
+ * The election's name in the reader's language. The report screens printed the
+ * server's `election` text, which is English only ("2027 Presidential Election"
+ * on a Hausa screen). The five general contests are named by CODE from the same
+ * keys the home cards use; a by-election keeps the server's own name.
+ */
+export const electionName = (c?: { code?: string; election?: string; name?: string } | null): string =>
+  (c?.code && CARD_ELECTION[c.code]) || c?.election || c?.name || '';
+
 /** Shorter chamber labels; "House of Representatives" alone wraps a card. */
 const CARD_CHAMBER: Record<string, string> = lazyT({
   SEN: 'n.components.follow-race.senate', // was the bare word 'Senate' — never translated

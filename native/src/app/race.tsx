@@ -150,10 +150,16 @@ export default function RaceScreen() {
         const seats = await loadSeats().catch(() => null);
         if (!live) return;
         if (stateName && seat) {
-          setRace(assemblyRace(seats, stateName, seat, def));
+          const built = assemblyRace(seats, stateName, seat, def);
+          setRace(built);
+          if (built) withFinalList(built, 'SHA').then((r) => { if (live) setRace(r); });
         } else if (stateName && lga) {
           const hits = assemblySeatsInLga(seats, stateName, lga);
-          if (hits.length === 1) setRace(assemblyRace(seats, stateName, hits[0].seat ?? '', def));
+          if (hits.length === 1) {
+            const built = assemblyRace(seats, stateName, hits[0].seat ?? '', def);
+            setRace(built);
+            if (built) withFinalList(built, 'SHA').then((r) => { if (live) setRace(r); });
+          }
           else {
             setRace(null);
             setPick({

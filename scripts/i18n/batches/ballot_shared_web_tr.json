@@ -1,0 +1,12 @@
+{
+  "observe.ballot-note-shared": {
+    "ha": "Fiye da mazaɓa ɗaya ke zaɓe a wannan yanki. An nuna jam'iyyu {v0} da ke takara a kowace daga cikinsu.",
+    "ig": "Ihe karịrị otu mpaghara ntuli aka na-atụ vootu n'ebe a. E gosiri otu ndọrọ ndọrọ ọchịchị {v0} na-azọ n'ime nke ọ bụla n'ime ha.",
+    "yo": "Ju agbègbè ìdìbò kan lọ ló ń dìbò ní agbègbè yìí. A fi àwọn ẹgbẹ́ òṣèlú {v0} tó ń díje nínú èyíkéyìí wọn hàn."
+  },
+  "observe.ballot-note-all-shared": {
+    "ha": "Ana nuna kowace jam'iyya mai rajista. {v0} daga cikinsu suna takara a mazaɓun wannan yanki.",
+    "ig": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. {v0} n'ime ha na-azọ na mpaghara ntuli aka nke ebe a.",
+    "yo": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. {v0} nínú wọn ń díje ní àwọn agbègbè ìdìbò ibí yìí."
+  }
+}

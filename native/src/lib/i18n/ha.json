@@ -1681,6 +1681,8 @@
   "notifications.time-ago": "{v0} da suka wuce",
   "observe.ballot-note": "Jerin ƙarshe na INEC yana da jam'iyyu {v0} a wannan zaɓen. An ɓoye sauran.",
   "observe.ballot-note-all": "Ana nuna kowace jam'iyya mai rajista. Jerin ƙarshe na INEC yana da {v0} a wannan zaɓen.",
+  "observe.ballot-note-all-shared": "Ana nuna kowace jam'iyya mai rajista. {v0} daga cikinsu suna takara a mazaɓun wannan yanki.",
+  "observe.ballot-note-shared": "Fiye da mazaɓa ɗaya ke zaɓe a wannan yanki. An nuna jam'iyyu {v0} da ke takara a kowace daga cikinsu.",
   "observe.ballot-show-all": "Nuna dukkan jam'iyyu",
   "observe.ballot-show-listed": "Nuna jam'iyyun wannan zaɓen kawai",
   "observe.card-saved-with-photos": "An ajiye a wayarka tare da hotunan rahotonka.",

@@ -72,7 +72,7 @@
   <script src="follow.js?v=6"></script>
   <script src="race-picker.js?v=14"></script>
   <script src="ward-map.js?v=1"></script>
-  <script src="race.js?v=38"></script>
+  <script src="race.js?v=39"></script>
   <script>
     // Generic race page. Two ways in:
     //
@@ -154,10 +154,10 @@
         const lga = QP.get('lga');
         let pick = null;
         if (stateName && seat) {
-          race = window.assemblyRace(seats, stateName, seat, contest);
+          race = await window.withFinalList(window.assemblyRace(seats, stateName, seat, contest), 'SHA');
         } else if (stateName && lga) {
           const hits = window.assemblySeatsInLga(seats, stateName, lga);
-          if (hits.length === 1) race = window.assemblyRace(seats, stateName, hits[0].seat, contest);
+          if (hits.length === 1) race = await window.withFinalList(window.assemblyRace(seats, stateName, hits[0].seat, contest), 'SHA');
           else pick = { state: stateName, seats: hits, why: `${lga} LGA elects ${hits.length} state members` };
         } else if (stateName) {
           const all = window.assemblySeats(seats, stateName);

@@ -35,8 +35,8 @@ import {
 } from '@/components/unit-map';
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
-import { api, BRAND, type Contest, type Party } from '@/lib/api';
-import { loadBallots, raceBallot, type Ballots } from '@/lib/ballots';
+import { api, BRAND, electionName, type Contest, type Party } from '@/lib/api';
+import { ballotNoteKey, loadBallots, raceBallot, raceBallotShared, type Ballots } from '@/lib/ballots';
 import {
   envelopeHardLimitM,
   GROSS_MISMATCH_M,
@@ -1617,7 +1617,7 @@ export default function ReportResult() {
     if (racesIn(unit.state, contests).length === 0) {
       notice.show(
         i18nT('n.app.report.result.no-active-election-in', { v0: unit.state }),
-        i18nT('n.app.report.result.hawkeye-is-covering-the-nothing-is', { v0: contests[0].election, v1: unit.name }),
+        i18nT('n.app.report.result.hawkeye-is-covering-the-nothing-is', { v0: electionName(contests[0]), v1: unit.name }),
       );
       return;
     }
@@ -2113,7 +2113,7 @@ export default function ReportResult() {
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
               {contests.length
-                ? contests[0].election
+                ? electionName(contests[0])
                 : contestsFailed
                   ? 'Election details unavailable'
                   : 'Loading election…'}
@@ -2557,7 +2557,7 @@ export default function ReportResult() {
             {ballot ? (
               <View className="mb-3 flex-row flex-wrap items-center">
                 <Text className="text-sm text-muted">
-                  {i18nT(showAllParties ? 'observe.ballot-note-all' : 'observe.ballot-note', { v0: ballot.length })}{' '}
+                  {i18nT(ballotNoteKey(showAllParties, raceBallotShared(ballots, contest?.code, unit)), { v0: ballot.length })}{' '}
                 </Text>
                 <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setShowAllFor(showAllParties ? null : ballotId)}>
                   <Text className="text-sm font-semibold text-good-ink underline">
@@ -2661,7 +2661,7 @@ export default function ReportResult() {
                   .join(' · ')}
               </Text>
               {contest ? (
-                <Text className="pt-1 text-xs font-bold text-good-ink">{contest.election}</Text>
+                <Text className="pt-1 text-xs font-bold text-good-ink">{electionName(contest)}</Text>
               ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">

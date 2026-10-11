@@ -91,6 +91,7 @@ def indexes(out):
     out, and absent means "not known" to every reader of this file."""
     con = sqlite3.connect(f"file:{B.DB}?mode=ro", uri=True)
     st_of, sen_c, rep_c, rep_w = {}, defaultdict(set), defaultdict(set), defaultdict(set)
+    lga_c = defaultdict(set)
     sen_n, rep_n, rep_wn = defaultdict(set), defaultdict(set), defaultdict(set)
     for pu, state, lga, ward, sen, fed in con.execute("SELECT pu_code, state, lga, ward, senatorial, federal_constituency FROM polling_units"):
         parts = (pu or "").split("-")
@@ -100,6 +101,7 @@ def indexes(out):
         stk = state_key(state)
         st_of.setdefault(ss, set()).add(stk)
         nk = f"{stk}|{K(lga)}"
+        lga_c[(ss, ll)].add(K(lga))
         if sen and f"{stk}|{K(sen)}" in out["SEN"]:
             sen_c[(ss, ll)].add(K(sen)); sen_n[nk].add(K(sen))
         if fed and f"{stk}|{K(fed)}" in out["REP"]:
@@ -109,8 +111,9 @@ def indexes(out):
     one = lambda x: next(iter(x)) if len(x) == 1 else None  # noqa: E731
     by_code = {ss: one(v) for ss, v in sorted(st_of.items()) if one(v)}
     split = 0
-    for (ss, ll) in sorted(set(sen_c) | set(rep_c)):
-        by_code[f"{ss}-{ll}"] = [one(sen_c.get((ss, ll), ())), one(rep_c.get((ss, ll), ()))]
+    for (ss, ll) in sorted(set(sen_c) | set(rep_c) | set(lga_c)):
+        # third: the LGA's own key, which is what a State Assembly ballot is filed under
+        by_code[f"{ss}-{ll}"] = [one(sen_c.get((ss, ll), ())), one(rep_c.get((ss, ll), ())), one(lga_c.get((ss, ll), ()))]
         if len(rep_c.get((ss, ll), ())) > 1:
             split += 1
             for (a, b, ww), v in sorted(rep_w.items()):
@@ -147,7 +150,7 @@ def candidate_files(P, joined):
         files[st]["GOV"] = [{**row(r), "mate": display(r["runningMate"]["name"])} for r in sorted(f["records"], key=lambda r: r["party"])]
     unresolved, counts = [], {}
     for code in ("SEN", "REP"):
-        named, paired = joined[code]
+        named, paired, _folded = joined[code]
         direct, squeezed = defaultdict(dict), defaultdict(dict)
         for (st, n) in named:
             direct[st][K(n)] = n
@@ -166,6 +169,62 @@ def candidate_files(P, joined):
     return files, unresolved, counts
 
 
+def assembly(P):
+    """State Houses of Assembly.
+
+    The register does not say which state constituency a unit is in, only its
+    LGA. So:
+      - the SEAT PAGES (app/seat_lgas.json, 1,005 of them) are tied to INEC's
+        races by name, for the candidate lists;
+      - a unit's BALLOT is its LGA's: exact where the LGA elects one member, the
+        UNION of its seats where it elects several (240 LGAs) — a superset, so a
+        party on the unit's real sheet is never left out.
+    INEC's list has races the seat table does not (constituencies restored in
+    2026). Their LGA is not known, so their parties are added to EVERY LGA of
+    their state: still a superset. A state with no list at all (Borno, missing
+    from INEC's file) gets nothing, and every party stays listed there."""
+    table = json.load(open(os.path.join(B.ROOT, "app", "seat_lgas.json")))["SHA"]
+    named = defaultdict(list)
+    for r in P("sha.json")["records"]:
+        named[(state_key(r["state"]), re.sub(r"\s+", " ", r["constituency"]).strip())].append(r)
+    seats, lgas_of = defaultdict(dict), {}
+    for key, v in table.items():
+        st, name = state_key(v["state"]), v.get("seat") or key.split("|", 1)[-1]
+        seats[st][name] = v.get("pollingUnits", 0)
+        lgas_of[(st, name)] = v.get("lgas", [])
+    paired, _extra, unjoined, unused, review = join(named, seats, "SHA")
+    row = lambda r: {"name": display(r["name"]), "party": r["party"]}  # noqa: E731
+    pages = defaultdict(dict)                      # state -> {K(seat): rows}
+    lga_races = defaultdict(set)                   # "STATE|LGA" -> {inec race}
+    for (st, seat), (race, _how) in paired.items():
+        pages[st][K(seat)] = [row(r) for r in sorted(named[(st, race)], key=lambda r: r["party"])]
+        for lga in lgas_of[(st, seat)]:
+            lga_races[f"{st}|{K(lga)}"].add(race)
+    loose = defaultdict(set)                       # state -> parties of races with no seat page
+    for st, race in unjoined:
+        loose[st] |= {r["party"] for r in named[(st, race)]}
+    states_with_list = {st for (st, _n) in named}
+    ballots, shared = {}, []
+    all_lgas = {f"{st}|{K(l)}" for (st, _seat), ls in lgas_of.items() for l in ls}
+    for key in sorted(all_lgas):
+        st = key.split("|", 1)[0]
+        if st not in states_with_list:
+            continue
+        races = lga_races.get(key, set())
+        codes = set(loose[st])
+        for race in races:
+            codes |= {r["party"] for r in named[(st, race)]}
+        if not codes:
+            continue
+        ballots[key] = sorted(codes)
+        if len(races) != 1 or loose[st]:
+            shared.append(key)
+    stats = {"inec_races": len(named), "seat_pages": sum(len(v) for v in seats.values()), "pages_with_candidates": len(paired),
+             "inec_races_without_a_page": [f"{a} / {b}" for a, b in unjoined], "pages_without_a_race": [f"{a} / {b}" for a, b, _u in unused],
+             "lgas_with_a_ballot": len(ballots), "of_which_exact": len(ballots) - len(shared), "of_which_union": len(shared)}
+    return pages, ballots, sorted(shared), stats, review
+
+
 def tokens(s):
     return frozenset(t for t in re.split(r"[^A-Z0-9]+", B.norm(s)) if t)
 
@@ -175,6 +234,8 @@ def tokens(s):
 HAND_LABELS = {
     # Lokoja LGA's units carry this label; the seat is Lokoja + Kogi (Koton-Karfe) LGAs.
     ("KOGI", "Lokoja/Koton Karfe/Kogi"): "Kogi (Lokoja)/Kogi (K.K.)",
+    # State Assembly: the same seat, named the other way round.
+    ("BENUE", "Konshisha III (Shangev-Tiev)"): "SHANGEV - TIEV (KONSHISHA)",
 }
 
 NUMERAL = re.compile(r"\s+(I{1,3}|IV|V)$")
@@ -290,7 +351,7 @@ def main():
                     races[("FCT", "FCT")] = races.pop(k); names[("FCT", "FCT")] = "FCT"
         named = {(st, names[(st, sq)]): v for (st, sq), v in races.items()}
         paired, extra, unjoined, unused, review = join(named, seats, code)
-        joined[code] = (named, paired)
+        joined[code] = (named, paired, [k for k, v in extra.items() if v])
         how = defaultdict(int)
         units_total = sum(sum(v.values()) for v in seats.values())
         units_covered = 0
@@ -312,7 +373,20 @@ def main():
         report += [f"  [{code}] NO SEAT for INEC race: {x}" for x in stats[code]["unjoined"]]
         report += [f"  [{code}] register seat with no race: {x}" for x in stats[code]["unused_register_seats"]]
 
+    sha_pages, sha_ballots, sha_shared, sha_stats, sha_review = assembly(P)
+    out["SHA"] = sha_ballots
+    stats["SHA"] = sha_stats
+    report.append(f"SHA   {sha_stats['inec_races']} INEC races · {sha_stats['pages_with_candidates']} of {sha_stats['seat_pages']} seat pages get candidates · "
+                  f"LGA ballots {sha_stats['lgas_with_a_ballot']} ({sha_stats['of_which_exact']} exact, {sha_stats['of_which_union']} a union)")
+    report += sha_review
+    report += [f"  [SHA] INEC race with no seat page: {x}" for x in sha_stats["inec_races_without_a_page"]]
+    report += [f"  [SHA] seat page with no race: {x}" for x in sha_stats["pages_without_a_race"]]
+    # Reps seats whose ballot is a union of numbered siblings (step 6 of the join)
+    rep_shared = sorted({f"{st}|{K(label)}" for (st, label) in joined["REP"][2]})
+    shared = {"REP": rep_shared, "SHA": sha_shared}
     cand_files, cand_unresolved, cand_counts = candidate_files(P, joined)
+    for st, seats_ in sha_pages.items():
+        cand_files[st]["SHA"] = seats_
     report.append(f"race pages: candidate lists for {cand_counts} seat pages (resolved, of) in {len(cand_files)} state files; governorship in {sum(1 for v in cand_files.values() if v.get('GOV'))}")
     report += [f"  [pages] no INEC race found for seat page: {x}" for x in cand_unresolved]
     by_code, lga_idx, ward_idx, idx_stats = indexes(out)
@@ -320,7 +394,7 @@ def main():
     distinct = {c: len({",".join(v) for v in out[c].values()}) for c in ("GOV", "SEN", "REP")}
     stats["distinct_ballots"] = distinct
     report.append(f"index: {idx_stats} · distinct ballots {distinct}")
-    bad = sorted({p for v in [out["PRES"], *out["GOV"].values(), *out["SEN"].values(), *out["REP"].values()] for p in v} - parties)
+    bad = sorted({p for v in [out["PRES"], *out["GOV"].values(), *out["SEN"].values(), *out["REP"].values(), *out["SHA"].values()] for p in v} - parties)
     report.append(f"party codes not on the register of parties: {bad or 'none'}")
     print("\n".join(report))
 
@@ -332,22 +406,22 @@ def main():
             "pulled": open(os.path.join(SRC, "pulled.txt")).read().strip().replace("pulled ", ""),
             "built": datetime.date.today().isoformat(),
             "files": {s[0]: s[2] for s in src if "ASSEMBLY" not in s[0]},
-            "keys": "SEN/REP: '<STATE>|<SEAT>' with both parts upper-cased and stripped to letters and digits, the seat being the register's own senatorial / federal_constituency value. GOV: the state, same rule. A key that is absent means: not known — show every registered party.",
+            "keys": "SEN/REP: '<STATE>|<SEAT>' with both parts upper-cased and stripped to letters and digits, the seat being the register's own senatorial / federal_constituency value. GOV: the state, same rule. SHA: '<STATE>|<LGA>' — the register does not record state constituencies, so the ballot is the LGA's: exact where it elects one member, the union of its seats where it elects several (those keys are listed under SHARED, as are the Reps seats whose ballot is a union). A key that is absent means: not known — show every registered party.",
             "join": stats,
         },
         **out,
     }
     if args.write:
         for path in (OUT_BACKEND, OUT_APP):
-            body = ({**doc, "BY_CODE": by_code} if path == OUT_BACKEND
-                    else {"_source": {k: doc["_source"][k] for k in ("what", "from", "pulled", "built", "keys")}, **out, "LGA": lga_idx, "WARD": ward_idx})
+            body = ({**doc, "SHARED": shared, "BY_CODE": by_code} if path == OUT_BACKEND
+                    else {"_source": {k: doc["_source"][k] for k in ("what", "from", "pulled", "built", "keys")}, **out, "SHARED": shared, "LGA": lga_idx, "WARD": ward_idx})
             json.dump(body, open(path, "w"), ensure_ascii=False, separators=(",", ":"))
             print("wrote", os.path.relpath(path, B.ROOT), os.path.getsize(path), "bytes")
         cdir = os.path.join(B.ROOT, "app", "candidates-2027")
         os.makedirs(cdir, exist_ok=True)
         total = 0
         for st, body in sorted(cand_files.items()):
-            doc_c = {"asOf": {"GOV": "2026-10-10", "SEN": "2026-09-12", "REP": "2026-09-12"},
+            doc_c = {"asOf": {"GOV": "2026-10-10", "SEN": "2026-09-12", "REP": "2026-09-12", "SHA": "2026-10-10"},
                      "source": "INEC, Final List of Candidates, 2027 General Election — https://www.inecnigeria.org/elections/2027-general-elections-update",
                      **body}
             fp = os.path.join(cdir, st + ".json")

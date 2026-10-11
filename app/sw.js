@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v564';
+const CACHE = 'hawkeye-v565';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -124,7 +124,8 @@ self.addEventListener('fetch', (e) => {
   }
 
   if (url.pathname === '/political_data.json' || url.pathname === '/members.json'
-      || url.pathname === '/party_changes.json' || url.pathname === '/ballots-2027.json') {
+      || url.pathname === '/party_changes.json' || url.pathname === '/ballots-2027.json'
+      || url.pathname.startsWith('/candidates-2027/')) {
     e.respondWith(
       fetch(e.request)
         .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })

@@ -72,7 +72,7 @@
   <script src="follow.js?v=6"></script>
   <script src="race-picker.js?v=14"></script>
   <script src="ward-map.js?v=1"></script>
-  <script src="race.js?v=37"></script>
+  <script src="race.js?v=38"></script>
   <script>
     // Generic race page. Two ways in:
     //
@@ -123,11 +123,14 @@
 
       if (tier === 'GOV' && stateName) {
         race = window.stateRace(data, stateName, contest);
+        // The general election only: a by-election carries its own list in the contest.
+        if (race && code === 'GOV') race = await window.withFinalList(race, 'GOV');
       } else if ((tier === 'SEN' || tier === 'REP') && seatName) {
         // seat_lgas.json is fetched ONLY here — 471 seats with their LGA
         // membership is ~46 KB that no other page has any use for.
         const seats = await fetch('seat_lgas.json').then((r) => r.json()).catch(() => null);
         race = window.seatRace(seats, code, seatName, contest, tier);
+        if (race && (code === 'SEN' || code === 'REP')) race = await window.withFinalList(race, code);
         // `contest &&` guards a real crash, not a style point: /api/contests is
         // allowed to be unreachable (contestOf catches to null and the page
         // still renders, undated), and reading `.constituencies` off null threw

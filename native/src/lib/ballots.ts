@@ -21,6 +21,8 @@ export interface Ballots {
   GOV?: Record<string, string[]>;
   SEN?: Record<string, string[]>;
   REP?: Record<string, string[]>;
+  /** "STATE|LGA" -> [senate seat | null, reps seats] — for a form that has a place, not a unit. */
+  LGA?: Record<string, [string | null, string[]]>;
 }
 export interface BallotUnit {
   state?: string | null;
@@ -84,4 +86,31 @@ export function raceBallot(b: Ballots | null, contest: string | null | undefined
           : contest === 'REP' ? b.REP?.[`${st}|${key(u.federal_constituency)}`]
             : null;
   return Array.isArray(list) && list.length ? list : null;
+}
+
+/**
+ * A COLLATION FORM HAS A PLACE, NOT A UNIT — twin of collationBallot() in
+ * app/collation.html. President and Governorship need only the state; Senate
+ * and Reps follow the LGA chosen (`LGA` in the file). A statewide Senate or
+ * Reps entry, State Assembly, a by-election: null, every party is listed.
+ */
+export function placeBallot(
+  b: Ballots | null,
+  contest: string | null | undefined,
+  place: { state?: string | null; lga?: string | null; statewide?: boolean },
+): string[] | null {
+  if (!b || !contest) return null;
+  const ok = (l?: string[] | null) => (Array.isArray(l) && l.length ? l : null);
+  if (contest === 'PRES') return ok(b.PRES);
+  const st = stateKey(place.state);
+  if (!st) return null;
+  if (contest === 'GOV') return ok(b.GOV?.[st]);
+  if ((contest !== 'SEN' && contest !== 'REP') || place.statewide) return null;
+  const e = b.LGA?.[`${st}|${key(place.lga)}`];
+  if (!Array.isArray(e)) return null;
+  if (contest === 'SEN') return e[0] ? ok(b.SEN?.[`${st}|${e[0]}`]) : null;
+  // Reps: an LGA shared by two constituencies lists the parties of both.
+  const lists = (e[1] || []).map((k) => b.REP?.[`${st}|${k}`]);
+  if (!lists.length || lists.some((l) => !ok(l))) return null;
+  return [...new Set(lists.flatMap((l) => l as string[]))].sort();
 }

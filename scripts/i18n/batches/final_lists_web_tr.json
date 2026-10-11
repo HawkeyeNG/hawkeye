@@ -1,0 +1,12 @@
+{
+  "race.final-list-note": {
+    "ha": "Kowane ɗan takara a jerin ƙarshe na INEC na wannan zaɓen — su {v0}.",
+    "ig": "Onye ndoro-ndoro ọ bụla nọ na ndepụta ikpeazụ INEC maka ntuli aka a — ha dị {v0}.",
+    "yo": "Gbogbo olùdíje tó wà nínú àkójọ ìkẹyìn INEC fún ìdìbò yìí — {v0} ni wọ́n."
+  },
+  "race.party-running-mate": {
+    "ha": "{v0} · abokin takara {v1}",
+    "ig": "{v0} · onye ibe ya {v1}",
+    "yo": "{v0} · alábàáṣiṣẹ́pọ̀ {v1}"
+  }
+}

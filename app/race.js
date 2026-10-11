@@ -1420,6 +1420,7 @@
       note: (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
         : '') + ballot.note,
+      noteTail: ballot.note,   // so withFinalList can swap the list sentence and keep the lead
       /* THE CATALOGUE CAN DECLARE A RACE. Both of these build a race object from
          scratch, so anything not named here is dropped — which is why the five
          by-elections of 19 Sept 2026 sat closed, with the result in
@@ -1690,6 +1691,51 @@
 
   window.mountRace = mountRace;
   window.findRace = findRace;
+  /**
+   * INEC'S FINAL LIST ON A GENERAL-ELECTION PAGE (Governorship, Senate, Reps).
+   *
+   * The generated pages said the candidate list was not out, because for 1,480
+   * seats it was not. It is now: INEC published the final lists on 12 Sept and
+   * 10 Oct 2026, and candidates-2027/<STATE>.json holds them per state
+   * (scripts/build_ballots_2027.py), keyed by the seat names these pages use.
+   *
+   * Applied AFTER the page's own builder and only when the file has this seat,
+   * so a missing file, an off-cycle state or a by-election (which carries its
+   * own list in the contest) leaves the page exactly as it was. Name and party,
+   * and the running mate for a governorship ticket. Twin: political.ts.
+   */
+  const CK = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+  const CSTATE = (s) => {
+    const k = CK(s);
+    if (k === 'FEDERALCAPITALTERRITORY' || k === 'FCTABUJA' || k === 'ABUJA') return 'FCT';
+    return k === 'NASSARAWA' ? 'NASARAWA' : k;
+  };
+  function withFinalList(race, code) {
+    const j = race && race.join;
+    if (!j || !j.state || ['GOV', 'SEN', 'REP'].indexOf(code) < 0) return Promise.resolve(race);
+    const get = (typeof window !== 'undefined' && window.fetchData) ? window.fetchData : fetch;
+    return Promise.resolve(get('candidates-2027/' + CSTATE(j.state) + '.json'))
+      .then((r) => (r && r.ok ? r.json() : null))
+      .then((f) => {
+        const list = f && (code === 'GOV' ? f.GOV : (f[code] || {})[CK(j.value)]);
+        if (!Array.isArray(list) || !list.length) return race;
+        const lead = race.noteTail && String(race.note || '').endsWith(race.noteTail)
+          ? String(race.note).slice(0, -race.noteTail.length) : '';
+        return Object.assign({}, race, {
+          candidates: list.map((c) => (c.mate
+            ? { name: c.name, party: c.party, meta: TV('race.party-running-mate', '{v0} · running mate {v1}', { v0: c.party, v1: c.mate }) }
+            : { name: c.name, party: c.party })),
+          others: [],
+          minors: [],
+          fieldLabel: 'candidates',
+          asOf: (f.asOf || {})[code],
+          note: lead + TV('race.final-list-note', "Every candidate on INEC's final list for this race — {v0} of them.", { v0: list.length })
+            + ' ' + T('race.map-facts-from-register', 'The map and seat facts on this page come from the electoral register.'),
+        });
+      })
+      .catch(() => race);
+  }
+  window.withFinalList = withFinalList;
   window.stateRace = stateRace;
   window.seatRace = seatRace;
   window.byElectionRace = byElectionRace;

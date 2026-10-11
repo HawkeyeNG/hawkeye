@@ -20,6 +20,8 @@ export type Candidate = {
   status?: string;
   incumbent?: boolean;
   photo?: string;
+  /** A second line under the name (a governorship ticket's running mate). */
+  meta?: string;
 };
 
 export type Minor = { name: string; party: string; meta?: string };
@@ -52,6 +54,8 @@ export type RaceJoin = {
 
 export type Race = {
   asOf?: string;
+  /** The list sentence at the end of `note`, so withFinalList can swap it and keep the lead. */
+  noteTail?: string;
   /**
    * Whether the field below is a list of CANDIDATES or, when INEC published the
    * ballot without the names, a list of PARTIES. The screen says which - calling
@@ -526,6 +530,7 @@ export function seatRace(
       (s.sharedRegister
         ? "INEC's register does not separate this seat from the other constituency in the same LGA, so the LGA and polling-unit figures on this page cover both. "
         : '') + ballot.note,
+    noteTail: ballot.note,
     /* THE CATALOGUE CAN DECLARE A RACE. Web twin: app/race.js. Both builders
        construct their race from scratch, so anything not named here is lost —
        which is why <Declared/> below has never rendered for a by-election even
@@ -840,6 +845,7 @@ export function byElectionRace(
         : base.sharedRegister
           ? i18nT('race.shared-lga-note') + ' '
           : '') + ballot.note,
+    noteTail: ballot.note,
     /* THE CATALOGUE CAN DECLARE A RACE. Web twin: app/race.js. Both builders
        construct their race from scratch, so anything not named here is lost —
        which is why <Declared/> below has never rendered for a by-election even
@@ -1009,3 +1015,52 @@ export const photoUrl = (photo?: string | null): string | undefined => {
   if (!photo) return undefined;
   return /^https?:\/\//i.test(photo) ? photo : `${BASE}/${photo.replace(/^\/+/, '')}`;
 };
+
+/**
+ * INEC'S FINAL LIST ON A GENERAL-ELECTION SCREEN (Governorship, Senate, Reps) —
+ * twin of withFinalList in app/race.js; keep the two in step.
+ *
+ * The generated screens said the candidate list was not out. It is: INEC
+ * published the final lists on 12 Sept and 10 Oct 2026, and the site serves
+ * them per state at candidates-2027/<STATE>.json (scripts/build_ballots_2027.py),
+ * keyed by the seat names these screens use.
+ *
+ * Applied AFTER the screen's own builder and only when the file has this seat:
+ * offline, an off-cycle state, or a by-election (which carries its own list in
+ * the contest) leaves the screen exactly as it was.
+ */
+const finalKey = (v?: string | null) => String(v || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+const finalState = (v?: string | null) => {
+  const k = finalKey(v);
+  if (k === 'FEDERALCAPITALTERRITORY' || k === 'FCTABUJA' || k === 'ABUJA') return 'FCT';
+  return k === 'NASSARAWA' ? 'NASARAWA' : k;
+};
+type FinalRow = { name: string; party: string; mate?: string };
+type FinalFile = { asOf?: Record<string, string>; GOV?: FinalRow[]; SEN?: Record<string, FinalRow[]>; REP?: Record<string, FinalRow[]> };
+
+export async function withFinalList(race: Race, code: string): Promise<Race> {
+  const j = race?.join;
+  if (!j?.state || !['GOV', 'SEN', 'REP'].includes(code)) return race;
+  try {
+    const r = await fetch(`${BASE}/candidates-2027/${finalState(j.state)}.json`);
+    if (!r.ok) return race;
+    const f = (await r.json()) as FinalFile;
+    const list = code === 'GOV' ? f.GOV : (f[code as 'SEN' | 'REP'] || {})[finalKey(j.value)];
+    if (!Array.isArray(list) || !list.length) return race;
+    const lead = race.noteTail && String(race.note || '').endsWith(race.noteTail)
+      ? String(race.note).slice(0, -race.noteTail.length) : '';
+    return {
+      ...race,
+      candidates: list.map((c) => (c.mate
+        ? { name: c.name, party: c.party, meta: i18nT('race.party-running-mate', { v0: c.party, v1: c.mate }) }
+        : { name: c.name, party: c.party })),
+      others: [],
+      minors: [],
+      fieldLabel: 'candidates',
+      asOf: f.asOf?.[code],
+      note: lead + i18nT('race.final-list-note', { v0: list.length }) + ' ' + i18nT('race.map-facts-from-register'),
+    };
+  } catch {
+    return race;
+  }
+}

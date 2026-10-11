@@ -3004,5 +3004,7 @@
   "observe.ballot-note": "Jerin ƙarshe na INEC yana da jam'iyyu {v0} a wannan zaɓen. An ɓoye sauran.",
   "observe.ballot-note-all": "Ana nuna kowace jam'iyya mai rajista. Jerin ƙarshe na INEC yana da {v0} a wannan zaɓen.",
   "observe.ballot-show-all": "Nuna dukkan jam'iyyu",
-  "observe.ballot-show-listed": "Nuna jam'iyyun wannan zaɓen kawai"
+  "observe.ballot-show-listed": "Nuna jam'iyyun wannan zaɓen kawai",
+  "race.final-list-note": "Kowane ɗan takara a jerin ƙarshe na INEC na wannan zaɓen — su {v0}.",
+  "race.party-running-mate": "{v0} · abokin takara {v1}"
 }

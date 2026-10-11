@@ -3003,5 +3003,7 @@
   "observe.ballot-note": "Àkójọ ìkẹyìn INEC ní ẹgbẹ́ òṣèlú {v0} nínú ìdìbò yìí. A ti fi àwọn yòókù pamọ́.",
   "observe.ballot-note-all": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. Àkójọ ìkẹyìn INEC ní {v0} nínú ìdìbò yìí.",
   "observe.ballot-show-all": "Fi gbogbo ẹgbẹ́ hàn",
-  "observe.ballot-show-listed": "Fi àwọn ẹgbẹ́ inú ìdìbò yìí nìkan hàn"
+  "observe.ballot-show-listed": "Fi àwọn ẹgbẹ́ inú ìdìbò yìí nìkan hàn",
+  "race.final-list-note": "Gbogbo olùdíje tó wà nínú àkójọ ìkẹyìn INEC fún ìdìbò yìí — {v0} ni wọ́n.",
+  "race.party-running-mate": "{v0} · alábàáṣiṣẹ́pọ̀ {v1}"
 }

@@ -27,6 +27,7 @@ import { ReceiptCopy } from '@/components/receipt-copy';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
+import { loadBallots, placeBallot, type Ballots } from '@/lib/ballots';
 import { pick, tap } from '@/lib/haptics';
 import { ELECTION_TYPES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
@@ -246,8 +247,18 @@ export default function ReportCollation() {
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
+  /** The race's own ballot for the place chosen (lib/ballots.ts) — as on the result form. */
+  const [ballots, setBallots] = useState<Ballots | null>(null);
+  const [showAllFor, setShowAllFor] = useState<string | null>(null);
+  const ballot = useMemo(
+    () => placeBallot(ballots, contest?.code, { state: stateSel, lga: lgaSel, statewide: level === 'state' }),
+    [ballots, contest?.code, stateSel, lgaSel, level],
+  );
+  const ballotId = `${contest?.code ?? ''}|${level ?? ''}|${stateSel ?? ''}|${lgaSel ?? ''}`;
+  const showAllParties = showAllFor === ballotId;
 
   useEffect(() => {
+    if (step === 'votes') loadBallots(setBallots).then((b) => { if (b) setBallots(b); }).catch(() => {});
     if (step === 'votes' && parties.length === 0) {
       api.parties().then(setParties).catch(() => {});
       fetch(`${BASE}/logos/manifest.json`)
@@ -270,12 +281,15 @@ export default function ReportCollation() {
 
   // Filter only — order stays fixed while typing (reordering steals focus).
   const filteredParties = useMemo(() => {
+    // Off the ballot = not listed, unless it already holds a count.
+    const on = ballot && !showAllParties ? new Set(ballot) : null;
+    const listed = on ? parties.filter((p) => on.has(p.code) || (counts[p.code] ?? '') !== '') : parties;
     const q = search.trim().toLowerCase();
-    if (!q) return parties;
-    return parties.filter(
+    if (!q) return listed;
+    return listed.filter(
       (p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
     );
-  }, [parties, search]);
+  }, [parties, search, ballot, showAllParties, counts]);
 
   // -- submit ---------------------------------------------------------------
   /** Optional collation-form serial, mirroring the PWA field. */
@@ -694,6 +708,18 @@ export default function ReportCollation() {
               value={search}
               onChangeText={setSearch}
             />
+            {ballot ? (
+              <View className="mb-3 flex-row flex-wrap items-center">
+                <Text className="text-sm text-muted">
+                  {i18nT(showAllParties ? 'observe.ballot-note-all' : 'observe.ballot-note', { v0: ballot.length })}{' '}
+                </Text>
+                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setShowAllFor(showAllParties ? null : ballotId)}>
+                  <Text className="text-sm font-semibold text-good-ink underline">
+                    {i18nT(showAllParties ? 'observe.ballot-show-listed' : 'observe.ballot-show-all')}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
             {filteredParties.slice(0, 30).map((p) => (
               <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2">
                 {logos[p.code] ? (

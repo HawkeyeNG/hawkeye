@@ -3003,5 +3003,7 @@
   "observe.ballot-note": "Ndepụta ikpeazụ INEC nwere otu ndọrọ ndọrọ ọchịchị {v0} na ntuli aka a. E zoro ndị ọzọ.",
   "observe.ballot-note-all": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. Ndepụta ikpeazụ INEC nwere {v0} na ntuli aka a.",
   "observe.ballot-show-all": "Gosi otu niile",
-  "observe.ballot-show-listed": "Gosi naanị otu ndị nọ na ntuli aka a"
+  "observe.ballot-show-listed": "Gosi naanị otu ndị nọ na ntuli aka a",
+  "race.final-list-note": "Onye ndoro-ndoro ọ bụla nọ na ndepụta ikpeazụ INEC maka ntuli aka a — ha dị {v0}.",
+  "race.party-running-mate": "{v0} · onye ibe ya {v1}"
 }

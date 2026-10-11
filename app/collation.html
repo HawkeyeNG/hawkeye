@@ -194,6 +194,10 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
           <span id="counts-fold-state" class="hint" style="margin-left:8px"></span>
         </summary>
         <input data-i18n-attr="placeholder:common.filter-parties-name-or-code,aria-label:common.filter-parties-by-name-or-code" id="vote-filter" type="search" autocomplete="off" placeholder="Filter parties — name or code" aria-label="Filter parties by name or code" style="margin-bottom:8px">
+        <!-- THE RACE'S OWN BALLOT — same rule and same wording as observe.html: rows of
+             parties that field nobody in this race are hidden while empty. -->
+        <style>#vote-inputs .vote-row[data-off="1"]:has(input:placeholder-shown) { display: none; }</style>
+        <p id="ballot-note" class="hint" hidden><span id="ballot-note-text"></span> <a href="#" id="ballot-toggle"></a></p>
         <div id="vote-inputs"></div>
         <label data-i18n-html="collation.form-serial-number-optional" for="form-serial">Form Serial Number <small>(Optional)</small></label>
         <input id="form-serial" type="text" autocomplete="off">
@@ -767,7 +771,70 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
         }
       };
       scopeUpdate();
+      applyBallot();
     })();
+
+    /* THE RACE'S OWN BALLOT (twin of raceBallot/applyBallot in app.js).
+       A collation form has no polling unit, so the seat is found from the
+       place chosen: ballots-2027.json `LGA` ties each LGA to its senatorial
+       district and federal constituency. President and Governorship need
+       only the state. Anything not known — a statewide Senate or Reps entry,
+       State Assembly, a by-election, no file — shows every party, as before.
+       Rows are only HIDDEN, and only while empty; what is sent is unchanged. */
+    let ballots = null;
+    let ballotShowAll = false;
+    const bKey = (v) => String(v || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+    const bState = (v) => { const k = bKey(v); return (k === 'FEDERALCAPITALTERRITORY' || k === 'FCTABUJA' || k === 'ABUJA') ? 'FCT' : (k === 'NASSARAWA' ? 'NASARAWA' : k); };
+    function collationBallot() {
+      if (!ballots) return null;
+      const c = $('sel-contest').value;
+      const ok = (b) => (Array.isArray(b) && b.length ? b : null);
+      if (c === 'PRES') return ok(ballots.PRES);
+      const st = bState($('sel-state').value);
+      if (!st) return null;
+      if (c === 'GOV') return ok((ballots.GOV || {})[st]);
+      if ((c !== 'SEN' && c !== 'REP') || $('sel-level').value === 'state') return null;
+      const e = (ballots.LGA || {})[`${st}|${bKey($('sel-lga').value)}`];
+      if (!Array.isArray(e)) return null;
+      if (c === 'SEN') return e[0] ? ok((ballots.SEN || {})[`${st}|${e[0]}`]) : null;
+      // Reps: an LGA shared by two constituencies shows the parties of both.
+      const lists = (e[1] || []).map((k) => (ballots.REP || {})[`${st}|${k}`]);
+      if (!lists.length || lists.some((b) => !ok(b))) return null;
+      return [...new Set(lists.flat())].sort();
+    }
+    function applyBallot() {
+      const b = collationBallot();
+      const on = b && !ballotShowAll ? new Set(b) : null;
+      for (const row of document.querySelectorAll('#vote-inputs .vote-row')) {
+        const inp = row.querySelector('input');
+        row.dataset.off = on && inp && !on.has(inp.dataset.party) ? '1' : '';
+      }
+      $('ballot-note').hidden = !b;
+      if (!b) return;
+      $('ballot-note-text').textContent = ballotShowAll
+        ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: b.length })
+        : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: b.length });
+      $('ballot-toggle').textContent = ballotShowAll
+        ? T('observe.ballot-show-listed', 'Show only the parties in this race')
+        : T('observe.ballot-show-all', 'Show all parties');
+    }
+    (function loadBallots() {
+      const stored = () => { try { const j = JSON.parse(localStorage.getItem('hk_ballots2027') || 'null'); if (j && Array.isArray(j.PRES) && j.PRES.length) { ballots = j; applyBallot(); } } catch (e) { /* every party stays on screen */ } };
+      fetch('ballots-2027.json').then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+        .then((j) => {
+          if (!j || !Array.isArray(j.PRES) || !j.PRES.length) throw new Error('shape');
+          ballots = j;
+          try { localStorage.setItem('hk_ballots2027', JSON.stringify(j)); } catch (e) { /* quota */ }
+          applyBallot();
+        }).catch(stored);
+    })();
+    // The place and the race decide the ballot; these listeners sit beside the
+    // page's own onchange handlers and run after them.
+    for (const id of ['sel-contest', 'sel-state', 'sel-lga', 'sel-level']) {
+      $(id).addEventListener('change', () => { ballotShowAll = false; setTimeout(applyBallot, 0); });
+    }
+    $('ballot-toggle').addEventListener('click', (e) => { e.preventDefault(); ballotShowAll = !ballotShowAll; applyBallot(); });
+    document.addEventListener('hawkeye-lang', applyBallot);
   </script>
   <script src="shell.js?v=4" defer></script>
 </body>

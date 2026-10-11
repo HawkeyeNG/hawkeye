@@ -17,7 +17,7 @@ import {
   findRace,
   loadPolitical,
   loadSeats,
-  seatRace,
+  seatRace, withFinalList,
   stateRace,
   type Race,
   type SeatInfo,
@@ -121,13 +121,18 @@ export default function RaceScreen() {
       const byeSeats = (def?.constituencies ?? []).length > 0;
 
       if (tier === 'GOV' && stateName) {
-        setRace(stateRace(data, stateName, def));
+        const built = stateRace(data, stateName, def);
+        setRace(built);
+        // The general election only: a by-election carries its own list in the contest.
+        if (built && contest === 'GOV') withFinalList(built, 'GOV').then((r) => { if (live) setRace(r); });
       } else if ((tier === 'SEN' || tier === 'REP') && seatName) {
         // seat_lgas.json is fetched ONLY on a seat screen — 1,480 seats with
         // their LGA membership is ~169 KB that no other screen has a use for.
         const seats = await loadSeats().catch(() => null);
         if (!live) return;
-        setRace(seatRace(seats, contest as string, seatName, def, tier));
+        const built = seatRace(seats, contest as string, seatName, def, tier);
+        setRace(built);
+        if (built && (contest === 'SEN' || contest === 'REP')) withFinalList(built, contest).then((r) => { if (live) setRace(r); });
       } else if (tier === 'SHA' && !byeSeats) {
         /**
          * THE GENERAL STATE-ASSEMBLY CONTEST — 1,005 seats, so it arrives as one

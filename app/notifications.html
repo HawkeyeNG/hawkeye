@@ -10,7 +10,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=200" />
-  <script src="native.js?v=126"></script>
+  <script src="native.js?v=127"></script>
   <script src="/monitor.js?v=5" defer></script>
   <style>
     .n { display: flex; gap: 12px; background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin: 8px 0; color: inherit; text-decoration: none; }
@@ -600,7 +600,8 @@
 
       if (!btn.dataset.modal) {
         // Short, or linked: behave like the link it used to be.
-        if (n.url) location.href = localUrl(n.url);
+        // In Lite the room lives on the website: native.js asks before leaving.
+        if (n.url) { const dest = localUrl(n.url); if (window.hkOpenAlertUrl) window.hkOpenAlertUrl(dest); else location.href = dest; }
         return;
       }
       $('nm-title').textContent = n.title;

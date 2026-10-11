@@ -2970,5 +2970,8 @@
   "nearme.offline-note": "Showing units saved on this phone. No connection needed.",
   "nearme.ready-title": "Units near you, offline",
   "nearme.ready-yes": "Saved for {v0}. Finding units near you works without a connection.",
-  "nearme.ready-no": "Not saved yet. Open Hawkeye once with a connection and it will be."
+  "nearme.ready-no": "Not saved yet. Open Hawkeye once with a connection and it will be.",
+  "lite.room-opens-on-website": "The campaign room opens on the website. Sign in there to manage it.",
+  "lite.room-leaving-title": "Opening the website",
+  "lite.open-website": "Open the website"
 }

@@ -2996,5 +2996,8 @@
   "nearme.offline-note": "Ó ń fi àwọn ibùdó ìdìbò tí a fi pamọ́ sórí fóònù yìí hàn. Kò nílò ìsopọ̀ íńtánẹ́ẹ̀tì.",
   "nearme.ready-title": "Àwọn ibùdó ìdìbò tó wà nítòsí rẹ, láìsí íńtánẹ́ẹ̀tì",
   "nearme.ready-yes": "A ti fi pamọ́ fún {v0}. Wíwá àwọn ibùdó ìdìbò tó wà nítòsí rẹ ń ṣiṣẹ́ láìsí ìsopọ̀ íńtánẹ́ẹ̀tì.",
-  "nearme.ready-no": "A kò tíì fi pamọ́. Ṣí Hawkeye lẹ́ẹ̀kan pẹ̀lú ìsopọ̀ íńtánẹ́ẹ̀tì, a ó sì fi pamọ́."
+  "nearme.ready-no": "A kò tíì fi pamọ́. Ṣí Hawkeye lẹ́ẹ̀kan pẹ̀lú ìsopọ̀ íńtánẹ́ẹ̀tì, a ó sì fi pamọ́.",
+  "lite.room-opens-on-website": "Yàrá ìpolongo ń ṣí lórí ojú-òpó wẹ́ẹ̀bù. Wọlé níbẹ̀ láti ṣàkóso rẹ̀.",
+  "lite.room-leaving-title": "Ń ṣí ojú-òpó wẹ́ẹ̀bù",
+  "lite.open-website": "Ṣí ojú-òpó wẹ́ẹ̀bù"
 }

@@ -1439,6 +1439,12 @@ async function webNote(H, surface, lang, n) {
       setTimeout(() => res(null), 15000);
     });
     await page.locator(`[data-id="${n.id}"]`).click();
+    // Lite asks before leaving for the room (native.js hkOpenAlertUrl). Accept it —
+    // the OK button is the last one — and keep what it said: that it ASKED is the
+    // evidence, and without the tap the walk would wait out the navigation timer.
+    const asked = await page.waitForSelector('[data-hk-dialog="confirm"]', { timeout: 2500 })
+      .then(async (d) => { const t = (await d.innerText()).replace(/\s+/g, ' ').trim(); await d.evaluate((el) => { const b = [...el.querySelectorAll('button')].pop(); if (b) b.click(); }); return t; })
+      .catch(() => null);
     const target = await navTarget;
     await page.waitForLoadState('load').catch(() => {});
     await H.webLang(page, lang);
@@ -1474,13 +1480,18 @@ async function webNote(H, surface, lang, n) {
     const lite = surface === 'lite' ? await (async () => {
       const html = await fetch(new URL('/notifications.html', page.url())).then((r) => r.text()).catch(() => '');
       const m = /const NOT_IN_APP = [^\n]+\n\s*function localUrl\(u\) \{[\s\S]*?\n {4}\}/.exec(html);
-      if (!m || !/location\.href = localUrl\(n\.url\)/.test(html)) return { leaves: true, out: n.url, why: 'the tap navigates to n.url unchanged' };
+      if (!m || !/localUrl\(n\.url\)/.test(html)) return { leaves: true, out: n.url, why: 'the tap navigates to n.url unchanged' };
+      // Leaving is acceptable when the app SAYS so first: the tap goes through
+      // native.js's hkOpenAlertUrl, and that asks before opening the room.
+      const nat = await fetch(new URL('/native.js', page.url())).then((r) => r.text()).catch(() => '');
+      const explained = /hkOpenAlertUrl\(dest\)/.test(html) && /window\.hkOpenAlertUrl = async/.test(nat) && /lite\.room-opens-on-website/.test(nat) && /hkConfirm\(msg/.test(nat);
       const localUrl = new Function('location', 'window', `${m[0]}; return localUrl;`)({ href: 'https://localhost/notifications.html' }, { HAWKEYE: { native: true } });
       const out = localUrl(n.url);
-      return { leaves: /^https?:\/\//i.test(out), out };
+      return { leaves: /^https?:\/\//i.test(out), out, explained };
     })() : null;
     if (lite) H.check(`4:lite-stays-in-app:${n.kind}:${lang}`, { flagged: lite.leaves, detail: `on a phone Lite would open ${lite.out}${lite.why ? ` (${lite.why})` : ''}`, evidence: [f1, f2] });
-    if (lite && lite.leaves) {
+    if (lite && lite.leaves) H.check(`4:lite-hand-off-explained:${n.kind}:${lang}`, { flagged: !(lite.explained && asked), detail: lite.explained && asked ? `Lite asked first: "${asked.slice(0, 120)}"` : `Lite leaves for the website with no warning (code has the notice: ${!!lite.explained}; dialog seen on tap: ${!!asked})`, evidence: [f1, f2] });
+    if (lite && lite.leaves && !(lite.explained && asked)) {
       H.check(`4:lite-absolute-url:${n.kind}:${lang}`, { flagged: true, detail: `Lite navigates to the absolute ${lite.out}; on a phone Lite is https://localhost, and Capacitor opens other hosts outside the app`, evidence: [f1, f2] });
       H.finding({ id: 'R-LITE-NOTE-LEAVES-APP', flow: '4-notify', severity: 'P1', surfaces: ['lite'],
         title: 'Lite: tapping a room notification leaves the app for the (signed-out) website',

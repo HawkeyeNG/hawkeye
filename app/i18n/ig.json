@@ -2996,5 +2996,8 @@
   "nearme.offline-note": "Na-egosi ebe ntuli aka echekwara na ekwentị a. Njikọ ịntanetị adịghị mkpa.",
   "nearme.ready-title": "Ebe ntuli aka dị gị nso, na-enweghị ịntanetị",
   "nearme.ready-yes": "Echekwara maka {v0}. Ịchọta ebe ntuli aka dị gị nso na-arụ ọrụ na-enweghị njikọ ịntanetị.",
-  "nearme.ready-no": "Echekwabeghị ya. Mepee Hawkeye otu ugboro na njikọ ịntanetị, a ga-echekwa ya."
+  "nearme.ready-no": "Echekwabeghị ya. Mepee Hawkeye otu ugboro na njikọ ịntanetị, a ga-echekwa ya.",
+  "lite.room-opens-on-website": "Ọnụ ụlọ mkpọsa na-emepe na weebụsaịtị. Banye ebe ahụ ka ị jikwaa ya.",
+  "lite.room-leaving-title": "Na-emepe weebụsaịtị",
+  "lite.open-website": "Mepee weebụsaịtị"
 }

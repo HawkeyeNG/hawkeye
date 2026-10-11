@@ -525,6 +525,27 @@
       return p + x.search + x.hash;
     } catch { return u; }
   };
+  /* THE ROOM IS ON THE WEBSITE, AND LITE SAYS SO (rooms walkthrough
+     R-LITE-NOTE-LEAVES-APP). The campaign room is not in this bundle, so "You can
+     now manage a room" and the room-label alert open hawkeye.com.ng in the
+     phone's browser — a different session, signed out. That used to happen with
+     no warning: one tap and the app was gone. Now the tap asks first and says
+     what will happen and what to do there. Everything the bundle carries, and
+     every other link, goes straight through. One helper for both doors: the
+     Alerts row (notifications.html) and a tapped push (initPush below). */
+  const leavesForRoom = (dest) => /^https?:\/\/([^/]*\.)?hawkeye\.com\.ng\/(room\/|situation-room\.html)/i.test(String(dest || ''));
+  window.hkOpenAlertUrl = async (dest) => {
+    if (leavesForRoom(dest)) {
+      const tr = (k, en) => (window.HawkeyeI18n && window.HawkeyeI18n.t ? window.HawkeyeI18n.t(k, en) : en);
+      const msg = tr('lite.room-opens-on-website', 'The campaign room opens on the website. Sign in there to manage it.');
+      const go = window.hkConfirm
+        ? await window.hkConfirm(msg, { title: tr('lite.room-leaving-title', 'Opening the website'), ok: tr('lite.open-website', 'Open the website'), cancel: tr('common.cancel', 'Cancel') })
+        : window.confirm(msg);
+      if (!go) return false;
+    }
+    location.href = dest;
+    return true;
+  };
   const fixEl = (el) => {
     if (!el.getAttribute || el.tagName === 'SCRIPT') return;
     for (const a of ['src', 'href']) {
@@ -877,7 +898,7 @@
          * the old incidents.html (the filing form) → the published list, and
          * NOT_IN_APP (the room) staying on the live site.
          */
-        location.href = url ? pushTarget(url) : 'notifications.html';
+        window.hkOpenAlertUrl(url ? pushTarget(url) : 'notifications.html');
       });
       await Push.register();
     };

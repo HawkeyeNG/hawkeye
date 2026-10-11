@@ -30,7 +30,10 @@ export default function ChatScreen() {
   // Also hide the page itself BEFORE it paints — chat.js hides it too, but only
   // once it runs, so the web contact page flashed for half a second first.
   const boot = `try{localStorage.setItem('hawkeye_lang','${lang}');localStorage.setItem('hawkeye_lang_prompted','1');}catch(e){}`
-    + `try{var s=document.createElement('style');s.textContent='body>:not([id^="intercom"]):not([class*="intercom"]){display:none!important}html,body{background:transparent!important}';document.documentElement.appendChild(s);}catch(e){}true;`;
+    // ON ANDROID THIS RUNS BEFORE THE DOCUMENT EXISTS: documentElement is null, the
+    // append threw inside the try, and the style was never added — the About page
+    // showed until chat.js hid it. So wait for the root, then add it.
+    + `(function h(n){try{var r=document.documentElement;if(!r){if(n<200)setTimeout(function(){h(n+1)},5);return;}var s=document.createElement('style');s.textContent='body>:not([id^="intercom"]):not([class*="intercom"]){display:none!important}html,body{background:transparent!important}';r.appendChild(s);}catch(e){}})(0);true;`;
   // NO header of ours: Intercom's messenger already carries the Hawkeye logo and
   // a close (×) that closes this screen ('chat-closed'); a second bar on top of
   // it was redundant and clipped the messenger's own header. The status-bar strip
@@ -67,7 +70,10 @@ export default function ChatScreen() {
           style={{ flex: 1, backgroundColor: 'transparent' }}
         />
         {loading ? (
-          <View className="absolute inset-0 items-center justify-center">
+          // OPAQUE, not a spinner floating over the page: whatever the page does
+          // before the messenger is up, none of it is seen. It lifts on
+          // 'chat-shown' — when the messenger itself is on screen.
+          <View className="absolute inset-0 items-center justify-center bg-surface">
             <ActivityIndicator color={BRAND.gold} />
             {/* The messenger's own × is not there yet — never leave the user stuck. */}
             <Pressable

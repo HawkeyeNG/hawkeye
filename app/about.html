@@ -2,6 +2,14 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- EMBEDDED CHAT (the native app's "Chat with us" screen loads this page with
+       ?chat=1&embed=1 and shows only the messenger). Hide the page BEFORE ITS FIRST
+       PAINT. chat.js applies the same rule, but it is deferred and runs after the
+       page has painted; and the app's own pre-load script does not land on Android,
+       where it runs before the document exists. So the About page flashed on
+       screen before the messenger opened (owner, Android, 2026-10-11). -->
+  <script>if(/[?&]embed=1(&|$)/.test(location.search))document.documentElement.classList.add('chat-embed');</script>
+  <style>html.chat-embed body>:not([id^="intercom"]):not([class*="intercom"]){display:none!important}html.chat-embed,html.chat-embed body{background:var(--bg,#0b1a12)!important}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#00482b">
   <meta name="description" content="About Hawkeye — an independent, nonpartisan platform that lets Nigerian citizens document and verify polling-unit results. Contact us.">

@@ -9,6 +9,10 @@
 # Production AWS account (owner decision, 27 Sep 2026). The staging scripts refuse
 # to touch any other account, including 131708657746 (the account the WSL CLI
 # was signed in to when these scripts were written).
+# The AWS CLI lives in ~/.local/bin, which a non-interactive shell (wsl.exe -- bash script)
+# does not have on its PATH: provision.sh then stopped at "aws CLI not found".
+case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH" ;; esac
+
 readonly HAWKEYE_ACCOUNT="025232685387"
 readonly REGION="eu-west-1"
 readonly AZ="eu-west-1a"

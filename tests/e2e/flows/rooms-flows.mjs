@@ -1463,8 +1463,25 @@ async function webNote(H, surface, lang, n) {
       const t = await H.text(page);
       H.check(`4:lands-my-groups:${n.kind}:${surface}:${lang}`, { flagged: !t.includes(n.room), detail: `landed ${page.url()}`, evidence: [f2] });
     }
-    if (surface === 'lite' && target && /^https:\/\/hawkeye\.com\.ng\//.test(target)) {
-      H.check(`4:lite-absolute-url:${n.kind}:${lang}`, { flagged: true, detail: `Lite navigates to the absolute ${target}; on a phone Lite is https://localhost, and Capacitor opens other hosts outside the app`, evidence: [f1, f2] });
+    /* MEASURED ON THE PAGE'S OWN DECISION, not on where the harness landed. This
+       harness runs Lite over the live site, so an in-app (root-relative) link and
+       an absolute one BOTH end at https://hawkeye.com.ng/… — the old test on
+       `target` flagged every notification and could never clear. So the page's
+       localUrl() is lifted out of notifications.html and asked what it does on a
+       phone, where Lite's origin is https://localhost and other hosts open
+       outside the app. The kinds check each other: my-groups must stay in the
+       app, and a page the bundle does not carry is allowed to say it leaves. */
+    const lite = surface === 'lite' ? await (async () => {
+      const html = await fetch(new URL('/notifications.html', page.url())).then((r) => r.text()).catch(() => '');
+      const m = /const NOT_IN_APP = [^\n]+\n\s*function localUrl\(u\) \{[\s\S]*?\n {4}\}/.exec(html);
+      if (!m || !/location\.href = localUrl\(n\.url\)/.test(html)) return { leaves: true, out: n.url, why: 'the tap navigates to n.url unchanged' };
+      const localUrl = new Function('location', 'window', `${m[0]}; return localUrl;`)({ href: 'https://localhost/notifications.html' }, { HAWKEYE: { native: true } });
+      const out = localUrl(n.url);
+      return { leaves: /^https?:\/\//i.test(out), out };
+    })() : null;
+    if (lite) H.check(`4:lite-stays-in-app:${n.kind}:${lang}`, { flagged: lite.leaves, detail: `on a phone Lite would open ${lite.out}${lite.why ? ` (${lite.why})` : ''}`, evidence: [f1, f2] });
+    if (lite && lite.leaves) {
+      H.check(`4:lite-absolute-url:${n.kind}:${lang}`, { flagged: true, detail: `Lite navigates to the absolute ${lite.out}; on a phone Lite is https://localhost, and Capacitor opens other hosts outside the app`, evidence: [f1, f2] });
       H.finding({ id: 'R-LITE-NOTE-LEAVES-APP', flow: '4-notify', severity: 'P1', surfaces: ['lite'],
         title: 'Lite: tapping a room notification leaves the app for the (signed-out) website',
         actual: 'notifications.html (and the push tap in native.js) does location.href = n.url, and every room notification url is absolute (https://hawkeye.com.ng/my-groups.html, /situation-room.html, /room/<slug>). Lite runs from https://localhost with no allowNavigation, and Capacitor 8 Bridge.launchIntent() hands any other host to the system (ACTION_VIEW) — the browser, signed out, or the native app if it claims the path. The in-app My Groups / room is never reached. In this harness Lite is served from hawkeye.com.ng, so the hop cannot be seen; the target url is recorded.',

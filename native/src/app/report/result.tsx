@@ -36,6 +36,7 @@ import {
 import { Crumb, Prompt } from '@/components/wizard';
 import { UnitSearch } from '@/components/unit-search';
 import { api, BRAND, type Contest, type Party } from '@/lib/api';
+import { loadBallots, raceBallot, type Ballots } from '@/lib/ballots';
 import {
   envelopeHardLimitM,
   GROSS_MISMATCH_M,
@@ -1666,8 +1667,21 @@ export default function ReportResult() {
   const [logos, setLogos] = useState<Record<string, string>>({});
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [search, setSearch] = useState('');
+  /**
+   * THE RACE'S OWN BALLOT (lib/ballots.ts): the parties INEC's final list has
+   * in this race at this unit. "Show all" is remembered FOR that race and unit,
+   * so choosing another one starts from its own list again without an effect.
+   */
+  const [ballots, setBallots] = useState<Ballots | null>(null);
+  const [showAllFor, setShowAllFor] = useState<string | null>(null);
+  const ballot = useMemo(() => raceBallot(ballots, contest?.code, unit), [ballots, contest?.code, unit]);
+  const ballotId = `${contest?.code ?? ''}|${unit?.pu_code ?? ''}`;
+  const showAllParties = showAllFor === ballotId;
 
   useEffect(() => {
+    if (step === 'votes' || step === 'sheet') {
+      loadBallots(setBallots).then((b) => { if (b) setBallots(b); }).catch(() => {});
+    }
     if ((step === 'votes' || step === 'sheet') && parties.length === 0) {
       api.parties().then(setParties).catch(() => {});
       // Official INEC emblems (same manifest the web app uses) — several party
@@ -1721,12 +1735,16 @@ export default function ReportResult() {
    * Ranking belongs on the review step, which already sorts by count.
    */
   const filteredParties = useMemo(() => {
+    // Off the ballot = not listed, unless it already holds a count (read off the
+    // sheet, or typed before the list narrowed): a number is never hidden.
+    const on = ballot && !showAllParties ? new Set(ballot) : null;
+    const listed = on ? parties.filter((p) => on.has(p.code) || (counts[p.code] ?? '') !== '') : parties;
     const q = search.trim().toLowerCase();
-    if (!q) return parties;
-    return parties.filter(
+    if (!q) return listed;
+    return listed.filter(
       (p) => p.code.toLowerCase().includes(q) || p.name.toLowerCase().includes(q),
     );
-  }, [parties, search]);
+  }, [parties, search, ballot, showAllParties, counts]);
 
   // -- step 6: review + submit ---------------------------------------------
   /** Optional EC8A serial, mirroring the PWA's #sheet-serial field. */
@@ -2536,6 +2554,18 @@ export default function ReportResult() {
               value={search}
               onChangeText={setSearch}
             />
+            {ballot ? (
+              <View className="mb-3 flex-row flex-wrap items-center">
+                <Text className="text-sm text-muted">
+                  {i18nT(showAllParties ? 'observe.ballot-note-all' : 'observe.ballot-note', { v0: ballot.length })}{' '}
+                </Text>
+                <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setShowAllFor(showAllParties ? null : ballotId)}>
+                  <Text className="text-sm font-semibold text-good-ink underline">
+                    {i18nT(showAllParties ? 'observe.ballot-show-listed' : 'observe.ballot-show-all')}
+                  </Text>
+                </Pressable>
+              </View>
+            ) : null}
             {filteredParties.slice(0, 30).map((p) => (
               <View key={p.code} className="mb-2 flex-row items-center rounded-2xl bg-card px-4 py-2">
                 {logos[p.code] ? (

@@ -2999,5 +2999,9 @@
   "nearme.ready-no": "Echekwabeghị ya. Mepee Hawkeye otu ugboro na njikọ ịntanetị, a ga-echekwa ya.",
   "lite.room-opens-on-website": "Ọnụ ụlọ mkpọsa na-emepe na weebụsaịtị. Banye ebe ahụ ka ị jikwaa ya.",
   "lite.room-leaving-title": "Na-emepe weebụsaịtị",
-  "lite.open-website": "Mepee weebụsaịtị"
+  "lite.open-website": "Mepee weebụsaịtị",
+  "observe.ballot-note": "Ndepụta ikpeazụ INEC nwere otu ndọrọ ndọrọ ọchịchị {v0} na ntuli aka a. E zoro ndị ọzọ.",
+  "observe.ballot-note-all": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. Ndepụta ikpeazụ INEC nwere {v0} na ntuli aka a.",
+  "observe.ballot-show-all": "Gosi otu niile",
+  "observe.ballot-show-listed": "Gosi naanị otu ndị nọ na ntuli aka a"
 }

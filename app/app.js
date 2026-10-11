@@ -2823,7 +2823,84 @@ function cachedContests() {
   return [];
 }
 
+/**
+ * THE RACE'S OWN BALLOT.
+ *
+ * The form listed all 22 registered parties for every race. INEC's final lists
+ * say who actually fields a candidate: 18 parties for President, and a
+ * different set in each senatorial district, federal constituency and state.
+ * ballots-2027.json (scripts/build_ballots_2027.py) holds those sets, keyed by
+ * the register's own district names, so the unit already chosen finds its own.
+ *
+ * It only HIDES rows, and only empty ones (the CSS rule beside #vote-inputs).
+ * Every party is still sent, as 0 — what a report says is unchanged, so reports
+ * from an older copy of the app still compare like for like. An unknown race,
+ * a State Assembly race, a missing file: every party is shown, as before.
+ */
+let ballots = null;
+let ballotShowAll = false;
+const ballotKey = (s) => String(s || '').toUpperCase().replace(/[^A-Z0-9]+/g, '');
+const ballotState = (s) => {
+  const k = ballotKey(s);
+  if (k === 'FEDERALCAPITALTERRITORY' || k === 'FCTABUJA' || k === 'ABUJA') return 'FCT';
+  return k === 'NASSARAWA' ? 'NASARAWA' : k;
+};
+function raceBallot(contest, u) {
+  if (!ballots || !u || !contest) return null;
+  const st = ballotState(u.state);
+  const b = contest === 'PRES' ? ballots.PRES
+    : contest === 'GOV' ? (ballots.GOV || {})[st]
+      : contest === 'SEN' ? (ballots.SEN || {})[`${st}|${ballotKey(u.senatorial)}`]
+        : contest === 'REP' ? (ballots.REP || {})[`${st}|${ballotKey(u.federal_constituency)}`]
+          : null;
+  return Array.isArray(b) && b.length ? b : null;
+}
+function applyBallot() {
+  const wrap = $('vote-inputs');
+  if (!wrap) return;
+  const sel = $('sel-contest');
+  const b = raceBallot(sel && sel.value, selectedPu);
+  const on = b && !ballotShowAll ? new Set(b) : null;
+  for (const row of wrap.querySelectorAll('.vote-row')) {
+    const inp = row.querySelector('input');
+    row.dataset.off = on && inp && !on.has(inp.dataset.party) ? '1' : '';
+  }
+  const note = $('ballot-note');
+  if (!note) return;
+  note.hidden = !b;
+  if (!b) return;
+  $('ballot-note-text').textContent = ballotShowAll
+    ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: b.length })
+    : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: b.length });
+  $('ballot-toggle').textContent = ballotShowAll
+    ? T('observe.ballot-show-listed', 'Show only the parties in this race')
+    : T('observe.ballot-show-all', 'Show all parties');
+}
+function loadBallots() {
+  if (ballots) return;
+  const stored = () => {
+    try {
+      const j = JSON.parse(localStorage.getItem('hk_ballots2027') || 'null');
+      if (j && Array.isArray(j.PRES) && j.PRES.length) { ballots = j; applyBallot(); }
+    } catch { /* unreadable — every party stays on screen */ }
+  };
+  fetch('ballots-2027.json')
+    .then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))))
+    .then((j) => {
+      // Validated before it is kept: a cached error page must not hide parties.
+      if (!j || !Array.isArray(j.PRES) || !j.PRES.length) throw new Error('shape');
+      ballots = j;
+      try { localStorage.setItem('hk_ballots2027', JSON.stringify(j)); } catch { /* quota */ }
+      applyBallot();
+    })
+    .catch(stored);
+}
+if ($('sel-contest')) $('sel-contest').addEventListener('change', () => { ballotShowAll = false; applyBallot(); });
+if ($('ballot-toggle')) $('ballot-toggle').addEventListener('click', (e) => { e.preventDefault(); ballotShowAll = !ballotShowAll; applyBallot(); });
+document.addEventListener('hawkeye-lang', () => { try { applyBallot(); } catch (e) { /* not on this page */ } });
+
 async function prepareReportUI() {
+  loadBallots();
   const [p, c, l] = await Promise.all([
     parties.length === 0 ? api('/api/parties').then((r) => r.body).catch(() => []) : parties,
     // Fall back to the last known-good list rather than to [], because [] is
@@ -2869,6 +2946,7 @@ async function prepareReportUI() {
     row.dataset.q = `${p.code} ${p.name}`.toLowerCase();
     wrap.appendChild(row);
   }
+  applyBallot();
   // Filter, don't scroll. A row with a COUNT ALREADY IN IT is never hidden:
   // filtering is a way to find a party, not a way to lose a number you typed.
   const filter = $('vote-filter');
@@ -2939,6 +3017,7 @@ function fillContests(keepChoice) {
   applyRaceProposal(sel);
   updateScopeNotice();
   updateSubmitState();
+  applyBallot();   // a new unit is a new district: its Senate and Reps ballots differ
 }
 // The list carries composed lines ("Governorship — Opens 6 Feb") that no key can
 // repaint: rebuild it when the language lands or changes. The choice is kept.

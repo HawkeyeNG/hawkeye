@@ -1,0 +1,22 @@
+{
+  "observe.ballot-note": {
+    "ha": "Jerin ƙarshe na INEC yana da jam'iyyu {v0} a wannan zaɓen. An ɓoye sauran.",
+    "ig": "Ndepụta ikpeazụ INEC nwere otu ndọrọ ndọrọ ọchịchị {v0} na ntuli aka a. E zoro ndị ọzọ.",
+    "yo": "Àkójọ ìkẹyìn INEC ní ẹgbẹ́ òṣèlú {v0} nínú ìdìbò yìí. A ti fi àwọn yòókù pamọ́."
+  },
+  "observe.ballot-note-all": {
+    "ha": "Ana nuna kowace jam'iyya mai rajista. Jerin ƙarshe na INEC yana da {v0} a wannan zaɓen.",
+    "ig": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. Ndepụta ikpeazụ INEC nwere {v0} na ntuli aka a.",
+    "yo": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. Àkójọ ìkẹyìn INEC ní {v0} nínú ìdìbò yìí."
+  },
+  "observe.ballot-show-all": {
+    "ha": "Nuna dukkan jam'iyyu",
+    "ig": "Gosi otu niile",
+    "yo": "Fi gbogbo ẹgbẹ́ hàn"
+  },
+  "observe.ballot-show-listed": {
+    "ha": "Nuna jam'iyyun wannan zaɓen kawai",
+    "ig": "Gosi naanị otu ndị nọ na ntuli aka a",
+    "yo": "Fi àwọn ẹgbẹ́ inú ìdìbò yìí nìkan hàn"
+  }
+}

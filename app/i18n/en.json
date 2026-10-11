@@ -2973,5 +2973,9 @@
   "nearme.ready-no": "Not saved yet. Open Hawkeye once with a connection and it will be.",
   "lite.room-opens-on-website": "The campaign room opens on the website. Sign in there to manage it.",
   "lite.room-leaving-title": "Opening the website",
-  "lite.open-website": "Open the website"
+  "lite.open-website": "Open the website",
+  "observe.ballot-note": "INEC's final list has {v0} parties in this race. The others are hidden.",
+  "observe.ballot-note-all": "Every registered party is shown. INEC's final list has {v0} in this race.",
+  "observe.ballot-show-all": "Show all parties",
+  "observe.ballot-show-listed": "Show only the parties in this race"
 }

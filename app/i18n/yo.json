@@ -2999,5 +2999,9 @@
   "nearme.ready-no": "A kò tíì fi pamọ́. Ṣí Hawkeye lẹ́ẹ̀kan pẹ̀lú ìsopọ̀ íńtánẹ́ẹ̀tì, a ó sì fi pamọ́.",
   "lite.room-opens-on-website": "Yàrá ìpolongo ń ṣí lórí ojú-òpó wẹ́ẹ̀bù. Wọlé níbẹ̀ láti ṣàkóso rẹ̀.",
   "lite.room-leaving-title": "Ń ṣí ojú-òpó wẹ́ẹ̀bù",
-  "lite.open-website": "Ṣí ojú-òpó wẹ́ẹ̀bù"
+  "lite.open-website": "Ṣí ojú-òpó wẹ́ẹ̀bù",
+  "observe.ballot-note": "Àkójọ ìkẹyìn INEC ní ẹgbẹ́ òṣèlú {v0} nínú ìdìbò yìí. A ti fi àwọn yòókù pamọ́.",
+  "observe.ballot-note-all": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. Àkójọ ìkẹyìn INEC ní {v0} nínú ìdìbò yìí.",
+  "observe.ballot-show-all": "Fi gbogbo ẹgbẹ́ hàn",
+  "observe.ballot-show-listed": "Fi àwọn ẹgbẹ́ inú ìdìbò yìí nìkan hàn"
 }

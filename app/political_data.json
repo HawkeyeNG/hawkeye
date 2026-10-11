@@ -153,8 +153,8 @@
     }
   },
   "race2027": {
-    "asOf": "2026-08-01",
-    "note": "INEC's published field of 19 candidates and their running mates (personal particulars displayed from 1 August 2026). Compiled from public records — verify against INEC; official candidate lists and results are INEC’s.",
+    "asOf": "2026-10-11",
+    "note": "INEC's final list of 18 candidates and their running mates (published 12 September 2026). Taken from INEC's list — verify against INEC; official candidate lists and results are INEC’s.",
     "election": "Presidential · 2027 general election",
     "candidates": [
       {
@@ -191,7 +191,7 @@
     ],
     "minors": [
       {
-        "name": "Rufai Adekunle Omoaje",
+        "name": "Rufai Adekunle Omo-Aje",
         "party": "AA",
         "meta": "AA · running mate Shehu Hussaini"
       },
@@ -208,7 +208,7 @@
       {
         "name": "Seyi Makinde",
         "party": "APM",
-        "meta": "APM · running mate Ibrahim Adamu Bala"
+        "meta": "APM · running mate Musa Lawal Daura"
       },
       {
         "name": "Yusuf Kabiru",
@@ -221,29 +221,24 @@
         "meta": "BP · running mate Mustapha Usman Turaki"
       },
       {
-        "name": "Memeh Samuel",
+        "name": "Adebisi Moses Olusoji",
         "party": "DLA",
-        "meta": "DLA · running mate Balogun Alex"
+        "meta": "DLA · running mate Abubakar Nafisat Usaku"
       },
       {
-        "name": "Okereke Sunday Chibuzor",
+        "name": "Okereke Sunday Chibuzo",
         "party": "LP",
         "meta": "LP · running mate Konto Hajja Bintu"
       },
       {
-        "name": "Okwori Ada Elizabeth Frederick",
+        "name": "Okwori Ada Elizabeth Fredrick",
         "party": "NDP",
-        "meta": "NDP · running mate Chikwuemeka Uchenna Anthony"
+        "meta": "NDP · running mate Chukwuemeka Uchenna Anthony"
       },
       {
-        "name": "Dikwa Suleiman Mohammed",
-        "party": "NNPP",
-        "meta": "NNPP · running mate Abubakar Isah"
-      },
-      {
-        "name": "Okereke Iken Esther",
+        "name": "Okereke Nkem Esther",
         "party": "NRM",
-        "meta": "NRM · running mate Samuel Magdalene Gali"
+        "meta": "NRM · running mate Sulaiman Nasir Muhammed"
       },
       {
         "name": "Sandy Onor",
@@ -253,20 +248,20 @@
       {
         "name": "Donald Duke",
         "party": "PRP",
-        "meta": "PRP · running mate Buba Musa"
+        "meta": "PRP · running mate Rabiu Kabiru"
       },
       {
         "name": "Adebayo Adewole Ebenezer",
         "party": "SDP",
-        "meta": "SDP · running mate Bugaje Usman Mohammed"
+        "meta": "SDP · running mate Bugaje Usman Muhammed"
       },
       {
-        "name": "Chukwu Anita Zugwai",
+        "name": "Agada Peter Ada",
         "party": "YPP",
-        "meta": "YPP · running mate Egbeola Olawale Mertins"
+        "meta": "YPP · running mate Key Patience Ndidi"
       },
       {
-        "name": "Nwanyanwu Daniel Danerechukwu",
+        "name": "Nwanyanwu Daniel Daberechukwu",
         "party": "ZLP",
         "meta": "ZLP · running mate Hassan Khalid"
       }

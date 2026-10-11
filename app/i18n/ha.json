@@ -3000,5 +3000,9 @@
   "nearme.ready-no": "Ba a ajiye ba tukuna. Buɗe Hawkeye sau ɗaya da haɗin intanet, za a ajiye.",
   "lite.room-opens-on-website": "Ɗakin kamfen yana buɗewa a shafin yanar gizo. Ka shiga a can domin ka gudanar da shi.",
   "lite.room-leaving-title": "Ana buɗe shafin yanar gizo",
-  "lite.open-website": "Buɗe shafin yanar gizo"
+  "lite.open-website": "Buɗe shafin yanar gizo",
+  "observe.ballot-note": "Jerin ƙarshe na INEC yana da jam'iyyu {v0} a wannan zaɓen. An ɓoye sauran.",
+  "observe.ballot-note-all": "Ana nuna kowace jam'iyya mai rajista. Jerin ƙarshe na INEC yana da {v0} a wannan zaɓen.",
+  "observe.ballot-show-all": "Nuna dukkan jam'iyyu",
+  "observe.ballot-show-listed": "Nuna jam'iyyun wannan zaɓen kawai"
 }

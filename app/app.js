@@ -2524,13 +2524,16 @@ $('btn-locate').onclick = async () => {
 };
 
 // ---------- locate: register browse (units without coordinates) ----------
-async function fillSelect(sel, items, placeholder) {
+async function fillSelect(sel, items, placeholder, key) {
   // A non-array here USED TO THROW and take the whole handler down with it, so
   // one bad payload emptied every dropdown in the cascade rather than just its
   // own. Degrade to an empty, disabled select instead: visibly nothing to pick,
   // and the steps after it still run.
   const list = Array.isArray(items) ? items : [];
-  sel.innerHTML = `<option value="">${placeholder}</option>` +
+  // `key` tags the placeholder so i18n.js repaints it: this runs as soon as the
+  // list arrives, which is often BEFORE the language bundle, and an untagged
+  // option then stayed English for the rest of the visit (REP-LANG-01).
+  sel.innerHTML = `<option value=""${key ? ` data-i18n="${key}"` : ''}>${placeholder}</option>` +
     list.map((i) => `<option>${i}</option>`).join('');
   sel.disabled = list.length === 0;
 }
@@ -2672,7 +2675,7 @@ async function refApi(path) {
 $('browse-block').addEventListener('toggle', async () => {
   if ($('browse-block').open && $('sel-state').options.length <= 1) {
     const { body } = await refApi('/api/register/states');
-    fillSelect($('sel-state'), body, T('common.select-state', '— select state —'));
+    fillSelect($('sel-state'), body, T('common.select-state', '— select state —'), 'common.select-state');
   }
 });
 $('sel-state').onchange = async () => {
@@ -2682,14 +2685,14 @@ $('sel-state').onchange = async () => {
   // the observer is still choosing an LGA, so it is on the phone by then.
   void loadStatePack($('sel-state').value);
   const { body } = await refApi(`/api/register/lgas?state=${encodeURIComponent($('sel-state').value)}`);
-  fillSelect($('sel-lga'), body, T('common.select-lga', '— select LGA —'));
+  fillSelect($('sel-lga'), body, T('common.select-lga', '— select LGA —'), 'common.select-lga');
 };
 $('sel-lga').onchange = async () => {
   $('register-units').innerHTML = '';
   const { body } = await refApi(
     `/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`,
   );
-  fillSelect($('sel-ward'), body, T('common.select-ward', '— select ward —'));
+  fillSelect($('sel-ward'), body, T('common.select-ward', '— select ward —'), 'common.select-ward');
 };
 $('sel-ward').onchange = async () => {
   const { body, error, status } = await refApi(
@@ -2912,7 +2915,7 @@ async function prepareReportUI() {
  *
  * Called again from prepareReportUI() once the contests land.
  */
-function fillContests() {
+function fillContests(keepChoice) {
   if (!selectedPu) return;
   const sel = $('sel-contest');
   if (!sel) return;
@@ -2920,7 +2923,14 @@ function fillContests() {
   // See window.HAWKEYE_RACES in menu.js for why /api/contests alone is too short.
   const applicableContests = contests.filter((c) => contestApplies(selectedPu, c.code, c.states));
   if (window.HAWKEYE_RACES) {
+    // A unit change starts the choice over, as it always has here; only a
+    // language repaint (keepChoice) carries it across, since nothing changed.
+    const before = keepChoice ? sel.value : '';
+    if (!keepChoice) sel.value = '';
     window.HAWKEYE_RACES.fill(sel, applicableContests, { placeholder: T('race.select-election', '— select election —') });
+    // fill() picks a lone race by itself, with no change event. Step 3 opens the
+    // count from that event, so a race chosen silently would leave it stuck.
+    if (!before && sel.value) sel.value = '';
   } else {
     sel.innerHTML = `<option value="">${T('race.select-election', '— select election —')}</option>`
       + applicableContests.map((c) => `<option value="${c.code}">${c.name}</option>`).join('');
@@ -2930,6 +2940,9 @@ function fillContests() {
   updateScopeNotice();
   updateSubmitState();
 }
+// The list carries composed lines ("Governorship — Opens 6 Feb") that no key can
+// repaint: rebuild it when the language lands or changes. The choice is kept.
+document.addEventListener('hawkeye-lang', () => { try { fillContests(true); } catch (e) { /* not on this page */ } });
 
 /**
  * A RACE THAT IS NOT OPEN IS NOT AN OPTION (flow walkthrough REP-RES-03).
@@ -2952,6 +2965,10 @@ function markClosedRaces(sel, list) {
     const d = at ? new Date(at) : null;
     const when = d && !Number.isNaN(d.getTime()) ? d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) : '';
     o.disabled = true;
+    // No longer a bare keyed name: left tagged, i18n.js would repaint it as the
+    // name alone and drop the "Opens …" part. fillContests() re-runs on a
+    // language change instead (listener below it).
+    o.removeAttribute('data-i18n');
     o.textContent = `${o.textContent} — ${when ? T('results.opens-on', 'Opens {v0}', { v0: when }) : T('race.not-open-yet', 'not open yet')}`;
     if (sel.value === o.value) sel.value = '';
   }
@@ -4323,10 +4340,15 @@ $('btn-submit').onclick = async () => {
       : T('common.venue-photo-pairs-match', '🏫 {v0} venue photo pairs match', { v0: r.venueMatches }))
     : '';
   $('entry-hash').textContent = body.entryHash;
-  const contestName = (contests.find((c) => c.code === r.contest) || {}).name || r.contest;
+  // In the reader's language: the server's name and scope line are English only.
+  // The five general races are worded here (contestScope mirrors the server's);
+  // a by-election keeps the server's line, which carries its own place name.
+  const rc = contests.find((c) => c.code === r.contest);
+  const contestName = rc ? ((window.HAWKEYE_RACES && window.HAWKEYE_RACES.name(rc)) || rc.name) : r.contest;
+  const scopeLine = ['PRES', 'SEN', 'REP', 'GOV', 'SHA'].includes(r.contest) ? contestScope(selectedPu, r.contest) : r.scope;
   $('result-summary').innerHTML = `
     <p><strong>${selectedPu.name}</strong> — ${contestName}</p>
-    ${r.scope ? `<p class="hint">${r.scope}</p>` : ''}
+    ${scopeLine ? `<p class="hint">${scopeLine}</p>` : ''}
     <p>${T('observe.result-status-line', 'Status: {status} · Confidence: {pct} ({m} of {n} reports match)', {
     status: `<strong class="status-${r.status}">${String(r.status).toUpperCase()}</strong>`,
     pct: `<strong>${r.confidence}%</strong>`, m: r.matchingReports, n: r.totalReports })}</p>

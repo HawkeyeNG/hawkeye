@@ -9,7 +9,7 @@
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=200">
+  <link rel="stylesheet" href="styles.css?v=201">
   <script src="native.js?v=127"></script>
   <script src="/monitor.js?v=5" defer></script>
   <!-- Leaflet self-hosted (vendor/leaflet) — CDN was a single point of failure
@@ -223,15 +223,17 @@
       $('stats').appendChild(i);
     }
     document.addEventListener('hawkeye-lang', paintStats);
-    async function fill(sel, items, ph) { sel.innerHTML = `<option value="">${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; }
+    // `key` tags the placeholder for i18n.js: this script runs before the language
+    // bundle lands, so an untagged one stayed English (REP-LANG-01).
+    async function fill(sel, items, ph, key) { sel.innerHTML = `<option value=""${key ? ` data-i18n="${key}"` : ''}>${ph}</option>` + items.map((i) => `<option>${i}</option>`).join(''); sel.disabled = !items.length; }
 
     $('sel-state').onchange = async () => {
-      $('units').innerHTML = ''; fill($('sel-ward'), [], T('common.select', '— select —'));
-      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), T('common.select-lga', '— select LGA —'));
+      $('units').innerHTML = ''; fill($('sel-ward'), [], T('common.select', '— select —'), 'common.select');
+      fill($('sel-lga'), await (await fetch('/api/register/lgas?state=' + encodeURIComponent($('sel-state').value))).json(), T('common.select-lga', '— select LGA —'), 'common.select-lga');
     };
     $('sel-lga').onchange = async () => {
       $('units').innerHTML = '';
-      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), T('common.select-ward', '— select ward —'));
+      fill($('sel-ward'), await (await fetch(`/api/register/wards?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}`)).json(), T('common.select-ward', '— select ward —'), 'common.select-ward');
     };
     $('sel-ward').onchange = async () => {
       const r = await (await fetch(`/api/register/units?state=${encodeURIComponent($('sel-state').value)}&lga=${encodeURIComponent($('sel-lga').value)}&ward=${encodeURIComponent($('sel-ward').value)}`)).json();
@@ -595,13 +597,13 @@
       $('pu-search-host').hidden = false;
       window.puSearch.mount($('pu-search-host'), { onSelect: pickUnit });
       showMyUnit();
-      fill($('sel-state'), await (await fetch('/api/register/states')).json(), T('common.select-state', '— select state —'));
+      fill($('sel-state'), await (await fetch('/api/register/states')).json(), T('common.select-state', '— select state —'), 'common.select-state');
     })();
   </script>
   <script src="tg.js?v=95"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
-  <script src="menu.js?v=198"></script>
+  <script src="menu.js?v=200"></script>
   <script src="shell.js?v=4" defer></script>
 </body>
 </html>

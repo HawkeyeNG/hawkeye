@@ -2659,6 +2659,10 @@ html.scrolling *::-webkit-scrollbar-thumb {
    Account", or the last footer link can always be scrolled clear of it. Where a
    pinned action bar exists, menu.js fabDock() lifts the bubble above it. */
 body.has-fab .gov-footer .wrap { padding-bottom: 96px; }
+/* On a phone the fixed Ask bubble occupies the right ~70px of whatever row is at
+   its height, and on Races that was the governorship row's "28 states" pill on
+   first paint (FA-FOLLOW-6). Those two rows keep their pill left of that column. */
+@media (max-width: 480px) { body.has-fab div.card > .race-item > .rc-pill { margin-right: 62px; } }
 html.native-app body.has-fab main,
 body.has-fab:not(:has(.gov-footer)) main { padding-bottom: 96px; }
 

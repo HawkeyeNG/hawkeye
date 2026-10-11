@@ -19,7 +19,7 @@
       document.documentElement.style.background="#004225 url(splash-icon.png?v=1) center/240px 240px no-repeat";
   }catch(e){}})();</script>
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
-  <link rel="stylesheet" href="styles.css?v=200" />
+  <link rel="stylesheet" href="styles.css?v=201" />
   <script>
     // Signed-in observers get the Observer Home instead of the landing page.
     // Class set before first paint so neither view flashes; a dead token is
@@ -227,6 +227,7 @@
        while it shows, the Practice Day card steps aside via .pday-yield. */
     #pday-card.pday-yield { display: none; }
     .pnudge-card h2 { margin-bottom: 6px; }
+    .pnudge-card .pnudge-ready { display: inline-block; margin: 10px 0 0 14px; font-weight: 700; font-size: .92rem; color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
     /* Undo styles.css's full-width green `button` — this is a small ×. The tap
        target is 44px through ::after, NOT a negative margin (home_spacing_test
        forbids those here), so the heading row keeps its height. */
@@ -971,7 +972,9 @@
           '<h2><span>' + esc(tt('index.practice-nudge-title', 'Try a practice run — 5 minutes')) + '</span>'
           + '<button type="button" class="pnudge-x" aria-label="' + esc(tt('index.practice-nudge-dismiss', 'Dismiss')) + '">×</button></h2>'
           + '<p class="pday-line">' + esc(tt('index.practice-nudge-sub', 'Rehearse reporting a result on a practice polling unit before polling day. Nothing you enter counts as a real result.')) + '</p>'
-          + '<a class="btn-accent pday-go" href="practice.html">' + esc(tt('index.practice-nudge-go', 'Start the practice run')) + '</a>';
+          + '<a class="btn-accent pday-go" href="practice.html">' + esc(tt('index.practice-nudge-go', 'Start the practice run')) + '</a>'
+          // The readiness check was only in the menu; nothing in a first run pointed to it (ONB-18).
+          + '<a class="pnudge-ready" href="ready.html">' + esc(tt('ready.title', 'Ready for election day')) + ' ›</a>';
         nudgeCard.querySelector('.pnudge-x').addEventListener('click', () => {
           try { localStorage.setItem(NUDGE_KEY, '1'); } catch { /* hidden for this visit either way */ }
           nudgeOn = false;
@@ -1238,7 +1241,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=198"></script>
+  <script src="menu.js?v=200"></script>
   <script src="shell.js?v=4" defer></script>
 </body>
 </html>

@@ -41,6 +41,7 @@ import { humanError } from '@/lib/errors';
 import { dayMonthYear } from '@/lib/dates';
 import { t as i18nT } from '@/lib/i18n';
 import { KIND_LABEL } from '@/lib/incident-kinds';
+import { ELECTION_TYPES } from '@/lib/races';
 
 /** The race-results Telegram channel — the one the FAQ and the web Profile name. */
 const RESULTS_CHANNEL = 'https://t.me/HawkeyeNG_Results';
@@ -622,7 +623,12 @@ export default function Profile() {
    * contest code — "GOV" on its own told nobody which election it meant. The
    * code only stands in while /api/contests is in flight or unreachable.
    */
-  const raceName = (code: string) => races[code] ?? code;
+  // By KEY for the five general races: `races` holds the server's English names,
+  // which is what a Hausa Profile was showing ("Presidential", REP-LANG-04).
+  const raceName = (code: string) => {
+    const t = ELECTION_TYPES.find((x) => x.code === code);
+    return t ? i18nT(t.labelKey) : races[code] ?? code;
+  };
 
   const acts: { key: string; icon: keyof typeof Feather.glyphMap; label: string; count: number }[] = [
     { key: 'reports', icon: 'file-text', label: i18nT('n.app.profile.result-reports'), count: me?.reports?.length ?? 0 },

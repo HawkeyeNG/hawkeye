@@ -732,7 +732,9 @@ async function signupNative(lang) {
       await page.reload({ waitUntil: 'load' }).catch(() => {});
       await nativeReady(page);
       s = await R.step(page, 'reload on the code screen');
-      ck('reloadAtCode', { url: page.url().replace(NBASE, 'native:'), number: await ninputs(page).nth(0).inputValue().catch(() => '') }, s.png);
+      // Judged by the STEP shown, as on the web: once the code step is resumed the
+      // first field is the (empty) code box, so its value says nothing (ONB-15).
+      ck('reloadAtCode', { mode: await nbtn(page, L('n.app.profile.verify')).isVisible().catch(() => false) ? 'code' : 'phone entry', url: page.url().replace(NBASE, 'native:'), number: await ninputs(page).nth(0).inputValue().catch(() => '') }, s.png);
       // back into the code screen
       if (!(await nbtn(page, 'Telegram').isVisible().catch(() => false))) await toForm(false);
       await nfill(page, 0, FX_PHONE);
@@ -1405,8 +1407,12 @@ async function firstrunWeb(surface, lang) {
     const nudge = await page.locator('#pnudge-card').isVisible().catch(() => false);
     ck('nudgeShown', nudge, s.png);
     if (nudge) order.push('practice nudge');
+    // The offer lives on the practice nudge card. This walk has no saved unit, so
+    // Home shows the unit prompt and the card stays hidden: count the link on the
+    // card itself then, or the check could never pass (ONB-18).
     const ready = await page.locator('a[href="ready.html"]:visible').count();
-    ck('readyOffered', ready > 0, s.png);
+    const onCard = nudge ? 0 : await page.locator('#pnudge-card a[href="ready.html"]').count();
+    ck('readyOffered', ready > 0 || onCard > 0, s.png);
     ck('unitPromptOnHome', /polling unit|rukunin zaɓe/i.test(t) ? (t.match(/[^\n]*(polling unit|rukunin zaɓe)[^\n]*/i) || [''])[0].slice(0, 100) : '', s.png);
     ck('order', order, s.png);
   } catch (e) { ERRORS.push(`${flow}/${surface}/${lang}: ${e.message}`); }

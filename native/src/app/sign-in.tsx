@@ -2,6 +2,7 @@ import Feather from '@expo/vector-icons/Feather';
 import * as Haptics from 'expo-haptics';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -120,6 +121,9 @@ function safeNext(raw: unknown): string | null {
  * failure we drop back to the request step with the error line.
  */
 type Step = 'password' | 'request' | 'otp' | 'wa-send' | 'call-send' | 'set-password' | 'exists' | 'pk-offer';
+/** A sign-up in progress, kept across a restart for PENDING_MS (see the effects in the screen). */
+const PENDING_KEY = 'hk_signin_pending_v1';
+const PENDING_MS = 10 * 60_000;
 /** Why we're sending a code: sign-up proof / forgot-password / no password yet. */
 type Purpose = 'signup' | 'reset' | 'no-password';
 
@@ -306,6 +310,37 @@ export default function SignIn() {
   const [inviteBad, setInviteBad] = useState(false);
   /** The "is this your number?" sheet before an organisation code is spent. */
   const [orgConfirm, setOrgConfirm] = useState(false);
+
+  /* A SIGN-UP SURVIVES A RESTART (onboarding walkthrough ONB-15). Everything
+     above is component state, so leaving for the SMS or WhatsApp that carries
+     the code — which on a small phone can end this app — came back to an empty
+     form: the number gone, and a code already sent with nowhere to type it. For
+     ten minutes the number and where the observer had got to are kept on the
+     phone: the code step reopens as the code step, anything else reopens with
+     the number filled in. It is cleared the moment the account step is reached. */
+  const pendingRead = useRef(false);
+  useEffect(() => {
+    AsyncStorage.getItem(PENDING_KEY)
+      .then((raw) => {
+        pendingRead.current = true;
+        if (!raw) return;
+        const p = JSON.parse(raw) as { phone?: string; purpose?: Purpose; channel?: Channel | null; step?: 'otp' | 'request'; at?: number };
+        if (!p.phone || !p.at || Date.now() - p.at > PENDING_MS) { AsyncStorage.removeItem(PENDING_KEY).catch(() => {}); return; }
+        setPhone((cur) => cur || p.phone!);
+        if (p.purpose) setPurpose(p.purpose);
+        if (p.step === 'otp' && p.channel) { setChannel(p.channel); setStep('otp'); } else setStep('request');
+      })
+      .catch(() => { pendingRead.current = true; });
+  }, []);
+  useEffect(() => {
+    if (!pendingRead.current) return;
+    if (step === 'otp' || step === 'request' || step === 'wa-send' || step === 'call-send') {
+      if (!phone) return;
+      AsyncStorage.setItem(PENDING_KEY, JSON.stringify({ phone, purpose, channel, step: step === 'otp' ? 'otp' : 'request', at: Date.now() })).catch(() => {});
+    } else {
+      AsyncStorage.removeItem(PENDING_KEY).catch(() => {});
+    }
+  }, [step, phone, purpose, channel]);
 
   /**
    * ONE FIELD, TWO KINDS OF CODE (owner decision, 2026-09-28), told apart by

@@ -28,7 +28,7 @@ import { RekorAnchor } from '@/components/rekor-anchor';
 import { Crumb, Prompt } from '@/components/wizard';
 import { api, BRAND, type Contest, opensLine, type Party } from '@/lib/api';
 import { pick, tap } from '@/lib/haptics';
-import type { Race, StateName } from '@/lib/races';
+import { ELECTION_TYPES, type Race, type StateName } from '@/lib/races';
 import { useUi } from '@/lib/theme';
 import { useAuth } from '@/lib/auth';
 import { describeFixFailure, trySubmitFix } from '@/lib/location';
@@ -759,7 +759,9 @@ export default function ReportCollation() {
               </Text>
               <Text className="text-xs text-muted">{scopeLine}</Text>
               {contest ? (
-                <Text className="pt-0.5 text-xs font-semibold text-good-ink">{contest.name}</Text>
+                <Text className="pt-0.5 text-xs font-semibold text-good-ink">
+                  {((t) => (t ? i18nT(t.labelKey) : contest.name))(ELECTION_TYPES.find((x) => x.code === contest.code))}
+                </Text>
               ) : null}
             </View>
             <View className="mb-3 flex-row gap-3">

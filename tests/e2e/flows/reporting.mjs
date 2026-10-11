@@ -213,6 +213,8 @@ function initScript(surface, { lang, signedIn = true, theme = 'dark' }) {
   })();`;
 }
 
+const LOCAL_APP = process.env.HK_LOCAL_APP === '1';
+const LOCAL_TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8' };
 const OPEN_CTX = new Set();
 async function newCtx(surface, { lang = 'en', S, vp = VP, geo = AT, signedIn = true } = {}) {
   while (OPEN_CTX.size >= 2) await sleep(200); // brief: at most 2 contexts at once
@@ -224,6 +226,14 @@ async function newCtx(surface, { lang = 'en', S, vp = VP, geo = AT, signedIn = t
     const req = route.request();
     const u = new URL(req.url());
     const isApi = u.pathname.startsWith('/api/');
+    // HK_LOCAL_APP=1: the site's own pages and scripts come from this checkout's
+    // app/, so a fix can be walked BEFORE it is deployed. Data (/api/, /reg/) and
+    // everything else still take the usual path below.
+    if (LOCAL_APP && u.hostname === 'hawkeye.com.ng' && req.method() === 'GET' && !isApi && !u.pathname.startsWith('/reg/')) {
+      const f = path.join(REPO, 'app', u.pathname === '/' ? 'index.html' : decodeURIComponent(u.pathname));
+      const type = LOCAL_TYPES[path.extname(f).toLowerCase()];
+      if (type && f.startsWith(path.join(REPO, 'app') + path.sep) && fs.existsSync(f)) return route.fulfill({ status: 200, headers: { 'content-type': type, 'cache-control': 'no-store' }, body: fs.readFileSync(f) });
+    }
     if (isApi && req.method() === 'GET' && S.hang.has(u.pathname)) { await sleep(45000); return route.abort('timedout').catch(() => {}); }
     if (isApi && req.method() === 'POST' && S.netFail.has(u.pathname)) { S.posts.push({ m: 'POST', p: u.pathname, aborted: true, at: Date.now() }); return route.abort('connectionreset'); }
     if (!S.apiDown) return route.fallback();

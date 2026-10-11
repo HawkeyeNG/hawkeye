@@ -199,7 +199,7 @@ export function buildFindings(checks, steps) {
   });
   add({
     id: 'ONB-15', flow: 'signup', severity: 'P3',
-    surfaces: on((s) => (s === 'native' ? v('signup', s, 'en', 'reloadAtCode')?.number === '' : v('signup', s, 'en', 'reloadAtCode')?.mode === 'phone entry')),
+    surfaces: on((s) => v('signup', s, 'en', 'reloadAtCode')?.mode === 'phone entry'),
     title: 'Leaving the code screen (Back, reload, app restart) loses the number and starts over',
     actual: 'Web/Lite: browser/Android Back on the code screen leaves sign-up for the previous page; a reload returns to an empty phone step (number and password gone). Native: the header close leaves sign-up; a restart opens an empty form. A code already sent cannot be typed in without sending another.',
     expected: 'Keep the number (and that a code is in flight) for a few minutes, so coming back from Telegram/SMS lands on the code step.',
@@ -219,7 +219,10 @@ export function buildFindings(checks, steps) {
   });
   add({
     id: 'ONB-17', flow: 'signout', severity: 'P3',
-    surfaces: [...on((s) => s !== 'native' && (v('signout', s, 'en', 'confirm_menu') === false || v('signout', s, 'en', 'confirm_profile') === false)), ...on((s) => s === 'native' && v('signout', s, 'en', 'confirm_profile') === true)],
+    // Native (which confirms) is listed only BESIDE a web surface that does not:
+    // on its own it is the good example, and listing it kept this open after the web was fixed.
+    surfaces: ((web) => (web.length ? [...web, ...on((s) => s === 'native' && v('signout', s, 'en', 'confirm_profile') === true)] : []))(
+      on((s) => s !== 'native' && (v('signout', s, 'en', 'confirm_menu') === false || v('signout', s, 'en', 'confirm_profile') === false))),
     title: 'Sign out: no confirmation on web/Lite (menu and Profile), a confirm sheet on native; different landings',
     actual: 'Web/Lite sign out at one tap from the menu or Profile and land on index.html (web: landing page; Lite: bounced to the Sign In form). Native asks "Sign out?" and lands on Welcome.',
     expected: 'One behaviour on all three (native\'s confirm + a welcome/landing).',
@@ -229,7 +232,9 @@ export function buildFindings(checks, steps) {
   });
   add({
     id: 'ONB-18', flow: 'firstrun', severity: 'P3',
-    surfaces: on((s) => v('firstrun', s, 'en', 'readyOffered') === false),
+    // Web and Lite only. Native Home stays lean by the owner's decision (4 Oct 2026);
+    // its readiness check is on More, and no link is added to Home for it.
+    surfaces: on((s) => s !== 'native' && v('firstrun', s, 'en', 'readyOffered') === false),
     title: 'First run never reaches the readiness check; web has no tour',
     actual: 'Order after sign-up — web: choose unit -> Home (practice nudge). Lite: choose unit -> Home -> 5-card tour -> practice nudge. Native: password -> choose unit -> Home -> tour -> practice nudge. "Ready for election day" (ready.html / /ready) is only in Menu/More; nothing in the first run points to it.',
     expected: 'The same sequence everywhere, with the readiness check offered once (e.g. on the nudge card after practice).',

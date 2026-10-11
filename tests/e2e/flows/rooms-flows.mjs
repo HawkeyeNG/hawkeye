@@ -351,11 +351,18 @@ async function webMyGroups(H, surface, lang) {
     const f4 = await R.step(page, 'refused', { screen: 'my-groups.html', note: 'row removed' });
     // Decline the unit of the first membership.
     await page.locator('button[data-act="decline"][data-gid="12"]').click();
+    // The page now ASKS first (hkConfirm). Accept it — the OK button is the last one —
+    // and record that it asked; the old walk never saw the dialog and judged a card
+    // that had not been declined at all.
+    const askedDecline = await page.waitForSelector('[data-hk-dialog="confirm"]', { timeout: 2500 })
+      .then(async (d) => { await d.evaluate((el) => { const b = [...el.querySelectorAll('button')].pop(); if (b) b.click(); }); return true; })
+      .catch(() => false);
     await H.waitText(page, wt(lang, 'my-groups.declined-note'), 8000);
     const f5 = await R.step(page, 'declined-unit', { screen: 'my-groups.html', tap: wt(lang, 'my-groups.not-where'), note: 'no confirmation; card says declined' });
     const undo = await page.locator('[data-gid="12"]').allInnerTexts().catch(() => []);
-    const canUndo = undo.some((x) => /undo|accept|confirm|is where/i.test(x));
-    if (H.check(`1:decline-no-undo:${surface}:${lang}`, { flagged: !canUndo, detail: `buttons on the card after declining: ${undo.join(' / ')}`, evidence: [f5] })) {
+    // A real button on the declined card, by its action — not a word in the card's text.
+    const canUndo = (await page.locator('[data-gid="12"][data-act="undecline"]').count().catch(() => 0)) > 0;
+    if (H.check(`1:decline-no-undo:${surface}:${lang}`, { flagged: !(canUndo || askedDecline), detail: `asked before declining: ${askedDecline}; undo button on the declined card: ${canUndo}; card: ${undo.join(' / ').slice(0, 160)}`, evidence: [f5] })) {
       H.finding({ ...DECLINE_NO_UNDO, surfaces: [surface], evidence: [H.ev(f5)] });
     }
     // Leave the accepted room.

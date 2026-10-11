@@ -2321,7 +2321,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       if (other !== d && !other.contains(d) && !d.contains(other)) other.open = false;
     });
   }, true);
+})();
 
+/* ITS OWN BLOCK, NOT THE ASK WIDGET'S. This lived inside the function above,
+   which returns early on observe.html, profile.html and (in the app) on
+   collation/practice/incidents — so window.HAWKEYE_RACES was never defined on
+   the very pages that file reports. They fell back to the server's English
+   names, and no fix made in fill() could reach them (REP-LANG-04). */
+(function () {
   /**
    * THE FULL RACES LIST, shared by every reporting flow (collation.html and
    * observe.html via app.js).
@@ -2386,7 +2393,10 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
       const by = new Map((available || []).map((c) => [c.code, c]));
       const prev = sel.value;
-      const head = o.placeholder === false ? '' : `<option value="">${esc(o.placeholder || i18nT('race.select-election', '— select election —'))}</option>`;
+      // Tagged for i18n.js when it is the standard line: filled before the language
+      // bundle arrives, an untagged option stayed English (REP-LANG-01/04).
+      const stdHead = i18nT('race.select-election', '— select election —');
+      const head = o.placeholder === false ? '' : `<option value=""${!o.placeholder || o.placeholder === stdHead ? ' data-i18n="race.select-election"' : ''}>${esc(o.placeholder || stdHead)}</option>`;
       /**
        * THE FIVE GENERAL CONTESTS, THEN ANY BY-ELECTION ON THE WIRE.
        *
@@ -2408,7 +2418,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       const extras = (available || []).filter((c) => !general.has(c.code));
       sel.innerHTML = head + RACE_ORDER.map((r) => {
         const c = by.get(r.code);
-        if (c) return `<option value="${esc(c.code)}">${esc(contestName(c))}</option>`;
+        if (c) return `<option value="${esc(c.code)}"${CONTEST_KEY[c.code] ? ` data-i18n="${CONTEST_KEY[c.code]}"` : ''}>${esc(contestName(c))}</option>`;
         // Named, visible, and unselectable — it tells people the race exists and
         // is coming without letting them file against an election with no date.
         return `<option value="${esc(r.code)}" disabled>${esc(i18nT(r.key, r.name))} — ${esc(i18nT('race.not-open-yet', 'not open yet'))}</option>`;

@@ -59,8 +59,8 @@ say "3/5 database snapshots"
 
 say "4/5 documents"
 mkdir -p "$DEST/docs/downloads"
-( cd "$WIN/Downloads" && find . -maxdepth 1 -iname '*hawkeye*' -print0 ) | rsync -rt --no-perms --no-owner --no-group --from0 --files-from=- \
-  "${SECRET_EXCL[@]}" "$WIN/Downloads/" "$DEST/docs/downloads/" >>"$LOG" 2>&1; say "   Downloads (Hawkeye*) rsync exit $?"
+( cd "$WIN/Downloads" && find . -maxdepth 1 \( -iname '*hawkeye*' -o -iname '*inixien*' -o -iname 'cac_receipt*' -o -iname 'affidavit*' \) -print0 ) | rsync -rt --no-perms --no-owner --no-group --from0 --files-from=- \
+  "${SECRET_EXCL[@]}" "$WIN/Downloads/" "$DEST/docs/downloads/" >>"$LOG" 2>&1; say "   Downloads (Hawkeye*, IniXien*, CAC filing papers) rsync exit $?"
 [ -d "$WIN/OneDrive/Documents/Work/IniXien" ] && { "${RS[@]}" "${SECRET_EXCL[@]}" "$WIN/OneDrive/Documents/Work/IniXien/" "$DEST/docs/IniXien/" >>"$LOG" 2>&1; say "   IniXien docs rsync exit $?"; }
 
 say "5/5 Claude's project memory"

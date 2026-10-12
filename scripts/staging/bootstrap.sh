@@ -744,10 +744,12 @@ SH
   grep -q '"smsOtp":false' <<<"${h:-}" && grep -q '"waCloud":false' <<<"$h" || ok=0
   n="$(cat /run/hawkeye/readers)"
   for i in $(seq 1 "$n"); do
-    h="$(curl -fsS --max-time 5 "${A[@]}" "http://127.0.0.1:844$i/api/health" 2>/dev/null || true)"
+    # Readers and the worker are started after the writer answers: give each the same grace, or a
+    # slower box fails this check a second before they listen (seen on the first Oracle run).
+    h=""; for _ in $(seq 1 60); do h="$(curl -fsS --max-time 2 "${A[@]}" "http://127.0.0.1:844$i/api/health" 2>/dev/null)" && break; sleep 1; done
     echo "reader$i  ${h:-NO ANSWER}"; grep -q '"role":"reader"' <<<"$h" || ok=0
   done
-  h="$(curl -fsS --max-time 5 "${A[@]}" http://127.0.0.1:8450/api/health 2>/dev/null || true)"
+  h=""; for _ in $(seq 1 60); do h="$(curl -fsS --max-time 2 "${A[@]}" http://127.0.0.1:8450/api/health 2>/dev/null)" && break; sleep 1; done
   echo "worker   ${h:-NO ANSWER}"; grep -q '"role":"worker"' <<<"$h" || ok=0
   h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve staging.hawkeye.com.ng:443:127.0.0.1 https://staging.hawkeye.com.ng/results.html || true)"
   echo "caddy    GET /results.html via :443 -> HTTP $h"; [ "$h" = 200 ] || ok=0

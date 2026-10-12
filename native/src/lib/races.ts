@@ -504,8 +504,9 @@ export type LocationProvenance =
    * Mechanical and checkable, but WEAKER than auto-matched: the restored seat is
    * a split of its parent, so the LGA is right while the centroid is the
    * parent's midpoint rather than this seat's. Fine for "roughly where", wrong
-   * for anything that needs the boundary. The 14 whose names reduce to nothing
-   * the register knows have no entry at all.
+   * for anything that needs the boundary. The 14 whose names do not reduce
+   * were placed from INEC's own sources — see the block comment in
+   * ASSEMBLY_LOCATIONS.
    */
   | 'restored-2026'
   /** Not established on evidence — carries a `note`. Do not rely on it blind. */
@@ -565,9 +566,8 @@ export const ASSEMBLY_LOCATIONS: Record<string, AssemblyLocation> = {
   // RESTORED 2026 — 26 state constituencies returned by court judgment,
   // announced by INEC on 10 June and 14 August 2026. Each takes the LGA and
   // centroid of the seat its name reduces to ("Ughelli South II" -> the
-  // Ughelli South LGA), which is mechanical and checkable. Seats whose name
-  // reduces to nothing the register knows are deliberately absent rather
-  // than guessed — see backend/src/data/restored-constituencies.json.
+  // Ughelli South LGA), which is mechanical and checkable. The list itself
+  // is backend/src/data/restored-constituencies.json.
   'Benue|Konshisha III (Shangev-Tiev)': { lgas: ['Konshisha'], centroid: { lat: 7.00008, lng: 8.78883 }, unitsBacking: 250, coordTier: 'crowd', provenance: 'restored-2026' },
   'Benue|Makurdi III (South East)': { lgas: ['Makurdi'], centroid: { lat: 7.73214, lng: 8.53161 }, unitsBacking: 562, coordTier: 'crowd', provenance: 'restored-2026' },
   'Benue|Gboko III': { lgas: ['Gboko'], centroid: { lat: 7.33333, lng: 9.00047 }, unitsBacking: 475, coordTier: 'crowd', provenance: 'restored-2026' },
@@ -580,6 +580,29 @@ export const ASSEMBLY_LOCATIONS: Record<string, AssemblyLocation> = {
   'Delta|Ughelli South II': { lgas: ['Ughelli South'], centroid: { lat: 5.428, lng: 5.90673 }, unitsBacking: 244, coordTier: 'crowd', provenance: 'restored-2026' },
   'Kogi|Ijumu II': { lgas: ['Ijumu'], centroid: { lat: 7.84381, lng: 5.9615 }, unitsBacking: 118, coordTier: 'approx', provenance: 'restored-2026' },
   'Kogi|Yagba West II': { lgas: ['Yagba West'], centroid: { lat: 8.22664, lng: 5.51327 }, unitsBacking: 96, coordTier: 'approx', provenance: 'restored-2026' },
+  // The other 14 do not reduce by name. Their LGA was established on 12 Oct
+  // 2026 from INEC's own sources, never guessed: the final candidate list
+  // names the LGA or numbers the seat ("NYAMATSOR (BURUKU)", "UKUM II" for
+  // Ukum Afia, "KOTON KARFE II"), the register has the seat's name as a ward
+  // of one LGA only (Abraka I-III in Ethiope East, Aujara in Jahun, Eika in
+  // Okehi, Ogugu I-III in Olamaboro, Dekina Town in Dekina), and INEC's
+  // "Restored Constituencies" table gives Igala Ogwa five wards that are all
+  // Ofu's (Igo, Aloma, Ejule/Alla, Ogbonicha, Iboko/Efakwu). INEC's final
+  // list calls Ijumu II "IJUMU ARIN". Centroids are the parent LGA's.
+  'Benue|Nyamatsor': { lgas: ['Buruku'], centroid: { lat: 7.30352, lng: 9.21033 }, unitsBacking: 240, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Benue|Ukum Afia': { lgas: ['Ukum'], centroid: { lat: 7.60662, lng: 9.63176 }, unitsBacking: 272, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Ika North East II': { lgas: ['Ika North- East'], centroid: { lat: 6.241, lng: 6.251 }, unitsBacking: 238, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Delta|Abraka': { lgas: ['Ethiope East'], centroid: { lat: 5.72649, lng: 5.99733 }, unitsBacking: 220, coordTier: 'crowd', provenance: 'restored-2026' },
+  'Jigawa|Aujara': { lgas: ['Jahun'], centroid: { lat: 12.084, lng: 9.53348 }, unitsBacking: 232, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Adavi East': { lgas: ['Adavi'], centroid: { lat: 7.57251, lng: 6.2424 }, unitsBacking: 217, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Eika': { lgas: ['Okehi'], centroid: { lat: 7.59103, lng: 6.17228 }, unitsBacking: 188, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Ajaokuta North': { lgas: ['Ajaokuta'], centroid: { lat: 7.50167, lng: 6.47133 }, unitsBacking: 146, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Bassa-Komu': { lgas: ['Bassa'], centroid: { lat: 7.836, lng: 7.06066 }, unitsBacking: 130, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Dekina Town & District': { lgas: ['Dekina'], centroid: { lat: 7.53727, lng: 7.15686 }, unitsBacking: 352, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Kabba-Bunu II': { lgas: ['Kabba/Bunu'], centroid: { lat: 7.84427, lng: 6.09333 }, unitsBacking: 147, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Koton Karfe II': { lgas: ['Kogi . K. K.'], centroid: { lat: 8.13231, lng: 6.83458 }, unitsBacking: 90, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Igalaogwa': { lgas: ['Ofu'], centroid: { lat: 7.32826, lng: 7.04433 }, unitsBacking: 184, coordTier: 'approx', provenance: 'restored-2026' },
+  'Kogi|Ogugu': { lgas: ['Olamaboro'], centroid: { lat: 7.1984, lng: 7.57048 }, unitsBacking: 136, coordTier: 'approx', provenance: 'restored-2026' },
   // Abia ----------------------------------------------------
   'Abia|Aba South': { lgas: ['Aba South'], centroid: { lat: 5.101, lng: 7.367 }, unitsBacking: 518, coordTier: 'crowd', provenance: 'auto-matched' },
   'Abia|Ukwa East': { lgas: ['Ukwa East'], centroid: { lat: 4.9412, lng: 7.4065 }, unitsBacking: 85, coordTier: 'crowd', provenance: 'auto-matched' },

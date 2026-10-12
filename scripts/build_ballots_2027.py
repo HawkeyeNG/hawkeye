@@ -236,13 +236,9 @@ HAND_LABELS = {
     ("KOGI", "Lokoja/Koton Karfe/Kogi"): "Kogi (Lokoja)/Kogi (K.K.)",
     # State Assembly: the same seat, named the other way round.
     ("BENUE", "Konshisha III (Shangev-Tiev)"): "SHANGEV - TIEV (KONSHISHA)",
-    # Restored in 2026: INEC's final list renames three of them (the only race left
-    # in each LGA once every other name has matched, and in the same slot of
-    # INEC's restored-seats order).
-    ("BENUE", "Nyamatsor"): "NYAMATSOR (BURUKU)",
-    ("BENUE", "Ukum Afia"): "UKUM II",
+    # Restored in 2026. (Nyamatsor (Buruku), Ukum II and Ijumu Arin already carry
+    # the final list's names on their seat pages.)
     ("KOGI", "Dekina Town & District"): "DEKINA TOWN",
-    ("KOGI", "Ijumu II"): "IJUMU ARIN",
 }
 
 NUMERAL = re.compile(r"\s+(I{1,3}|IV|V)$")

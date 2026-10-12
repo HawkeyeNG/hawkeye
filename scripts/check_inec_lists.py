@@ -54,6 +54,30 @@ def get(url, method="GET", tries=4):
     raise RuntimeError(f"{method} {url}: {last}")
 
 
+# INEC redrew the wards of the three Warri LGAs in June 2026 (20 registration
+# areas each) and listed them per state constituency, but its public polling-
+# unit directory still shows the old ones, so that list cannot be tied to units
+# yet (tmp/inec-2027/warri, and the note in build_sha_ward_composition.py).
+WARRI_OLD = {"WARRI NORTH": 10, "WARRI SOUTH": 12, "WARRI SOUTH WEST": 10}
+PU_API = "https://cvr.inecnigeria.org/PublicApi/"
+
+
+def warri_wards():
+    """Ward counts in INEC's polling-unit directory today, or None if it cannot be read."""
+    import json
+    rows = lambda body: {k: v for d in json.loads(body) for k, v in d.items() if k not in ("0", "selected")}  # noqa: E731
+    name = lambda v: re.sub(r"\s+", " ", re.sub(r"^[\d\s-]+", "", str(v))).strip().upper()  # noqa: E731
+    try:
+        lgas = rows(get(PU_API + "lgas/1/Search?data%5BSearch%5D%5Bstate_id%5D=10")[2])   # 10 = Delta
+        out = {}
+        for lid, label in lgas.items():
+            if name(label) in WARRI_OLD:
+                out[name(label)] = len(rows(get(PU_API + f"wards/1/Search?data%5BSearch%5D%5Blocal_government_id%5D={lid}")[2]))
+        return out if len(out) == len(WARRI_OLD) else None
+    except Exception:           # noqa: BLE001 — a side check; the list comparison above still stands
+        return None
+
+
 def main():
     try:
         known = {}
@@ -97,6 +121,13 @@ def main():
         else "the State Assembly file is new or changed — parse it and look for Borno"
     print(f"INEC 2027 lists: {len(pages)} pages, {len(now)} documents on the site; {len(known)} in our baseline")
     print(f"Borno (State Assembly): {borno}")
+    w = warri_wards()
+    if w is None:
+        print("Warri wards (polling-unit directory): could not be read this time")
+    elif w == WARRI_OLD:
+        print("Warri wards (polling-unit directory): unchanged — still the old 10 / 12 / 10")
+    else:
+        findings.append(f"WARDS    Warri now shows {w} in INEC's polling-unit directory: refresh those LGAs in the register, then apply tmp/inec-2027/warri")
     if findings:
         print(f"{len(findings)} difference(s):")
         print("\n".join("  " + f for f in findings))

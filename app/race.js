@@ -1661,6 +1661,9 @@
         value: (s.lgas || [])[0] || s.seat,
         state: s.state,
         lgas: s.lgas || [],
+        // Where INEC listed this seat's wards, the map and the area list show those alone.
+        wards: s.wardNames || undefined,
+        seatLabel: s.wardNames ? s.seat : undefined,
       },
     };
   }

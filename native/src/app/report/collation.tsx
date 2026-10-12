@@ -251,7 +251,7 @@ export default function ReportCollation() {
   const [ballots, setBallots] = useState<Ballots | null>(null);
   const [showAllFor, setShowAllFor] = useState<string | null>(null);
   const ballot = useMemo(
-    () => placeBallot(ballots, contest?.code, { state: stateSel, lga: lgaSel, statewide: level === 'state' }),
+    () => placeBallot(ballots, contest?.code, { state: stateSel, lga: lgaSel, ward: level === 'ward' ? wardSel : null, statewide: level === 'state' }),
     [ballots, contest?.code, stateSel, lgaSel, level],
   );
   const ballotId = `${contest?.code ?? ''}|${level ?? ''}|${stateSel ?? ''}|${lgaSel ?? ''}`;
@@ -711,7 +711,7 @@ export default function ReportCollation() {
             {ballot ? (
               <View className="mb-3 flex-row flex-wrap items-center">
                 <Text className="text-sm text-muted">
-                  {i18nT(ballotNoteKey(showAllParties, placeBallotShared(ballots, contest?.code, { state: stateSel, lga: lgaSel })), { v0: ballot.length })}{' '}
+                  {i18nT(ballotNoteKey(showAllParties, placeBallotShared(ballots, contest?.code, { state: stateSel, lga: lgaSel, ward: level === 'ward' ? wardSel : null })), { v0: ballot.length })}{' '}
                 </Text>
                 <Pressable accessibilityRole="button" hitSlop={8} onPress={() => setShowAllFor(showAllParties ? null : ballotId)}>
                   <Text className="text-sm font-semibold text-good-ink underline">

@@ -23,6 +23,8 @@ export interface Ballots {
   REP?: Record<string, string[]>;
   /** State Assembly, filed by "STATE|LGA": the register records the LGA, not the constituency. */
   SHA?: Record<string, string[]>;
+  /** "STATE|LGA|WARD" → parties, only where INEC listed an LGA's wards per constituency. */
+  SHAW?: Record<string, string[]>;
   /** Keys whose list is the UNION of several races (Reps seats, State Assembly LGAs). */
   SHARED?: Record<string, string[]>;
   /** "STATE|LGA" -> [senate seat | null, reps seats] — for a form that has a place, not a unit. */
@@ -33,6 +35,7 @@ export interface BallotUnit {
   senatorial?: string | null;
   federal_constituency?: string | null;
   lga?: string | null;
+  ward?: string | null;
 }
 
 const STORE = 'hk_ballots2027_v1';
@@ -89,7 +92,7 @@ export function raceBallot(b: Ballots | null, contest: string | null | undefined
       : contest === 'GOV' ? b.GOV?.[st]
         : contest === 'SEN' ? b.SEN?.[`${st}|${key(u.senatorial)}`]
           : contest === 'REP' ? b.REP?.[`${st}|${key(u.federal_constituency)}`]
-            : contest === 'SHA' ? b.SHA?.[`${st}|${key(u.lga)}`]
+            : contest === 'SHA' ? (b.SHAW?.[`${st}|${key(u.lga)}|${key(u.ward)}`] ?? b.SHA?.[`${st}|${key(u.lga)}`])
               : null;
   return Array.isArray(list) && list.length ? list : null;
 }
@@ -98,6 +101,7 @@ export function raceBallot(b: Ballots | null, contest: string | null | undefined
 export function raceBallotShared(b: Ballots | null, contest: string | null | undefined, u: BallotUnit | null | undefined): boolean {
   if (!b || !u || !contest) return false;
   const st = stateKey(u.state);
+  if (contest === 'SHA' && b.SHAW?.[`${st}|${key(u.lga)}|${key(u.ward)}`]) return false;
   const k = contest === 'SHA' ? `${st}|${key(u.lga)}` : contest === 'REP' ? `${st}|${key(u.federal_constituency)}` : null;
   return !!k && (b.SHARED?.[contest] ?? []).includes(k);
 }
@@ -116,7 +120,7 @@ export const ballotNoteKey = (all: boolean, shared: boolean) =>
 export function placeBallot(
   b: Ballots | null,
   contest: string | null | undefined,
-  place: { state?: string | null; lga?: string | null; statewide?: boolean },
+  place: { state?: string | null; lga?: string | null; ward?: string | null; statewide?: boolean },
 ): string[] | null {
   if (!b || !contest) return null;
   const ok = (l?: string[] | null) => (Array.isArray(l) && l.length ? l : null);
@@ -125,7 +129,7 @@ export function placeBallot(
   if (!st) return null;
   if (contest === 'GOV') return ok(b.GOV?.[st]);
   if ((contest !== 'SEN' && contest !== 'REP' && contest !== 'SHA') || place.statewide) return null;
-  if (contest === 'SHA') return ok(b.SHA?.[`${st}|${key(place.lga)}`]);
+  if (contest === 'SHA') return ok((place.ward ? b.SHAW?.[`${st}|${key(place.lga)}|${key(place.ward)}`] : null) ?? b.SHA?.[`${st}|${key(place.lga)}`]);
   const e = b.LGA?.[`${st}|${key(place.lga)}`];
   if (!Array.isArray(e)) return null;
   if (contest === 'SEN') return e[0] ? ok(b.SEN?.[`${st}|${e[0]}`]) : null;
@@ -136,12 +140,12 @@ export function placeBallot(
 }
 
 /** Twin of collationShared() in app/collation.html. */
-export function placeBallotShared(b: Ballots | null, contest: string | null | undefined, place: { state?: string | null; lga?: string | null }): boolean {
+export function placeBallotShared(b: Ballots | null, contest: string | null | undefined, place: { state?: string | null; lga?: string | null; ward?: string | null }): boolean {
   if (!b || !contest) return false;
   const st = stateKey(place.state);
   const lga = `${st}|${key(place.lga)}`;
   const marked = b.SHARED?.[contest] ?? [];
-  if (contest === 'SHA') return marked.includes(lga);
+  if (contest === 'SHA') return marked.includes(lga) && !(place.ward && b.SHAW?.[`${lga}|${key(place.ward)}`]);
   if (contest !== 'REP') return false;
   const seats = b.LGA?.[lga]?.[1] ?? [];
   return seats.length > 1 || seats.some((k) => marked.includes(`${st}|${k}`));

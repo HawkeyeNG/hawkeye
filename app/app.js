@@ -2845,6 +2845,10 @@ const ballotState = (s) => {
   if (k === 'FEDERALCAPITALTERRITORY' || k === 'FCTABUJA' || k === 'ABUJA') return 'FCT';
   return k === 'NASSARAWA' ? 'NASARAWA' : k;
 };
+/** Where INEC listed an LGA's wards per state constituency, the unit's ward names its own race. */
+function shaWardBallot(st, u) {
+  return (ballots.SHAW || {})[`${st}|${ballotKey(u.lga)}|${ballotKey(u.ward || '')}`] || null;
+}
 function raceBallot(contest, u) {
   if (!ballots || !u || !contest) return null;
   const st = ballotState(u.state);
@@ -2854,7 +2858,7 @@ function raceBallot(contest, u) {
         : contest === 'REP' ? (ballots.REP || {})[`${st}|${ballotKey(u.federal_constituency)}`]
           // State Assembly: the register records the LGA, not the constituency, so
           // the list is the LGA's — the union of its seats where it elects several.
-          : contest === 'SHA' ? (ballots.SHA || {})[`${st}|${ballotKey(u.lga)}`]
+          : contest === 'SHA' ? (shaWardBallot(st, u) || (ballots.SHA || {})[`${st}|${ballotKey(u.lga)}`])
             : null;
   return Array.isArray(b) && b.length ? b : null;
 }
@@ -2862,6 +2866,7 @@ function raceBallot(contest, u) {
 function raceBallotShared(contest, u) {
   if (!ballots || !u) return false;
   const st = ballotState(u.state);
+  if (contest === 'SHA' && shaWardBallot(st, u)) return false;
   const key = contest === 'SHA' ? `${st}|${ballotKey(u.lga)}` : contest === 'REP' ? `${st}|${ballotKey(u.federal_constituency)}` : null;
   return !!key && (((ballots.SHARED || {})[contest]) || []).includes(key);
 }

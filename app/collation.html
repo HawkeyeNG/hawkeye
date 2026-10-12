@@ -795,7 +795,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       if (c === 'GOV') return ok((ballots.GOV || {})[st]);
       if ((c !== 'SEN' && c !== 'REP' && c !== 'SHA') || $('sel-level').value === 'state') return null;
       // State Assembly: filed by LGA — the union of its seats where it elects several.
-      if (c === 'SHA') return ok((ballots.SHA || {})[`${st}|${bKey($('sel-lga').value)}`]);
+      if (c === 'SHA') return ok(shaWard(st) || (ballots.SHA || {})[`${st}|${bKey($('sel-lga').value)}`]);
       const e = (ballots.LGA || {})[`${st}|${bKey($('sel-lga').value)}`];
       if (!Array.isArray(e)) return null;
       if (c === 'SEN') return e[0] ? ok((ballots.SEN || {})[`${st}|${e[0]}`]) : null;
@@ -804,13 +804,18 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
       if (!lists.length || lists.some((b) => !ok(b))) return null;
       return [...new Set(lists.flat())].sort();
     }
+    // A ward-level State Assembly entry, in an LGA whose wards INEC listed per constituency: that ward's own race.
+    function shaWard(st) {
+      if (!ballots || $('sel-level').value !== 'ward') return null;
+      return (ballots.SHAW || {})[`${st}|${bKey($('sel-lga').value)}|${bKey($('sel-ward').value)}`] || null;
+    }
     function collationShared() {
       if (!ballots) return false;
       const c = $('sel-contest').value;
       const st = bState($('sel-state').value);
       const lga = `${st}|${bKey($('sel-lga').value)}`;
       const marked = ((ballots.SHARED || {})[c]) || [];
-      if (c === 'SHA') return marked.includes(lga);
+      if (c === 'SHA') return marked.includes(lga) && !shaWard(st);
       if (c !== 'REP') return false;
       const seats = ((ballots.LGA || {})[lga] || [])[1] || [];
       return seats.length > 1 || seats.some((k) => marked.includes(`${st}|${k}`));
@@ -846,7 +851,7 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     })();
     // The place and the race decide the ballot; these listeners sit beside the
     // page's own onchange handlers and run after them.
-    for (const id of ['sel-contest', 'sel-state', 'sel-lga', 'sel-level']) {
+    for (const id of ['sel-contest', 'sel-state', 'sel-lga', 'sel-level', 'sel-ward']) {
       $(id).addEventListener('change', () => { ballotShowAll = false; setTimeout(applyBallot, 0); });
     }
     $('ballot-toggle').addEventListener('click', (e) => { e.preventDefault(); ballotShowAll = !ballotShowAll; applyBallot(); });

@@ -1,0 +1,783 @@
+{
+ "_source": {
+  "title": "Restored Constituencies in Kogi, Jigawa, Benue and Delta States",
+  "publisher": "INEC",
+  "created": "2026-06-17",
+  "url": "https://inecnigeria.org/wp-content/uploads/Restored-Constituencies-in-Kogi-Jigawa-Benue-and-Delta-States.pdf",
+  "archived": "https://web.archive.org/web/20260815130345/https://inecnigeria.org/wp-content/uploads/Restored-Constituencies-in-Kogi-Jigawa-Benue-and-Delta-States.pdf",
+  "sha256": "e38e71c7e4203a2a31b512e50092035e183990c33a6888cc664fbbdbc0adb667",
+  "note": "Ward names are the register's spellings. INEC's table covers the 10 June 2026 restorations except Gboko and the two Warri LGAs; the 14 August ones are not in it."
+ },
+ "lgas": {
+  "Kogi|Adavi": {
+   "Adavi": {
+    "inecLabel": "ADAVI WEST (Old and renamed)",
+    "wards": [
+     "Adavi-Eba",
+     "Ege/Iruvochinomi",
+     "Idanuhua",
+     "Ino Ziomi/Ipaku/Osisi",
+     "Iruvucheba",
+     "Ogaminana",
+     "Okunchi/Ozuri/Onieka"
+    ],
+    "wardCodes": [
+     "22-01-01",
+     "22-01-02",
+     "22-01-03",
+     "22-01-04",
+     "22-01-05",
+     "22-01-08",
+     "22-01-11"
+    ],
+    "pollingUnits": 114
+   },
+   "Adavi East": {
+    "inecLabel": "ADAVI EAST (New)",
+    "wards": [
+     "Ikaraworo/Idobanyere",
+     "Kuroko I",
+     "Kuroko Ii",
+     "Nagazi Farm Centre"
+    ],
+    "wardCodes": [
+     "22-01-06",
+     "22-01-07",
+     "22-01-09",
+     "22-01-10"
+    ],
+    "pollingUnits": 103
+   }
+  },
+  "Kogi|Ajaokuta": {
+   "Ajaokuta": {
+    "inecLabel": "AJAOKUTA",
+    "wards": [
+     "Abodi/Patesi",
+     "Adogo",
+     "Badoko",
+     "Ebiya North",
+     "Ebiya South",
+     "Ichuwa/Upaja",
+     "Ogigiri"
+    ],
+    "wardCodes": [
+     "22-02-01",
+     "22-02-02",
+     "22-02-03",
+     "22-02-04",
+     "22-02-05",
+     "22-02-06",
+     "22-02-07"
+    ],
+    "pollingUnits": 38
+   },
+   "Ajaokuta North": {
+    "inecLabel": "AJAOKUTA NORTH (New)",
+    "wards": [
+     "Achagana",
+     "Adogu/Apamira/Ogodo Uhuovene",
+     "Ganaga/Township",
+     "Obangede/Ohunene/Ukoko Inye'Re",
+     "Odonu/Unosi",
+     "Old Ajaokuta",
+     "Omgbo"
+    ],
+    "wardCodes": [
+     "22-02-08",
+     "22-02-09",
+     "22-02-10",
+     "22-02-11",
+     "22-02-12",
+     "22-02-13",
+     "22-02-14"
+    ],
+    "pollingUnits": 108
+   }
+  },
+  "Kogi|Okehi": {
+   "Eika": {
+    "inecLabel": "EIKA (New)",
+    "wards": [
+     "Eika / Ohizenyi",
+     "Obangede / Uhuodo",
+     "Ohuepe / Omavi Uboro",
+     "Okaito / Usungwen"
+    ],
+    "wardCodes": [
+     "22-16-07",
+     "22-16-08",
+     "22-16-09",
+     "22-16-10"
+    ],
+    "pollingUnits": 71
+   },
+   "Okehi": {
+    "inecLabel": "IHIMA (Old and renamed)",
+    "wards": [
+     "Ikuehi",
+     "Obeiba I",
+     "Obeiba Ii",
+     "Oboroke Eba",
+     "Oboroke Uvete I",
+     "Oboroke Uveteii",
+     "Ohueta"
+    ],
+    "wardCodes": [
+     "22-16-01",
+     "22-16-02",
+     "22-16-03",
+     "22-16-04",
+     "22-16-05",
+     "22-16-06",
+     "22-16-11"
+    ],
+    "pollingUnits": 117
+   }
+  },
+  "Kogi|Bassa": {
+   "Bassa": {
+    "inecLabel": "BASSA NGE/IGBIRRA",
+    "wards": [
+     "Eforo",
+     "Gboloko",
+     "Kpata",
+     "Mozum",
+     "Ozugbe"
+    ],
+    "wardCodes": [
+     "22-04-06",
+     "22-04-07",
+     "22-04-08",
+     "22-04-09",
+     "22-04-10"
+    ],
+    "pollingUnits": 55
+   },
+   "Bassa-Komu": {
+    "inecLabel": "BASSA KOMU (New)",
+    "wards": [
+     "Akuba I",
+     "Akuba Ii",
+     "Ayede/Akakana",
+     "Ikende",
+     "Ozongulo/Kpanche"
+    ],
+    "wardCodes": [
+     "22-04-01",
+     "22-04-02",
+     "22-04-03",
+     "22-04-04",
+     "22-04-05"
+    ],
+    "pollingUnits": 75
+   }
+  },
+  "Kogi|Dekina": {
+   "Dekina/Biraidu": {
+    "inecLabel": "DEKINA/BIRAIDU",
+    "wards": [
+     "Abocho",
+     "Emewe",
+     "Ogbabede"
+    ],
+    "wardCodes": [
+     "22-05-03",
+     "22-05-06",
+     "22-05-07"
+    ],
+    "pollingUnits": 99
+   },
+   "Okura": {
+    "inecLabel": "OKURA",
+    "wards": [
+     "Adumu Egume",
+     "Anyigba",
+     "Ojikpadala",
+     "Okura Olafia"
+    ],
+    "wardCodes": [
+     "22-05-08",
+     "22-05-09",
+     "22-05-10",
+     "22-05-11"
+    ],
+    "pollingUnits": 138
+   },
+   "Dekina Town & District": {
+    "inecLabel": "DEKINA TOWN (New)",
+    "wards": [
+     "Dekina Town",
+     "Iyale",
+     "Odu I",
+     "Odu Ii",
+     "Ogane Inigu"
+    ],
+    "wardCodes": [
+     "22-05-01",
+     "22-05-02",
+     "22-05-04",
+     "22-05-05",
+     "22-05-12"
+    ],
+    "pollingUnits": 115
+   }
+  },
+  "Kogi|Olamaboro": {
+   "Olamaboro I": {
+    "inecLabel": "OLAMABORO",
+    "wards": [
+     "Imane I",
+     "Imane Ii",
+     "Olamaboro I",
+     "Olamaboro Ii",
+     "Olamaboro Iii"
+    ],
+    "wardCodes": [
+     "22-18-01",
+     "22-18-02",
+     "22-18-06",
+     "22-18-07",
+     "22-18-08"
+    ],
+    "pollingUnits": 99
+   },
+   "Ogugu": {
+    "inecLabel": "OGUGU (New)",
+    "wards": [
+     "Ogugu I",
+     "Ogugu Ii",
+     "Ogugu Iii",
+     "Olamaboro Iv",
+     "Olamaboro V"
+    ],
+    "wardCodes": [
+     "22-18-03",
+     "22-18-04",
+     "22-18-05",
+     "22-18-09",
+     "22-18-10"
+    ],
+    "pollingUnits": 75
+   }
+  },
+  "Kogi|Ofu": {
+   "Ofu": {
+    "inecLabel": "OFU",
+    "wards": [
+     "Aloji",
+     "Itobe/Okokenyi",
+     "Ochadamu",
+     "Ofoke",
+     "Ugwolawo 2",
+     "Ugwolawo I"
+    ],
+    "wardCodes": [
+     "22-14-04",
+     "22-14-05",
+     "22-14-06",
+     "22-14-07",
+     "22-14-08",
+     "22-14-09"
+    ],
+    "pollingUnits": 112
+   },
+   "Igalaogwa": {
+    "inecLabel": "IGALA OGWA (New)",
+    "wards": [
+     "Aloma",
+     "Ejule Allah",
+     "Iboko/Efakwu",
+     "Igo",
+     "Ogbonicha"
+    ],
+    "wardCodes": [
+     "22-14-01",
+     "22-14-02",
+     "22-14-03",
+     "22-14-10",
+     "22-14-11"
+    ],
+    "pollingUnits": 72
+   }
+  },
+  "Kogi|Ijumu": {
+   "Ijumu": {
+    "inecLabel": "IJUMU I (GBEDE)",
+    "wards": [
+     "Aiyegunle",
+     "Aiyetoro I",
+     "Aiyetoro Ii",
+     "Iyah/Ayeh",
+     "Odokoro"
+    ],
+    "wardCodes": [
+     "22-09-01",
+     "22-09-02",
+     "22-09-03",
+     "22-09-04",
+     "22-09-05"
+    ],
+    "pollingUnits": 46
+   },
+   "Ijumu Arin": {
+    "inecLabel": "IJUMU-ARIN II (New)",
+    "wards": [
+     "Aiyere/Arimah",
+     "Egbeda Egga/Okedayo",
+     "Ekinrin Ade",
+     "Ibgolayere/Ilaere",
+     "Iffe/Ikoyi/Okejumu",
+     "Ileteju/Origa",
+     "Iyamoye",
+     "Iyara",
+     "Ogale/Aduge",
+     "Ogidi"
+    ],
+    "wardCodes": [
+     "22-09-06",
+     "22-09-07",
+     "22-09-08",
+     "22-09-09",
+     "22-09-10",
+     "22-09-11",
+     "22-09-12",
+     "22-09-13",
+     "22-09-14",
+     "22-09-15"
+    ],
+    "pollingUnits": 75
+   }
+  },
+  "Kogi|Kabba/Bunu": {
+   "Kabba/Bunu": {
+    "inecLabel": "KABBA/ BUNU I",
+    "wards": [
+     "Aiyeteju",
+     "Aiyewa",
+     "Asuta",
+     "Egbeda",
+     "Odo-Akete",
+     "Odolu",
+     "Okedayo",
+     "Okekoko",
+     "Otu"
+    ],
+    "wardCodes": [
+     "22-10-01",
+     "22-10-02",
+     "22-10-03",
+     "22-10-04",
+     "22-10-05",
+     "22-10-06",
+     "22-10-07",
+     "22-10-08",
+     "22-10-09"
+    ],
+    "pollingUnits": 93
+   },
+   "Kabba-Bunu II": {
+    "inecLabel": "KABBA/ BUNU II (New)",
+    "wards": [
+     "Aiyetoro-Kiri",
+     "Akutupa-Kiri",
+     "Iluke",
+     "Odo-Ape",
+     "Okebukun",
+     "Olle/Oke-Ofin"
+    ],
+    "wardCodes": [
+     "22-10-10",
+     "22-10-11",
+     "22-10-12",
+     "22-10-13",
+     "22-10-14",
+     "22-10-15"
+    ],
+    "pollingUnits": 63
+   }
+  },
+  "Kogi|Kogi . K. K.": {
+   "Kogi (K.K)": {
+    "inecLabel": "KOTON KARFE I",
+    "wards": [
+     "Akpasu",
+     "Irenodu",
+     "Kotonkarfe South East",
+     "Odaki-Koton Karfe",
+     "Tawari",
+     "Ukwo-Koton Karfe"
+    ],
+    "wardCodes": [
+     "22-11-01",
+     "22-11-02",
+     "22-11-03",
+     "22-11-05",
+     "22-11-06",
+     "22-11-07"
+    ],
+    "pollingUnits": 62
+   },
+   "Koton Karfe II": {
+    "inecLabel": "KOTON KARFE II (New)",
+    "wards": [
+     "Chikara North",
+     "Chikara South",
+     "Gegu-Beki North",
+     "Gegu-Beki South",
+     "Girinya"
+    ],
+    "wardCodes": [
+     "22-11-04",
+     "22-11-08",
+     "22-11-09",
+     "22-11-10",
+     "22-11-11"
+    ],
+    "pollingUnits": 43
+   }
+  },
+  "Jigawa|Jahun": {
+   "Aujara": {
+    "inecLabel": "AUJARA",
+    "wards": [
+     "Aujara",
+     "Gunka",
+     "Harbo Sabuwa",
+     "Harbo Tsohuwa",
+     "Kale",
+     "Kanwa"
+    ],
+    "wardCodes": [
+     "17-14-01",
+     "17-14-04",
+     "17-14-05",
+     "17-14-06",
+     "17-14-10",
+     "17-14-11"
+    ],
+    "pollingUnits": 123
+   },
+   "Jahun": {
+    "inecLabel": "JAHUN",
+    "wards": [
+     "Gangawa",
+     "Gauza Tazara",
+     "Idanduna",
+     "Jabarna",
+     "Jahun"
+    ],
+    "wardCodes": [
+     "17-14-02",
+     "17-14-03",
+     "17-14-07",
+     "17-14-08",
+     "17-14-09"
+    ],
+    "pollingUnits": 109
+   }
+  },
+  "Benue|Ukum": {
+   "Ukum II": {
+    "inecLabel": "UKUM II (AFIA)",
+    "wards": [
+     "Aterayange",
+     "Azendeshi",
+     "Ityuluv",
+     "Lumbuv",
+     "Mbayenge",
+     "Mbazun",
+     "Tsaav"
+    ],
+    "wardCodes": [
+     "07-21-01",
+     "07-21-02",
+     "07-21-04",
+     "07-21-07",
+     "07-21-09",
+     "07-21-10",
+     "07-21-11"
+    ],
+    "pollingUnits": 156
+   },
+   "Ukum I (Ngenev)": {
+    "inecLabel": "UKUM I (New)",
+    "wards": [
+     "Borikyo",
+     "Kendev",
+     "Kundav",
+     "Mbatian",
+     "Ugbaam",
+     "Uyam"
+    ],
+    "wardCodes": [
+     "07-21-03",
+     "07-21-05",
+     "07-21-06",
+     "07-21-08",
+     "07-21-12",
+     "07-21-13"
+    ],
+    "pollingUnits": 116
+   }
+  },
+  "Benue|Konshisha": {
+   "Konshisha I (Gaav)": {
+    "inecLabel": "KONSHISHA (GAAV)",
+    "wards": [
+     "Mbake",
+     "Mbanor",
+     "Mbatsen",
+     "Mbavaa",
+     "Mbawar",
+     "Mbayegh/Mbaikyer",
+     "Tse-Agberagba"
+    ],
+    "wardCodes": [
+     "07-10-05",
+     "07-10-06",
+     "07-10-07",
+     "07-10-08",
+     "07-10-09",
+     "07-10-10",
+     "07-10-11"
+    ],
+    "pollingUnits": 160
+   },
+   "Konshisha III (Shangev-Tiev)": {
+    "inecLabel": "KONSHISHA (SHANGEV -TIEV) - New",
+    "wards": [
+     "Ikyurav/Mbatwer",
+     "Mbagusa/Mbatser",
+     "Mbaikyase",
+     "Mbaiwarnyam"
+    ],
+    "wardCodes": [
+     "07-10-01",
+     "07-10-02",
+     "07-10-03",
+     "07-10-04"
+    ],
+    "pollingUnits": 94
+   }
+  },
+  "Benue|Makurdi": {
+   "Makurdi I (North)": {
+    "inecLabel": "MAKURDI I (NORTH)",
+    "wards": [
+     "Agan",
+     "Mbalagh",
+     "North Bank I",
+     "North Bank Ii"
+    ],
+    "wardCodes": [
+     "07-13-01",
+     "07-13-07",
+     "07-13-09",
+     "07-13-10"
+    ],
+    "pollingUnits": 137
+   },
+   "Makurdi South": {
+    "inecLabel": "MARKURDI II (SOUTH)",
+    "wards": [
+     "Ankpa/Wadata",
+     "Bar",
+     "Modern Market"
+    ],
+    "wardCodes": [
+     "07-13-02",
+     "07-13-03",
+     "07-13-08"
+    ],
+    "pollingUnits": 144
+   },
+   "Makurdi III (South East)": {
+    "inecLabel": "MARKURDI III (SOUTH EAST)",
+    "wards": [
+     "Central/South Mission",
+     "Clerks/Market",
+     "Fiidi",
+     "Wailomayo"
+    ],
+    "wardCodes": [
+     "07-13-04",
+     "07-13-05",
+     "07-13-06",
+     "07-13-11"
+    ],
+    "pollingUnits": 281
+   }
+  },
+  "Benue|Buruku": {
+   "Nyamatsor (Buruku)": {
+    "inecLabel": "NYAMATSOR (New)",
+    "wards": [
+     "Etulo",
+     "Mbaade",
+     "Mbaakura",
+     "Mbaazagee",
+     "Mbaityough",
+     "Mbakyaan",
+     "Mbayaka",
+     "Shorov"
+    ],
+    "wardCodes": [
+     "07-04-02",
+     "07-04-03",
+     "07-04-04",
+     "07-04-07",
+     "07-04-09",
+     "07-04-10",
+     "07-04-12",
+     "07-04-13"
+    ],
+    "pollingUnits": 132
+   },
+   "Buruku": {
+    "inecLabel": "TOMBO",
+    "wards": [
+     "Binev",
+     "Mbaapen",
+     "Mbaatirkyaa",
+     "Mbaikyongo/Nyifon",
+     "Mbaya"
+    ],
+    "wardCodes": [
+     "07-04-01",
+     "07-04-05",
+     "07-04-06",
+     "07-04-08",
+     "07-04-11"
+    ],
+    "pollingUnits": 108
+   }
+  },
+  "Delta|Ika North- East": {
+   "Ika North East": {
+    "inecLabel": "IKA NORTH EAST I",
+    "wards": [
+     "Idumuesah",
+     "Otolokpo",
+     "Owa I",
+     "Owa Ii",
+     "Owa Iii",
+     "Owa Iv",
+     "Owa V",
+     "Owa Vi",
+     "Uteogbeje",
+     "Uteokpu"
+    ],
+    "wardCodes": [
+     "10-07-01",
+     "10-07-02",
+     "10-07-03",
+     "10-07-04",
+     "10-07-05",
+     "10-07-06",
+     "10-07-09",
+     "10-07-10",
+     "10-07-13",
+     "10-07-14"
+    ],
+    "pollingUnits": 162
+   },
+   "Ika North East II": {
+    "inecLabel": "IKA NORTH EAST II (New)",
+    "wards": [
+     "Akumazi",
+     "Igbodo",
+     "Mbiri",
+     "Umunede"
+    ],
+    "wardCodes": [
+     "10-07-07",
+     "10-07-08",
+     "10-07-11",
+     "10-07-12"
+    ],
+    "pollingUnits": 76
+   }
+  },
+  "Delta|Sapele": {
+   "Sapele": {
+    "inecLabel": "SAPELE I",
+    "wards": [
+     "Sapele Urban I",
+     "Sapele Urban Ii",
+     "Sapele Urban Iii",
+     "Sapele Urban Iv",
+     "Sapele Urban V",
+     "Sapele Urban Vi",
+     "Sapele Urban Vii",
+     "Sapele Urban Viii"
+    ],
+    "wardCodes": [
+     "10-17-01",
+     "10-17-02",
+     "10-17-03",
+     "10-17-04",
+     "10-17-05",
+     "10-17-06",
+     "10-17-07",
+     "10-17-08"
+    ],
+    "pollingUnits": 174
+   },
+   "Sapele II": {
+    "inecLabel": "SAPELE II (New)",
+    "wards": [
+     "Amuokpe",
+     "Elume",
+     "Okokporo/Ugborhen"
+    ],
+    "wardCodes": [
+     "10-17-09",
+     "10-17-10",
+     "10-17-11"
+    ],
+    "pollingUnits": 94
+   }
+  },
+  "Delta|Ethiope West": {
+   "Ethiope West": {
+    "inecLabel": "ETHIOPE WEST I",
+    "wards": [
+     "Oghara I",
+     "Oghara Ii",
+     "Oghara Iii",
+     "Oghara Iv",
+     "Oghara V"
+    ],
+    "wardCodes": [
+     "10-06-07",
+     "10-06-08",
+     "10-06-09",
+     "10-06-10",
+     "10-06-11"
+    ],
+    "pollingUnits": 117
+   },
+   "Ethiope West II": {
+    "inecLabel": "ETHIOPE WEST II (New)",
+    "wards": [
+     "Jesse I",
+     "Jesse Ii",
+     "Jesse Iii",
+     "Jesse Iv",
+     "Mosogar I",
+     "Mosogar Ii"
+    ],
+    "wardCodes": [
+     "10-06-01",
+     "10-06-02",
+     "10-06-03",
+     "10-06-04",
+     "10-06-05",
+     "10-06-06"
+    ],
+    "pollingUnits": 103
+   }
+  }
+ }
+}

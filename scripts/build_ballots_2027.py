@@ -219,10 +219,26 @@ def assembly(P):
         ballots[key] = sorted(codes)
         if len(races) != 1 or loose[st]:
             shared.append(key)
-    stats = {"inec_races": len(named), "seat_pages": sum(len(v) for v in seats.values()), "pages_with_candidates": len(paired),
+    # Where INEC listed an LGA's wards per constituency (and every count checked
+    # out against the register), a ward names its own race: an exact list.
+    comp = json.load(open(os.path.join(B.ROOT, "scripts", "data", "sha_ward_composition_2026.json")))["lgas"]
+    shaw, shaw_code = {}, {}
+    for lk, seats_c in sorted(comp.items()):
+        state, lga = lk.split("|", 1)
+        st = state_key(state)
+        if any((st, seat) not in paired for seat in seats_c):
+            print(f"  [SHA] ward composition for {lk} skipped: a seat there has no INEC race")
+            continue
+        for seat, v in seats_c.items():
+            codes = sorted({r["party"] for r in named[(st, paired[(st, seat)][0])]})
+            for w in v["wards"]:
+                shaw[f"{st}|{K(lga)}|{K(w)}"] = codes
+            for c in v["wardCodes"]:
+                shaw_code[c] = codes
+    stats = {"wards_with_their_own_ballot": len(shaw), "inec_races": len(named), "seat_pages": sum(len(v) for v in seats.values()), "pages_with_candidates": len(paired),
              "inec_races_without_a_page": [f"{a} / {b}" for a, b in unjoined], "pages_without_a_race": [f"{a} / {b}" for a, b, _u in unused],
              "lgas_with_a_ballot": len(ballots), "of_which_exact": len(ballots) - len(shared), "of_which_union": len(shared)}
-    return pages, ballots, sorted(shared), stats, review
+    return pages, ballots, sorted(shared), stats, review, shaw, shaw_code
 
 
 def tokens(s):
@@ -376,8 +392,9 @@ def main():
         report += [f"  [{code}] NO SEAT for INEC race: {x}" for x in stats[code]["unjoined"]]
         report += [f"  [{code}] register seat with no race: {x}" for x in stats[code]["unused_register_seats"]]
 
-    sha_pages, sha_ballots, sha_shared, sha_stats, sha_review = assembly(P)
+    sha_pages, sha_ballots, sha_shared, sha_stats, sha_review, shaw, shaw_code = assembly(P)
     out["SHA"] = sha_ballots
+    out["SHAW"] = shaw
     stats["SHA"] = sha_stats
     report.append(f"SHA   {sha_stats['inec_races']} INEC races · {sha_stats['pages_with_candidates']} of {sha_stats['seat_pages']} seat pages get candidates · "
                   f"LGA ballots {sha_stats['lgas_with_a_ballot']} ({sha_stats['of_which_exact']} exact, {sha_stats['of_which_union']} a union)")
@@ -416,7 +433,7 @@ def main():
     }
     if args.write:
         for path in (OUT_BACKEND, OUT_APP):
-            body = ({**doc, "SHARED": shared, "BY_CODE": by_code} if path == OUT_BACKEND
+            body = ({**doc, "SHAW_CODE": shaw_code, "SHARED": shared, "BY_CODE": by_code} if path == OUT_BACKEND
                     else {"_source": {k: doc["_source"][k] for k in ("what", "from", "pulled", "built", "keys")}, **out, "SHARED": shared, "LGA": lga_idx, "WARD": ward_idx})
             json.dump(body, open(path, "w"), ensure_ascii=False, separators=(",", ":"))
             print("wrote", os.path.relpath(path, B.ROOT), os.path.getsize(path), "bytes")

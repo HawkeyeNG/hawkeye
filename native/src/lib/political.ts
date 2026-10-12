@@ -405,6 +405,8 @@ export type SeatInfo = {
    * shared number as the seat's own.
    */
   sharedRegister?: boolean;
+  /** Register ward names, present only where INEC published this seat's wards. */
+  wardNames?: string[];
 };
 /**
  * Keyed by TIER, then by seat. SEN and REP key on the bare seat name, which is
@@ -915,6 +917,9 @@ export function assemblyRace(
       value: (s.lgas ?? [])[0] ?? (s.seat ?? seat),
       state: s.state,
       lgas: s.lgas ?? [],
+      // Where INEC listed this seat's wards, the map and the area list show those alone.
+      wards: s.wardNames ?? undefined,
+      seatLabel: s.wardNames ? (s.seat ?? seat) : undefined,
     },
   };
 }

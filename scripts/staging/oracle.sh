@@ -45,7 +45,7 @@ CONF="${HAWKEYE_STAGING_ORACLE_ENV:-$HOME/.config/hawkeye/staging-oracle.env}"
 : "${STAGING_HOST:?STAGING_HOST missing in $CONF}"
 USER_="${STAGING_USER:-ubuntu}"; KEY="${STAGING_SSH_KEY:-$HOME/.ssh/hawkeye_oracle}"; KEY="${KEY/#\~/$HOME}"
 [ -f "$KEY" ] || die "SSH key $KEY not found"
-SSH=(ssh -i "$KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 "$USER_@$STAGING_HOST")
+SSH=(ssh -i "$KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20 -o ServerAliveInterval=30 -o ServerAliveCountMax=20 "$USER_@$STAGING_HOST")
 SCP=(scp -q -i "$KEY" -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=20)
 
 # The host must say it is staging before anything is sent to it.

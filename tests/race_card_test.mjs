@@ -21,6 +21,9 @@ const APP = '/home/elrio/hawkeye/app';
 const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml' };
 const CONTESTS = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/backend/src/data/contests.json', 'utf8'));
 const SEATS = JSON.parse(fs.readFileSync(`${APP}/seat_lgas.json`, 'utf8'));
+// INEC's final lists (published Sept/Oct 2026): how many candidates a race page must count.
+const K = (x) => String(x).toUpperCase().replace(/[^A-Z0-9]/g, '');
+const listed = (state, code, seat) => JSON.parse(fs.readFileSync(`${APP}/candidates-2027/${state}.json`, 'utf8'))[code][K(seat)].length;
 
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
@@ -73,7 +76,7 @@ console.log('   ', JSON.stringify(c));
 // The year may arrive as its own cell or inside the election day — assert it
 // is READABLE, not which box holds it.
 check('a year is visible on the card', JSON.stringify(c), (v) => /20\d\d/.test(v));
-check('says Candidates TBD rather than dropping the cell', c.Candidates, 'TBD');
+check('counts the candidates on INEC\'s final list', Number(c.Candidates), listed('GOMBE', 'REP', 'Gombe/Kwami/Funakaye'));
 check('counts LGAs', c.LGAs, (v) => Number(v) > 0);
 check('and does NOT show a ward count', 'Wards' in c, false);
 check('the LGA count matches the seat table',
@@ -85,7 +88,13 @@ c = await card('contest=SEN&seat=Abia%20Central');
 console.log('   ', JSON.stringify(c));
 check('counts LGAs', c.LGAs, (v) => Number(v) > 0);
 check('and not wards', 'Wards' in c, false);
-check('Candidates TBD', c.Candidates, 'TBD');
+check('counts the candidates on INEC\'s final list', Number(c.Candidates), listed('ABIA', 'SEN', 'Abia Central'));
+
+// Borno is missing from INEC's State Assembly file, so its seats have no list.
+console.log('\n=== a race with no published list says TBD ===');
+c = await card('contest=SHA&state=Borno&seat=Gwoza');
+console.log('   ', JSON.stringify(c));
+check('says Candidates TBD rather than dropping the cell', c.Candidates, 'TBD');
 
 console.log('\n=== a governorship keeps LGAs and gains a year ===');
 c = await card('contest=GOV&state=Bauchi');

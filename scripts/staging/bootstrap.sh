@@ -69,12 +69,23 @@ on_host() {
   [ -n "$BUCKET" ] && [ -n "$STAMP" ] || fail "--bucket and --stamp are required"
   # This box must BE staging: read its own tag through IMDSv2.
   local tok envtag
-  tok="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300')"
-  envtag="$(curl -fsS -H "X-aws-ec2-metadata-token: $tok" http://169.254.169.254/latest/meta-data/tags/instance/env || true)"
-  [ "$envtag" = staging ] || fail "this instance is not tagged env=staging (got '$envtag'); refusing"
+  if [ "${HK_PROVIDER:-aws}" = oracle ]; then
+    # Oracle (scripts/staging/oracle.sh): the instance's own display name, from Oracle's metadata service.
+    envtag="$(curl -fsS -H 'Authorization: Bearer Oracle' http://169.254.169.254/opc/v2/instance/displayName || true)"
+    [ "$envtag" = hawkeye-staging ] || fail "this instance is not named hawkeye-staging (got '$envtag'); refusing"
+  else
+    tok="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300')"
+    envtag="$(curl -fsS -H "X-aws-ec2-metadata-token: $tok" http://169.254.169.254/latest/meta-data/tags/instance/env || true)"
+    [ "$envtag" = staging ] || fail "this instance is not tagged env=staging (got '$envtag'); refusing"
+  fi
 
   log "packages"
-  dnf -y -q install tar xz gzip gcc-c++ make python3 sqlite >/dev/null
+  if command -v dnf >/dev/null 2>&1; then dnf -y -q install tar xz gzip gcc-c++ make python3 sqlite >/dev/null
+  else   # Ubuntu (Oracle)
+    export DEBIAN_FRONTEND=noninteractive
+    apt-get -qq update >/dev/null
+    apt-get -y -qq install tar xz-utils gzip g++ make python3 sqlite3 curl ca-certificates >/dev/null
+  fi
 
   local W; W="$(mktemp -d)"
   fetch() { curl -fsSL --retry 3 --max-time 300 -o "$2" "$1"; }
@@ -104,7 +115,9 @@ on_host() {
   id caddy >/dev/null 2>&1 || useradd --system --home-dir /var/lib/caddy --create-home --shell /sbin/nologin caddy
 
   log "data volume -> $DATA"
-  if ! findmnt -rn "$DATA" >/dev/null; then
+  if [ "${HK_PROVIDER:-aws}" = oracle ]; then
+    mkdir -p "$DATA"   # one boot volume there; no separate data disk to find or format
+  elif ! findmnt -rn "$DATA" >/dev/null; then
     local rootdisk dev=""
     rootdisk="$(lsblk -no PKNAME "$(findmnt -no SOURCE /)")"
     if blkid -L hawkeye-data >/dev/null 2>&1; then dev="$(blkid -L hawkeye-data)"
@@ -122,6 +135,11 @@ on_host() {
     mount "$DATA"
   fi
   install -d -o hawkeye -g hawkeye -m 0750 "$DATA" "$DATA/storage" "$DATA/storage/uploads"
+  if [ "${HK_PROVIDER:-aws}" = oracle ]; then
+    # No S3 there: the `aws` stand-in keeps objects on this disk, and so does Litestream until R2 keys exist.
+    install -d -o hawkeye -g hawkeye -m 0750 "$DATA/objstore" "$DATA/objstore/$BUCKET" "$DATA/objstore/.meta" "$DATA/litestream-replica"
+    install -d -m 0755 /etc/hawkeye; echo oracle > /etc/hawkeye/local-objstore
+  fi
   install -d -o root -g root -m 0755 /opt/hawkeye/releases /etc/hawkeye /usr/local/libexec/hawkeye /etc/caddy
 
   log "code (deploy/$STAMP)"
@@ -243,6 +261,12 @@ if r2:
     replica = (f"      type: s3\n      bucket: {q(ls['R2_BUCKET'])}\n      path: {q(rpath)}\n"
                f"      endpoint: {q(ls['R2_ENDPOINT'])}\n      region: auto\n"
                f"      access-key-id: {q(ls['R2_ACCESS_KEY_ID'])}\n      secret-access-key: {q(ls['R2_SECRET_ACCESS_KEY'])}\n"
+               f"      sync-interval: {sync}\n")
+elif os.path.exists("/etc/hawkeye/local-objstore"):
+    # Not on AWS (scripts/staging/oracle.sh): there is no S3 to fall back to. A replica on this box's
+    # own disk exercises Litestream and protects nothing.
+    print("prestart: WARNING no R2 replica keys (litestream/R2_*): Litestream replicates to THIS disk", file=sys.stderr)
+    replica = (f"      type: file\n      path: {q('/var/lib/hawkeye/litestream-replica/' + rpath)}\n"
                f"      sync-interval: {sync}\n")
 else:
     print("prestart: WARNING no R2 replica keys (litestream/R2_*): Litestream replicates to S3, the SAME provider "
@@ -752,13 +776,14 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 . "$HERE/lib.sh"
 REPO="$(cd "$HERE/../.." && pwd)"
 
-DRY=""; DIRTY_OK=""; SEED_DB=""; READERS="auto"
+DRY=""; DIRTY_OK=""; SEED_DB=""; READERS="auto"; BUNDLE_ONLY=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --dry-run) DRY=1; shift ;;
     --allow-dirty) DIRTY_OK=1; shift ;;
     --seed-db) SEED_DB="${2:-}"; shift 2 ;;
     --readers) READERS="${2:-}"; shift 2 ;;
+    --bundle-only) BUNDLE_ONLY="${2:-}"; shift 2 ;;   # write bundle.tgz + STAMP into this directory and stop (oracle.sh)
     -h|--help) sed -n '2,26p' "$0"; exit 0 ;;
     *) die "unknown option '$1' (see --help)" ;;
   esac
@@ -796,6 +821,12 @@ BAD="$(tar -tzf "$WORK/bundle.tgz" | grep -E '(^|/)\.env($|\.)|(^|/)node_modules
 $BAD"
 NFILES="$(tar -tzf "$WORK/bundle.tgz" | wc -l)"; SIZE="$(du -h "$WORK/bundle.tgz" | cut -f1)"
 say "bundle: $NFILES files, $SIZE, revision $(cat "$WORK/backend/REVISION") (checked: no .env, keys, DBs, node_modules, fixtures)"
+if [ -n "$BUNDLE_ONLY" ]; then
+  [ -d "$BUNDLE_ONLY" ] || die "--bundle-only: $BUNDLE_ONLY is not a directory"
+  cp "$WORK/bundle.tgz" "$BUNDLE_ONLY/bundle.tgz"; printf '%s\n' "$STAMP" > "$BUNDLE_ONLY/STAMP"
+  say "bundle written to $BUNDLE_ONLY (release $STAMP); no AWS call made"
+  exit 0
+fi
 
 if [ -n "$DRY" ]; then
   cat <<EOF

@@ -386,3 +386,34 @@ Litestream history in it).
 4. **Direct-origin load testing** needs the temporary security-group rule and
    the Origin CA trust described in step 5. `scripts/loadtest/run.sh` has no
    insecure-TLS switch, on purpose.
+
+## Staging on Oracle (`oracle.sh`)
+
+The same on-host setup can run on an Oracle Cloud VM, carried over SSH. It was
+added on 12 Oct 2026 so that a load test can be paid for with Oracle's free
+trial credit while AWS credits are unavailable.
+
+1. Create the VM by hand in the Oracle console: display name **`hawkeye-staging`**
+   (the scripts refuse any other name), Canonical Ubuntu 24.04 aarch64,
+   VM.Standard.A1.Flex, a public IPv4 address, the `hawkeye_oracle` public key.
+2. Put its address in `~/.config/hawkeye/staging-oracle.env` (`STAGING_HOST`,
+   `STAGING_USER=ubuntu`, `STAGING_SSH_KEY`). Never in this repository.
+3. `oracle.sh --check` reaches the host and prints what it is; it changes nothing.
+4. `oracle.sh [--seed-db FILE] [--readers N]` builds the same bundle as
+   `bootstrap.sh`, sends it, and runs `bootstrap.sh --on-host` with
+   `HK_PROVIDER=oracle`.
+5. In the console, the subnet's security list must allow TCP 80 and 443 in. The
+   host firewall then admits Cloudflare's ranges only.
+
+**What is weaker than on AWS, by design.** There is no SSM and no S3 there:
+
+- the four secrets are generated on the host into `/etc/hawkeye/params` (root only);
+- `oracle/aws-shim.py` is installed as `aws` and keeps the deploy bundle and the
+  hourly DB backup **on the host's own disk**;
+- Litestream replicates to that same disk until R2 keys are placed under
+  `/etc/hawkeye/params/litestream/`.
+
+So the two "independent copies" are not independent there. That is acceptable
+for a throwaway load-test host and for nothing else. Remove the VM in the
+console when the test is done (a trial account's paid resources are removed by
+Oracle when the trial ends).

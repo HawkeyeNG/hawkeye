@@ -687,6 +687,8 @@ EOF
 staging.hawkeye.com.ng {
 	import /run/hawkeye/caddy-tls.caddy
 	encode gzip
+	# Staging is a copy of the public site: keep it out of search engines.
+	header X-Robots-Tag "noindex, nofollow"
 	@reads {
 		method GET HEAD
 		path /api/national/* /api/contests /api/declarations /api/integrity/* /api/incidents /api/docket /api/anchors /api/ledger/* /api/results /api/results/* /api/register/* /api/polling-units*

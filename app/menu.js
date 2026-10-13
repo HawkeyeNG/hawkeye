@@ -1809,6 +1809,8 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // in step with native/src/components/social-row.tsx and the signature block in
   // docs/EMAIL-TEMPLATE.html — three copies, no shared source.
   const SOCIAL = [
+    // The WhatsApp CHANNEL (14 Oct 2026), first: it is where most Nigerians already are.
+    { name: 'WhatsApp',  url: 'https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h', svg: '<path d="M3.6 20.4l1.2-4.3A8.4 8.4 0 1 1 8 19.3z"/><path d="M9.2 8.3c-.3 1 .3 2.6 1.6 3.9s2.9 1.9 3.9 1.6l.7-.9-1.6-1-.8.6c-.6-.3-1.6-1.3-1.9-1.9l.6-.8-1-1.6z" fill="currentColor" stroke="none"/>' },
     { name: 'TikTok',    url: 'https://www.tiktok.com/@hawkeyengbot', svg: '<path d="M15.5 3c.3 2.3 1.9 3.9 4.5 4.1v2.7c-1.6.1-3.1-.4-4.5-1.3v6.1a5.6 5.6 0 1 1-5.6-5.6c.3 0 .6 0 .9.1v2.8a2.8 2.8 0 1 0 2 2.7V3z" fill="currentColor" stroke="none"/>' },
     { name: 'Instagram', url: 'https://www.instagram.com/hawkeyengbot/', svg: '<rect x="3.5" y="3.5" width="17" height="17" rx="5"/><circle cx="12" cy="12" r="3.7"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/>' },
     { name: 'X',         url: 'https://x.com/HawkEyeNGBot', svg: '<path d="M4 4l6.9 8.4L4.3 20H7l5.1-5.7L16.6 20H20l-7.2-8.8L19.4 4H16.8l-4.6 5.2L8.2 4z" fill="currentColor" stroke="none"/>' },

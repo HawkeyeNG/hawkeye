@@ -85,6 +85,11 @@ const SOCIAL: {
   url: string;
   app?: string;
 }[] = [
+  // The WhatsApp CHANNEL (14 Oct 2026), first: it is where most Nigerians already are.
+  // whatsapp.com links are verified App Links / Universal Links, so the https url opens the
+  // channel in the app (no scheme is documented for channels). Feather has no WhatsApp mark;
+  // the speech bubble is the nearest glyph in the set.
+  { name: 'WhatsApp', icon: 'message-circle', url: 'https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h' },
   { name: 'TikTok', icon: 'music', url: 'https://www.tiktok.com/@hawkeyengbot' },
   {
     name: 'Instagram',

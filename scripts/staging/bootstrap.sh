@@ -795,6 +795,12 @@ SH
   systemctl daemon-reload
   systemctl enable hawkeye.target hawkeye-writer.service hawkeye-worker.service hawkeye-readers.service hawkeye-litestream.service hawkeye-litestream-interval.timer hawkeye-db-backup.timer hawkeye-caddy.service >/dev/null 2>&1
   /usr/local/sbin/hawkeye-restart || fail "start failed (prestart refusal or Caddyfile; see above)"
+  # Several writers, polite overload, the report journal: put back what this host was set to
+  # (scripts/staging/oracle/writers-overlay.sh records it; the lines above rebuilt ONE writer).
+  if [ -f /etc/hawkeye/writers.conf ] && [ -f /opt/hawkeye/current/scripts/staging/oracle/writers-overlay.sh ]; then
+    install -m 0755 /opt/hawkeye/current/scripts/staging/oracle/writers-overlay.sh /usr/local/sbin/hk-writers-overlay
+    /usr/local/sbin/hk-writers-overlay || fail "the writers overlay failed"
+  fi
 
   log "verify by behaviour"
   local h ok=1 n
@@ -814,7 +820,8 @@ SH
   echo "worker   ${h:-NO ANSWER}"; grep -q '"role":"worker"' <<<"$h" || ok=0
   h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve staging.hawkeye.com.ng:443:127.0.0.1 https://staging.hawkeye.com.ng/results.html || true)"
   echo "caddy    GET /results.html via :443 -> HTTP $h"; [ "$h" = 200 ] || ok=0
-  systemctl is-active --quiet hawkeye-litestream.service && echo "litestream active" || { echo "litestream NOT active"; ok=0; }
+  if [ -f /etc/hawkeye/peak-mode ]; then echo "litestream standing down: PEAK MODE is on (hawkeye-peak-mode status)"
+  else systemctl is-active --quiet hawkeye-litestream.service && echo "litestream active" || { echo "litestream NOT active"; ok=0; }; fi
   systemctl is-active --quiet hawkeye-db-backup.timer && echo "db backup timer active (hourly at :05)" || { echo "db backup timer NOT active"; ok=0; }
   systemctl is-active --quiet hawkeye-litestream-interval.timer && echo "litestream interval timer active (D7)" || { echo "litestream interval timer NOT active"; ok=0; }
   # D7: the running config must carry the interval the schedule says, not merely exist.
@@ -860,7 +867,7 @@ fi
 
 # ---- 1. The code bundle: tracked + untracked-but-not-ignored files only -------------------
 DIRTY="$( { git -C "$REPO" status --porcelain -- app scripts/loadtest scripts/staging
-            git -C "$REPO/backend" status --porcelain -- src scripts/journal_restore.mjs package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
+            git -C "$REPO/backend" status --porcelain -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
 if [ -n "$DIRTY" ] && [ -z "$DIRTY_OK" ]; then
   if [ -z "$DRY" ]; then die "uncommitted changes ($(wc -l <<<"$DIRTY") files); commit them or pass --allow-dirty:
 $(head -10 <<<"$DIRTY")"; fi
@@ -873,7 +880,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)-${BACK_SHA}"
 [ -n "$DIRTY" ] && STAMP="$STAMP-dirty"
 mkdir -p "$WORK/backend"; printf '%s\n' "backend-$BACK_SHA+app-$MAIN_SHA${DIRTY:+-dirty}" > "$WORK/backend/REVISION"
 git -C "$REPO" ls-files -z --cached --others --exclude-standard -- app scripts/loadtest scripts/staging > "$WORK/list"
-git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src scripts/journal_restore.mjs package.json package-lock.json eng.traineddata \
+git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs package.json package-lock.json eng.traineddata \
   | while IFS= read -r -d '' f; do printf 'backend/%s\0' "$f"; done >> "$WORK/list"
 # Deleted-but-still-tracked files would make tar fail; keep only what exists.
 while IFS= read -r -d '' f; do [ -e "$REPO/$f" ] && printf '%s\0' "$f"; done < "$WORK/list" > "$WORK/list.ok"

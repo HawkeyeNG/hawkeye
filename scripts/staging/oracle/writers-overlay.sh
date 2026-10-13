@@ -1,9 +1,9 @@
 #!/bin/bash
 # Several writer processes behind Caddy, with polite overload. STAGING ONLY.
 #
-# INTERIM: bootstrap.sh still builds one writer and rewrites the Caddyfile and the writer unit on
-# every redeploy, so this has to be run again after each one. It belongs in bootstrap.sh as
-# WRITERS=N once the backup question below is settled.
+# bootstrap.sh builds one writer and rewrites the Caddyfile and the writer unit on every redeploy;
+# this turns that into several. Run it once by hand with the settings wanted: it records them in
+# /etc/hawkeye/writers.conf, and from then on bootstrap.sh runs it again after each redeploy.
 #
 #   sudo install -m 0755 writers-overlay.sh /usr/local/sbin/hk-writers-overlay
 #   sudo hk-writers-overlay 3              (JOURNAL=1 in front turns the report journal on)
@@ -28,8 +28,12 @@
 #   holds SQLite's write lock ~13% of the time in 0.2-0.6 s stretches. monitor-interval 200ms
 #   made that worse (21%, one hold of 9 s); Litestream 0.3.13 much worse (25%, holds to 20 s).
 set -euo pipefail
-N="${1:-3}"
-CAP="${WRITER_MAX_IN_FLIGHT:-150}"
+# With no argument: what this host was last set to (bootstrap.sh calls it this way after a redeploy).
+CONF=/etc/hawkeye/writers.conf
+if [ $# -eq 0 ] && [ -f "$CONF" ]; then . "$CONF"; fi
+N="${1:-${N:-3}}"
+# 400: with 150 a healthy run at the design rate was refused 7% of the time; the accept queue is 511.
+CAP="${WRITER_MAX_IN_FLIGHT:-400}"
 RETRY_AFTER_S="${BUSY_RETRY_AFTER_S:-20}"
 U=/etc/systemd/system
 UP="127.0.0.1:8430"
@@ -96,4 +100,5 @@ PY
 systemctl reload hawkeye-caddy.service 2>/dev/null || systemctl restart hawkeye-caddy.service
 for n in $(seq 2 "$N"); do systemctl restart "hawkeye-writer$n.service"; done
 systemctl restart hawkeye-writer.service
-echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s"
+printf 'N=%s\nWRITER_MAX_IN_FLIGHT=%s\nBUSY_RETRY_AFTER_S=%s\nJOURNAL=%s\n' "$N" "$CAP" "$RETRY_AFTER_S" "${JOURNAL:-}" > "$CONF"
+echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s | journal: ${JOURNAL:-off}"

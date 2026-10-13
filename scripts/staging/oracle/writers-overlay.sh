@@ -6,7 +6,7 @@
 # WRITERS=N once the backup question below is settled.
 #
 #   sudo install -m 0755 writers-overlay.sh /usr/local/sbin/hk-writers-overlay
-#   sudo hk-writers-overlay 3
+#   sudo hk-writers-overlay 3              (JOURNAL=1 in front turns the report journal on)
 #
 # What the load tests of 13-14 Oct 2026 established (docs/private/ELECTION-NIGHT-HOSTING.md):
 #
@@ -46,6 +46,10 @@ done
 for u in hawkeye-writer.service $(for n in $(seq 2 "$N"); do echo "hawkeye-writer$n.service"; done) hawkeye-reader@.service; do
   install -d "$U/$u.d"
   printf '[Service]\nEnvironment=SQLITE_WAL_AUTOCHECKPOINT=0\n' > "$U/$u.d/checkpoint.conf"
+done
+# JOURNAL=1: the writers keep the report journal (backend services/reportJournal.js) and ship it to the bucket.
+for u in hawkeye-writer.service $(for n in $(seq 2 "$N"); do echo "hawkeye-writer$n.service"; done); do
+  if [ "${JOURNAL:-}" = 1 ]; then printf '[Service]\nEnvironment=REPORT_JOURNAL=1\n' > "$U/$u.d/journal.conf"; else rm -f "$U/$u.d/journal.conf"; fi
 done
 systemctl daemon-reload
 

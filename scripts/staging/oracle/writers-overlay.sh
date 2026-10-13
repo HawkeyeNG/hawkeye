@@ -76,6 +76,12 @@ polite = ("\t# POLITE OVERLOAD: when the proxy cannot place a request, say so at
           "\t\thandle @busy {\n"
           "\t\t\theader Retry-After " + os.environ['RETRY_AFTER_S'] + "\n"
           "\t\t\theader Content-Type application/json\n"
+          # The Lite app calls from another origin: without these its WebView hides the 503 and
+          # the outbox sees only "network error". The answer carries no data, so any origin may read it.
+          "\t\t\theader Access-Control-Allow-Origin {http.request.header.Origin}\n"
+          "\t\t\theader Access-Control-Allow-Credentials true\n"
+          "\t\t\theader Access-Control-Expose-Headers Retry-After\n"
+          "\t\t\theader Vary Origin\n"
           "\t\t\trespond `{\"error\":\"busy\",\"retryAfterS\":" + os.environ['RETRY_AFTER_S'] + "}` 503\n"
           "\t\t}\n"
           "\t}\n")

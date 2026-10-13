@@ -14,7 +14,7 @@
 #
 # What the server gets: Node 22 LTS, Caddy (Cloudflare Origin CA cert, or `tls internal`
 # until you add one), Litestream 0.5 (ONE continuous replica: R2 once its keys exist, S3 until
-# then), an hourly sqlite3 .backup to S3 (the independent second copy), an unprivileged
+# then), an hourly VACUUM INTO copy to S3 (the independent second copy), an unprivileged
 # `hawkeye` user, the data volume at /var/lib/hawkeye, and systemd units:
 #   hawkeye-prestart  (boot: secrets from SSM Parameter Store -> /run/hawkeye, tmpfs)
 #   hawkeye-writer    ROLE=writer :8430   every non-GET, the only request-path writer
@@ -23,7 +23,7 @@
 #   hawkeye-litestream                    continuous replica: RPO <= 1 s in election week, <= 10 s otherwise
 #   hawkeye-litestream-interval.timer     hourly: sync-interval 1s from 13 to 24 Jan 2027 (WAT), 10s otherwise
 #                                         (design D7; `sudo hawkeye-litestream-interval --set 1s|10s|auto`)
-#   hawkeye-db-backup.timer               hourly at :05: sqlite3 .backup -> gzip -> s3://BUCKET/backup/
+#   hawkeye-db-backup.timer               hourly at :05: VACUUM INTO -> gzip -> s3://BUCKET/backup/
 #                                         (newest 48 hourly + 14 daily kept), RPO <= 1 h (S3)
 #   caddy, all grouped under hawkeye.target
 # `sudo hawkeye-restore-test` restores from BOTH copies and checks them against the live ledger.
@@ -236,7 +236,7 @@ write(RUN + "/app.env", "".join(f"{k}={v}\n" for k, v in sorted(env.items())), 0
 write(RUN + "/origin-auth.hdr", f"X-Origin-Auth: {env['ORIGIN_AUTH_SECRET']}\n" if env.get("ORIGIN_AUTH_SECRET") else "", 0o600, 0)
 # Litestream 0.5: ONE replica per database. R2 when its four params exist; until then S3 through
 # the instance role, so staging is never unreplicated. The independent second copy is
-# hawkeye-db-backup.timer (hourly sqlite3 .backup to S3), not Litestream.
+# hawkeye-db-backup.timer (hourly VACUUM INTO copy to S3), not Litestream.
 # sync-interval (design D7): 1s in election week (13-24 Jan 2027, WAT), 10s otherwise, from
 # hawkeye-litestream-interval, which the hourly timer re-runs to switch it on the day. If the
 # helper fails, 1s: the safe side is the shorter RPO, never a refusal to start.
@@ -387,7 +387,10 @@ SH
 # Hourly INDEPENDENT copy of the live database to S3 (hawkeye-db-backup.timer). Litestream has ONE
 # replica (R2, RPO <= 1 s in election week, <= 10 s otherwise: D7); this is the second provider (RPO <= 1 h) and shares nothing with it:
 # not the tool, not the format, not the credentials.
-#   1. sqlite3 .backup: SQLite's online-backup API, a consistent copy while the writer keeps writing
+#   1. VACUUM INTO: the database as it is at ONE instant, read in a single transaction while the
+#      writers keep writing. (It was `.backup`. That restarts whenever another connection commits:
+#      under report load on staging, 14 Oct 2026, it took 295 s, finished only when the load did,
+#      and reports were refused while it tried. VACUUM INTO took 2 s in the same run.)
 #   2. PRAGMA quick_check on the COPY; its ledger head goes into the object's metadata
 #   3. gzip -> s3://BUCKET/backup/hourly/hawkeye-<UTC>.db.gz   (metadata: sha256, ledger-id, ledger-hash)
 #   4. the first copy of each UTC day is also copied, server side, to backup/daily/hawkeye-<date>.db.gz
@@ -407,7 +410,7 @@ now="$(date -u +%Y%m%dT%H%M%SZ)"; snap="$WORK/hawkeye-$now.db"
 trap 'rm -f "$snap" "$snap.gz"' EXIT
 # no_ckpt_on_close: should this ever be the last connection, closing it must NOT checkpoint the
 # live WAL. Litestream owns checkpoints: it has to read every frame before it reaches the main file.
-sqlite3 "$DB" ".timeout 30000" ".output /dev/null" ".dbconfig no_ckpt_on_close on" ".output stdout" ".backup '$snap'"
+sqlite3 "$DB" ".timeout 30000" ".output /dev/null" ".dbconfig no_ckpt_on_close on" ".output stdout" "VACUUM INTO '$snap'"
 qc="$(sqlite3 "$snap" 'PRAGMA quick_check;')"
 [ "$qc" = ok ] || { echo "db-backup: the copy fails quick_check: $qc" >&2; exit 1; }
 head="$(sqlite3 "$snap" "SELECT id || ' ' || entry_hash FROM submissions ORDER BY id DESC LIMIT 1;")"
@@ -433,6 +436,50 @@ date -u +%FT%TZ > "$WORK/last-ok"
 echo "db-backup: ok s3://$BUCKET/$key ($size, sha256 ${sha:0:12}, ledger head #${lid:-none})"
 SH
   chmod 0755 /usr/local/libexec/hawkeye/db-backup
+
+  cat > /usr/local/sbin/hawkeye-peak-mode <<'SH'
+#!/usr/bin/env bash
+# PEAK MODE: how the backup works in the hours when reports arrive fastest.
+#
+# Litestream has to hold SQLite's write lock while it reads what was written. At the design rate
+# (250 reports/s) that was ~13% of the time in 0.2-0.6 s stretches on staging, and three writers that
+# take the whole rate without it took ~120/s with it (load tests, 13-14 Oct 2026). In peak mode:
+#   - the REPORT JOURNAL (backend services/reportJournal.js) ships every accepted report to the bucket
+#     within about a second; it must already be on (REPORT_JOURNAL=1 on the writers);
+#   - a database snapshot goes to the bucket every 10 minutes (accounts, follows, everything else);
+#   - Litestream stands down.
+# To rebuild a lost server: newest snapshot + the journal objects -> backend/scripts/journal_restore.mjs
+# (drilled on staging: 79,173 reports put back in 54 s, ledger identical to the live one).
+#
+#   hawkeye-peak-mode on | off | status
+set -euo pipefail
+FLAG=/etc/hawkeye/peak-mode
+journal() { curl -fsS --max-time 4 -H @/run/hawkeye/origin-auth.hdr http://127.0.0.1:8430/api/health 2>/dev/null | python3 -c 'import json,sys; j=json.load(sys.stdin).get("journal"); print("off" if not j else ("ok" if j.get("ok") else "FAILING"), (j or {}).get("lines", 0), (j or {}).get("pendingBytes", 0))' 2>/dev/null || echo "unreachable 0 0"; }
+case "${1:-status}" in
+  on)
+    set -- $(journal)
+    [ "$1" = ok ] || { echo "refusing: the report journal is $1. Without it peak mode would leave new reports with no copy off this server." >&2; exit 1; }
+    date -u +%FT%TZ > "$FLAG"
+    systemctl stop hawkeye-litestream.service
+    systemctl enable --now hawkeye-peak-snapshot.timer >/dev/null 2>&1
+    systemctl start hawkeye-db-backup.service || { echo "the first snapshot FAILED (journalctl -u hawkeye-db-backup)" >&2; exit 1; }
+    echo "peak mode ON: journal shipping, snapshot every 10 minutes (one taken now), Litestream stopped" ;;
+  off)
+    rm -f "$FLAG"
+    systemctl disable --now hawkeye-peak-snapshot.timer >/dev/null 2>&1 || true
+    # Litestream saw none of what was written meanwhile, so its saved position describes a log that no
+    # longer exists: it starts again from a full copy of the database.
+    rm -rf /var/lib/hawkeye/storage/.hawkeye.db-litestream
+    systemctl start hawkeye-litestream.service
+    echo "peak mode OFF: Litestream started again from a fresh copy; the journal keeps shipping; snapshots back to hourly" ;;
+  status)
+    echo "peak mode: $([ -f "$FLAG" ] && echo "ON since $(cat "$FLAG")" || echo off)"
+    echo "litestream: $(systemctl is-active hawkeye-litestream.service || true) | 10-minute snapshots: $(systemctl is-active hawkeye-peak-snapshot.timer || true) | last snapshot ok: $(cat /var/lib/hawkeye/backup/last-ok 2>/dev/null || echo never)"
+    echo "journal (state, reports written, bytes not yet shipped): $(journal)" ;;
+  *) echo "usage: hawkeye-peak-mode on|off|status" >&2; exit 2 ;;
+esac
+SH
+  chmod 0755 /usr/local/sbin/hawkeye-peak-mode
 
   cat > /usr/local/sbin/hawkeye-restore-test <<'SH'
 #!/usr/bin/env bash
@@ -583,6 +630,8 @@ EOF
 [Unit]
 Description=Litestream 0.5: continuous SQLite replication, ONE replica (R2; S3 until the R2 keys exist)
 Requires=hawkeye-prestart.service
+# Peak mode (hawkeye-peak-mode on): the report journal and 10-minute snapshots carry the backup.
+ConditionPathExists=!/etc/hawkeye/peak-mode
 After=hawkeye-writer.service
 PartOf=hawkeye.target
 [Service]
@@ -618,7 +667,7 @@ WantedBy=hawkeye.target
 EOF
   cat > /etc/systemd/system/hawkeye-db-backup.service <<EOF
 [Unit]
-Description=Hawkeye: independent DB copy to S3 (sqlite3 .backup; newest 48 hourly + 14 daily kept)
+Description=Hawkeye: independent DB copy to S3 (VACUUM INTO; newest 48 hourly + 14 daily kept)
 RequiresMountsFor=$DATA
 [Service]
 Type=oneshot
@@ -635,6 +684,16 @@ ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 ReadWritePaths=$DATA
+EOF
+  cat > /etc/systemd/system/hawkeye-peak-snapshot.timer <<EOF
+[Unit]
+Description=Hawkeye PEAK MODE: a database snapshot to S3 every 10 minutes (hawkeye-peak-mode on|off)
+[Timer]
+OnCalendar=*-*-* *:00/10:00
+AccuracySec=10s
+Unit=hawkeye-db-backup.service
+[Install]
+WantedBy=timers.target
 EOF
   cat > /etc/systemd/system/hawkeye-db-backup.timer <<EOF
 [Unit]
@@ -801,7 +860,7 @@ fi
 
 # ---- 1. The code bundle: tracked + untracked-but-not-ignored files only -------------------
 DIRTY="$( { git -C "$REPO" status --porcelain -- app scripts/loadtest scripts/staging
-            git -C "$REPO/backend" status --porcelain -- src package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
+            git -C "$REPO/backend" status --porcelain -- src scripts/journal_restore.mjs package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
 if [ -n "$DIRTY" ] && [ -z "$DIRTY_OK" ]; then
   if [ -z "$DRY" ]; then die "uncommitted changes ($(wc -l <<<"$DIRTY") files); commit them or pass --allow-dirty:
 $(head -10 <<<"$DIRTY")"; fi
@@ -814,7 +873,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)-${BACK_SHA}"
 [ -n "$DIRTY" ] && STAMP="$STAMP-dirty"
 mkdir -p "$WORK/backend"; printf '%s\n' "backend-$BACK_SHA+app-$MAIN_SHA${DIRTY:+-dirty}" > "$WORK/backend/REVISION"
 git -C "$REPO" ls-files -z --cached --others --exclude-standard -- app scripts/loadtest scripts/staging > "$WORK/list"
-git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src package.json package-lock.json eng.traineddata \
+git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src scripts/journal_restore.mjs package.json package-lock.json eng.traineddata \
   | while IFS= read -r -d '' f; do printf 'backend/%s\0' "$f"; done >> "$WORK/list"
 # Deleted-but-still-tracked files would make tar fail; keep only what exists.
 while IFS= read -r -d '' f; do [ -e "$REPO/$f" ] && printf '%s\0' "$f"; done < "$WORK/list" > "$WORK/list.ok"

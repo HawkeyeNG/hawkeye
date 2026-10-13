@@ -78,7 +78,14 @@ fi
 
 # Ask the server what it is. A production server behind an IP or another name
 # is still production.
-HEALTH="$(curl -fsS --max-time 15 -H 'X-Loadtest: 1' "$BASE_URL/api/health" 2>/dev/null || true)"
+# Straight at a staging origin: its certificate is Caddy's own (not publicly trusted) and its
+# origin lock wants the header on every request, this one included. Neither applies to a
+# production NAME, which was refused above before anything was sent.
+PRE=(); if [ -z "$PROD" ]; then
+  [ -z "$DIRECT" ] || { PRE+=(-k); export K6_INSECURE_SKIP_TLS_VERIFY=true; }
+  [ -z "${ORIGIN_AUTH:-}" ] || PRE+=(-H "X-Origin-Auth: $ORIGIN_AUTH")
+fi
+HEALTH="$(curl -fsS --max-time 15 -H 'X-Loadtest: 1' "${PRE[@]}" "$BASE_URL/api/health" 2>/dev/null || true)"
 [ -n "$HEALTH" ] || die "cannot reach $BASE_URL/api/health (check the URL; the k6 setup() check would refuse too)"
 if printf '%s' "$HEALTH" | grep -Eq '"env"[[:space:]]*:[[:space:]]*"production"'; then PROD=1; fi
 

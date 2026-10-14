@@ -187,13 +187,22 @@ on_host() {
     echo "APP_ENV=$SITE"
     echo "NODE_ENV=production"
     # Staging may not message anyone; production's SMS settings come with its secrets.
-    [ "$SITE" = staging ] && printf 'SMS_PROVIDER=console\nSMS_OTP_ENABLED=false\n'
+    if [ "$SITE" = staging ]; then printf 'SMS_PROVIDER=console\nSMS_OTP_ENABLED=false\n'; fi
     echo "DB_PATH=$DATA/storage/hawkeye.db"
     echo "UPLOAD_DIR=$DATA/storage/uploads"
     echo "PUBLIC_BASE_URL=https://$SITE_HOST"
     echo "UV_THREADPOOL_SIZE=16"
     echo "READERS=$READERS"
+    # PRODUCTION IS DORMANT until the cutover creates /etc/hawkeye/live (hosting plan §4.2 B):
+    # STANDBY=1 = no background work, every write refused with 503, the database query_only, every
+    # outbound connection refused (backend config.js). It holds the live site's real SMS, WhatsApp,
+    # Telegram and social keys, so while GO54 is still the site it must not be able to act; and a
+    # redeploy must never wake it by accident, so dormant is the default, not a flag.
+    if [ "$SITE" = production ] && [ ! -f /etc/hawkeye/live ]; then echo "STANDBY=1"; fi
   } > "/etc/hawkeye/$SITE.env"
+  if [ "$SITE" = production ]; then
+    if [ -f /etc/hawkeye/live ]; then log "production is LIVE (/etc/hawkeye/live exists)"; else log "production is DORMANT (STANDBY=1) until the cutover creates /etc/hawkeye/live"; fi
+  fi
   echo "$STAMP" > /etc/hawkeye/release
 
   # ---- boot-time loader: SSM -> /run/hawkeye (tmpfs). Runs before every app start. ----

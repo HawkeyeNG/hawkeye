@@ -41,7 +41,7 @@ UP="127.0.0.1:8430"
 
 for n in $(seq 2 "$N"); do
   sed -e "s/PORT=8430/PORT=843$((n-1))/" \
-      -e "s/HOST_ID=staging-writer/HOST_ID=staging-writer-$n/" \
+      -E -e "s/HOST_ID=([a-z]+)-writer\$/HOST_ID=\\1-writer-$n/" \
       -e "s/^Description=.*/Description=Hawkeye writer $n (several writers)/" \
       -e 's/^After=hawkeye-prestart.service$/After=hawkeye-prestart.service hawkeye-writer.service/' \
       "$U/hawkeye-writer.service" > "$U/hawkeye-writer$n.service"
@@ -79,7 +79,7 @@ for f in "$U"/hawkeye-photos*.service; do
   if [ "$n" -gt "$PHOTOS" ]; then systemctl disable --now "${f##*/}" >/dev/null 2>&1 || true; rm -rf "$f" "$f.d"; fi
 done
 for n in $(seq 1 "$PHOTOS"); do
-  sed -e "s/ROLE=worker PORT=8450 HOST_ID=staging-worker/ROLE=photos PORT=$((8460 + n)) HOST_ID=staging-photos-$n/" \
+  sed -E -e "s/ROLE=worker PORT=8450 HOST_ID=([a-z]+)-worker\$/ROLE=photos PORT=$((8460 + n)) HOST_ID=\\1-photos-$n/" \
       -e "s/^Description=.*/Description=Hawkeye photos $n (OCR and photo analysis, low CPU priority)/" \
       "$U/hawkeye-worker.service" > "$U/hawkeye-photos$n.service"
   grep -q 'ROLE=photos' "$U/hawkeye-photos$n.service" || { echo "photos: the worker unit's Environment line has changed"; exit 1; }

@@ -50,9 +50,10 @@ DATA=/var/lib/hawkeye
 #  ON-HOST MODE (root on the staging instance, via SSM Run Command)
 # =====================================================================================
 on_host() {
-  local BUCKET="" STAMP="" SEED="" READERS="auto"
+  local BUCKET="" STAMP="" SEED="" READERS="auto" SITE="staging"
   while [ $# -gt 0 ]; do
     case "$1" in
+      --site) SITE="$2"; shift 2 ;;
       --bucket) BUCKET="$2"; shift 2 ;;
       --stamp) STAMP="$2"; shift 2 ;;
       --seed-db) SEED=1; shift ;;
@@ -67,16 +68,22 @@ on_host() {
   [ "$(id -u)" = 0 ] || fail "must run as root"
   [ "$(uname -m)" = aarch64 ] || fail "expected arm64 (Graviton), got $(uname -m)"
   [ -n "$BUCKET" ] && [ -n "$STAMP" ] || fail "--bucket and --stamp are required"
+  # SITE: staging (default; a throwaway copy that must not reach real people) or production (the
+  # election server: real secrets placed by the owner, never generated here). Everything that
+  # differs hangs off these three values.
+  case "$SITE" in staging|production) ;; *) fail "--site must be staging or production (got '$SITE')" ;; esac
+  local SITE_HOST="staging.hawkeye.com.ng"; [ "$SITE" = production ] && SITE_HOST="hawkeye.com.ng"
+  SSM_PREFIX_H="/hawkeye/$SITE"
   # This box must BE staging: read its own tag through IMDSv2.
   local tok envtag
   if [ "${HK_PROVIDER:-aws}" = oracle ]; then
     # Oracle (scripts/staging/oracle.sh): the instance's own display name, from Oracle's metadata service.
     envtag="$(curl -fsS -H 'Authorization: Bearer Oracle' http://169.254.169.254/opc/v2/instance/displayName || true)"
-    [ "$envtag" = hawkeye-staging ] || fail "this instance is not named hawkeye-staging (got '$envtag'); refusing"
+    [ "$envtag" = "hawkeye-$SITE" ] || fail "this instance is not named hawkeye-$SITE (got '$envtag'); refusing"
   else
     tok="$(curl -fsS -X PUT http://169.254.169.254/latest/api/token -H 'X-aws-ec2-metadata-token-ttl-seconds: 300')"
     envtag="$(curl -fsS -H "X-aws-ec2-metadata-token: $tok" http://169.254.169.254/latest/meta-data/tags/instance/env || true)"
-    [ "$envtag" = staging ] || fail "this instance is not tagged env=staging (got '$envtag'); refusing"
+    [ "$envtag" = "$SITE" ] || fail "this instance is not tagged env=$SITE (got '$envtag'); refusing"
   fi
 
   log "packages"
@@ -174,18 +181,19 @@ on_host() {
   rm -rf "$W"
 
   log "config"
-  cat > /etc/hawkeye/staging.env <<EOF
-# NON-secret settings. Secrets come from SSM ($SSM_PREFIX_H/env/*) into /run/hawkeye/app.env at boot.
-APP_ENV=staging
-NODE_ENV=production
-SMS_PROVIDER=console
-SMS_OTP_ENABLED=false
-DB_PATH=$DATA/storage/hawkeye.db
-UPLOAD_DIR=$DATA/storage/uploads
-PUBLIC_BASE_URL=https://staging.hawkeye.com.ng
-UV_THREADPOOL_SIZE=16
-READERS=$READERS
-EOF
+  echo "$SITE" > /etc/hawkeye/site
+  {
+    echo "# NON-secret settings. Secrets come from SSM ($SSM_PREFIX_H/env/*) into /run/hawkeye/app.env at boot."
+    echo "APP_ENV=$SITE"
+    echo "NODE_ENV=production"
+    # Staging may not message anyone; production's SMS settings come with its secrets.
+    [ "$SITE" = staging ] && printf 'SMS_PROVIDER=console\nSMS_OTP_ENABLED=false\n'
+    echo "DB_PATH=$DATA/storage/hawkeye.db"
+    echo "UPLOAD_DIR=$DATA/storage/uploads"
+    echo "PUBLIC_BASE_URL=https://$SITE_HOST"
+    echo "UV_THREADPOOL_SIZE=16"
+    echo "READERS=$READERS"
+  } > "/etc/hawkeye/$SITE.env"
   echo "$STAMP" > /etc/hawkeye/release
 
   # ---- boot-time loader: SSM -> /run/hawkeye (tmpfs). Runs before every app start. ----
@@ -196,7 +204,9 @@ EOF
 /run is tmpfs: secrets never touch the disk. REFUSES (exit 1, so nothing starts)
 if staging has any credential that could message a real person."""
 import json, os, re, subprocess, sys, grp, pwd
-PREFIX, REGION, RUN = "/hawkeye/staging", "eu-west-1", "/run/hawkeye"
+SITE = open("/etc/hawkeye/site").read().strip() if os.path.exists("/etc/hawkeye/site") else "staging"
+if SITE not in ("staging", "production"): sys.exit(f"prestart: REFUSED: /etc/hawkeye/site says {SITE!r}")
+PREFIX, REGION, RUN = f"/hawkeye/{SITE}", "eu-west-1", "/run/hawkeye"
 def die(m): print("prestart: REFUSED: " + m, file=sys.stderr); sys.exit(1)
 out = subprocess.run(["aws", "--region", REGION, "ssm", "get-parameters-by-path", "--path", PREFIX,
                       "--recursive", "--with-decryption", "--output", "json"], check=True, capture_output=True, text=True).stdout
@@ -209,13 +219,23 @@ tls = {k[4:]: v for k, v in params.items() if k.startswith("tls/")}
 FORBIDDEN = ["SENDCHAMP_API_KEY", "TERMII_API_KEY", "BULKSMS_NG_API_TOKEN", "WA_CLOUD_TOKEN", "WA_PHONE_NUMBER_ID",
              "TELEGRAM_BOT_TOKEN", "TELEGRAM_TEST_BOT_TOKEN", "FCM_PRIVATE_KEY", "FCM_CLIENT_EMAIL", "VAPID_PRIVATE_KEY",
              "X_API_KEY", "X_ACCESS_TOKEN", "META_PAGE_TOKEN", "TIKTOK_CLIENT_SECRET", "MASTER_PHONE"]
-for k in FORBIDDEN:
-    if env.get(k): die(f"{PREFIX}/env/{k} is set. Staging must hold no messaging, push or social credentials.")
-for k, want in (("APP_ENV", "staging"), ("SMS_PROVIDER", "console")):
-    if k in env and env[k] != want: die(f"{k}={env[k]} in SSM; staging requires {want}")
-if env.get("SMS_OTP_ENABLED", "").lower() in ("1", "true", "yes", "on"): die("SMS_OTP_ENABLED is on")
-for k in ("JWT_SECRET", "ORACLE_SECRET", "PHONE_SALT"):
-    if len(env.get(k, "")) < 32: die(f"{PREFIX}/env/{k} missing or short (provision.sh creates it)")
+if SITE == "staging":
+    for k in FORBIDDEN:
+        if env.get(k): die(f"{PREFIX}/env/{k} is set. Staging must hold no messaging, push or social credentials.")
+    for k, want in (("APP_ENV", "staging"), ("SMS_PROVIDER", "console")):
+        if k in env and env[k] != want: die(f"{k}={env[k]} in SSM; staging requires {want}")
+    if env.get("SMS_OTP_ENABLED", "").lower() in ("1", "true", "yes", "on"): die("SMS_OTP_ENABLED is on")
+    for k in ("JWT_SECRET", "ORACLE_SECRET", "PHONE_SALT"):
+        if len(env.get(k, "")) < 32: die(f"{PREFIX}/env/{k} missing or short (provision.sh creates it)")
+else:
+    # PRODUCTION: the secrets are the live site's own (a new PHONE_SALT or JWT_SECRET would lock
+    # every observer out), placed by the owner, never generated. Refuse to start without them, and
+    # without the bucket: the election server keeps photos and backups OFF the machine.
+    if env.get("APP_ENV", "production") != "production": die(f"APP_ENV={env['APP_ENV']} in params; production requires production")
+    need = ["JWT_SECRET", "ORACLE_SECRET", "PHONE_SALT", "ORIGIN_AUTH_SECRET",
+            "S3_BUCKET", "S3_ENDPOINT", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"]
+    missing = [k for k in need if not env.get(k)]
+    if missing: die("production needs " + ", ".join(f"{PREFIX}/env/{k}" for k in missing))
 SAFE = re.compile(r"^[A-Za-z0-9._:/+=@,\-]*$")
 for k, v in env.items():
     if not re.match(r"^[A-Z][A-Z0-9_]*$", k) or not SAFE.match(v): die(f"env/{k}: bad name or value characters")
@@ -287,7 +307,7 @@ else:
     write(RUN + "/caddy-tls.caddy", "tls internal\n", 0o644, 0)
 # Readers: auto = vCPUs/2 (1..8), so a resize to c7g.4xlarge gets 8 on the next boot.
 want = "auto"
-for line in open("/etc/hawkeye/staging.env"):
+for line in open(f"/etc/hawkeye/{SITE}.env"):
     if line.startswith("READERS="): want = line.split("=", 1)[1].strip()
 n = max(1, min(8, (os.cpu_count() or 2) // 2)) if want == "auto" else max(1, min(8, int(want)))
 write(RUN + "/readers", f"{n}\n", 0o644, 0)
@@ -562,7 +582,7 @@ SH
   local COMMON="User=hawkeye
 Group=hawkeye
 WorkingDirectory=/opt/hawkeye/current/backend
-EnvironmentFile=/etc/hawkeye/staging.env
+EnvironmentFile=/etc/hawkeye/$SITE.env
 EnvironmentFile=/run/hawkeye/app.env
 ExecStart=/usr/local/bin/node src/server.js
 Restart=always
@@ -592,7 +612,7 @@ Requires=hawkeye-prestart.service
 After=hawkeye-prestart.service
 PartOf=hawkeye.target
 [Service]
-Environment=ROLE=writer PORT=8430 HOST_ID=staging-writer
+Environment=ROLE=writer PORT=8430 HOST_ID=$SITE-writer
 $COMMON
 [Install]
 WantedBy=hawkeye.target
@@ -604,7 +624,7 @@ Requires=hawkeye-prestart.service
 After=hawkeye-prestart.service hawkeye-writer.service
 PartOf=hawkeye.target
 [Service]
-Environment=ROLE=reader PORT=844%i HOST_ID=staging-reader-%i
+Environment=ROLE=reader PORT=844%i HOST_ID=$SITE-reader-%i
 $COMMON
 EOF
   cat > /etc/systemd/system/hawkeye-worker.service <<EOF
@@ -614,7 +634,7 @@ Requires=hawkeye-prestart.service
 After=hawkeye-prestart.service hawkeye-writer.service
 PartOf=hawkeye.target
 [Service]
-Environment=ROLE=worker PORT=8450 HOST_ID=staging-worker
+Environment=ROLE=worker PORT=8450 HOST_ID=$SITE-worker
 $COMMON
 [Install]
 WantedBy=hawkeye.target
@@ -751,7 +771,7 @@ WantedBy=hawkeye.target
 EOF
   cat > /etc/systemd/system/hawkeye.target <<EOF
 [Unit]
-Description=Hawkeye staging (writer, readers, worker, litestream, hourly DB backup, caddy)
+Description=Hawkeye $SITE (writer, readers, worker, litestream, hourly DB backup, caddy)
 Wants=hawkeye-prestart.service hawkeye-writer.service hawkeye-readers.service hawkeye-worker.service hawkeye-litestream.service hawkeye-litestream-interval.timer hawkeye-db-backup.timer hawkeye-caddy.service
 [Install]
 WantedBy=multi-user.target
@@ -802,6 +822,11 @@ http:// {
 	redir https://staging.hawkeye.com.ng{uri} 308
 }
 EOF
+  if [ "$SITE" = production ]; then
+    # The live site: its own name, and it must be indexed (staging's noindex line goes).
+    sed -i -e "s/staging\.hawkeye\.com\.ng/$SITE_HOST/g" -e '/Staging is a copy of the public site/d' -e '/X-Robots-Tag "noindex, nofollow"/d' /etc/caddy/Caddyfile
+    grep -q 'staging\|noindex' /etc/caddy/Caddyfile && fail "the production Caddyfile still names staging or noindex"
+  fi
 
   # One command to re-read SSM (new keys, a new cert) and restart every role, writer first.
   cat > /usr/local/sbin/hawkeye-restart <<'SH'
@@ -828,7 +853,7 @@ SH
     /usr/local/sbin/hk-writers-overlay || fail "the writers overlay failed"
   fi
   # The load tests' reset (refuses to run unless this is a staging host).
-  if [ -f /opt/hawkeye/current/scripts/staging/oracle/reset-staging.sh ]; then
+  if [ "$SITE" = staging ] && [ -f /opt/hawkeye/current/scripts/staging/oracle/reset-staging.sh ]; then
     install -m 0755 /opt/hawkeye/current/scripts/staging/oracle/reset-staging.sh /usr/local/sbin/hk-reset-staging
   fi
 
@@ -837,8 +862,8 @@ SH
   local A=(-H @/run/hawkeye/origin-auth.hdr)   # the origin lock covers localhost too
   for _ in $(seq 1 60); do h="$(curl -fsS --max-time 2 "${A[@]}" http://127.0.0.1:8430/api/health 2>/dev/null)" && break; sleep 1; done
   echo "writer   ${h:-NO ANSWER}"
-  grep -q '"env":"staging"' <<<"${h:-}" && grep -q '"role":"writer"' <<<"$h" || ok=0
-  grep -q '"smsOtp":false' <<<"${h:-}" && grep -q '"waCloud":false' <<<"$h" || ok=0
+  grep -q "\"env\":\"$SITE\"" <<<"${h:-}" && grep -q '"role":"writer"' <<<"$h" || ok=0
+  if [ "$SITE" = staging ]; then grep -q '"smsOtp":false' <<<"${h:-}" && grep -q '"waCloud":false' <<<"$h" || ok=0; fi
   n="$(cat /run/hawkeye/readers)"
   for i in $(seq 1 "$n"); do
     # Readers and the worker are started after the writer answers: give each the same grace, or a
@@ -848,7 +873,7 @@ SH
   done
   h=""; for _ in $(seq 1 60); do h="$(curl -fsS --max-time 2 "${A[@]}" http://127.0.0.1:8450/api/health 2>/dev/null)" && break; sleep 1; done
   echo "worker   ${h:-NO ANSWER}"; grep -q '"role":"worker"' <<<"$h" || ok=0
-  h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve staging.hawkeye.com.ng:443:127.0.0.1 https://staging.hawkeye.com.ng/results.html || true)"
+  h="$(curl -skS --max-time 5 "${A[@]}" -o /dev/null -w '%{http_code}' --resolve "$SITE_HOST:443:127.0.0.1" "https://$SITE_HOST/results.html" || true)"
   echo "caddy    GET /results.html via :443 -> HTTP $h"; [ "$h" = 200 ] || ok=0
   if [ -f /etc/hawkeye/peak-mode ]; then echo "litestream standing down: PEAK MODE is on (hawkeye-peak-mode status)"
   else systemctl is-active --quiet hawkeye-litestream.service && echo "litestream active" || { echo "litestream NOT active"; ok=0; }; fi
@@ -863,7 +888,7 @@ SH
   else echo "db backup FAILED"; journalctl -u hawkeye-db-backup.service -n 20 --no-pager -o cat; ok=0; fi
   /usr/local/sbin/hawkeye-restore-test 180 || ok=0
   [ "$ok" = 1 ] || fail "verification failed (journalctl -u 'hawkeye-*')"
-  log "DONE: release $STAMP is live on staging"
+  log "DONE: release $STAMP is live on $SITE"
 }
 
 if [ "${1:-}" = "--on-host" ]; then shift; on_host "$@"; exit 0; fi

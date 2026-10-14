@@ -45,8 +45,8 @@ PY
 case "${1:-}" in
   preflight)
     echo "GO54: $(health_go54 | python3 -c 'import json,sys; d=json.load(sys.stdin); print("env", d.get("env"), "| readOnly", d.get("readOnly"))')"
-    c=$(curl -s -m 25 -A "$UA" -o /dev/null -w '%{http_code}' -X POST "$SITE/api/admin/backup/snapshot")
-    echo "GO54 snapshot route without the secret: HTTP $c  (401/403 = it exists; 404 = deploy the backend first)"
+    # Not probed here: an admin call without the secret alerts the owner as a failed login. The
+    # snapshot step proves the route (it needs backend 36e2b048 or later on GO54).
     echo "election server: $(prod_health | python3 -c 'import json,sys; d=json.load(sys.stdin); print("env", d.get("env"), "| readOnly", d.get("readOnly"), "| standby", bool(d.get("standby")))')"
     [ -n "$(admin_secret)" ] && echo "admin secret: present in backend/.env" || echo "admin secret: MISSING in backend/.env"
     ;;

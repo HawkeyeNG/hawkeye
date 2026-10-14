@@ -63,10 +63,29 @@ p = '/etc/caddy/Caddyfile'
 s = open(p).read()
 s = re.sub(r"\t# SEVERAL WRITERS:[^\n]*\n\t@reports [^\n]*\n\thandle @reports \{\n.*?\n\t\}\n", "", s, flags=re.S)
 s = re.sub(r"\t# EXPERIMENT:[^\n]*\n\t@reports [^\n]*\n\thandle @reports \{\n.*?\n\t\}\n", "", s, flags=re.S)
+s = re.sub(r"\t# SIGNED-IN READS[^\n]*\n\t@apiGets \{\n.*?\n\t\}\n\thandle @apiGets \{\n.*?\n\t\}\n", "", s, flags=re.S)
 s = re.sub(r"\t# POLITE OVERLOAD:[^\n]*\n\thandle_errors \{\n.*?\n\t\}\n", "", s, flags=re.S)
 writers = ("\t# SEVERAL WRITERS: the report path (presign AND submit) is shared; everything else stays on the first.\n"
            "\t@reports path /api/submissions /api/submissions/* /api/uploads/*\n"
            "\thandle @reports {\n"
+           "\t\treverse_proxy " + os.environ['UP'] + " {\n"
+           "\t\t\tlb_policy round_robin\n"
+           "\t\t\tlb_try_duration 1s\n"
+           "\t\t\tlb_try_interval 100ms\n"
+           "\t\t\tunhealthy_request_count " + os.environ['CAP'] + "\n"
+           "\t\t}\n"
+           "\t}\n"
+           # A GET keeps no state in the process that answers it, so signed-in reads (1,500/s at the
+           # design point; one writer answers ~800/s per core) are shared as well. Other writes stay on
+           # the first writer: their throttles and dedupe live in its memory. The TikTok sign-in is a GET
+           # that DOES rely on that memory, so it stays there too.
+           "\t# SIGNED-IN READS are shared across the writers as well; every other write stays on the first.\n"
+           "\t@apiGets {\n"
+           "\t\tmethod GET HEAD\n"
+           "\t\tpath /api/*\n"
+           "\t\tnot path /api/tiktok/*\n"
+           "\t}\n"
+           "\thandle @apiGets {\n"
            "\t\treverse_proxy " + os.environ['UP'] + " {\n"
            "\t\t\tlb_policy round_robin\n"
            "\t\t\tlb_try_duration 1s\n"

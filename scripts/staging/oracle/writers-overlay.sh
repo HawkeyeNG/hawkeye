@@ -55,6 +55,29 @@ done
 for u in hawkeye-writer.service $(for n in $(seq 2 "$N"); do echo "hawkeye-writer$n.service"; done); do
   if [ "${JOURNAL:-}" = 1 ]; then printf '[Service]\nEnvironment=REPORT_JOURNAL=1\n' > "$U/$u.d/journal.conf"; else rm -f "$U/$u.d/journal.conf"; fi
 done
+# PHOTOS=N (0 = off): N 'photos' processes run the OCR and photo-analysis queues at LOW CPU priority
+# (CPUWeight 10 against the default 100), so serving always wins and they catch up after the peak;
+# the worker then leaves those queues to them (PHOTO_QUEUES=off). Each job is claimed by exactly one
+# process (backend services/jobClaim.js). 14 Oct: with the queues off the box, dropped connections
+# at the design load fell from ~124,000 to ~5,000.
+PHOTOS="${PHOTOS:-0}"
+[ "$PHOTOS" -ge 0 ] && [ "$PHOTOS" -le 64 ] || { echo "photos: 0 to 64"; exit 1; }
+for f in "$U"/hawkeye-photos*.service; do
+  [ -e "$f" ] || continue
+  n="${f##*hawkeye-photos}"; n="${n%.service}"
+  if [ "$n" -gt "$PHOTOS" ]; then systemctl disable --now "${f##*/}" >/dev/null 2>&1 || true; rm -rf "$f" "$f.d"; fi
+done
+for n in $(seq 1 "$PHOTOS"); do
+  sed -e "s/ROLE=worker PORT=8450 HOST_ID=staging-worker/ROLE=photos PORT=$((8460 + n)) HOST_ID=staging-photos-$n/" \
+      -e "s/^Description=.*/Description=Hawkeye photos $n (OCR and photo analysis, low CPU priority)/" \
+      "$U/hawkeye-worker.service" > "$U/hawkeye-photos$n.service"
+  grep -q 'ROLE=photos' "$U/hawkeye-photos$n.service" || { echo "photos: the worker unit's Environment line has changed"; exit 1; }
+  install -d "$U/hawkeye-photos$n.service.d"
+  printf '[Service]\nCPUWeight=10\nNice=10\nEnvironment=SQLITE_WAL_AUTOCHECKPOINT=0\n' > "$U/hawkeye-photos$n.service.d/priority.conf"
+done
+install -d "$U/hawkeye-worker.service.d"
+if [ "$PHOTOS" -gt 0 ]; then printf '[Service]\nEnvironment=PHOTO_QUEUES=off\n' > "$U/hawkeye-worker.service.d/photos.conf"
+else rm -f "$U/hawkeye-worker.service.d/photos.conf"; fi
 systemctl daemon-reload
 
 UP="$UP" CAP="$CAP" RETRY_AFTER_S="$RETRY_AFTER_S" python3 - <<'PY'
@@ -119,5 +142,7 @@ PY
 systemctl reload hawkeye-caddy.service 2>/dev/null || systemctl restart hawkeye-caddy.service
 for n in $(seq 2 "$N"); do systemctl restart "hawkeye-writer$n.service"; done
 systemctl restart hawkeye-writer.service
-printf 'N=%s\nWRITER_MAX_IN_FLIGHT=%s\nBUSY_RETRY_AFTER_S=%s\nJOURNAL=%s\n' "$N" "$CAP" "$RETRY_AFTER_S" "${JOURNAL:-}" > "$CONF"
-echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s | journal: ${JOURNAL:-off}"
+systemctl restart hawkeye-worker.service
+for n in $(seq 1 "$PHOTOS"); do systemctl enable "hawkeye-photos$n.service" >/dev/null 2>&1 || true; systemctl restart "hawkeye-photos$n.service"; done
+printf 'N=%s\nWRITER_MAX_IN_FLIGHT=%s\nBUSY_RETRY_AFTER_S=%s\nJOURNAL=%s\nPHOTOS=%s\n' "$N" "$CAP" "$RETRY_AFTER_S" "${JOURNAL:-}" "$PHOTOS" > "$CONF"
+echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s | journal: ${JOURNAL:-off} | photos processes: $PHOTOS"

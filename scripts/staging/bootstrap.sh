@@ -827,6 +827,10 @@ SH
     install -m 0755 /opt/hawkeye/current/scripts/staging/oracle/writers-overlay.sh /usr/local/sbin/hk-writers-overlay
     /usr/local/sbin/hk-writers-overlay || fail "the writers overlay failed"
   fi
+  # The load tests' reset (refuses to run unless this is a staging host).
+  if [ -f /opt/hawkeye/current/scripts/staging/oracle/reset-staging.sh ]; then
+    install -m 0755 /opt/hawkeye/current/scripts/staging/oracle/reset-staging.sh /usr/local/sbin/hk-reset-staging
+  fi
 
   log "verify by behaviour"
   local h ok=1 n

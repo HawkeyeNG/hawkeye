@@ -447,7 +447,10 @@ SH
 #   - the REPORT JOURNAL (backend services/reportJournal.js) ships every accepted report to the bucket
 #     within about a second; it must already be on (REPORT_JOURNAL=1 on the writers);
 #   - a database snapshot goes to the bucket every 10 minutes (accounts, follows, everything else);
-#   - Litestream stands down.
+#   - Litestream stands down;
+#   - hawkeye-peak-checkpoint copies the write-ahead log into the database every 2 s. Litestream did
+#     that job; without it the log grew 0 -> 7.4 GB in 10 minutes at the design load (14 Oct) and every
+#     read had to search it. PASSIVE: it never waits for, or blocks, a writer.
 # To rebuild a lost server: newest snapshot + the journal objects -> backend/scripts/journal_restore.mjs
 # (drilled on staging: 79,173 reports put back in 54 s, ledger identical to the live one).
 #
@@ -461,12 +464,14 @@ case "${1:-status}" in
     [ "$1" = ok ] || { echo "refusing: the report journal is $1. Without it peak mode would leave new reports with no copy off this server." >&2; exit 1; }
     date -u +%FT%TZ > "$FLAG"
     systemctl stop hawkeye-litestream.service
+    systemctl start hawkeye-peak-checkpoint.service
     systemctl enable --now hawkeye-peak-snapshot.timer >/dev/null 2>&1
     systemctl start hawkeye-db-backup.service || { echo "the first snapshot FAILED (journalctl -u hawkeye-db-backup)" >&2; exit 1; }
     echo "peak mode ON: journal shipping, snapshot every 10 minutes (one taken now), Litestream stopped" ;;
   off)
     rm -f "$FLAG"
     systemctl disable --now hawkeye-peak-snapshot.timer >/dev/null 2>&1 || true
+    systemctl stop hawkeye-peak-checkpoint.service || true
     # Litestream saw none of what was written meanwhile, so its saved position describes a log that no
     # longer exists: it starts again from a full copy of the database.
     rm -rf /var/lib/hawkeye/storage/.hawkeye.db-litestream
@@ -474,7 +479,7 @@ case "${1:-status}" in
     echo "peak mode OFF: Litestream started again from a fresh copy; the journal keeps shipping; snapshots back to hourly" ;;
   status)
     echo "peak mode: $([ -f "$FLAG" ] && echo "ON since $(cat "$FLAG")" || echo off)"
-    echo "litestream: $(systemctl is-active hawkeye-litestream.service || true) | 10-minute snapshots: $(systemctl is-active hawkeye-peak-snapshot.timer || true) | last snapshot ok: $(cat /var/lib/hawkeye/backup/last-ok 2>/dev/null || echo never)"
+    echo "litestream: $(systemctl is-active hawkeye-litestream.service || true) | 10-minute snapshots: $(systemctl is-active hawkeye-peak-snapshot.timer || true) | log checkpoints: $(systemctl is-active hawkeye-peak-checkpoint.service || true) | last snapshot ok: $(cat /var/lib/hawkeye/backup/last-ok 2>/dev/null || echo never)"
     echo "journal (state, reports written, bytes not yet shipped): $(journal)" ;;
   *) echo "usage: hawkeye-peak-mode on|off|status" >&2; exit 2 ;;
 esac
@@ -679,6 +684,24 @@ IOSchedulingClass=best-effort
 IOSchedulingPriority=7
 ExecStart=/usr/local/libexec/hawkeye/db-backup
 TimeoutStartSec=45min
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=$DATA
+EOF
+  cat > /etc/systemd/system/hawkeye-peak-checkpoint.service <<EOF
+[Unit]
+Description=Hawkeye PEAK MODE: copy the write-ahead log into the database every 2 s (hawkeye-peak-mode on|off)
+ConditionPathExists=/etc/hawkeye/peak-mode
+RequiresMountsFor=$DATA
+[Service]
+User=hawkeye
+Group=hawkeye
+# One line every ~30 s: busy flag, frames in the log, frames copied. The loop ends when peak mode does.
+ExecStart=/bin/bash -c 'n=0; while [ -e /etc/hawkeye/peak-mode ]; do r=\$\$(sqlite3 $DB_PATH "PRAGMA wal_checkpoint(PASSIVE);" 2>&1); [ \$\$((n++ %% 15)) = 0 ] && echo "checkpoint \$\$r"; sleep 2; done'
+Restart=on-failure
+RestartSec=5
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes

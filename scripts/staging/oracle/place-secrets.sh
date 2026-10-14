@@ -21,12 +21,21 @@ name="$(curl -fsS -m 5 -H 'Authorization: Bearer Oracle' http://169.254.169.254/
 [ "$name" = hawkeye-production ] || { echo "REFUSED: this machine is '$name', not hawkeye-production" >&2; exit 1; }
 D=/etc/hawkeye/params/env
 install -d -m 0700 /etc/hawkeye/params "$D"
+# Echo off ONCE for the whole paste: `read -s` turns it off line by line, and a paste that arrives
+# over ssh in pieces was shown in the gaps between lines (14 Oct). Restored however this exits.
+t=""
+if [ -t 0 ]; then
+  TTY_SAVED="$(stty -g)"; stty -echo
+  trap 'stty "$TTY_SAVED"; [ -z "$t" ] || rm -f "$t"' EXIT
+else
+  trap '[ -z "$t" ] || rm -f "$t"' EXIT
+fi
 case "${1:-}" in
   --pem)
     n="${2:-}"; [[ "$n" =~ ^[A-Z][A-Z0-9_]*$ ]] || { echo "usage: --pem NAME" >&2; exit 2; }
     echo "Paste the key file now, then press Ctrl-D (nothing you paste is shown back):"
-    t="$(mktemp)"; trap 'rm -f "$t"' EXIT
-    while IFS= read -r -s l || [ -n "$l" ]; do printf '%s\n' "${l%$'\r'}"; done > "$t"; echo
+    t="$(mktemp)"
+    while IFS= read -r l || [ -n "$l" ]; do printf '%s\n' "${l%$'\r'}"; done > "$t"; echo
     grep -q -- '-----BEGIN [A-Z ]*PRIVATE KEY-----' "$t" && grep -q -- '-----END [A-Z ]*PRIVATE KEY-----' "$t" \
       || { echo "REFUSED: that is not a PEM private key (no BEGIN/END PRIVATE KEY lines)" >&2; exit 1; }
     (umask 077; awk 'NF { printf "%s\\n", $0 }' "$t" > "$D/$n.tmp"); mv "$D/$n.tmp" "$D/$n"
@@ -35,8 +44,8 @@ case "${1:-}" in
     w="${2:-}"; case "$w" in cert) f=origin_cert; want=CERTIFICATE ;; key) f=origin_key; want="PRIVATE KEY" ;; *) echo "usage: --tls cert|key" >&2; exit 2 ;; esac
     install -d -m 0700 /etc/hawkeye/params/tls
     echo "Paste the Origin CA $w now, then press Ctrl-D (nothing you paste is shown back):"
-    t="$(mktemp)"; trap 'rm -f "$t"' EXIT
-    while IFS= read -r -s l || [ -n "$l" ]; do printf '%s\n' "${l%$'\r'}"; done > "$t"; echo
+    t="$(mktemp)"
+    while IFS= read -r l || [ -n "$l" ]; do printf '%s\n' "${l%$'\r'}"; done > "$t"; echo
     grep -q -- "-----BEGIN [A-Z ]*$want-----" "$t" || { echo "REFUSED: that does not look like a $w (no BEGIN ... $want line)" >&2; exit 1; }
     (umask 077; cp "$t" "/etc/hawkeye/params/tls/$f.tmp"); mv "/etc/hawkeye/params/tls/$f.tmp" "/etc/hawkeye/params/tls/$f"
     echo "written: tls/$f"; exit 0 ;;
@@ -53,7 +62,7 @@ esac
 SKIP=" APP_ENV NODE_ENV PORT HOST DB_PATH UPLOAD_DIR PUBLIC_BASE_URL UV_THREADPOOL_SIZE READERS ROLE HOST_ID "
 echo "Paste the production .env now, then press Ctrl-D (nothing you paste is shown back):"
 written=""; skipped=""; bad=""
-while IFS= read -r -s line || [ -n "$line" ]; do
+while IFS= read -r line || [ -n "$line" ]; do
   line="${line%$'\r'}"
   case "$line" in ''|'#'*) continue ;; esac
   k="${line%%=*}"; v="${line#*=}"

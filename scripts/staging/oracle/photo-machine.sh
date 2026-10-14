@@ -75,9 +75,16 @@ EOF
     sleep 5
     echo "photo machine $(hostname): $(systemctl list-units --state=active --plain --no-legend 'hawkeye-photo-worker@*.service' | wc -l) of $PROCS processes running"
     ;;
+  stop)
+    # Instances one by one: `systemctl disable --now 'hawkeye-photo-worker@*'` leaves them running.
+    for u in $(systemctl list-units --all --plain --no-legend 'hawkeye-photo-worker@*.service' | awk '{print $1}'); do
+      systemctl disable --now "$u" >/dev/null 2>&1 || true
+    done
+    echo "running: $(systemctl list-units --state=active --plain --no-legend 'hawkeye-photo-worker@*.service' | wc -l)"
+    ;;
   status)
     echo "running: $(systemctl list-units --state=active --plain --no-legend 'hawkeye-photo-worker@*.service' | wc -l)"
     journalctl -u 'hawkeye-photo-worker@*' --since "-10 min" -o cat | grep -v '"done"' | tail -5
     ;;
-  *) echo "usage: photo-machine.sh push <ip> [processes] | setup [processes] | status" >&2; exit 2 ;;
+  *) echo "usage: photo-machine.sh push <ip> [processes] | setup [processes] | stop | status" >&2; exit 2 ;;
 esac

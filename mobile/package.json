@@ -16,10 +16,10 @@
     "@capacitor-firebase/messaging": "^8.4.0",
     "@capacitor-mlkit/document-scanner": "^8.1.0",
     "@capacitor-mlkit/text-recognition": "^8.1.0",
-    "@capacitor/android": "^8.0.0",
+    "@capacitor/android": "^8.4.3",
     "@capacitor/app": "^8.0.0",
     "@capacitor/camera": "^8.0.0",
-    "@capacitor/core": "^8.0.0",
+    "@capacitor/core": "^8.4.3",
     "@capacitor/geolocation": "^8.0.0",
     "@capacitor/network": "^8.0.0",
     "@capacitor/preferences": "^8.0.0",
@@ -32,14 +32,14 @@
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^8.0.0",
-    "@capacitor/ios": "^8.0.0",
+    "@capacitor/cli": "^8.4.3",
+    "@capacitor/ios": "^8.4.3",
     "patch-package": "^8.0.1"
   },
   "overrides": {
     "@capacitor/assets": {
       "@capacitor/cli": "$@capacitor/cli",
-      "sharp": "^0.35.4"
+      "sharp": "^0.35.5"
     },
     "xcode": {
       "uuid": "^11.1.1"

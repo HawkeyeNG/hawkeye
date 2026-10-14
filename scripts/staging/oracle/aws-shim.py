@@ -63,6 +63,39 @@ def meta_of(bucket, key):
         return {}
 
 
+# OFF THE BOX: everything under backup/ (the hourly copy and peak mode's 10-minute snapshots) goes
+# to the R2 bucket the app already has keys for (S3_* in /run/hawkeye/app.env; BACKUP_S3_BUCKET to
+# use another bucket), through backend/scripts/r2cli.mjs. Without those keys it stays on this disk
+# as before. The deploy bundle stays local either way.
+R2CLI = os.environ.get("AWS_SHIM_R2CLI", "/opt/hawkeye/current/backend/scripts/r2cli.mjs")
+APP_ENV_FILE = os.environ.get("AWS_SHIM_APP_ENV", "/run/hawkeye/app.env")
+
+
+def remote_env():
+    try:
+        lines = open(APP_ENV_FILE).read().splitlines()
+    except OSError:
+        return None
+    env = dict(l.split("=", 1) for l in lines if "=" in l and not l.startswith("#"))
+    keys = ("S3_ENDPOINT", "S3_BUCKET", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY")
+    if not all(env.get(k) for k in keys) or not os.path.isfile(R2CLI):
+        return None
+    out = {k: env[k] for k in keys + ("S3_REGION", "BACKUP_S3_BUCKET") if env.get(k)}
+    out["PATH"] = os.environ.get("PATH", "/usr/local/bin:/usr/bin:/bin")
+    return out
+
+
+def remote(key, *args):
+    """Run r2cli for an object under backup/; None when this key stays local."""
+    if not key.startswith("backup/"):
+        return None
+    env = remote_env()
+    if env is None:
+        return None
+    import subprocess
+    return subprocess.run(["/usr/local/bin/node", R2CLI, *args], env=env).returncode
+
+
 def main(argv):
     opts, rest, i = {}, [], 0
     flags = {"--only-show-errors", "--recursive", "--with-decryption"}
@@ -83,6 +116,14 @@ def main(argv):
     if cmd == "s3 cp" and len(rest) == 4:
         src, dst = split(rest[2]), split(rest[3])
         metadata = dict(kv.split("=", 1) for kv in opts.get("--metadata", "").split(",") if "=" in kv)
+        if src and dst:
+            rc = remote(dst[1], "copy", src[1], dst[1]) if src[1].startswith("backup/") else None
+        elif dst:
+            rc = remote(dst[1], "put", rest[2], dst[1], json.dumps(metadata))
+        else:
+            rc = remote(src[1], "get", src[1], rest[3]) if src else None
+        if rc is not None:
+            return rc
         if src and dst:                                   # object to object: the metadata travels
             if not os.path.isfile(path(*src)):
                 die(f"no such object {rest[2]}", 1)
@@ -99,6 +140,9 @@ def main(argv):
 
     if cmd == "s3 rm" and len(rest) == 3:
         b, k = split(rest[2]) or die("s3 rm needs an s3:// address")
+        rc = remote(k, "rm", k)
+        if rc is not None:
+            return rc
         for p in (path(b, k), path(b, k, meta=True)):
             try:
                 os.remove(p)
@@ -108,6 +152,10 @@ def main(argv):
 
     if cmd == "s3api head-object":
         b, k = opts.get("--bucket"), opts.get("--key")
+        q = opts.get("--query", "")
+        rc = remote(k or "", "head", k, *([q[len("Metadata."):]] if q.startswith("Metadata.") else []))
+        if rc is not None:
+            return rc
         if not b or not k or not os.path.isfile(path(b, k)):
             die("Not Found", 254)
         m = meta_of(b, k)
@@ -122,6 +170,9 @@ def main(argv):
         b, prefix = opts.get("--bucket"), opts.get("--prefix", "")
         if not b or opts.get("--query") != "Contents[].Key" or opts.get("--output") != "text":
             die("list-objects-v2 is supported only as --query 'Contents[].Key' --output text")
+        rc = remote(prefix, "list", prefix)
+        if rc is not None:
+            return rc
         base, keys = os.path.join(ROOT, b), []
         for d, _dirs, files in os.walk(base):
             for f in files:

@@ -699,7 +699,7 @@ RequiresMountsFor=$DATA
 User=hawkeye
 Group=hawkeye
 # One line every ~30 s: busy flag, frames in the log, frames copied. The loop ends when peak mode does.
-ExecStart=/bin/bash -c 'n=0; while [ -e /etc/hawkeye/peak-mode ]; do r=\$\$(sqlite3 $DB_PATH "PRAGMA wal_checkpoint(PASSIVE);" 2>&1); [ \$\$((n++ %% 15)) = 0 ] && echo "checkpoint \$\$r"; sleep 2; done'
+ExecStart=/bin/bash -c 'n=0; while [ -e /etc/hawkeye/peak-mode ]; do r=\$\$(sqlite3 $DATA/storage/hawkeye.db "PRAGMA wal_checkpoint(PASSIVE);" 2>&1); [ \$\$((n++ %% 15)) = 0 ] && echo "checkpoint \$\$r"; sleep 2; done'
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=yes

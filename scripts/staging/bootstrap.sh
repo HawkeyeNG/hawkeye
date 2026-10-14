@@ -893,7 +893,7 @@ fi
 
 # ---- 1. The code bundle: tracked + untracked-but-not-ignored files only -------------------
 DIRTY="$( { git -C "$REPO" status --porcelain -- app scripts/loadtest scripts/staging
-            git -C "$REPO/backend" status --porcelain -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
+            git -C "$REPO/backend" status --porcelain -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs scripts/photo_worker.mjs package.json package-lock.json | sed -E 's#^(...)#\1backend/#'; } | sed '/^$/d')"
 if [ -n "$DIRTY" ] && [ -z "$DIRTY_OK" ]; then
   if [ -z "$DRY" ]; then die "uncommitted changes ($(wc -l <<<"$DIRTY") files); commit them or pass --allow-dirty:
 $(head -10 <<<"$DIRTY")"; fi
@@ -906,7 +906,7 @@ STAMP="$(date -u +%Y%m%dT%H%M%SZ)-${BACK_SHA}"
 [ -n "$DIRTY" ] && STAMP="$STAMP-dirty"
 mkdir -p "$WORK/backend"; printf '%s\n' "backend-$BACK_SHA+app-$MAIN_SHA${DIRTY:+-dirty}" > "$WORK/backend/REVISION"
 git -C "$REPO" ls-files -z --cached --others --exclude-standard -- app scripts/loadtest scripts/staging > "$WORK/list"
-git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs package.json package-lock.json eng.traineddata \
+git -C "$REPO/backend" ls-files -z --cached --others --exclude-standard -- src scripts/journal_restore.mjs scripts/journal_fetch.mjs scripts/photo_worker.mjs package.json package-lock.json eng.traineddata \
   | while IFS= read -r -d '' f; do printf 'backend/%s\0' "$f"; done >> "$WORK/list"
 # Deleted-but-still-tracked files would make tar fail; keep only what exists.
 while IFS= read -r -d '' f; do [ -e "$REPO/$f" ] && printf '%s\0' "$f"; done < "$WORK/list" > "$WORK/list.ok"

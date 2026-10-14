@@ -237,8 +237,15 @@ else:
     missing = [k for k in need if not env.get(k)]
     if missing: die("production needs " + ", ".join(f"{PREFIX}/env/{k}" for k in missing))
 SAFE = re.compile(r"^[A-Za-z0-9._:/+=@,\-]*$")
+QUOTABLE = re.compile(r"^[\x20-\x7e]*$")
 for k, v in env.items():
-    if not re.match(r"^[A-Z][A-Z0-9_]*$", k) or not SAFE.match(v): die(f"env/{k}: bad name or value characters")
+    if not re.match(r"^[A-Z][A-Z0-9_]*$", k): die(f"env/{k}: bad name")
+    if SAFE.match(v): continue
+    # Production carries keys with spaces and backslashes (FCM_PRIVATE_KEY is one line with literal
+    # \n escapes, services/push.js). Those go into app.env SINGLE-QUOTED, which systemd and the shell
+    # both pass through untouched. A quote, a real line break or a control character is refused.
+    if SITE == "production" and QUOTABLE.match(v) and "'" not in v: continue
+    die(f"env/{k}: value has characters this loader will not pass on")
 blob = all(env.get(k) for k in ("S3_BUCKET", "S3_ENDPOINT", "S3_ACCESS_KEY_ID", "S3_SECRET_ACCESS_KEY"))
 env.setdefault("UPLOAD_MODE", "direct" if blob else "proxy")
 env.setdefault("BLOB_DRIVER", "s3" if blob else "fs")
@@ -250,7 +257,7 @@ def write(path, text, mode, gid):
     fd = os.open(tmp, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, mode)
     with os.fdopen(fd, "w") as f: f.write(text)
     os.chown(tmp, 0, gid); os.chmod(tmp, mode); os.replace(tmp, path)
-write(RUN + "/app.env", "".join(f"{k}={v}\n" for k, v in sorted(env.items())), 0o640, gid_h)
+write(RUN + "/app.env", "".join(f"{k}={v}\n" if SAFE.match(v) else f"{k}='{v}'\n" for k, v in sorted(env.items())), 0o640, gid_h)
 # The app's origin lock (X-Origin-Auth) applies to every request, localhost included:
 # root's own health checks send it from this file (curl -H @file), never on a command line.
 write(RUN + "/origin-auth.hdr", f"X-Origin-Auth: {env['ORIGIN_AUTH_SECRET']}\n" if env.get("ORIGIN_AUTH_SECRET") else "", 0o600, 0)

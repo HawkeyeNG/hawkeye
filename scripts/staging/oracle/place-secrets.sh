@@ -71,7 +71,12 @@ while IFS= read -r line || [ -n "$line" ]; do
   case "$SKIP" in *" $k "*) skipped="$skipped $k"; continue ;; esac
   # One layer of surrounding quotes is .env syntax, not part of the value. Escapes inside stay
   # literal: FCM_PRIVATE_KEY must keep its \n sequences (backend services/push.js).
-  if [[ "$v" =~ ^\"(.*)\"$ ]] || [[ "$v" =~ ^\'(.*)\'$ ]]; then v="${BASH_REMATCH[1]}"; fi
+  # dotenv's rules, as GO54 reads the same file: a quoted value is what is inside the quotes (a
+  # comment may follow); an unquoted value ends where whitespace + # starts a comment (14 Oct:
+  # VAPID_SUBJECT carried one in, and the loader rightly refused it).
+  if [[ "$v" =~ ^\"([^\"]*)\"([[:space:]]+#.*)?$ ]] || [[ "$v" =~ ^\'([^\']*)\'([[:space:]]+#.*)?$ ]]; then v="${BASH_REMATCH[1]}"
+  elif [[ "$v" =~ ^(.*[^[:space:]])[[:space:]]+#.*$ ]]; then v="${BASH_REMATCH[1]}"
+  elif [[ "$v" =~ ^[[:space:]]*#.*$ ]]; then v=""; fi
   (umask 077; printf '%s' "$v" > "$D/$k.tmp"); mv "$D/$k.tmp" "$D/$k"
   written="$written $k"
 done

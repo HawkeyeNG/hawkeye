@@ -61,6 +61,9 @@ done
 # process (backend services/jobClaim.js). 14 Oct: with the queues off the box, dropped connections
 # at the design load fell from ~124,000 to ~5,000.
 PHOTOS="${PHOTOS:-0}"
+# REMOTE_PHOTOS=1: PHOTO MACHINES do that work instead (option B: backend routes/photoJobs.js and
+# scripts/photo_worker.mjs, with PHOTO_WORKER_TOKEN in the app's params), so nothing on this host does.
+REMOTE_PHOTOS="${REMOTE_PHOTOS:-0}"
 [ "$PHOTOS" -ge 0 ] && [ "$PHOTOS" -le 64 ] || { echo "photos: 0 to 64"; exit 1; }
 for f in "$U"/hawkeye-photos*.service; do
   [ -e "$f" ] || continue
@@ -76,7 +79,7 @@ for n in $(seq 1 "$PHOTOS"); do
   printf '[Service]\nCPUWeight=10\nNice=10\nEnvironment=SQLITE_WAL_AUTOCHECKPOINT=0\n' > "$U/hawkeye-photos$n.service.d/priority.conf"
 done
 install -d "$U/hawkeye-worker.service.d"
-if [ "$PHOTOS" -gt 0 ]; then printf '[Service]\nEnvironment=PHOTO_QUEUES=off\n' > "$U/hawkeye-worker.service.d/photos.conf"
+if [ "$PHOTOS" -gt 0 ] || [ "$REMOTE_PHOTOS" = 1 ]; then printf '[Service]\nEnvironment=PHOTO_QUEUES=off\n' > "$U/hawkeye-worker.service.d/photos.conf"
 else rm -f "$U/hawkeye-worker.service.d/photos.conf"; fi
 systemctl daemon-reload
 
@@ -144,5 +147,5 @@ for n in $(seq 2 "$N"); do systemctl restart "hawkeye-writer$n.service"; done
 systemctl restart hawkeye-writer.service
 systemctl restart hawkeye-worker.service
 for n in $(seq 1 "$PHOTOS"); do systemctl enable "hawkeye-photos$n.service" >/dev/null 2>&1 || true; systemctl restart "hawkeye-photos$n.service"; done
-printf 'N=%s\nWRITER_MAX_IN_FLIGHT=%s\nBUSY_RETRY_AFTER_S=%s\nJOURNAL=%s\nPHOTOS=%s\n' "$N" "$CAP" "$RETRY_AFTER_S" "${JOURNAL:-}" "$PHOTOS" > "$CONF"
-echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s | journal: ${JOURNAL:-off} | photos processes: $PHOTOS"
+printf 'N=%s\nWRITER_MAX_IN_FLIGHT=%s\nBUSY_RETRY_AFTER_S=%s\nJOURNAL=%s\nPHOTOS=%s\nREMOTE_PHOTOS=%s\n' "$N" "$CAP" "$RETRY_AFTER_S" "${JOURNAL:-}" "$PHOTOS" "$REMOTE_PHOTOS" > "$CONF"
+echo "writers: $N ($UP) | at most $CAP in flight each | busy answer: 503, Retry-After ${RETRY_AFTER_S}s | journal: ${JOURNAL:-off} | photos processes: $PHOTOS | photo machines: $([ "$REMOTE_PHOTOS" = 1 ] && echo yes || echo no)"

@@ -448,7 +448,8 @@ SH
 #     within about a second; it must already be on (REPORT_JOURNAL=1 on the writers);
 #   - a database snapshot goes to the bucket every 10 minutes (accounts, follows, everything else);
 #   - Litestream stands down;
-#   - hawkeye-peak-checkpoint copies the write-ahead log into the database every 2 s. Litestream did
+#   - hawkeye-peak-checkpoint copies the write-ahead log into the database every 2 s, and every 30 s
+#     makes the log start again from its beginning. Litestream did
 #     that job; without it the log grew 0 -> 7.4 GB in 10 minutes at the design load (14 Oct) and every
 #     read had to search it. PASSIVE: it never waits for, or blocks, a writer.
 # To rebuild a lost server: newest snapshot + the journal objects -> backend/scripts/journal_restore.mjs
@@ -698,8 +699,10 @@ RequiresMountsFor=$DATA
 [Service]
 User=hawkeye
 Group=hawkeye
-# One line every ~30 s: busy flag, frames in the log, frames copied. The loop ends when peak mode does.
-ExecStart=/bin/bash -c 'n=0; while [ -e /etc/hawkeye/peak-mode ]; do r=\$\$(sqlite3 $DATA/storage/hawkeye.db "PRAGMA wal_checkpoint(PASSIVE);" 2>&1); [ \$\$((n++ %% 15)) = 0 ] && echo "checkpoint \$\$r"; sleep 2; done'
+# PASSIVE every 2 s; every 30 s a RESTART (waits up to 0.5 s for writers and readers) so the next writer
+# starts the log again from its beginning: readers never all stop under load, so without it the file
+# only grows (6.7 GB in 10 minutes, 14 Oct). Logs each RESTART: busy flag, frames in the log, copied.
+ExecStart=/bin/bash -c 'n=0; while [ -e /etc/hawkeye/peak-mode ]; do m=PASSIVE; [ \$\$((n %% 15)) = 14 ] && m=RESTART; r=\$\$(sqlite3 -cmd ".timeout 500" $DATA/storage/hawkeye.db "PRAGMA wal_checkpoint(\$\$m);" 2>&1); [ \$\$m = RESTART ] && echo "checkpoint \$\$m \$\$r"; n=\$\$((n+1)); sleep 2; done'
 Restart=on-failure
 RestartSec=5
 NoNewPrivileges=yes

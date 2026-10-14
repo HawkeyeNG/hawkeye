@@ -64,6 +64,14 @@ PHOTOS="${PHOTOS:-0}"
 # REMOTE_PHOTOS=1: PHOTO MACHINES do that work instead (option B: backend routes/photoJobs.js and
 # scripts/photo_worker.mjs, with PHOTO_WORKER_TOKEN in the app's params), so nothing on this host does.
 REMOTE_PHOTOS="${REMOTE_PHOTOS:-0}"
+# Photo checks must never stop: photo machines can fail, lose their token or never be started. So
+# with REMOTE_PHOTOS=1 this host ALWAYS keeps its own low-priority photos processes too (at least 2).
+# Both drain the same queues; a job is claimed by exactly one of them, so nothing is done twice, and
+# the local ones only get the CPU that serving leaves over.
+if [ "$REMOTE_PHOTOS" = 1 ] && [ "$PHOTOS" -lt 2 ]; then
+  echo "photos: REMOTE_PHOTOS=1 keeps 2 local photos processes as well (was PHOTOS=$PHOTOS)"
+  PHOTOS=2
+fi
 [ "$PHOTOS" -ge 0 ] && [ "$PHOTOS" -le 64 ] || { echo "photos: 0 to 64"; exit 1; }
 for f in "$U"/hawkeye-photos*.service; do
   [ -e "$f" ] || continue

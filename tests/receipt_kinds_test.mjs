@@ -235,6 +235,13 @@ console.log('\n=== 3. incidents.html files a report and hands over the card ==='
   await p.click('#btn-submit');
   await p.waitForSelector('#done-modal:not([hidden])', { timeout: 15000 });
   await p.waitForFunction(() => window.__cards.length >= 2, null, { timeout: 8000 });
+  // The hook above records the card when show() is CALLED; show() reveals the
+  // wrap only after drawing it (loadLogo + toBlob). Wait for that, as the sent
+  // case does, or a loaded machine reads the wrap before it is revealed (seen in
+  // a full run: card right, wrap still hidden). showCopy() re-hides the wrap
+  // before it calls show(), so this cannot match the first card's reveal; no
+  // throw on timeout, so a wrap that never shows still FAILS the check below.
+  await p.waitForSelector('#receipt-wrap:not([hidden])', { timeout: 8000 }).catch(() => {});
   dropNext = false;
   const queued = await p.evaluate(() => ({
     title: document.getElementById('done-title').textContent,

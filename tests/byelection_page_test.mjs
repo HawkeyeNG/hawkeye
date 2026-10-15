@@ -19,9 +19,14 @@ const APP = '/home/elrio/hawkeye/app';
 const TYPES = { '.json': 'application/json', '.js': 'text/javascript', '.html': 'text/html', '.css': 'text/css', '.svg': 'image/svg+xml' };
 const CONTESTS = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/backend/src/data/contests.json', 'utf8'));
 
+/** When set, INEC's 2027 final lists (app/candidates-2027/<STATE>.json) are not
+ *  served — an open seat whose list is not out, which is what every 2027 seat was
+ *  until 3a2c0709 (2026-10-11) shipped the lists. */
+let withholdFinalLists = false;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+  if (withholdFinalLists && url.startsWith('/candidates-2027/')) { res.writeHead(404); return res.end(); }
   if (url === '/api/contests') return json(CONTESTS.map((c) => ({ ...c, open: false, opensAt: `${c.date}T08:30:00+01:00` })));
   if (url.startsWith('/api/national/')) {
     return json({ contest: url.split('/').pop(), level: 'lga', scope: null, subunits: [], regions: [], national: [], unitsReporting: 0, inDispute: 0, updatedAt: Date.now() });
@@ -208,10 +213,21 @@ r = await open('contest=GOV&state=Bauchi');
 check('a generated governorship still renders its LGAs', r.shapes, (n) => n === 20);
 r = await open('contest=REP&seat=Gombe%2FKwami%2FFunakaye');
 check('the 2027 general seat page still renders', r.shapes, 3);
-// An OPEN race still promises the list - the declared wording above is keyed on
-// the result, not applied everywhere.
-check('and, being open, still says the list is not published yet', r.body,
-  (t) => /has not published the candidate list for this race yet/i.test(t));
+// INEC's final list is out for this seat (3a2c0709), so the page carries it.
+const FINAL = JSON.parse(fs.readFileSync(`${APP}/candidates-2027/GOMBE.json`, 'utf8')).REP.GOMBEKWAMIFUNAKAYE;
+check('and carries INEC\'s final list for it, every name', r.body,
+  (t) => FINAL.length > 0 && FINAL.every((c) => t.includes(c.name))
+    && t.includes(`Every candidate on INEC's final list for this race — ${FINAL.length} of them.`));
+check('so it no longer says the list is not published', r.body,
+  (t) => !/has not published the candidate list/i.test(t));
+// An OPEN race with no list still promises one - the declared wording above is
+// keyed on the result, not applied everywhere. With the final lists withheld,
+// the same page is that race again.
+withholdFinalLists = true;
+r = await open('contest=REP&seat=Gombe%2FKwami%2FFunakaye');
+withholdFinalLists = false;
+check('CONTROL without the final list, being open, it still says the list is not published yet', r.body,
+  (t) => /has not published the candidate list for this race yet/i.test(t) && !/INEC's final list/.test(t));
 
 check('no page errors anywhere', errs, []);
 await b.close();

@@ -14,9 +14,13 @@ const CONTESTS = JSON.parse(fs.readFileSync('/home/elrio/hawkeye/backend/src/dat
 const SEATS = JSON.parse(fs.readFileSync(`${APP}/seat_lgas.json`, 'utf8'));
 const DGEO = JSON.parse(fs.readFileSync(`${APP}/district_geo.json`, 'utf8'));
 
+/** When set, INEC's 2027 final lists (app/candidates-2027/<STATE>.json) are not
+ *  served: the seat as it was before 3a2c0709 (2026-10-11) shipped them. */
+let withholdFinalLists = false;
 const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0];
   const json = (o) => { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)); };
+  if (withholdFinalLists && url.startsWith('/candidates-2027/')) { res.writeHead(404); return res.end(); }
   if (url === '/api/contests') return json(CONTESTS.map((c) => ({ ...c, open: false, opensAt: `${c.date}T08:30:00+01:00` })));
   if (url.startsWith('/api/national/')) {
     return json({
@@ -62,8 +66,24 @@ check(`drawn as its ${want.lgas.length} LGAs`, await p.$$eval('.race-map path', 
 check('captioned', await p.textContent('.race-map + .hint'), `${seat} — ${want.lgas.length} local government areas`);
 check('sized from the register', await p.$$eval('.race-statbar .s', (n) => n.map((x) => x.textContent.replace(/\s+/g, ' ').trim())),
   (c) => c.some((x) => x.includes(String(want.lgas.length))) && c.some((x) => /Polling units/.test(x)));
-check('and it says why there are no candidates', await p.textContent('.race-ctx'),
-  (t) => /has not published the candidate list/.test(t));
+// INEC's final list is out for this seat (3a2c0709), so the page carries it and
+// credits it, and no longer explains an absence.
+const FINAL = JSON.parse(fs.readFileSync(`${APP}/candidates-2027/EBONYI.json`, 'utf8')).SEN.EBONYISOUTH;
+check('it lists INEC\'s final list for the seat, every name', await p.textContent('#race-main'),
+  (t) => FINAL.length > 0 && FINAL.every((c) => t.includes(c.name))
+    && t.includes(`Every candidate on INEC's final list for this race — ${FINAL.length} of them.`));
+check('so it no longer says the list is not published', await p.$$eval('.race-ctx', (n) => n.map((x) => x.textContent).join(' ')),
+  (t) => !/has not published the candidate list/.test(t));
+// CONTROL: with the final list withheld the same page still says why there are
+// no candidates — the wording this check asserted before the lists shipped.
+withholdFinalLists = true;
+await p.goto(`${base}/race.html?contest=SEN&seat=${encodeURIComponent(seat)}`, { waitUntil: 'networkidle' });
+await p.waitForSelector('.race-ctx', { timeout: 10000 }).catch(() => {});
+check('CONTROL without the final list it says why there are no candidates',
+  await p.$$eval('.race-ctx', (n) => n.map((x) => x.textContent).join(' ')), (t) => /has not published the candidate list/.test(t));
+withholdFinalLists = false;
+await p.goto(`${base}/race.html?contest=SEN&seat=${encodeURIComponent(seat)}`, { waitUntil: 'networkidle' });
+await p.waitForSelector('.race-map', { timeout: 10000 });
 // The board link is a RULE now, not a button: a seat page draws its own LGAs
 // coloured from the same board data, so it no longer offers a way to a less
 // specific view of itself. The rule still has to name the seat, so it is

@@ -118,6 +118,8 @@ const cards = (pg) => pg.evaluate(() => {
     visiblePracticeCards: [n, p].filter(vis).length,
     text: n.innerText.replace(/\s+/g, ' ').trim(),
     links: [...n.querySelectorAll('a')].map((a) => a.getAttribute('href')),
+    // The card's BUTTON, by its class, so the second link cannot stand in for it.
+    go: n.querySelector('a.pday-go')?.getAttribute('href') ?? null,
     dismissLabel: n.querySelector('.pnudge-x')?.getAttribute('aria-label') || null,
     // styles.css makes every <button> full-width and green; the × must not be.
     dismissBox: (() => {
@@ -136,7 +138,10 @@ let r = await open();
 let c = await cards(r.pg);
 check('show: nudge visible', c.nudge, true);
 check('show: title and body', c.text, (t) => t.startsWith('Try a practice run — 5 minutes') && t.includes('Nothing you enter counts as a real result.'));
-check('show: the button opens the practice flow', c.links, ['practice.html']);
+check('show: the button opens the practice flow', c.go, 'practice.html');
+// 5af9bf4f (ONB-18) added the readiness check under the button: nothing in a
+// first run pointed to it. Exactly these two links, the button first.
+check('show: and a second link opens the readiness check — nothing else', c.links, ['practice.html', 'ready.html']);
 check('show: the × has an accessible name', c.dismissLabel, 'Dismiss');
 check('show: the × is small, unshadowed, with a 44px tap target (not the global full-width button)', c.dismissBox, [28, 28, 'none', 44]);
 check('AT MOST ONE: Practice Day card steps aside while the nudge shows', [c.pday, c.visiblePracticeCards], [false, 1]);

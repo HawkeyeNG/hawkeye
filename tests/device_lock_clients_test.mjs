@@ -112,8 +112,27 @@ check('device-signals.ts: ANDROID_ID on Android, DeviceCheck on iOS, both featur
 check('CONTROL: an unguarded call is caught', sigRules(signals.replace(/typeof device\?\.androidId !== 'function'/g, 'false'))[2] === false);
 
 const auth = read('native/src/lib/auth.ts');
-check('native signOut tells the server (best effort) before the session is cleared',
-  /export async function signOut\(\)[\s\S]{0,700}\/api\/observers\/sign-out[\s\S]{0,700}await expireSession\(\)/.test(auth));
+/* Read the ORDER inside signOut's own body, not within a character window: the
+   window ({0,700} each side) went red on working code when b941161b added the
+   signedOutByChoice lines and their comment above the call. What matters is
+   that the call is in signOut and comes before the session is cleared. */
+const signOutBody = (s) => {
+  const at = s.search(/export async function signOut\(\)/);
+  if (at < 0) return '';
+  const end = s.indexOf('\n}\n', at);
+  return s.slice(at, end < 0 ? s.length : end);
+};
+const tellsFirst = (s) => {
+  const body = signOutBody(s);
+  const call = body.indexOf('/api/observers/sign-out');
+  const clear = body.indexOf('await expireSession()');
+  return call > -1 && clear > -1 && call < clear;
+};
+check('native signOut tells the server (best effort) before the session is cleared', tellsFirst(auth));
+check('CONTROL: without the call it is caught', tellsFirst(auth.replace(/\/api\/observers\/sign-out/g, '/x')) === false);
+const moved = signOutBody(auth).replace(/\/api\/observers\/sign-out/g, '/x')
+  .replace('await expireSession()', "await expireSession(); fetch('/api/observers/sign-out')");
+check('CONTROL: the call moved after the session is cleared is caught', tellsFirst(`${moved}\n}\n`) === false);
 
 // ---- the native module and the Lite plugins ----------------------------------------------
 const cfg = JSON.parse(read('native/modules/hawkeye-device/expo-module.config.json'));

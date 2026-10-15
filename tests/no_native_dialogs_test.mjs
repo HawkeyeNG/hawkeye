@@ -122,11 +122,29 @@ check('no Alert.alert / Alert.prompt (or an Alert import) in native', nativeHits
 
 console.log('\n=== every page that raises a dialog loads dialog.js ===');
 const HK = /\bhk(Alert|Confirm|Prompt|Choose)\s*\(/;
+/* A script that LOADS dialog.js ITSELF before it asks — a <script src="dialog.js">
+   it appends and awaits, as menu.js's sign-out (42ae938b) and native.js's
+   room-link warning do — does not need the page to carry it: the call cannot
+   throw for want of it. Recognised by the code, not by file name: the appended
+   script's src is dialog.js, and an hk* call comes after it. */
+const SELF_LOAD = /\.src\s*=\s*['"`]\/?dialog\.js(?:\?[^'"`]*)?['"`]/;
+const loadsItsOwn = (s) => {
+  const m = s.match(SELF_LOAD);
+  if (!m) return false;
+  const rest = s.slice(m.index);
+  return HK.test(rest) && !HK.test(s.slice(0, m.index));
+};
 const scriptUses = {};
 for (const f of fs.readdirSync(APP).filter((n) => n.endsWith('.js'))) {
-  scriptUses[f] = HK.test(strip(fs.readFileSync(`${APP}/${f}`, 'utf8')));
+  const s = strip(fs.readFileSync(`${APP}/${f}`, 'utf8'));
+  scriptUses[f] = HK.test(s) && !loadsItsOwn(s);
 }
 check('CONTROL the scan sees the scripts that call it', ['app.js', 'capture.js', 'practice.js'].every((f) => scriptUses[f]), true);
+check('the self-loaders are recognised (menu.js, native.js)', ['menu.js', 'native.js'].map((f) => scriptUses[f]), [false, false]);
+check('CONTROL a call BEFORE the self-load still needs the page to load dialog.js',
+  loadsItsOwn("hkAlert('x'); const s = document.createElement('script'); s.src = 'dialog.js?v=1'; await hkConfirm('y');"), false);
+check('CONTROL a self-load of some other script is not dialog.js',
+  loadsItsOwn("s.src = 'chat.js?v=1'; await hkConfirm('y');"), false);
 /** True when this page's own code, or an app script it loads, calls an hk*
  *  dialog while the page does not load dialog.js. outbox.js is exempt: its one
  *  call is guarded (`if (G.hkAlert)`) because it also runs in the worker. */

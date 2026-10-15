@@ -538,9 +538,19 @@
     if (leavesForRoom(dest)) {
       const tr = (k, en) => (window.HawkeyeI18n && window.HawkeyeI18n.t ? window.HawkeyeI18n.t(k, en) : en);
       const msg = tr('lite.room-opens-on-website', 'The campaign room opens on the website. Sign in there to manage it.');
+      // Our own dialog, never the browser's grey box (tests/no_native_dialogs_test.mjs).
+      // Most pages do not load dialog.js, so fetch it now, as menu.js's sign-out
+      // does; if it cannot load, the link opens as it did before this asked.
+      if (!window.hkConfirm) {
+        await new Promise((res) => {
+          const s = document.createElement('script');
+          s.src = 'dialog.js?v=1'; s.onload = res; s.onerror = res;
+          document.head.appendChild(s);
+        });
+      }
       const go = window.hkConfirm
         ? await window.hkConfirm(msg, { title: tr('lite.room-leaving-title', 'Opening the website'), ok: tr('lite.open-website', 'Open the website'), cancel: tr('common.cancel', 'Cancel') })
-        : window.confirm(msg);
+        : true;
       if (!go) return false;
     }
     location.href = dest;

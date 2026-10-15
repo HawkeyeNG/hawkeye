@@ -420,12 +420,19 @@ console.log('\n=== (c) once, right after saving a unit ===');
   check('and it returns to Profile', await p.evaluate(() => location.pathname), '/profile.html');
 
   // ONCE: the next save goes straight back, as it always did.
+  //
+  // PICK THE SAME UNIT BY ITS CODE, not "the first option". Since b941161b a
+  // chosen unit remembers its state (pu-search.js rememberState), so this second
+  // search is answered from the FCT register pack on this device, not from this
+  // server's one-unit fixture, and the first option is another Ogbomosho Street
+  // unit. Clicking THEIRS by code keeps the check about the offer, not the list.
   S.posts = [];
   await Promise.all([p.waitForURL(/choose-unit\.html/), p.click('#btn-pick-unit')]);
   await p.waitForTimeout(500);
   await p.fill('#pus-q', 'ogbomosho');
-  await p.waitForSelector('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
-  await p.click('#unit-search-host .pu-option', { timeout: 5000 }).catch(() => {});
+  const theirsOption = `#unit-search-host .pu-option:has-text("${THEIRS.pu_code}")`;
+  await p.waitForSelector(theirsOption, { timeout: 5000 }).catch(() => {});
+  await p.click(theirsOption, { timeout: 5000 }).catch(() => {});
   await Promise.all([p.waitForURL(/profile\.html/, { timeout: 5000 }).catch(() => {}), p.click('#btn-unit-save')]);
   await p.waitForTimeout(400);
   check('the second save is not offered it again', [S.posts, await p.evaluate(() => location.pathname)], [[THEIRS.pu_code], '/profile.html']);

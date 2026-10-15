@@ -93,7 +93,13 @@ console.log('\n=== native: whatsapp:// first on iOS and Android (owner, 2026-09-
 console.log('\n=== native: the WhatsApp step is short ===');
 {
   const signIn = read(`${N}app/sign-in.tsx`);
-  const pane = signIn.slice(signIn.indexOf("step === 'wa-send' ?"), signIn.indexOf("step === 'otp' ?"));
+  // The END marker is searched from the start marker on: 5af9bf4f's sign-up
+  // resume writes `step === 'otp' ? 'otp' : 'request'` near the top of the file,
+  // and a first-match indexOf landed there, sliced an EMPTY pane and failed three
+  // checks against a pane that was fine.
+  const paneAt = signIn.indexOf("step === 'wa-send' ?");
+  const paneEnd = signIn.indexOf("step === 'otp' ?", paneAt);
+  const pane = paneAt > -1 && paneEnd > paneAt ? signIn.slice(paneAt, paneEnd) : '';
   check('one short line (wa-body-3)', pane.includes("i18nT('n.auth.wa-body-3')"), true);
   check('the long paragraph (wa-body-2) is gone', /wa-body-2/.test(signIn), false);
   check('the waiting line is the short one', /i18nT\('n\.auth\.wa-waiting'\)/.test(signIn) && !/wa-waiting-2/.test(signIn), true);

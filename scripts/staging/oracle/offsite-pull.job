@@ -1,0 +1,102 @@
+#!/bin/bash
+# GO54's nightly snapshot to two more places, from the Oracle election server (backend
+# services/backup.js "MORE THAN ONE PLACE"): this disk (/var/lib/hawkeye-offsite, last 7) and R2
+# (backup/go54-nightly/, last 7). The laptop's Google Drive copy carries on as before.
+# Hourly from hawkeye-offsite-pull.timer; installed as /usr/local/sbin/hawkeye-offsite-pull by
+# scripts/staging/oracle/offsite-pull.sh. Each copy is checked (md5 against GO54's own file; R2's
+# copy read back) and reported to GO54 with where=oracle / where=r2. GO54 records a copy only if it
+# matches its snapshot, and alarms the owner when a place goes 36 h stale. Failures are reported
+# too (-> owner's Telegram). GO54 holds no credential for this machine, so a break-in there cannot
+# reach these copies. Nothing to do once this server is the live one (its own backups take over).
+set -uo pipefail
+SITE=${HAWKEYE_SITE:-https://hawkeye.com.ng}
+ORIGIN_HDR=${HAWKEYE_ORIGIN_HDR:-}   # only for a run against a local app (rehearsal)
+DIR=/var/lib/hawkeye-offsite
+ENVF=/run/hawkeye/app.env
+R2CLI=/opt/hawkeye/current/backend/scripts/r2cli.mjs
+NODE=/usr/local/bin/node
+PREFIX=${OFFSITE_R2_PREFIX:-backup/go54-nightly/}   # a rehearsal uses its own
+KEEP=7
+UA='Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36'
+ts() { date -u +%FT%TZ; }
+mkdir -p "$DIR"; chmod 700 "$DIR"
+exec 9>"$DIR/.lock"
+flock -n 9 || { echo "$(ts) another run holds the lock — skipped"; exit 0; }
+T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
+[ -f /etc/hawkeye/live ] && [ -z "$ORIGIN_HDR" ] && { echo "$(ts) this server is live — its own backups run instead"; exit 0; }
+
+envget() {  # one value from app.env (production quotes some values in single quotes)
+  python3 - "$ENVF" "$1" <<'PY'
+import sys
+p, k = sys.argv[1], sys.argv[2]
+for line in open(p):
+    line = line.rstrip("\n")
+    if line.startswith(k + "="):
+        v = line[len(k) + 1:]
+        if len(v) >= 2 and v[0] == v[-1] == "'": v = v[1:-1]
+        print(v); break
+PY
+}
+SECRET=$(envget ADMIN_CONSOLE_SECRET 2>/dev/null)
+hdrs() { printf 'x-admin-secret: %s\n' "$SECRET"; [ -n "$ORIGIN_HDR" ] && cat "$ORIGIN_HDR"; printf '%s' "${1:-}"; }
+HTTP=000
+api() {  # api <json>: POST to GO54. The secret goes in a header read from a file descriptor, never argv.
+  HTTP=$(curl -sS -m 120 -A "$UA" -o "$T/body" -w '%{http_code}' -X POST "$SITE/api/admin/backup/offsite" \
+    -H @<(hdrs 'content-type: application/json') --data-binary "$1" 2>"$T/cerr") || HTTP=000
+  [ "$HTTP" = 200 ]
+}
+fail() {  # fail <step> <message>: log, tell GO54 (-> owner's Telegram), exit 1
+  local msg; msg=$(printf '%s' "$2" | tr '\r\n' '  ' | tail -c 300)
+  echo "$(ts) FAILED at $1: $msg"
+  if [ -n "$SECRET" ] && ! api "$(python3 -c 'import json,sys; print(json.dumps({"ok":False,"step":sys.argv[1],"message":sys.argv[2]}))' "oracle-$1" "$msg")"; then
+    echo "$(ts) could not report it either (HTTP $HTTP) — GO54's 36 h alarm still covers this"
+  fi
+  exit 1
+}
+report() {  # report <where> <file> <size> <md5>
+  api "$(python3 -c 'import json,sys; print(json.dumps({"where":sys.argv[1],"file":sys.argv[2],"size":int(sys.argv[3]),"md5":sys.argv[4]}))' "$@")" \
+    || fail "verify-$1" "HTTP $HTTP from /api/admin/backup/offsite: $(head -c 200 "$T/body") $(head -c 120 "$T/cerr")"
+}
+[ -n "$SECRET" ] || fail config "ADMIN_CONSOLE_SECRET not readable from $ENVF"
+
+# 1. Nothing new? GO54's newest snapshot is already verified in both places. Any doubt: do the work.
+if curl -fsS -m 30 -A "$UA" ${ORIGIN_HDR:+-H @"$ORIGIN_HDR"} "$SITE/api/health" 2>/dev/null | python3 -c '
+import json, sys
+b = json.load(sys.stdin).get("backup") or {}
+c = b.get("copies") or {}
+last = b.get("lastSnapshot")
+sys.exit(0 if last and all((c.get(p) or {}).get("at") == last for p in ("oracle", "r2")) else 1)' 2>/dev/null; then
+  exit 0
+fi
+
+# 2. The newest snapshot, checked against GO54's own md5, and a complete gzipped SQLite file.
+code=$(curl -sS -m 900 -A "$UA" -D "$T/hdr" -o "$T/snap" -w '%{http_code}' -H @<(hdrs) \
+  "$SITE/api/admin/backup/file/latest" 2>"$T/cerr") || code=000
+[ "$code" = 200 ] || fail download "HTTP $code $(head -c 200 "$T/snap" 2>/dev/null) $(head -c 120 "$T/cerr")"
+NAME=$(grep -i '^x-snapshot-name:' "$T/hdr" | tail -1 | cut -d: -f2- | tr -d ' \r')
+WANT=$(grep -i '^x-snapshot-md5:' "$T/hdr" | tail -1 | cut -d: -f2- | tr -d ' \r')
+[[ "$NAME" =~ ^hawkeye-[0-9]{4}-[0-9]{2}-[0-9]{2}\.db\.gz$ ]] || fail download "not a snapshot name: ${NAME:0:80}"
+GOT=$(md5sum "$T/snap" | cut -d' ' -f1)
+[ "$GOT" = "$WANT" ] || fail download "md5 $GOT, GO54 says ${WANT:0:40}"
+gzip -t "$T/snap" 2>/dev/null || fail download "not a complete gzip file"
+[ "$(gzip -dc "$T/snap" 2>/dev/null | head -c 15)" = "SQLite format 3" ] || fail download "not an SQLite database"
+SIZE=$(stat -c %s "$T/snap")
+
+# 3. This disk: keep it (the last 7), report it.
+install -m 600 "$T/snap" "$DIR/$NAME"
+ls "$DIR" | grep -E '^hawkeye-[0-9-]+\.db\.gz$' | sort | head -n -"$KEEP" | while read -r f; do rm -f "$DIR/$f"; done
+report oracle "$NAME" "$SIZE" "$GOT"
+
+# 4. R2: put (R2 refuses a body that does not match its Content-MD5), read it back, report R2's bytes.
+for k in S3_ENDPOINT S3_BUCKET BACKUP_S3_BUCKET S3_REGION S3_ACCESS_KEY_ID S3_SECRET_ACCESS_KEY; do
+  v=$(envget "$k"); [ -n "$v" ] && export "$k=$v"
+done
+"$NODE" "$R2CLI" put "$DIR/$NAME" "$PREFIX$NAME" >"$T/r2" 2>&1 || fail r2-put "$(tail -2 "$T/r2")"
+"$NODE" "$R2CLI" get "$PREFIX$NAME" "$T/back" >"$T/r2" 2>&1 || fail r2-readback "$(tail -2 "$T/r2")"
+RSUM=$(md5sum "$T/back" | cut -d' ' -f1)
+[ "$RSUM" = "$GOT" ] || fail r2-readback "R2 holds md5 $RSUM, the file is $GOT"
+keys=$("$NODE" "$R2CLI" list "$PREFIX" 2>"$T/r2") || fail r2-list "$(tail -2 "$T/r2")"
+[ "$keys" = None ] || printf '%s\n' $keys | grep -E "^${PREFIX}hawkeye-[0-9-]+\.db\.gz$" | sort | head -n -"$KEEP" \
+  | while read -r k; do "$NODE" "$R2CLI" rm "$k" >/dev/null 2>&1; done
+report r2 "$NAME" "$(stat -c %s "$T/back")" "$RSUM"
+echo "$(ts) $NAME (md5 $GOT) on this disk and in R2 $PREFIX — GO54 verified both"

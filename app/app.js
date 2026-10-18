@@ -4227,6 +4227,18 @@ $('btn-submit').onclick = async () => {
 
   $('submit-status').textContent = T('observe.submitting', 'Submitting…');
 
+  /* A DEADLINE ON EVERY HAND-OFF STEP. fetch() has no timeout of its own, and
+     a 2G link that dies mid-upload can leave it pending for as long as the page
+     is open: "Submitting…" on screen, Submit disabled, and the signed report in
+     neither the ledger nor the outbox. Past the deadline the report is parked
+     exactly as if the phone were offline; the outbox sends it in the background,
+     and a copy that did land meanwhile comes back 409 (already there). */
+  const SUBMIT_DEADLINE_MS = 120000;
+  const deadline = (p) => {
+    let t;
+    return Promise.race([p, new Promise((_, rej) => { t = setTimeout(() => rej(new Error('submit_deadline')), SUBMIT_DEADLINE_MS); })])
+      .finally(() => clearTimeout(t));
+  };
   // DIRECT UPLOAD, WHEN THE SERVER OFFERS IT. The photos go straight to the
   // bucket and only hashes come here, because inbound bytes count against the
   // host's monthly allowance and the photos are the whole of it. If anything at
@@ -4263,20 +4275,26 @@ $('btn-submit').onclick = async () => {
       directBody = JSON.stringify({ ...f, imageSha256, venueImageSha256, ...(hashOnly ? { hashOnly: '1' } : {}) });
     }
   };
-  await planUpload(true);
+  let planned = true;
+  try { await deadline(planUpload(true)); } catch { planned = false; }
 
   // A copy of the two photos on the device (save-media.js), once, at hand-off —
   // accepted or queued. These are the compressed bytes that were signed.
   const keepCopies = () => window.HAWKEYE_SAVE_MEDIA && window.HAWKEYE_SAVE_MEDIA(
     [shots.sheet, shots.venue].filter(Boolean).map((s) => ({ blob: s.blob, kind: 'photo' })), 'result');
 
-  const post = () => api('/api/submissions', {
-    method: 'POST',
-    headers: directBody
-      ? { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}`, 'content-type': 'application/json' }
-      : { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
-    body: directBody || form,
-  });
+  const post = () => {
+    const ctl = new AbortController();
+    const t = setTimeout(() => ctl.abort(), SUBMIT_DEADLINE_MS);
+    return api('/api/submissions', {
+      method: 'POST',
+      headers: directBody
+        ? { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}`, 'content-type': 'application/json' }
+        : { authorization: `Bearer ${localStorage.getItem('hawkeye_token')}` },
+      body: directBody || form,
+      signal: ctl.signal,
+    }).finally(() => clearTimeout(t));
+  };
   // Hand the signed report to the offline outbox and show it as saved. The
   // report is already signed over its exact bytes, so it can wait — on every
   // platform, since IndexedDB is universal; outbox.js's own listeners drive the
@@ -4305,10 +4323,17 @@ $('btn-submit').onclick = async () => {
     fields.imageSha256 = imageSha256;
     fields.venueImageSha256 = venueImageSha256;
     try {
-      await window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob, ...(notBefore ? { notBefore } : {}) });
-      keepCopies(); // here, not when the outbox flushes it later
-      clearDraft(); // handed off — the outbox holds it now
-    } catch { /* ignore */ }
+      // Bounded too: a store that never answers must not hold the screen.
+      await deadline(window.HawkeyeOutbox.queue({ fields, sheet: shots.sheet.blob, venue: shots.venue.blob, ...(notBefore ? { notBefore } : {}) }));
+    } catch {
+      // NOT SAVED (storage full, private mode, a store that refused it). This
+      // used to fall through to "Saved on your phone" and drop the photos, so
+      // a report that existed nowhere was shown as safe. The caller says the
+      // report did not go and leaves Submit live, with the photos still here.
+      return false;
+    }
+    keepCopies(); // here, not when the outbox flushes it later
+    clearDraft(); // handed off — the outbox holds it now
     shots.sheet = null; shots.venue = null;
     const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
     let offlineVotes = [];
@@ -4328,6 +4353,13 @@ $('btn-submit').onclick = async () => {
   // First retry: Retry-After plus jitter (outbox.js decides the numbers).
   const holdUntil = (st, ra) => Date.now() + (window.HawkeyeOutbox && window.HawkeyeOutbox.retryDelayMs
     ? window.HawkeyeOutbox.retryDelayMs(st, ra, 0) : 60000);
+  // No answer (offline, or past the deadline): park it, or say it did not go.
+  const parkOffline = async () => {
+    if (await park(T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.'))) return;
+    $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
+    $('btn-submit').disabled = false;
+  };
+  if (!planned) return void (await parkOffline());
 
   if (presignBusy) {
     if (await park(busyLine(), holdUntil(presignBusy.status, presignBusy.retryAfter))) return;
@@ -4341,10 +4373,7 @@ $('btn-submit').onclick = async () => {
     ({ status, body, retryAfter } = await post());
   } catch {
     // Network failure: queue it and flush on reconnect (offline outbox).
-    if (await park(T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.'))) return;
-    $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
-    $('btn-submit').disabled = false;
-    return;
+    return void (await parkOffline());
   }
   // A 401 NAMING AN AUTH ERROR (expired, unknown observer after a server
   // reset, device mismatch…) = dead session. Silently re-mint via resume and
@@ -4355,7 +4384,17 @@ $('btn-submit').onclick = async () => {
   if (authDead(status, body)) {
     localStorage.removeItem('hawkeye_token');
     $('submit-status').textContent = T('observe.refreshing-your-session', 'Refreshing your session…');
-    if (await tryResume()) ({ status, body, retryAfter } = await post());
+    // The resume and the resend are network calls too: a link that drops here
+    // used to leave "Refreshing your session…" up for good with Submit dead.
+    let resumed = false;
+    try { resumed = await deadline(tryResume()); } catch { resumed = false; }
+    if (resumed) {
+      try {
+        ({ status, body, retryAfter } = await post());
+      } catch {
+        return void (await parkOffline());
+      }
+    }
   }
   if (authDead(status, body)) {
     /* KEEP THE SIGNED REPORT. The report is signed over its exact bytes and
@@ -4379,7 +4418,7 @@ $('btn-submit').onclick = async () => {
   // this server cannot hold a byte-less report). The photos never left the
   // phone, so upload them the ordinary way and send the same signed report.
   if (hashOnly && status === 409 && body && body.error === 'photo_not_uploaded') {
-    await planUpload(false);
+    try { await deadline(planUpload(false)); } catch { return void (await parkOffline()); }
     if (presignBusy) {
       if (await park(busyLine(), holdUntil(presignBusy.status, presignBusy.retryAfter))) return;
       $('submit-status').textContent = T('observe.server-busy-try-again', 'Hawkeye is busy — try again in a minute.');
@@ -4389,10 +4428,7 @@ $('btn-submit').onclick = async () => {
     try {
       ({ status, body, retryAfter } = await post());
     } catch {
-      if (await park(T('observe.saved-offline', 'Saved offline — your signed report sends automatically when you are back online.'))) return;
-      $('submit-status').textContent = T('observe.you-appear-to-be-offline-check-your', 'You appear to be offline — check your connection and try again.');
-      $('btn-submit').disabled = false;
-      return;
+      return void (await parkOffline());
     }
   }
   // The report is fine, the server is not (busy 503, rate-limited 429, down,

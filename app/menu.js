@@ -1888,6 +1888,82 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   linkInecFooters();
   setTimeout(linkInecFooters, 2500);
 
+  /* SIGN OUT — the ONE implementation (the menu and profile.html both call it;
+     window.HawkeyeSignOut). It clears the token AND the device's signing key, so
+     /resume cannot silently sign this account back in on a shared phone. Before
+     the owner decision of 18 Oct 2026 profile.html kept the key (review L1).
+     A report still waiting in the outbox is signed with that key, so once the
+     key goes it can never verify: the confirm says how many are waiting, and
+     the observer can stay signed in until they send. */
+  async function unsentReports() {
+    try {
+      if (window.HawkeyeOutbox) return await window.HawkeyeOutbox.count();
+      // Pages without outbox.js: count its store directly, never creating it.
+      return await new Promise((res) => {
+        const rq = indexedDB.open('hawkeye-outbox');
+        rq.onupgradeneeded = () => { rq.transaction.abort(); res(0); };
+        rq.onerror = () => res(0);
+        rq.onsuccess = () => {
+          const db = rq.result;
+          try {
+            const c = db.transaction('reports', 'readonly').objectStore('reports').count();
+            c.onsuccess = () => { db.close(); res(c.result || 0); };
+            c.onerror = () => { db.close(); res(0); };
+          } catch { db.close(); res(0); }
+        };
+      });
+    } catch { return 0; }
+  }
+  async function signOut() {
+    // ASK FIRST, as native's sheet does (flow walkthrough ONB-17). Most pages
+    // never load dialog.js, so fetch it now; if it cannot load, sign out as before.
+    if (!window.hkConfirm) {
+      await new Promise((res) => {
+        const s = document.createElement('script');
+        s.src = 'dialog.js?v=1'; s.onload = res; s.onerror = res;
+        document.head.appendChild(s);
+      });
+    }
+    const tr = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
+    const n = await unsentReports();
+    const body = n > 0
+      ? tr('profile.sign-out-unsent-body', 'Signed reports waiting on this phone: {n}. If you sign out now, they can never be sent. Stay signed in until they go.').replace('{n}', String(n))
+      : tr('profile.sign-out-confirm-body', 'You can sign back in with your number and password. Your reports are unaffected.');
+    if (window.hkConfirm && !(await window.hkConfirm(body,
+      { title: tr('profile.sign-out-confirm-title', 'Sign out?'), ok: tr('profile.sign-out-confirm-ok', 'Sign Out'), danger: true },
+    ))) return;
+    // Tell the server first (POST /api/observers/sign-out): until it hears,
+    // this account still holds this phone for the one-phone-one-account
+    // rule (backend services/deviceClaims.js). keepalive: the page is about
+    // to navigate away. Best effort — signing out must work offline.
+    try {
+      const tk = localStorage.getItem('hawkeye_token');
+      if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
+    } catch { /* ignore */ }
+    localStorage.removeItem('hawkeye_token');
+    // The key is deleted BEFORE leaving the page: a navigation can cut off a
+    // request still in flight, and a key left behind is the bug this fixes.
+    await new Promise((res) => {
+      try {
+        const rq = indexedDB.open('hawkeye', 1);
+        rq.onsuccess = () => {
+          try {
+            const t = rq.result.transaction('kv', 'readwrite');
+            t.objectStore('kv').delete('keypair');
+            t.oncomplete = t.onerror = t.onabort = () => res();
+          } catch { res(); }
+        };
+        rq.onerror = () => res();
+      } catch { res(); }
+      setTimeout(res, 1500); // never hold sign-out hostage to a stuck store
+    });
+    // Sign out lands on index.html, NOT the sign-in form: in the app that's
+    // the welcome screen and on the web it's the landing page. Dropping a
+    // signed-out user straight onto a password field reads like an error.
+    location.href = 'index.html';
+  }
+  window.HawkeyeSignOut = signOut;
+
   // Signed-in menu items. Sign-in happens WITHOUT a page load (the OTP pane on
   // observe.html just flips screens), so this has to be re-runnable rather than a
   // one-shot at script time — otherwise the menu keeps showing the signed-out
@@ -1919,40 +1995,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
         // Sign out clears the token AND the device key so auto-resume can't
         // silently sign back in; sends the user to a fresh sign-up.
         i18nLate(p);
-        add('#', 'Sign out', 'sign-out').addEventListener('click', async (e) => {
+        add('#', 'Sign out', 'sign-out').addEventListener('click', (e) => {
           e.preventDefault();
-          // ASK FIRST, as native's sheet does (flow walkthrough ONB-17): one tap
-          // here used to end the session. Most pages never load dialog.js, so
-          // fetch it now; if it cannot load, sign out as before.
-          if (!window.hkConfirm) {
-            await new Promise((res) => {
-              const s = document.createElement('script');
-              s.src = 'dialog.js?v=1'; s.onload = res; s.onerror = res;
-              document.head.appendChild(s);
-            });
-          }
-          const tr = (k, en) => (window.HawkeyeI18n ? window.HawkeyeI18n.t(k, en) : en);
-          if (window.hkConfirm && !(await window.hkConfirm(
-            tr('profile.sign-out-confirm-body', 'You can sign back in with your number and password. Your reports are unaffected.'),
-            { title: tr('profile.sign-out-confirm-title', 'Sign out?'), ok: tr('profile.sign-out-confirm-ok', 'Sign Out'), danger: true },
-          ))) return;
-          // Tell the server first (POST /api/observers/sign-out): until it hears,
-          // this account still holds this phone for the one-phone-one-account
-          // rule (backend services/deviceClaims.js). keepalive: the page is about
-          // to navigate away. Best effort — signing out must work offline.
-          try {
-            const tk = localStorage.getItem('hawkeye_token');
-            if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
-          } catch { /* ignore */ }
-          localStorage.removeItem('hawkeye_token');
-          try {
-            const rq = indexedDB.open('hawkeye', 1);
-            rq.onsuccess = () => { try { rq.result.transaction('kv', 'readwrite').objectStore('kv').delete('keypair'); } catch { /* ignore */ } };
-          } catch { /* ignore */ }
-          // Sign out lands on index.html, NOT the sign-in form: in the app that's
-          // the welcome screen and on the web it's the landing page. Dropping a
-          // signed-out user straight onto a password field reads like an error.
-          location.href = 'index.html';
+          signOut();
         });
         // ("Delete my ID" moved into profile.html — one authoritative place.)
       } else if (!signedIn && present) {

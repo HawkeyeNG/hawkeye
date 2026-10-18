@@ -24,7 +24,12 @@
   addEventListener('error', onErr);
   addEventListener('unhandledrejection', onErr);
 
-  var PHONE = /(?:\+?234|\b0)\s?[789][01]\d(?:[\s-]?\d){7}\b/g;
+  // Nigerian mobiles however they are typed: 0803…, +234 803…, +234-803…,
+  // +234 (0) 803…, 234 0803…, and the bare ten digits 803 123 4567.
+  var PHONE = /(?:(?:\+|\b)234[\s-]?(?:\(0\)[\s-]?)?0?|\b0|\b)[789][01]\d(?:[\s-]{0,2}\d){7}\b/g;
+  // A coordinate with 4+ decimals (≈11 m) is a person's position, e.g. a fix
+  // quoted in an error message.
+  var COORD = /-?\b\d{1,3}\.\d{4,}\b/g;
   // Bounded parts (RFC 5321 limits): unbounded ones went quadratic on long text with no '@'.
   var EMAIL = /[\w.+-]{1,64}@[\w-]{1,63}(?:\.[\w-]{1,63}){1,8}/g;
   var LONG = /\b[A-Za-z0-9_-]{24,}\b/g;                 // tokens, keys, hashes
@@ -34,7 +39,7 @@
   var PARAM = /([?#&][\w.-]{1,40}=)[^\s"')&]*/g;
   function clean(s) {
     return s.replace(QUERY, '$1').replace(PARAM, '$1[redacted]').replace(EMAIL, '[email]')
-      .replace(PHONE, '[phone]').replace(LONG, '[redacted]');
+      .replace(PHONE, '[phone]').replace(COORD, '[coord]').replace(LONG, '[redacted]');
   }
   // Sentry's own ids are 32-hex strings that LONG would destroy; leave them.
   var KEEP = { event_id: 1, trace_id: 1, span_id: 1, parent_span_id: 1, sdk: 1, debug_meta: 1 };

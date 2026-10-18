@@ -2968,6 +2968,7 @@
   "auth.number-never-stored": "A kì í tọ́jú nọ́mbà rẹ.",
   "profile.sign-out-confirm-title": "Jáde?",
   "profile.sign-out-confirm-body": "O lè wọlé padà pẹ̀lú nọ́mbà rẹ àti ọ̀rọ̀ ìpamọ́ rẹ. Kò sí ohun tí yóò ṣe àwọn ìròyìn rẹ.",
+  "profile.sign-out-unsent-body": "Àwọn ìròyìn tí o fọwọ́sí tí ń dúró lórí fóònù yìí: {n}. Tí o bá jáde nísinsìnyí, a kò ní lè fi wọ́n ránṣẹ́ láéláé. Má ṣe jáde títí a ó fi fi wọ́n ránṣẹ́.",
   "profile.sign-out-confirm-ok": "Jáde",
   "my-groups.undo-decline": "Yí i padà",
   "index.smaller-phone-lite-app": "Fóònù kékeré? Gba <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>.",

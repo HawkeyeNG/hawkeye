@@ -8,10 +8,18 @@ window.getDeviceId = (() => {
   let cached = null;
   return async function getDeviceId() {
     if (cached) return cached;
-    let seed = localStorage.getItem('hk_device_seed');
+    // NEVER THROWS: api() awaits this before every request, so a throw here is
+    // every sign-in, lookup and report failing. crypto.randomUUID arrived in
+    // Chrome 92 and Lite runs on Android 7 WebViews older than that; storage can
+    // be blocked outright. Either way a seed is still made (kept for this page
+    // if it cannot be stored).
+    let seed = null;
+    try { seed = localStorage.getItem('hk_device_seed'); } catch { /* storage blocked */ }
     if (!seed) {
-      seed = crypto.randomUUID();
-      localStorage.setItem('hk_device_seed', seed);
+      seed = typeof crypto.randomUUID === 'function'
+        ? crypto.randomUUID()
+        : [...crypto.getRandomValues(new Uint8Array(16))].map((b) => b.toString(16).padStart(2, '0')).join('');
+      try { localStorage.setItem('hk_device_seed', seed); } catch { /* this page only */ }
     }
     let gpu = '';
     try {

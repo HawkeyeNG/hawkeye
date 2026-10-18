@@ -2968,6 +2968,7 @@
   "auth.number-never-stored": "Anaghị echekwa nọmba gị.",
   "profile.sign-out-confirm-title": "Pụọ?",
   "profile.sign-out-confirm-body": "Ị nwere ike ịbanye ọzọ site na nọmba gị na okwuntughe gị. Ọ dịghị ihe ga-eme akụkọ gị.",
+  "profile.sign-out-unsent-body": "Akụkọ e binyere aka na-eche n'ekwentị a: {n}. Ọ bụrụ na ị pụọ ugbu a, a gaghị enwe ike iziga ha ọzọ. Apụla ruo mgbe e zipuru ha.",
   "profile.sign-out-confirm-ok": "Pụọ",
   "my-groups.undo-decline": "Weghachi",
   "index.smaller-phone-lite-app": "Ekwentị dị obere? Nweta <a href=\"https://hawkeye.com.ng/download.html\">Lite App</a>.",

@@ -300,13 +300,14 @@ console.log('\n=== app.js submit path (structure) ===');
   const src = fs.readFileSync(`${H}/app/app.js`, 'utf8');
   const has = (re) => re.test(src);
   const rules = (s) => [
-    /await planUpload\(true\)/.test(s),
+    // (wrapped in the submit deadline since the pre-election review)
+    /await (deadline\()?planUpload\(true\)/.test(s),
     /figures: \{ puCode: selectedPu\.pu_code, contest, votes \}/.test(s),
-    /hashOnly && status === 409 && body && body\.error === 'photo_not_uploaded'[\s\S]{0,80}await planUpload\(false\)/.test(s),
+    /hashOnly && status === 409 && body && body\.error === 'photo_not_uploaded'[\s\S]{0,80}await (deadline\()?planUpload\(false\)/.test(s),
     /body\.photosOnDevice \? `<p class="hint">\$\{T\('observe\.photos-kept-as-evidence'/.test(s),
   ];
   check('app.js offers figures, falls back on 409, and says the photos were kept', rules(src), [true, true, true, true]);
-  const broken = src.replace('await planUpload(false)', 'void 0');
+  const broken = src.replace(/await (deadline\()?planUpload\(false\)/, 'void 0');
   check('control: removing the fallback is detected', rules(broken)[2], false);
   check('app.js never gates hash-only on the gallery switch', has(/hashOnly[^\n]*hawkeye_save_media|hawkeye_save_media[^\n]*hashOnly/), false);
 }

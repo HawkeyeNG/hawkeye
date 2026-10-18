@@ -1294,7 +1294,9 @@
         done++;
         const isOk = Boolean(approved[key]);
         if (isOk) ok++;
-        const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
+        // Party names are TYPED by labellers (train.html) and arrive here through
+        // truth.json: text, never markup, in a page that holds the passphrase.
+        const counts = Object.entries(t).map(([p, n]) => `${escAttr(p)} ${escAttr(n)}`).join(', ') || '<em>all zero</em>';
         // A labeller's own boxes win over the synced sidecar: they were read
         // off the sheet by the person whose label is being reviewed, and the
         // job here is to check THAT reading.
@@ -1308,7 +1310,7 @@
         ].join('');
         let boxHtml = '';
         if (b) {
-          const cell = (lab, v) => `<span>${lab} <b>${v ?? '--'}</b></span>`;
+          const cell = (lab, v) => `<span>${lab} <b>${escAttr(v ?? '--')}</b></span>`;
           // Re-derive from the label being reviewed, not from anything stored:
           // the whole job here is to check the label, so a cached verdict would
           // be checking the checker.

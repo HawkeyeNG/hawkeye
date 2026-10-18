@@ -30,6 +30,10 @@
     if (rq) rq.onsuccess = () => { out = rq.result; };
     t.oncomplete = () => { db.close(); res(out); };
     t.onerror = () => { db.close(); rej(t.error); };
+    // A transaction that fails at COMMIT (QuotaExceededError: the two photos did
+    // not fit) fires only 'abort' — no request error, so onerror never ran and
+    // queue() never settled: the submit screen sat on "Submitting…" for good.
+    t.onabort = () => { db.close(); rej(t.error || new Error('transaction aborted')); };
   }));
   const run = tx(DB, STORE, { keyPath: 'id', autoIncrement: true });
   // A SECOND database rather than a new store in the first: a new store means a
@@ -93,6 +97,11 @@
   // Answers about the SERVER (busy) or this OBSERVER (rate-limited), not about
   // one report: every report behind it would get the same answer, so stop.
   const holdsQueue = (s) => s === 429 || s === 503;
+  // The 401 codes that mean the SESSION is dead (backend requireObserver; the
+  // same list as native.js authRejected). Any other named 401 — bad_signature —
+  // is about the REPORT, and no sign-in will ever fix it.
+  const AUTH_DEAD = { missing_token: 1, invalid_token: 1, unknown_observer: 1, signed_in_elsewhere: 1, device_mismatch: 1 };
+  const sessionDead = (body) => !(body && typeof body.error === 'string') || AUTH_DEAD[body.error] === 1;
   /** Retry-After as ms from `now` — delta-seconds or an HTTP-date; null if absent or unreadable. */
   function parseRetryAfter(v, now) {
     const s = v == null ? '' : String(v).trim();
@@ -243,7 +252,11 @@
         // 401 is the SESSION, not the report: it used to fall into the drop below
         // and delete a signed report because a token expired while it waited.
         // Keep it; the next flush after sign-in sends it (native defers it too).
-        else if (resp.status === 401) break;
+        // But only a 401 that NAMES the session (or names nothing we can read):
+        // a report the server cannot verify (bad_signature — signed with a key
+        // a sign-out deleted) used to stop here on every flush, forever, and
+        // hold every report queued behind it. It is dropped below, and said so.
+        else if (resp.status === 401 && sessionDead(body)) break;
         // 429 / 503: the server or this observer is over its limit \u2014 every
         // report behind this one would hear the same, so hold them all and stop.
         else if (holdsQueue(resp.status)) { holdRest(items.slice(i), resp.status, retryAfterOf(resp, body)); break; }

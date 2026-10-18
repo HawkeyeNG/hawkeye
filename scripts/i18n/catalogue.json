@@ -1666,6 +1666,7 @@
   "profile.set-password": "Set Password",
   "profile.share-hawkeye": "Share Hawkeye",
   "profile.sign-out-confirm-body": "You can sign back in with your number and password. Your reports are unaffected.",
+  "profile.sign-out-unsent-body": "Signed reports waiting on this phone: {n}. If you sign out now, they can never be sent. Stay signed in until they go.",
   "profile.sign-out-confirm-ok": "Sign Out",
   "profile.sign-out-confirm-title": "Sign out?",
   "profile.sign-out-on-this-device": "Sign Out on This Device",

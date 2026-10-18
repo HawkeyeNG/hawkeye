@@ -328,7 +328,9 @@
         done++;
         const isOk = Boolean(approved[key]);
         if (isOk) ok++;
-        const counts = Object.entries(t).map(([p, n]) => `${p} ${n}`).join(', ') || '<em>all zero</em>';
+        // Party names are TYPED by labellers (train.html) and arrive here through
+        // truth.json: text, never markup, in a page that holds the passphrase.
+        const counts = Object.entries(t).map(([p, n]) => `${escAttr(p)} ${escAttr(n)}`).join(', ') || '<em>all zero</em>';
         const qa = isOk
           ? `<div class="qa"><span class="okchip">✓ Approved for ML</span>
              <button class="btn-reject" data-qa="deny" data-key="${escAttr(key)}">Deny</button></div>`

@@ -19,47 +19,23 @@
  *
  *   node tests/submit_never_stuck_test.mjs
  */
-import { createRequire } from 'node:module';
-const require_ = createRequire('/home/elrio/hawkeye/tests/ui/');
-const { chromium } = require_('playwright-core');
-import fs from 'node:fs';
-import http from 'node:http';
-import path from 'node:path';
+import { jwt, launch, serveApp, tally } from './helpers/harness.mjs';
 
-const APP = '/home/elrio/hawkeye/app';
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png' };
 /** What /api/submissions and /api/observers/resume do in this case. */
 let submit = 'hang';
 let resume = 'hang';
-const server = http.createServer((req, res) => {
-  const [u] = req.url.split('?');
-  const json = (v, s = 200) => { res.writeHead(s, { 'content-type': 'application/json' }); res.end(JSON.stringify(v)); };
+const { base, close } = await serveApp((u, req, res, json) => {
   if (u === '/api/parties') return json([{ code: 'ZZZ', name: 'Served Party' }]);
   if (u === '/api/contests') return json([{ code: 'GOV', name: 'Governorship', states: ['Osun'], reportingOpen: true }]);
   if (u === '/api/submissions') {
-    if (submit === 'hang') return undefined; // never answers
-    if (submit === 'drop') return req.socket.destroy();
+    if (submit === 'hang') return true; // never answers
+    if (submit === 'drop') { req.socket.destroy(); return true; }
     if (submit === '401') return json({ error: 'invalid_token' }, 401);
   }
-  if (u === '/api/observers/resume' && resume === 'hang') return undefined;
-  if (u.startsWith('/api/')) return json({});
-  const f = path.join(APP, decodeURIComponent(u === '/' ? '/index.html' : u));
-  if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
-  res.writeHead(200, { 'content-type': TYPES[path.extname(f)] || 'application/octet-stream' });
-  return fs.createReadStream(f).pipe(res);
+  return u === '/api/observers/resume' && resume === 'hang';
 });
-await new Promise((r) => server.listen(0, r));
-const base = `http://127.0.0.1:${server.address().port}`;
-
-let fail = 0;
-const check = (l, got, want = true) => {
-  const ok = typeof want === 'function' ? want(got) : JSON.stringify(got) === JSON.stringify(want);
-  if (!ok) fail++;
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${l}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
-};
-
-const browser = await chromium.launch({ executablePath: '/home/elrio/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome' });
-const JWT = () => `x.${Buffer.from(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 86400 })).toString('base64')}.y`;
+const { check, finish } = tally();
+const browser = await launch();
 const UNIT = { pu_code: '30-05-07-001', name: 'Akepe Street', ward: 'Ward 5', lga: 'Ede North', state: 'Osun', lat: 7.7, lng: 4.4, tier: 'verified' };
 
 /**
@@ -87,7 +63,7 @@ async function submitOnce({ store = 'ok', clock = false } = {}) {
         return r;
       };
     }
-  }, [JWT(), store]);
+  }, [jwt(), store]);
   const p = await ctx.newPage();
   await p.goto(`${base}/observe.html`);
   await p.waitForFunction(() => typeof document.getElementById('btn-submit').onclick === 'function' && !!window.HawkeyeOutbox, null, { timeout: 12000 });
@@ -166,6 +142,5 @@ console.log('\n=== CONTROL: offline with a working store ===');
 }
 
 await browser.close();
-server.close();
-console.log(fail ? `\n${fail} FAILED` : '\nall passed');
-process.exit(fail ? 1 : 0);
+close();
+finish();

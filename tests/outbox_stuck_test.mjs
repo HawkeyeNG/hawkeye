@@ -17,65 +17,10 @@
 //   node tests/outbox_stuck_test.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { H, tally } from './helpers/harness.mjs';
+import { memoryIndexedDB } from './helpers/memory-idb.mjs';
 
-const H = '/home/elrio/hawkeye';
-let fail = 0;
-const check = (label, got, want) => {
-  const ok = typeof want === 'function' ? want(got) : JSON.stringify(got) === JSON.stringify(want);
-  if (!ok) fail++;
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
-};
-
-// ---- a small IndexedDB; `abortAdds` fails every add() at commit, as quota does
-function fakeIndexedDB({ abortAdds = false } = {}) {
-  const dbs = new Map();
-  const later = (fn) => setTimeout(fn, 0);
-  return {
-    open(name) {
-      const req = {};
-      later(() => {
-        const fresh = !dbs.has(name);
-        if (fresh) dbs.set(name, new Map());
-        const stores = dbs.get(name);
-        const db = {
-          createObjectStore(store, opts = {}) {
-            stores.set(store, { keyPath: opts.keyPath, next: 1, data: new Map() });
-          },
-          close() {},
-          transaction(store) {
-            const s = stores.get(store);
-            const ops = [];
-            let added = false;
-            const t = { error: null };
-            const op = (fn) => { const r = {}; ops.push(() => { r.result = fn(); r.onsuccess?.(); }); return r; };
-            t.objectStore = () => ({
-              add: (v) => op(() => { added = true; const c = structuredClone(v); const id = s.next++; if (s.keyPath) c[s.keyPath] = id; s.data.set(id, c); return id; }),
-              put: (v, k) => op(() => { s.data.set(k ?? v[s.keyPath], structuredClone(v)); return k; }),
-              get: (k) => op(() => structuredClone(s.data.get(k))),
-              delete: (k) => op(() => { s.data.delete(k); }),
-              getAll: () => op(() => [...s.data.values()].map((v) => structuredClone(v))),
-            });
-            later(() => {
-              const before = new Map(s.data);
-              for (const f of ops) f();
-              if (abortAdds && added) {
-                // Commit refused: roll back, and fire ONLY 'abort' (no request error).
-                s.data = before;
-                t.error = Object.assign(new Error('The quota has been exceeded.'), { name: 'QuotaExceededError' });
-                t.onabort?.();
-              } else t.oncomplete?.();
-            });
-            return t;
-          },
-        };
-        req.result = db;
-        if (fresh) req.onupgradeneeded?.();
-        req.onsuccess?.();
-      });
-      return req;
-    },
-  };
-}
+const { check, finish } = tally();
 
 function loadOutbox({ idb, respond }) {
   const posts = [];
@@ -110,12 +55,12 @@ const settles = (p, ms = 1500) => Promise.race([
 
 console.log('=== 1. a store that refuses the report at commit ===');
 {
-  const o = loadOutbox({ idb: fakeIndexedDB({ abortAdds: true }), respond: () => json(201, {}) });
+  const o = loadOutbox({ idb: memoryIndexedDB({ abortAdds: true }), respond: () => json(201, {}) });
   check('queue() REJECTS (the caller can say "not saved"), it does not hang', await settles(o.O.queue(report(1))), 'rejected QuotaExceededError');
   check('...and nothing is in the queue', await o.O.count(), 0);
 }
 {
-  const o = loadOutbox({ idb: fakeIndexedDB(), respond: () => json(201, {}) });
+  const o = loadOutbox({ idb: memoryIndexedDB(), respond: () => json(201, {}) });
   check('CONTROL: the same queue() on a store with room resolves', await settles(o.O.queue(report(1))), 'resolved');
   check('CONTROL: ...and holds the report', await o.O.count(), 1);
 }
@@ -123,7 +68,7 @@ console.log('=== 1. a store that refuses the report at commit ===');
 console.log('\n=== 2. a 401 about the REPORT does not hold the queue ===');
 {
   // Report 1 was signed with a key that no longer exists; report 2 is fine.
-  const o = loadOutbox({ idb: fakeIndexedDB(), respond: (n) => (n === 1 ? json(401, { error: 'bad_signature' }) : json(201, {})) });
+  const o = loadOutbox({ idb: memoryIndexedDB(), respond: (n) => (n === 1 ? json(401, { error: 'bad_signature' }) : json(201, {})) });
   await seeded(o, 2);
   await o.O.flush();
   check('bad_signature: the report behind it is still sent', o.posts, ['01-01-01-001', '01-01-01-002']);
@@ -136,11 +81,10 @@ for (const [label, resp] of [
   ['401 signed_in_elsewhere', () => json(401, { error: 'signed_in_elsewhere' })],
   ['401 with no JSON body', () => new Response('<html>401</html>', { status: 401 })],
 ]) {
-  const o = loadOutbox({ idb: fakeIndexedDB(), respond: resp });
+  const o = loadOutbox({ idb: memoryIndexedDB(), respond: resp });
   await seeded(o, 2);
   await o.O.flush();
   check(`CONTROL: ${label} is the SESSION -> one try, both reports kept for after sign-in`, [o.posts.length, await o.O.count()], [1, 2]);
 }
 
-console.log(fail ? `\n${fail} FAILED` : '\nall passed');
-process.exit(fail ? 1 : 0);
+finish();

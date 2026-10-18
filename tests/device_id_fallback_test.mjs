@@ -13,15 +13,10 @@
 //   node tests/device_id_fallback_test.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { H, tally } from './helpers/harness.mjs';
 import { webcrypto } from 'node:crypto';
 
-const H = '/home/elrio/hawkeye';
-let fail = 0;
-const check = (label, got, want) => {
-  const ok = typeof want === 'function' ? want(got) : JSON.stringify(got) === JSON.stringify(want);
-  if (!ok) fail++;
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
-};
+const { check, finish } = tally();
 
 function load({ randomUUID = true, storage = 'ok' } = {}) {
   const mem = new Map();
@@ -66,5 +61,4 @@ const HEX64 = (v) => /^[0-9a-f]{64}$/.test(v);
   check('CONTROL: the same seed gives the same id on the next page', await settle(again.get), a);
 }
 
-console.log(fail ? `\n${fail} FAILED` : '\nall passed');
-process.exit(fail ? 1 : 0);
+finish();

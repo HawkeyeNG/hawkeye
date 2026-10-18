@@ -13,14 +13,9 @@
 //   node tests/sentry_scrub_test.mjs
 import fs from 'node:fs';
 import vm from 'node:vm';
+import { H, tally } from './helpers/harness.mjs';
 
-const H = '/home/elrio/hawkeye';
-let fail = 0;
-const check = (label, got, want) => {
-  const ok = typeof want === 'function' ? want(got) : JSON.stringify(got) === JSON.stringify(want);
-  if (!ok) fail++;
-  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${ok ? '' : `\n        got  ${JSON.stringify(got)}`}`);
-};
+const { check, finish } = tally();
 
 let opts = null;
 const sandbox = {
@@ -36,7 +31,8 @@ const sandbox = {
 };
 sandbox.window = sandbox;
 vm.runInNewContext(fs.readFileSync(`${H}/app/monitor.js`, 'utf8'), sandbox);
-if (!opts) { console.log('FAIL  monitor.js never initialised Sentry'); process.exit(1); }
+check('monitor.js initialises Sentry', !!opts);
+if (!opts) finish();
 const scrub = (msg) => opts.beforeSend({ exception: { values: [{ type: 'Error', value: msg }] } }).exception.values[0].value;
 
 for (const n of ['08031234567', '+234 803 123 4567', '2348031234567', '0803-123-4567',
@@ -52,5 +48,4 @@ for (const s of ['SDK 11.0.0 took 12.5 ms', 'parties 18 of 18 loaded, retry 3', 
   check(`CONTROL: "${s}" is left alone`, scrub(s), s);
 }
 
-console.log(fail ? `\n${fail} FAILED` : '\nall passed');
-process.exit(fail ? 1 : 0);
+finish();

@@ -67,11 +67,16 @@ const webRules = (s) => [
 check('app.js: the report asks for a DeviceCheck token; the receipt shows the translated notice', webRules(appJs).every(Boolean), webRules(appJs));
 check('CONTROL: dropping the notice is caught', webRules(appJs.replace(/T\('observe\.device-owned-not-counted'/g, "T('x'"))[1] === false);
 
-for (const p of ['app/menu.js', 'app/profile.html']) {
-  const s = read(p);
+{
+  const s = read('app/menu.js');
   const rule = (x) => /\/api\/observers\/sign-out[\s\S]{0,600}removeItem\('hawkeye_token'\)/.test(x);
-  check(`${p}: sign-out tells the server BEFORE the token is dropped`, rule(s));
-  check(`CONTROL (${p}): without the call it is caught`, rule(s.replace(/\/api\/observers\/sign-out/g, '/x')) === false);
+  check('app/menu.js: sign-out tells the server BEFORE the token is dropped', rule(s));
+  check('CONTROL (app/menu.js): without the call it is caught', rule(s.replace(/\/api\/observers\/sign-out/g, '/x')) === false);
+  // profile.html runs the SAME sign-out (review L1): no second copy to drift.
+  const prof = read('app/profile.html');
+  const delegates = (x) => /\$\('btn-signout'\)\.onclick = \(\) => window\.HawkeyeSignOut\(\)/.test(x) && !/\/api\/observers\/sign-out/.test(x);
+  check('app/profile.html: sign-out is menu.js window.HawkeyeSignOut (one implementation)', delegates(prof));
+  check('CONTROL (app/profile.html): a private copy is caught', delegates(`${prof}\nfetch('/api/observers/sign-out')`) === false);
 }
 
 const WEB_KEY = 'observe.device-owned-not-counted';

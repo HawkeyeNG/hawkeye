@@ -1023,22 +1023,10 @@
     document.addEventListener('DOMContentLoaded', () => { if (token()) pkLoad(); });
     document.addEventListener('hawkeye-lang', () => { if (!$('profile').hidden) pkPaint(); });
 
-    // The server hears first (one phone, one counting account per election:
-    // backend services/deviceClaims.js); best effort, keepalive past the navigation.
-    $('btn-signout').onclick = async () => {
-      // Ask first, as the menu and native do (flow walkthrough ONB-17).
-      if (!(await hkConfirm(T('profile.sign-out-confirm-body', 'You can sign back in with your number and password. Your reports are unaffected.'), {
-        title: T('profile.sign-out-confirm-title', 'Sign out?'),
-        ok: T('profile.sign-out-confirm-ok', 'Sign Out'),
-        danger: true,
-      }))) return;
-      try {
-        const tk = localStorage.getItem('hawkeye_token');
-        if (tk) fetch('/api/observers/sign-out', { method: 'POST', keepalive: true, headers: { authorization: 'Bearer ' + tk } }).catch(() => {});
-      } catch { /* signing out must work offline */ }
-      localStorage.removeItem('hawkeye_token');
-      location.href = 'index.html';
-    };
+    // The SAME sign-out as the menu (menu.js window.HawkeyeSignOut): asks first,
+    // warns about reports still waiting, tells the server, and deletes the
+    // signing key too. This copy used to keep the key (review L1).
+    $('btn-signout').onclick = () => window.HawkeyeSignOut();
 
     $('btn-delete').onclick = async () => {
       if (!(await hkConfirm(T('profile.delete-confirm-body', 'Your key, device binding, Telegram link and subscriptions are wiped. Ledger reports stay (they are public and permanent).'), {

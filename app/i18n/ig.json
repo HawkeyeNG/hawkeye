@@ -3008,5 +3008,10 @@
   "race.final-list-note": "Onye ndoro-ndoro ọ bụla nọ na ndepụta ikpeazụ INEC maka ntuli aka a — ha dị {v0}.",
   "race.party-running-mate": "{v0} · onye ibe ya {v1}",
   "observe.ballot-note-shared": "Ihe karịrị otu mpaghara ntuli aka na-atụ vootu n'ebe a. E gosiri otu ndọrọ ndọrọ ọchịchị {v0} na-azọ n'ime nke ọ bụla n'ime ha.",
-  "observe.ballot-note-all-shared": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. {v0} n'ime ha na-azọ na mpaghara ntuli aka nke ebe a."
+  "observe.ballot-note-all-shared": "A na-egosi otu ndọrọ ndọrọ ọchịchị ọ bụla e debanyere aha. {v0} n'ime ha na-azọ na mpaghara ntuli aka nke ebe a.",
+  "geo.denied": "Hawkeye chọrọ ebe ị nọ — nye saịtị a ikike ebe, wee nwaa ọzọ.",
+  "geo.unavailable": "Ngwaọrụ gị enweghị ike ịchọpụta ebe ọ nọ — nwaa ọzọ n'oge na-adịghị anya.",
+  "geo.timeout": "Enweghị ike inweta ọnọdụ GPS — bịaruo nso windo ma ọ bụ pụọ n'èzí, wee nwaa ọzọ.",
+  "geo.error": "Ngwaọrụ a enweghị ike ịkọ ebe ọ nọ ugbu a — nwaa ọzọ.",
+  "capture.camera-unavailable": "Igwefoto adịghị — {v0}"
 }

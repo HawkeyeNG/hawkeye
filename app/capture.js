@@ -129,7 +129,7 @@
         // Never swallow everything as "user cancelled": a denied permission or a
         // missing plugin then looks exactly like a button that does nothing.
         const msg = String((e && e.message) || e || '');
-        if (!/cancel/i.test(msg) && onError) onError(`Camera unavailable — ${msg || 'unknown error'}`);
+        if (!/cancel/i.test(msg) && onError) onError(T('capture.camera-unavailable', 'Camera unavailable — {v0}', { v0: msg || 'unknown error' }));
         return;
       }
       if (blob) await onShot(blob, t);

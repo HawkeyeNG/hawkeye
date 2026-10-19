@@ -71,7 +71,11 @@
   };
 
   window.HAWKEYE_GEO = {
-    line: function (err) { return LINE[reasonOf(err)]; },
+    // Translated at call time (review L3): geo.denied / unavailable / timeout / error.
+    line: function (err) {
+      var r = reasonOf(err);
+      return window.HawkeyeI18n ? window.HawkeyeI18n.t('geo.' + r, LINE[r]) : LINE[r];
+    },
     code: function (err) { return CODE[reasonOf(err)]; },
   };
 })();

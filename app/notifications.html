@@ -470,10 +470,12 @@
     function localUrl(u) {
       try {
         const x = new URL(u, location.href);
-        if (!/(^|\.)hawkeye\.com\.ng$/.test(x.hostname)) return u;
+        // Off our site only an ordinary web link is followed: a javascript: or
+        // data: URL in an alert would run on this page (review L6).
+        if (!/(^|\.)hawkeye\.com\.ng$/.test(x.hostname)) return /^https?:$/.test(x.protocol) ? x.href : '#';
         if (window.HAWKEYE && window.HAWKEYE.native && NOT_IN_APP.test(x.pathname)) return x.href;
         return (x.pathname === '/incidents.html' ? '/incident-reports.html' : x.pathname) + x.search + x.hash;
-      } catch { return u; }
+      } catch { return '#'; }
     }
     // Mark ONE alert read, update every badge, and grey the row immediately —
     // the receipt catches up behind the navigation.

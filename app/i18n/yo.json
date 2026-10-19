@@ -3008,5 +3008,10 @@
   "race.final-list-note": "Gbogbo olùdíje tó wà nínú àkójọ ìkẹyìn INEC fún ìdìbò yìí — {v0} ni wọ́n.",
   "race.party-running-mate": "{v0} · alábàáṣiṣẹ́pọ̀ {v1}",
   "observe.ballot-note-shared": "Ju agbègbè ìdìbò kan lọ ló ń dìbò ní agbègbè yìí. A fi àwọn ẹgbẹ́ òṣèlú {v0} tó ń díje nínú èyíkéyìí wọn hàn.",
-  "observe.ballot-note-all-shared": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. {v0} nínú wọn ń díje ní àwọn agbègbè ìdìbò ibí yìí."
+  "observe.ballot-note-all-shared": "Gbogbo ẹgbẹ́ òṣèlú tí a forúkọsílẹ̀ ni a fi hàn. {v0} nínú wọn ń díje ní àwọn agbègbè ìdìbò ibí yìí.",
+  "geo.denied": "Hawkeye nílò ibi tí o wà — fún ojú ìwé yìí ní ààyè ibi, kí o sì gbiyanju lẹ́ẹ̀kan sí.",
+  "geo.unavailable": "Ẹ̀rọ rẹ kò lè mọ ibi tí ó wà — gbiyanju lẹ́ẹ̀kan sí láìpẹ́.",
+  "geo.timeout": "A kò rí ipò GPS — sún mọ́ fèrèsé tàbí jáde síta, kí o sì gbiyanju lẹ́ẹ̀kan sí.",
+  "geo.error": "Ẹ̀rọ yìí kò lè sọ ibi tí ó wà báyìí — gbiyanju lẹ́ẹ̀kan sí.",
+  "capture.camera-unavailable": "Kámẹ́rà kò sí — {v0}"
 }

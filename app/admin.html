@@ -1231,15 +1231,15 @@
           return `<div class="vid">${warn}<video data-hk-evidence src="/uploads/${m.file}" controls playsinline preload="metadata"></video></div>`;
         }).join('');
         const gps = (i.lat != null && i.lng != null)
-          ? ` · <a href="https://maps.google.com/?q=${i.lat},${i.lng}" target="_blank" rel="noopener">📍 map</a>` : '';
+          ? ` · <a href="https://maps.google.com/?q=${Number(i.lat)},${Number(i.lng)}" target="_blank" rel="noopener">📍 map</a>` : '';
         const acts = tab === 'pending'
           ? `<div class="acts"><button data-act="publish" data-id="${i.id}">Publish</button>
              <button class="btn-reject" data-act="reject" data-id="${i.id}">Reject</button></div>` : '';
         return `<div class="inc ${i.status}">
-          <h3>${KIND[i.kind] || i.kind}</h3>
-          <div class="meta">#${i.id} · observer ${i.observer_id ?? '—'}${i.state ? ' · ' + i.state : ''}${i.pu_code ? ' · ' + i.pu_code : ''}${gps} · ${new Date(i.created_at).toLocaleString()}</div>
+          <h3>${escAttr(KIND[i.kind] || i.kind)}</h3>
+          <div class="meta">#${i.id} · observer ${i.observer_id ?? '—'}${i.state ? ' · ' + escAttr(i.state) : ''}${i.pu_code ? ' · ' + escAttr(i.pu_code) : ''}${gps} · ${new Date(i.created_at).toLocaleString()}</div>
           ${i.description ? `<p>${i.description.replace(/</g, '&lt;')}</p>` : '<p class="meta">(no text)</p>'}
-          ${i.ai ? `<div class="meta" style="border-left:3px solid #0a5c39;padding-left:8px">🤖 AI (advisory): ${(i.ai.summary || '').replace(/</g, '&lt;')} · kind: ${i.ai.kind}${i.ai.kind !== i.kind ? ' ⚠ differs' : ''} · urgency: ${i.ai.urgency} · spam: ${i.ai.spam}</div>` : ''}
+          ${i.ai ? `<div class="meta" style="border-left:3px solid #0a5c39;padding-left:8px">🤖 AI (advisory): ${(i.ai.summary || '').replace(/</g, '&lt;')} · kind: ${escAttr(i.ai.kind)}${i.ai.kind !== i.kind ? ' ⚠ differs' : ''} · urgency: ${escAttr(i.ai.urgency)} · spam: ${escAttr(i.ai.spam)}</div>` : ''}
           ${media ? `<div class="m">${media}</div>` : ''}
           ${acts}
         </div>`;

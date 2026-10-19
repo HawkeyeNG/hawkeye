@@ -92,17 +92,25 @@ async function kvSet(key, val) {
 }
 
 // ---------- observer identity ----------
+// ONE key per install: two first calls racing on a fresh install each made and
+// stored a key (last write wins), and a report signed with the losing key could
+// never verify (review L8). The generation in flight is shared.
+let keysInFlight = null;
 async function ensureKeys() {
-  let pair = await kvGet('keypair');
-  if (!pair) {
-    pair = await crypto.subtle.generateKey(
-      { name: 'ECDSA', namedCurve: 'P-256' },
-      false, // non-extractable: the private key can sign but never be exported
-      ['sign', 'verify'],
-    );
-    await kvSet('keypair', pair);
+  const pair = await kvGet('keypair');
+  if (pair) return pair;
+  if (!keysInFlight) {
+    keysInFlight = (async () => {
+      const made = await crypto.subtle.generateKey(
+        { name: 'ECDSA', namedCurve: 'P-256' },
+        false, // non-extractable: the private key can sign but never be exported
+        ['sign', 'verify'],
+      );
+      await kvSet('keypair', made);
+      return made;
+    })().finally(() => { keysInFlight = null; });
   }
-  return pair;
+  return keysInFlight;
 }
 
 async function signPayload(pair, payloadString) {

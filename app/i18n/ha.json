@@ -3009,5 +3009,10 @@
   "race.final-list-note": "Kowane ɗan takara a jerin ƙarshe na INEC na wannan zaɓen — su {v0}.",
   "race.party-running-mate": "{v0} · abokin takara {v1}",
   "observe.ballot-note-shared": "Fiye da mazaɓa ɗaya ke zaɓe a wannan yanki. An nuna jam'iyyu {v0} da ke takara a kowace daga cikinsu.",
-  "observe.ballot-note-all-shared": "Ana nuna kowace jam'iyya mai rajista. {v0} daga cikinsu suna takara a mazaɓun wannan yanki."
+  "observe.ballot-note-all-shared": "Ana nuna kowace jam'iyya mai rajista. {v0} daga cikinsu suna takara a mazaɓun wannan yanki.",
+  "geo.denied": "Hawkeye na buƙatar wurinka — ba wannan shafin izinin wuri, sannan ka sake gwadawa.",
+  "geo.unavailable": "Na’urarka ba ta iya gane inda take ba — sake gwadawa nan da ɗan lokaci.",
+  "geo.timeout": "Ba a samu matsayin GPS ba — matsa kusa da taga ko fita waje, sannan ka sake gwadawa.",
+  "geo.error": "Wannan na’urar ba ta iya bayar da wurinta yanzu ba — sake gwadawa.",
+  "capture.camera-unavailable": "Babu kyamara — {v0}"
 }

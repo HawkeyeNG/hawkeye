@@ -2982,5 +2982,10 @@
   "race.final-list-note": "Every candidate on INEC's final list for this race — {v0} of them.",
   "race.party-running-mate": "{v0} · running mate {v1}",
   "observe.ballot-note-shared": "More than one constituency votes in this area. The {v0} parties standing in any of them are shown.",
-  "observe.ballot-note-all-shared": "Every registered party is shown. {v0} of them stand in the constituencies of this area."
+  "observe.ballot-note-all-shared": "Every registered party is shown. {v0} of them stand in the constituencies of this area.",
+  "geo.denied": "Hawkeye needs your location — allow Location for this site and try again.",
+  "geo.unavailable": "Your device could not work out where it is — try again in a moment.",
+  "geo.timeout": "Could not get a GPS fix — move near a window or step outside and try again.",
+  "geo.error": "This device could not report its location just now — try again.",
+  "capture.camera-unavailable": "Camera unavailable — {v0}"
 }

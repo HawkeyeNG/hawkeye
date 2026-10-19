@@ -16,6 +16,7 @@
  * against it — the rule is the endpoint.
  */
 import { BASE } from '@/lib/api';
+import { fetchWithin } from '@/lib/deadline';
 import { authedGet, getToken } from '@/lib/auth';
 import { t as i18nT } from '@/lib/i18n';
 import { trySubmitFix } from '@/lib/location';
@@ -83,7 +84,8 @@ export async function checkIn(
   const token = getToken();
   if (!token) return { ok: false, error: 'not_signed_in' };
   try {
-    const res = await fetch(`${BASE}/api/my/check-in`, {
+    // With a deadline: the check-in card says "working" until this settles.
+    const res = await fetchWithin(`${BASE}/api/my/check-in`, {
       method: 'POST',
       headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' },
       body: JSON.stringify({ pu_code: puCode, lat: fix.lat, lng: fix.lng, accuracy: fix.accuracy }),

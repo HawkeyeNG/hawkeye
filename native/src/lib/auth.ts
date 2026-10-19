@@ -5,6 +5,7 @@
 import * as SecureStore from '@/lib/secure-store';
 import { useSyncExternalStore } from 'react';
 
+import { fetchWithin } from '@/lib/deadline';
 import { getIdentity } from '@/lib/identity';
 import { currentLangForOtp } from '@/lib/i18n';
 import { pendingInviteCode, settleInviteAfterVerify } from '@/lib/pending-invite';
@@ -113,8 +114,14 @@ export type RegisterResult = {
 // slots an account has (backend services/sessions.js: one phone and one
 // computer). React Native's own user agent (okhttp / CFNetwork) says the same,
 // so an app still on an older bundle is classed correctly without it.
+//
+// With a deadline (lib/deadline.ts). Sign-in, OTP, password and /resume all
+// come through here, and none had one: on a stalled 2G socket the sign-in
+// button spun for good, and a /resume that never answered left renewSession's
+// shared promise pending forever — so every later 401 in the app (authedGet,
+// authedSend) waited on it too, until the app was killed.
 async function post<T>(path: string, body: object, headers: Record<string, string> = {}): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetchWithin(`${BASE}${path}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-device-class': 'phone', ...headers },
     body: JSON.stringify(body),
@@ -870,9 +877,9 @@ export async function authedGet<T>(
      * recognises falls through to expiry.
      */
     if (opts.signOutOn401 !== false && (await renewSession())) {
-      const retry = await fetch(`${BASE}${path}`, {
+      const retry = await fetchWithin(`${BASE}${path}`, {
         headers: { accept: 'application/json', authorization: `Bearer ${state.token}` },
-      });
+      }, 12_000);
       if (retry.ok) return (await retry.json()) as T;
     }
     // expireSession, never signOut: a rejected token clears the session but must

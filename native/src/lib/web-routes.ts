@@ -62,7 +62,10 @@ export function webPageRoute(url: string): string | null {
   // join.html?t=<token> — the form the website's sign-in round-trip uses.
   if (file === 'join.html') {
     const t = /(?:^|&)t=([^&]+)/.exec(query)?.[1];
-    const tok = t ? decodeURIComponent(t) : '';
+    // A malformed escape (?t=%E0) must not throw: this runs inside the push
+    // tap handler and a paste box, where a throw is a crash, not a refusal.
+    let tok = '';
+    try { tok = t ? decodeURIComponent(t) : ''; } catch { tok = ''; }
     return TOKEN.test(tok) ? `/join/${tok}` : '/my-groups';
   }
   if (file === 'my-groups.html' || file === 'my-groups') return '/my-groups';

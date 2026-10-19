@@ -36,6 +36,7 @@ import { myReferral, type Referral } from '@/lib/referral';
 import { inviteUnitUrl, isUnitCode, shareInviteUnit } from '@/lib/invite-unit';
 import { useUi } from '@/lib/theme';
 import { requestOtp, signOut, useAuth, verifyOwner } from '@/lib/auth';
+import { fetchWithin } from '@/lib/deadline';
 import { getIdentity } from '@/lib/identity';
 import { humanError } from '@/lib/errors';
 import { dayMonthYear } from '@/lib/dates';
@@ -134,7 +135,8 @@ const unitWhere = (u: NonNullable<Me['unit']>) => {
 async function authed(path: string, init: RequestInit = {}) {
   const token = await SecureStore.getItemAsync('hawkeye.auth.token');
   const id = await getIdentity();
-  const res = await fetch(`${BASE}${path}`, {
+  // With a deadline: delete-account and change-password hold a spinner on this.
+  const res = await fetchWithin(`${BASE}${path}`, {
     ...init,
     headers: {
       ...(init.headers ?? {}),
@@ -584,7 +586,16 @@ export default function Profile() {
 
   const doDelete = async () => {
     setConfirmBusy(true);
-    const { status } = await authed('/api/observers/delete', { method: 'POST' });
+    let status = 0;
+    try {
+      ({ status } = await authed('/api/observers/delete', { method: 'POST' }));
+    } catch {
+      // No answer: the sheet must not spin for good. Nothing was deleted that we know of.
+      setConfirmBusy(false);
+      setConfirm(null);
+      notice.show(i18nT('n.app.profile.could-not-delete'), i18nT('n.app.sign-in.network-error-try-again'));
+      return;
+    }
     setConfirmBusy(false);
     setConfirm(null);
     if (status === 200) {

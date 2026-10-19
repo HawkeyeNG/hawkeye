@@ -1,6 +1,6 @@
 // Sample how many GPUs Vast.ai has free right now, and at what price, and append
 // one JSON line to the file given (default data/vast.jsonl). Run on a schedule
-// for 2026-10 → 2026-11 to learn when cards are plentiful, so the election-night
+// for 2026-10 → 2027-02 to learn when cards are plentiful, so the election-night
 // grab (planned ~24 h before polls open) starts at the right time.
 //
 // Public, no-auth search API. It returns at most 64 offers a query, so each GPU

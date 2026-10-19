@@ -1,6 +1,7 @@
 name: Vast GPU availability sampler
 
-# Every 6 hours from 2 Oct to 2 Nov 2026: how many RTX 4090 / 5090 / 3090 cards
+# Every 6 hours from 2 Oct 2026 to 7 Feb 2027 (extended 19 Oct from 2 Nov, to see
+# December/January and both polling days): how many RTX 4090 / 5090 / 3090 cards
 # Vast.ai has free, how many fit our image (verified, reliability >= 0.98,
 # CUDA >= 13), and at what price. One JSON line per run on the orphan branch
 # `vast-availability` (data/vast.jsonl), so main stays clean. Guides when to
@@ -25,7 +26,7 @@ jobs:
       - name: Stop after the sampling window
         id: window
         run: |
-          if [ "$(date -u +%Y%m%d)" -gt 20261102 ]; then echo "over=1" >> "$GITHUB_OUTPUT"; fi
+          if [ "$(date -u +%Y%m%d)" -gt 20270207 ]; then echo "over=1" >> "$GITHUB_OUTPUT"; fi
       - uses: actions/checkout@v4
         if: steps.window.outputs.over != '1'
         with:

@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import Feather from '@expo/vector-icons/Feather';
 
 import { BASE } from '@/lib/api';
+import { fetchWithin } from '@/lib/deadline';
 import { useAuth } from '@/lib/auth';
 import { useT } from '@/lib/i18n';
 import { useUi } from '@/lib/theme';
@@ -154,7 +155,9 @@ export default function JoinGroup() {
     let live = true;
     (async () => {
       try {
-        const r = await fetch(`${BASE}/api/join/${encodeURIComponent(code)}`);
+        // Deadlines on both calls: a stalled link otherwise holds the
+        // full-screen spinner (or the Join button) for good.
+        const r = await fetchWithin(`${BASE}/api/join/${encodeURIComponent(code)}`);
         if (!live) return;
         if (r.status === 409) { setState('held'); return; }
         if (!r.ok) { const s = await spentState(r); if (live) setState(s); return; }
@@ -172,7 +175,7 @@ export default function JoinGroup() {
     setJoinError(null);
     setState('joining');
     try {
-      const r = await fetch(`${BASE}/api/join/${encodeURIComponent(code)}`, {
+      const r = await fetchWithin(`${BASE}/api/join/${encodeURIComponent(code)}`, {
         method: 'POST',
         headers: { 'content-type': 'application/json', authorization: `Bearer ${session}` },
       });

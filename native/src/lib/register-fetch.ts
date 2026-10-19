@@ -14,6 +14,7 @@
  *
  * See docs/PU-SEARCH-2027.md.
  */
+import { fetchWithin } from '@/lib/deadline';
 import {
   loadIndex, statesOffline, lgasOffline, wardsOffline, unitsOfflineHeld,
 } from '@/lib/register';
@@ -72,5 +73,17 @@ export async function regFetch(url: string, init?: RequestInit): Promise<Respons
   } catch {
     // Never let the offline path break a request that would have worked.
   }
-  return fetch(url, init);
+  const res = await fetchWithin(url, init);
+  /**
+   * A REFUSAL IS NOT A LIST. Five browse screens do `r.json().then(setStates)`
+   * and render `states.map(...)`, so a 429/503/500 with a JSON body (the
+   * server's `{ error: 'busy' }`) became the state, and the render threw
+   * "map is not a function" — the error screen in place of the report flow,
+   * the moment the server is under election-day load. Rejecting instead lands
+   * in each caller's `.catch`, which already handles "no answer".
+   */
+  if (!res.ok && /\/api\/register\/(states|lgas|wards)$/.test(url.split('?')[0])) {
+    throw new Error(`register ${res.status}`);
+  }
+  return res;
 }

@@ -163,7 +163,9 @@ const jsonRes = (status, body) => () => new Response(JSON.stringify(body), { sta
 
 console.log('\n=== native: the outbox defers a 401, and auth.ts explains it ===');
 const outboxTs = fs.readFileSync(`${H}/native/src/lib/outbox.ts`, 'utf8');
-const branch401 = outboxTs.match(/\} else if \(res\.status === 401\) \{([\s\S]*?)\}/);
+// The SESSION 401 branch (a report-level 401 — bad_signature — is dropped
+// separately; tests/native_outbox_stuck_test.mjs).
+const branch401 = outboxTs.match(/\} else if \(res\.status === 401(?: && \(await sessionDead401\(res\)\))?\) \{([\s\S]*?)\}/);
 check('outbox.ts: a 401 after the re-mint defers the job (never retire)', branch401 && /defer\(job/.test(branch401[1]) && !/retire\(/.test(branch401[1]), true);
 const authTs = fs.readFileSync(`${H}/native/src/lib/auth.ts`, 'utf8');
 const resumeHandled = (src) => (src.match(/if \(r\.signedInElsewhere\)/g) || []).length;

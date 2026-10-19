@@ -35,7 +35,8 @@ import { filePart, remintSession } from '@/lib/submit';
 import { isDirectBusy, isHashOnly, uploadDirect, type DirectBusy } from '@/lib/direct-upload';
 import { keepEvidence } from '@/lib/evidence';
 import { t as i18nT } from '@/lib/i18n';
-import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
+import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus, sessionDead401 } from '@/lib/retry';
+import { fetchWithin, JSON_DEADLINE_MS, UPLOAD_DEADLINE_MS } from '@/lib/deadline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -422,13 +423,17 @@ async function attempt(
       json = JSON.stringify({ ...b, hashOnly: '1' });
     }
   }
-  const res = await fetch(`${BASE}${PATHS[job.kind]}`, {
+  // A deadline, so a stalled socket fails like any dead network: the job is
+  // deferred and the flush ends. Without one `sending` stayed true for the
+  // life of the app and no later flush — reconnect, resume, the 60 s sweep,
+  // the background task — ever ran again.
+  const res = await fetchWithin(`${BASE}${PATHS[job.kind]}`, {
     method: 'POST',
     headers: json
       ? { authorization: `Bearer ${token}`, 'x-device-id': deviceId, 'content-type': 'application/json' }
       : { authorization: `Bearer ${token}`, 'x-device-id': deviceId },
     body: json ?? buildForm(job),
-  });
+  }, json ? JSON_DEADLINE_MS : UPLOAD_DEADLINE_MS);
   return { res, hashOnly };
 }
 
@@ -527,6 +532,18 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
         break;
       }
 
+      // A 401 that names the REPORT (bad_signature), not the session: no
+      // re-mint or sign-in changes that answer. It used to re-mint and stop
+      // the flush on every pass — holding every report queued behind it for
+      // good. Dropped with the server's reason, as app/outbox.js does.
+      if (!isDirectBusy(res) && res.status === 401 && !(await sessionDead401(res))) {
+        const why = await refusal(res);
+        await retire(job);
+        await recordDrop(job, why);
+        publish({ lastError: why });
+        continue;
+      }
+
       if (res.status === 401 && !reminted) {
         // The session died while the report waited. Re-mint silently — an
         // observer should not have to sign in to release evidence they already
@@ -563,7 +580,8 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
       } else if (res.ok || res.status === 409) {
         await retire(job); // landed, or the server already had it
         sent += 1;
-      } else if (res.status === 401) {
+      } else if (res.status === 401 && (await sessionDead401(res))) {
+        // (A report-level 401 after the re-mint falls to the drop below.)
         defer(job, 'session expired (HTTP 401)');
         break;
       } else if (holdsQueue(res.status)) {

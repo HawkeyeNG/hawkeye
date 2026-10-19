@@ -61,6 +61,26 @@ type PresignSlot = {
   key?: string;
 };
 
+/**
+ * fetch with a deadline (the same rule as lib/deadline.ts, kept local so this
+ * module stays at one import — tests/rn-direct-upload.test.mjs compiles it
+ * alone). RN's fetch never times out: a presign or PUT on a stalled socket
+ * held the submit screen on "Signing and submitting…" and the outbox flush
+ * open for good. A timeout throws, which every caller below reads as "fall
+ * back" exactly like any other network failure.
+ */
+const PRESIGN_DEADLINE_MS = 30_000;
+const PUT_DEADLINE_MS = 180_000;
+async function within(url: string, init: RequestInit, ms: number): Promise<Response> {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), ms);
+  try {
+    return await fetch(url, { ...init, signal: ctl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Bytes of a captured photo, read the same way submit.ts reads them. */
 async function bytesOf(uri: string): Promise<Uint8Array> {
   return new Uint8Array(await new File(uri).arrayBuffer());
@@ -107,7 +127,7 @@ export async function uploadDirect(args: {
 
   let plan: { mode?: string; sheet?: PresignSlot; venue?: PresignSlot };
   try {
-    const res = await fetch(`${BASE}/api/uploads/presign`, {
+    const res = await within(`${BASE}/api/uploads/presign`, {
       method: 'POST',
       headers: {
         authorization: `Bearer ${token}`,
@@ -124,7 +144,7 @@ export async function uploadDirect(args: {
         venueBytes: venueBytes.length,
         ...(offer && figures ? { puCode: figures.puCode, contest: figures.contest, votes: figures.votes } : {}),
       }),
-    });
+    }, PRESIGN_DEADLINE_MS);
     // 409 is the server saying "I am in proxy mode" — an answer, not a fault.
     if (res.status === 409) return null;
     if (res.status === 429 || res.status === 503) {
@@ -159,14 +179,14 @@ export async function uploadDirect(args: {
       // no-op, so skip it and save the observer their mobile data.
       if (slot.alreadyStored) continue;
       if (!slot.url) return null;
-      const put = await fetch(slot.url, {
+      const put = await within(slot.url, {
         method: 'PUT',
         headers: slot.headers ?? {},
         // A real Blob, not the Uint8Array: Expo SDK 54+ ships a spec-compliant
         // fetch whose BodyInit does not include typed arrays. Same bytes, same
         // length — and the length is what the signature pins.
         body: new Blob([body as unknown as BlobPart]),
-      });
+      }, PUT_DEADLINE_MS);
       // The bucket verifies the body against the signed checksum and length, so
       // a rejection here means the bytes are not what we said they were.
       // Falling back is right: the origin will hash them itself and decide.

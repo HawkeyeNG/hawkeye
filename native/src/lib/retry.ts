@@ -66,3 +66,23 @@ export async function retryAfterOf(res: Response): Promise<string | null> {
   const body = (await res.clone().json().catch(() => null)) as { retryAfterS?: number } | null;
   return body && body.retryAfterS != null ? String(body.retryAfterS) : null;
 }
+
+/**
+ * Is this 401 about the SESSION, or about the REPORT?
+ *
+ * The codes backend requireObserver sends when the session itself is dead —
+ * the same list as app/outbox.js AUTH_DEAD. A 401 that names nothing we can
+ * read is treated as the session too. Any other named 401 (bad_signature: the
+ * server cannot verify this report's signature) is about the report, and no
+ * re-mint or sign-in will ever change the answer.
+ */
+export const AUTH_DEAD = ['missing_token', 'invalid_token', 'unknown_observer', 'signed_in_elsewhere', 'device_mismatch'];
+export const sessionDead = (body: unknown): boolean => {
+  const e = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined;
+  return typeof e !== 'string' || AUTH_DEAD.includes(e);
+};
+
+/** sessionDead() for a 401 response. Reads a CLONE, so the body stays readable. */
+export async function sessionDead401(res: Response): Promise<boolean> {
+  return sessionDead(await res.clone().json().catch(() => null));
+}

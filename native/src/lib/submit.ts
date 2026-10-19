@@ -13,7 +13,8 @@ import * as SecureStore from '@/lib/secure-store';
 import { bootstrapAuth } from '@/lib/auth';
 import { isDirectBusy, isHashOnly, uploadDirect } from '@/lib/direct-upload';
 import { keepEvidence } from '@/lib/evidence';
-import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus } from '@/lib/retry';
+import { holdsQueue, retryAfterOf, retryDelayMs, retryableStatus, sessionDead401 } from '@/lib/retry';
+import { fetchWithin, JSON_DEADLINE_MS, UPLOAD_DEADLINE_MS } from '@/lib/deadline';
 import { confirmSigning } from '@/lib/biometric';
 import { getIdentity } from '@/lib/identity';
 import { deviceSignalsField } from '@/lib/device-signals';
@@ -305,16 +306,21 @@ async function deliver(
   // session re-mint replays cleanly.
   buildJson?: (() => string) | null,
 ): Promise<Response> {
+  // With a deadline: a stalled socket used to hold "Signing and submitting…"
+  // forever, with the signed report in neither the ledger nor the outbox. A
+  // timeout throws like a dead network, and the caller parks the report.
   const go = (t: string) =>
-    fetch(`${BASE}${path}`, {
+    fetchWithin(`${BASE}${path}`, {
       method: 'POST',
       headers: buildJson
         ? { authorization: `Bearer ${t}`, 'x-device-id': deviceId, 'content-type': 'application/json' }
         : { authorization: `Bearer ${t}`, 'x-device-id': deviceId },
       body: buildJson ? buildJson() : buildForm(),
-    });
+    }, buildJson ? JSON_DEADLINE_MS : UPLOAD_DEADLINE_MS);
   const res = await go(token);
-  if (res.status !== 401) return res;
+  // Only a 401 about the SESSION is worth a re-mint: bad_signature is about
+  // the report, and re-minting would only sign the observer out for nothing.
+  if (res.status !== 401 || !(await sessionDead401(res))) return res;
   // A session can expire between opening the app at dawn and the close of poll.
   // The report is already signed and still valid — re-mint and retry once
   // rather than making the observer sign in with the sheet already gone.
@@ -394,7 +400,7 @@ const undeliveredDryRun = (why: string): SubmitResult => ({
 export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   const id = await getIdentity();
   const token = await SecureStore.getItemAsync(K_TOKEN);
-  if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
+  if (!token) return { ok: false, error: 'not_signed_in', message: i18nT('ready.sign-in-first') };
 
   // Reading and hashing happen BEFORE the network. Failures here were being
   // reported as "network error" — name the stage so the next failure is
@@ -582,7 +588,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
   // bootstrapAuth has just flipped the auth store to signed-out, which swaps
   // this screen for the sign-in guard and takes the photos with it. The job is
   // signed and complete, and the outbox waits for a token before each attempt.
-  if (res.status === 401) {
+  if (res.status === 401 && (await sessionDead401(res))) {
     return park(
       'session expired / HTTP 401',
       i18nT('n.lib.submit.signed-out-your-signed-report-is'),
@@ -639,7 +645,7 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
 export async function submitCollation(input: CollationInput): Promise<SubmitResult> {
   const id = await getIdentity();
   const token = await SecureStore.getItemAsync(K_TOKEN);
-  if (!token) return { ok: false, error: 'not_signed_in', message: 'Sign in first.' };
+  if (!token) return { ok: false, error: 'not_signed_in', message: i18nT('ready.sign-in-first') };
 
   let imageSha256: string;
   let venueImageSha256: string;
@@ -708,7 +714,7 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     return park(`network: ${errText(e)}`);
   }
 
-  if (res.status === 401) {
+  if (res.status === 401 && (await sessionDead401(res))) {
     return park(
       'session expired / HTTP 401',
       i18nT('n.lib.submit.signed-out-your-signed-report-is'),
@@ -734,6 +740,6 @@ export async function submitCollation(input: CollationInput): Promise<SubmitResu
     error: code,
     // Always append the code + HTTP status. A bare "Submission failed" cost
     // a full device round-trip to diagnose; the screen must name the fault.
-    message: `${ERRORS[code] ?? body.hint ?? 'Submission failed — try again.'} (${code} / HTTP ${res.status})`,
+    message: `${ERRORS[code] ?? body.hint ?? i18nT('n.lib.submit.submission-failed-try-again')} (${code} / HTTP ${res.status})`,
   };
 }

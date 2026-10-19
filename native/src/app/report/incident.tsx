@@ -63,6 +63,7 @@ import { ModalCard } from '@/components/modal-card';
 import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from '@/lib/upload';
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
+import { fetchWithin, UPLOAD_DEADLINE_MS } from '@/lib/deadline';
 import { nearbyOrOffline } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
@@ -1127,12 +1128,15 @@ export default function ReportIncident() {
         // Handed back as a Response so everything downstream is untouched.
         return new Response(r.text, { status: r.status });
       };
+      // The fallback gets the XHR's deadline too: it runs exactly when the XHR
+      // failed (often its own timeout on 2G), and with none the submit
+      // spinner stayed up for good instead of handing the report to the outbox.
       const post = () =>
-        fetch(`${BASE}/api/incidents`, {
+        fetchWithin(`${BASE}/api/incidents`, {
           method: 'POST',
           headers,
           body: buildForm(),
-        });
+        }, UPLOAD_DEADLINE_MS);
       // One silent retry: a reset connection on Nigerian mobile networks is a
       // transient, not a verdict. (Server-side dedupe is not a concern here —
       // a retried incident that DID land twice just shows twice in the queue.)

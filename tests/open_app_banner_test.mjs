@@ -31,4 +31,15 @@ check('app-argument is this URL, & and " escaped', tag.includes('app-argument=ht
 check('CONTROL the attribute is closed exactly once (no break-out)', (tag.match(/"/g) || []).length, 4);
 check('a no-script copy without the argument', /<noscript><meta name="apple-itunes-app" content="app-id=\d+" \/><\/noscript>/.test(head), true);
 
+// /open forwards at once, so the PAGE IT FORWARDS TO must carry the bar: the
+// email's "Try a practice run" ends on practice-day.html (iPhone test 20 Oct).
+const pd = fs.readFileSync(`${APP}/practice-day.html`, 'utf8');
+const pdHead = pd.slice(0, pd.indexOf('</head>'));
+check('practice-day.html has a fixed bar for the native app, routing back to practice day',
+  pdHead.includes(`<meta name="apple-itunes-app" content="app-id=${native}, app-argument=https://hawkeye.com.ng/open?to=practiceday" />`), true);
+check('CONTROL /open still forwards practiceday to practice-day.html', /practiceday: '\.\.\/practice-day\.html'/.test(html), true);
+const dl = fs.readFileSync(`${APP}/download.html`, 'utf8');
+check('download.html (the email\'s "Get Hawkeye") has the bar for the native app',
+  dl.slice(0, dl.indexOf('</head>')).includes(`<meta name="apple-itunes-app" content="app-id=${native}, app-argument=https://hawkeye.com.ng/">`), true);
+
 finish();

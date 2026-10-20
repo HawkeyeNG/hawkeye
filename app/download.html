@@ -8,6 +8,10 @@
   <title data-i18n="download.hawkeye-get-the-app">Hawkeye — Get the app</title>
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <!-- Safari's "Open / Get" bar for the native app: the email's "Get Hawkeye"
+       button lands here (iPhone test 20 Oct showed no bar). -->
+  <meta name="apple-itunes-app" content="app-id=6804218478, app-argument=https://hawkeye.com.ng/">
+
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=201">
   <script src="native.js?v=128"></script>

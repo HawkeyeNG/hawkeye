@@ -9,6 +9,10 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="icon" type="image/svg+xml" href="logo.svg?v=101" />
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+  <!-- Safari's "Open in app" bar for the native app. Email buttons reach this
+       page through /open, which forwards at once (no time for /open's own bar),
+       so the bar must be HERE. A fixed tag: Practice Day is about the app. -->
+  <meta name="apple-itunes-app" content="app-id=6804218478, app-argument=https://hawkeye.com.ng/open?to=practiceday" />
   <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
   <link rel="stylesheet" href="styles.css?v=201" />
   <script src="native.js?v=128"></script>

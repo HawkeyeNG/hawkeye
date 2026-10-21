@@ -8,7 +8,9 @@
 import fs from 'node:fs';
 
 const OUT = process.argv[2] || 'data/vast.jsonl';
-const GPUS = ['RTX 4090', 'RTX 5090', 'RTX 3090'];
+// RTX PRO 6000 (Blackwell, 96 GB; added 21 Oct 2026): ~$1/h, a possible fallback when
+// 4090/5090 run short. Vast names each edition separately (Workstation, Server, Max-Q).
+const GPUS = ['RTX 4090', 'RTX 5090', 'RTX 3090', 'RTX PRO 6000 WS', 'RTX PRO 6000 S', 'RTX PRO 6000 Max-Q'];
 const EU = new Set('AT BE BG HR CY CZ DK EE FI FR DE GR HU IE IT LV LT LU MT NL PL PT RO SK SI ES SE GB NO CH IS'.split(' '));
 const CUDA_MIN = 13.0;       // our vLLM image
 const REL_MIN = 0.98;

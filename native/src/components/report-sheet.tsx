@@ -1,8 +1,8 @@
-import BottomSheet, { BottomSheetBackdrop, BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps, BottomSheetBackgroundProps } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { forwardRef, useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import Feather from '@expo/vector-icons/Feather';
@@ -11,6 +11,7 @@ import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { myRooms, type MyRoom } from '@/lib/check-in';
 import { dismissSetAside, dropReason, useOutbox } from '@/lib/outbox';
+import { setReportSheetOpen } from '@/lib/report-sheet-open';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -63,6 +64,14 @@ const ACTIONS: {
  * room for the arrival check-in card and the waiting-reports line when they
  * are drawn. Memoised per combination below, so the array identity is stable
  * across renders that change neither.
+ *
+ * AN ESTIMATE ONLY, used until the content has been measured once. A fixed share
+ * of the screen cannot know how the text wraps: a set-aside row that runs to a
+ * fifth line in Hausa pushed "Report a Collation" off the bottom of a 393x852
+ * phone, and on a 360x640 phone even the bare sheet (42%) cut that action off.
+ * The sheet now takes the height its content measures (onContentSizeChange
+ * below), capped at SHEET_MAX_SHARE of the window, and SCROLLS past the cap,
+ * so every action is always reachable.
  */
 /**
  * The sheet's ground, painted from the SAME palette variables as the text on
@@ -82,6 +91,26 @@ const OUTBOX_PCT = 7;
 const SET_ASIDE_PCT = 7;
 const SET_ASIDE_ROW_PCT = 8;
 const SET_ASIDE_ROWS = 3;
+/** The row's icon, and the gap pl-2 leaves after it: "and N more" starts where
+ *  the row text does. */
+const ASIDE_ICON = 14;
+const ASIDE_GAP = 8;
+/** @gorhom/bottom-sheet's default handle: 10 + 4 (the bar) + 10. The measured
+ *  content sits under it, so the snap point is content + handle. */
+const HANDLE_H = 24;
+/** The tallest the sheet may be; past this its content scrolls. */
+const SHEET_MAX_SHARE = 0.9;
+
+/**
+ * ONE FULL STOP. Our lines for a code end with their own ("…to report it."),
+ * dropReason() then adds the identifier, and the row sentence ends with its own
+ * "." — so a row read "…report it. (outside_geofence / HTTP 422)." The reason's
+ * stop goes, the sentence's stays. Applied to the finished sentence, so the
+ * translated texts and dropReason() (also the outbox's lastError) are untouched.
+ */
+function oneStop(s: string): string {
+  return s.replace(/\.\s+(\([^()]*\))\.$/, ' $1.').replace(/\.\.$/, '.');
+}
 
 export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   { onAction },
@@ -124,6 +153,10 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   }, [auth.status, refreshRooms]);
   const arrival = rooms && !checkedInEverywhere(rooms) ? assignedUnit(rooms) : null;
 
+  /* A sheet torn down while open (sign-out unmounts the tabs; a language change
+     remounts the whole app) must not leave the Ask Hawkeye bubble hidden. */
+  useEffect(() => () => setReportSheetOpen(false), []);
+
   /* REP-OFF-01: a report held in the outbox was invisible once its receipt
      screen was left. This sheet is where a reporter looks next. */
   const { pending, setAside } = useOutbox();
@@ -133,11 +166,20 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
      refuse the same report again. Newest first, the rest counted. */
   const asideShown = setAside.slice(0, SET_ASIDE_ROWS);
 
-  const snapPoints = useMemo(
-    () => [`${BASE_PCT + (arrival ? CHECK_IN_PCT : 0) + (pending > 0 ? OUTBOX_PCT : 0)
-      + (asideShown.length ? SET_ASIDE_PCT + asideShown.length * SET_ASIDE_ROW_PCT : 0)}%`],
-    [arrival, pending, asideShown.length],
-  );
+  /**
+   * MEASURED, THEN CAPPED. contentH is the scroll content's own height (0 until
+   * the first measurement — the sheet is mounted closed, so that lands before
+   * anyone opens it). It cannot feed back on itself: the snap point sizes the
+   * scroll VIEWPORT, never the content inside it, so one measurement settles.
+   * Rounded up so a fractional height never leaves a 0.5 px scroll.
+   */
+  const { height: winH } = useWindowDimensions();
+  const [contentH, setContentH] = useState(0);
+  const snapPoints = useMemo(() => {
+    const estimate = (winH * (BASE_PCT + (arrival ? CHECK_IN_PCT : 0) + (pending > 0 ? OUTBOX_PCT : 0)
+      + (asideShown.length ? SET_ASIDE_PCT + asideShown.length * SET_ASIDE_ROW_PCT : 0))) / 100;
+    return [Math.min(contentH > 0 ? contentH + HANDLE_H : estimate, Math.floor(winH * SHEET_MAX_SHARE))];
+  }, [arrival, pending, asideShown.length, contentH, winH]);
 
   /**
    * THE BACKDROP IS UNMOUNTED WHEN CLOSED, NOT JUST FADED.
@@ -189,9 +231,17 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       onChange={(i) => {
         if (i >= 0 && !open) refreshRooms();
         setOpen(i >= 0);
+        // Every settle, both ways: -1 is how a backdrop tap, a swipe down and an
+        // action's close() all end; >= 0 covers reduced motion, where the sheet
+        // can open without onAnimate ever firing.
+        setReportSheetOpen(i >= 0);
       }}
       onAnimate={(from, to) => {
-        if (from < 0 && to >= 0) refreshRooms();
+        if (from < 0 && to >= 0) {
+          refreshRooms();
+          // The Ask Hawkeye bubble leaves as the sheet starts to rise, not after.
+          setReportSheetOpen(true);
+        }
       }}
       // undefined, not null: the prop types as FC | undefined, and passing null
       // is the difference between "no backdrop" and a type error.
@@ -204,7 +254,10 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
       handleIndicatorStyle={{ backgroundColor: ui.faint }}
       backgroundComponent={SheetBackground}
     >
-      <BottomSheetView style={{ paddingBottom: insets.bottom + 12 }}>
+      <BottomSheetScrollView
+        contentContainerStyle={{ paddingBottom: insets.bottom + 12 }}
+        onContentSizeChange={(_w, h) => setContentH(Math.ceil(h))}
+      >
         <Text className="px-5 pb-1 pt-1 text-lg font-bold text-ink">{i18nT('nav.report')}</Text>
         <Text className="px-5 pb-3 text-sm text-muted">
           {i18nT('n.components.report-sheet.every-report-is-signed-hash-chained')}
@@ -223,20 +276,20 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
           <View className="mx-4 mb-2 rounded-xl bg-bad px-3 py-2">
             {asideShown.map((d) => (
               <View key={`${d.droppedAt}-${d.label}`} className="flex-row pb-1">
-                <Feather name="alert-circle" size={14} color={ui.tint.bad.ink} style={{ marginTop: 1 }} />
+                <Feather name="alert-circle" size={ASIDE_ICON} color={ui.tint.bad.ink} style={{ marginTop: 1 }} />
                 <Text className="flex-1 pl-2 text-xs font-semibold text-bad-ink">
-                  {i18nT('n.lib.outbox.a-queued-report-was-dropped', { v0: `${d.label}: ${dropReason(d)}` })}
+                  {oneStop(i18nT('n.lib.outbox.a-queued-report-was-dropped', { v0: `${d.label}: ${dropReason(d)}` }))}
                 </Text>
               </View>
             ))}
             {setAside.length > asideShown.length ? (
-              <Text className="pb-1 pl-6 text-xs text-bad-ink">
+              <Text className="pb-1 text-xs text-bad-ink" style={{ paddingLeft: ASIDE_ICON + ASIDE_GAP }}>
                 {i18nT('n.components.report-sheet.set-aside-more', { v0: setAside.length - asideShown.length })}
               </Text>
             ) : null}
             <Pressable
               onPress={() => { void dismissSetAside(); }}
-              className="mt-1 self-end rounded-lg border border-line px-3 py-1 active:opacity-70"
+              className="mt-1 self-end rounded-lg border border-bad-ink/70 px-3 py-1 active:opacity-70"
             >
               <Text className="text-xs font-bold text-ink">{i18nT('common.ok')}</Text>
             </Pressable>
@@ -250,6 +303,10 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
             className="mx-4 mb-2 flex-row items-center rounded-2xl bg-surface px-4 py-3 active:opacity-70"
             onPress={() => {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              // Not left to the close animation's onChange alone: the action pushes
+              // a screen over this one at the same moment, and nothing must leave
+              // the bubble hidden if that animation is cut short.
+              setReportSheetOpen(false);
               onAction(a.key);
             }}
           >
@@ -263,7 +320,7 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
             <Feather name="chevron-right" size={18} color={ui.faint} />
           </Pressable>
         ))}
-      </BottomSheetView>
+      </BottomSheetScrollView>
     </BottomSheet>
   );
 });

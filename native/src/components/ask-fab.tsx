@@ -11,6 +11,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { BRAND } from '@/lib/api';
 import { t as i18nT } from '@/lib/i18n';
+import { useReportSheetOpen } from '@/lib/report-sheet-open';
 
 /** Diameter of the bubble. Below ~48 it stops being a comfortable one-thumb target. */
 const SIZE = 52;
@@ -144,6 +145,8 @@ export function AskFab() {
   const onChatPage = pathname === '/page' && (slug === 'faq' || slug === 'about');
   const bounds = useBounds();
   const typing = useTyping();
+  /** The Report sheet is up: this bubble is drawn above it and sat on its OK. */
+  const sheetOpen = useReportSheetOpen();
   const [pos, setPos] = useState<Pos | null>(null);
 
   /**
@@ -185,8 +188,9 @@ export function AskFab() {
     AsyncStorage.setItem(K_POS, JSON.stringify(next)).catch(() => {});
   }, []);
 
-  // Unmounted while typing; `pos` lives up here, so it comes back where it was.
-  if (!pos || typing || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
+  // Unmounted while typing or while the Report sheet is up; `pos` lives up here,
+  // so it comes back where it was.
+  if (!pos || typing || sheetOpen || HIDDEN.has(pathname) || pathname.startsWith('/report')) return null;
 
   return (
     // NO full-screen wrapper. There was one, with pointerEvents="box-none", and it

@@ -790,6 +790,67 @@
     return 2 * 6371000 * Math.asin(Math.sqrt(h));
   }
 
+  /**
+   * NEAR-ME ASKS WITH A ROUNDED POSITION (review L9, 2026-10-22).
+   *
+   * GET /api/polling-units and /api/mapping/nearby carry the position in the
+   * URL, and URLs are written to the server's and the edge's access logs. The
+   * fix itself (7 decimals, ~1 cm) is a home address there. So every near-me
+   * request states the fix rounded to NEAR_DECIMALS (3: never more than 79 m
+   * from the real one in Nigeria) and says so with slackM, which widens the
+   * server's search by that much (backend services/geo.js nearSlackM). The exact
+   * fix stays on the phone: nearExact() re-measures every row from it and drops
+   * what is outside the radius the page meant. Measured on a copy of the
+   * production register (570 unit positions, jittered 0-15 m): the observer's
+   * own unit was listed, at the same rank, every time; at 2 decimals the
+   * register lookup lost it 1 time in 10.
+   *
+   * The same rule as native/src/lib/near-query.ts. Every near-me call site
+   * builds its query with nearQuery(); tests/near_me_query_precision_test.mjs
+   * fails any URL that carries lat=${...} of its own.
+   */
+  var NEAR_DECIMALS = 3;
+  var NEAR_SLACK_M = 80;
+  function nearCoord(v) { return Number(v).toFixed(NEAR_DECIMALS); }
+  /** 'lat=7.772&lng=4.557&slackM=80' — the query string for either lookup. */
+  function nearQuery(lat, lng) {
+    return 'lat=' + nearCoord(lat) + '&lng=' + nearCoord(lng) + '&slackM=' + NEAR_SLACK_M;
+  }
+  /**
+   * A near-me answer re-measured from the EXACT fix. `body` is what either
+   * lookup answered ({ units: [...] }, or a bare array from an old server);
+   * anything else comes back untouched. Each row's distance is taken from the
+   * point the server measured from (`lat ?? crowd_lat`: publicUnit has already
+   * withheld a rejected pin, so this IS trustedPin ?? trustedCrowd; a mapping
+   * row's lat/lng is its drawn point), rows beyond `maxM` — the register's own
+   * radiusM when not given — are dropped, and the list is nearest-first.
+   */
+  function nearExact(body, lat, lng, maxM) {
+    var list = Array.isArray(body) ? body : (body && Array.isArray(body.units) ? body.units : null);
+    if (!list) return body;
+    var limit = Number(maxM);
+    if (!(limit > 0) && body && !Array.isArray(body)) limit = Number(body.radiusM);
+    var out = [];
+    for (var i = 0; i < list.length; i++) {
+      var u = list[i];
+      if (!u) continue;
+      var la = u.lat != null ? u.lat : u.crowd_lat, ln = u.lng != null ? u.lng : u.crowd_lng;
+      if (la == null || ln == null || !isFinite(lat) || !isFinite(lng)) { out.push(u); continue; }
+      var d = Math.round(haversineM(Number(lat), Number(lng), Number(la), Number(ln)));
+      if (limit > 0 && d > limit) continue;
+      var row = {};
+      for (var k in u) if (Object.prototype.hasOwnProperty.call(u, k)) row[k] = u[k];
+      row.distanceM = d;
+      out.push(row);
+    }
+    out.sort(function (a, b) { return (a.distanceM == null ? 1e9 : a.distanceM) - (b.distanceM == null ? 1e9 : b.distanceM); });
+    if (Array.isArray(body)) return out;
+    var copy = {};
+    for (var key in body) if (Object.prototype.hasOwnProperty.call(body, key)) copy[key] = body[key];
+    copy.units = out;
+    return copy;
+  }
+
   /** The full API row for unit i: the pack's names plus this file's location. */
   function unitWithLocation(p, c, i, distanceM) {
     var f = c.flags[i];
@@ -1136,6 +1197,11 @@
     coordsHeld: function (state) { return idbGet('coords:' + state).then(function (c) { return !!c; }).catch(function () { return false; }); },
     nearbyOffline: nearbyOffline,
     nearbyOrOffline: nearbyOrOffline,
+    /* Near-me requests: a rounded position on the wire, distances from the exact fix. */
+    nearQuery: nearQuery,
+    nearExact: nearExact,
+    NEAR_DECIMALS: NEAR_DECIMALS,
+    NEAR_SLACK_M: NEAR_SLACK_M,
     _coords: { decode: decodeCoords, nearbyFromPacks: nearbyFromPacks, decodeState: decodeState }, // for the Node gate
 
     /** Resolves once `state` can answer searches (the fold has been built). */

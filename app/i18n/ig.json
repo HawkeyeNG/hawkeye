@@ -3013,5 +3013,6 @@
   "geo.unavailable": "Ngwaọrụ gị enweghị ike ịchọpụta ebe ọ nọ — nwaa ọzọ n'oge na-adịghị anya.",
   "geo.timeout": "Enweghị ike inweta ọnọdụ GPS — bịaruo nso windo ma ọ bụ pụọ n'èzí, wee nwaa ọzọ.",
   "geo.error": "Ngwaọrụ a enweghị ike ịkọ ebe ọ nọ ugbu a — nwaa ọzọ.",
-  "capture.camera-unavailable": "Igwefoto adịghị — {v0}"
+  "capture.camera-unavailable": "Igwefoto adịghị — {v0}",
+  "outbox.refused": "Sava jụrụ ya"
 }

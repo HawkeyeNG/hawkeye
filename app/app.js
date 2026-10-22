@@ -369,9 +369,13 @@ function nearbyCacheUsable() {
 async function prefetchNearby() {
   if (!lastFix || nearbyCacheUsable()) return;
   const { latitude: lat, longitude: lng } = lastFix.coords;
+  // A ROUNDED position on the wire, distances from the exact fix
+  // (register-store.js nearQuery). No helper, no warm-up: btn-locate still runs.
+  const store = window.registerStore;
+  if (!store || !store.nearQuery) return;
   try {
-    const { body } = await api(`/api/polling-units?lat=${lat}&lng=${lng}`);
-    nearbyCache = { lat, lng, at: Date.now(), body };
+    const { body } = await api(`/api/polling-units?${store.nearQuery(lat, lng)}`);
+    nearbyCache = { lat, lng, at: Date.now(), body: store.nearExact(body, lat, lng) };
   } catch { /* best-effort warm-up; btn-locate still does the real fetch */ }
 }
 
@@ -2447,19 +2451,26 @@ $('btn-locate').onclick = async () => {
    * long version of this note and the evidence behind it.
    */
   const merged = async () => {
+    // The position goes out ROUNDED (register-store.js nearQuery) and every
+    // distance is re-measured here from the exact fix. Without the helper
+    // nothing is sent: the failure path below names search and browse.
+    const store = window.registerStore;
+    if (!store || !store.nearQuery) return { error: 'near_query_unavailable' };
+    const nq = store.nearQuery(lat, lng);
     const online = Promise.all([
-      apiTry(`/api/polling-units?lat=${lat}&lng=${lng}`),
-      apiTry(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
+      apiTry(`/api/polling-units?${nq}`),
+      apiTry(`/api/mapping/nearby?${nq}&radiusM=800`),
     ]);
     // Answered from the files on the phone when the server does not
     // (register-store.js nearbyOrOffline): 8 s of grace, then the offline copy.
-    const store = window.registerStore;
-    const [reg, near, viaPacks] = store && store.nearbyOrOffline
+    const [reg0, near0, viaPacks] = store.nearbyOrOffline
       ? await store.nearbyOrOffline(lat, lng, 800, online, { good: (a, b) => !(a.error && b.error), wrap: (body) => ({ body }) })
       : [...(await online), false];
     // A failure on either side is survivable; a failure on both is not, and is
     // reported as one, so the caller's error path still fires.
-    if (reg.error && near.error) return reg;
+    if (reg0.error && near0.error) return reg0;
+    const reg = reg0.error ? reg0 : { ...reg0, body: store.nearExact(reg0.body, lat, lng) };
+    const near = near0.error ? near0 : { ...near0, body: store.nearExact(near0.body, lat, lng, 800) };
     /**
      * ONE SHAPE OUT. The two endpoints do not agree on field names — the
      * register answers `pu_code` with `lga` and `state`, the mapping index

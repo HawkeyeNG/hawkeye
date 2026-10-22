@@ -1,5 +1,5 @@
 /**
- * THE WEB REVIEW'S LOW ITEMS (PR #17 L3, L4, L6, L7, L8), each run or read
+ * THE WEB REVIEW'S LOW ITEMS (PR #17 L3, L4, L5, L6, L7, L8), each run or read
  * from the real file:
  *   L6  notifications.html localUrl(): an alert URL off our site is followed
  *       only if it is http(s) — a javascript: / data: URL becomes '#'.
@@ -7,6 +7,8 @@
  *       generated key instead of each storing their own.
  *   L3  geo-msg.js: the four location lines come from geo.* in the reader's
  *       language; L4 capture.js: "Camera unavailable" likewise.
+ *   L5  outbox.js: the reason a set-aside (dropped) report is shown with is
+ *       built when shown, in the reader's language (observe.err.* / outbox.refused).
  *   L7  admin.html / review.html incident queue: server fields go in as text.
  * Each check fails on the code before the fix.
  *
@@ -70,6 +72,42 @@ const read = (f) => fs.readFileSync(`${APP}/${f}`, 'utf8');
   check('L3/L4 every new line is in en/ha/ig/yo (NFC, not English)', missing, []);
   check('L4 capture.js shows "Camera unavailable" through its key', /T\('capture\.camera-unavailable'/.test(read('capture.js')), true);
   check('L4 ...and every language keeps {v0}', keys.slice(4).every((k) => ['en', 'ha', 'ig', 'yo'].every((l) => String(bundles[l][k]).includes('{v0}'))), true);
+}
+
+// ---- L5 -------------------------------------------------------------------------
+{
+  // The SHIPPED outbox.js in a service-worker-shaped realm (no document, so
+  // nothing starts on load), with a bundle standing in for i18n.js.
+  const load = (lang, dict) => {
+    const G = {
+      navigator: { onLine: true }, addEventListener() {}, dispatchEvent() {},
+      HawkeyeI18n: { current: lang, t: (k, fb) => (Object.prototype.hasOwnProperty.call(dict, k) ? dict[k] : fb === undefined ? k : fb) },
+    };
+    vm.runInNewContext(read('outbox.js'), { self: G, indexedDB: {}, setTimeout, clearTimeout, setInterval, console });
+    return G.HawkeyeOutbox;
+  };
+  // Before the fix the alert printed the stored English `why` as it was.
+  const reason = (O, d) => (typeof O.reasonOf === 'function' ? O.reasonOf(d) : d.why);
+  const ha = JSON.parse(read('i18n/ha.json'));
+  const yo = JSON.parse(read('i18n/yo.json'));
+  const drop = { label: '01-01-01-001 · PRES', status: 401, code: 'bad_signature',
+    hint: 'Signature check failed — refresh and try again.', why: 'Signature check failed — refresh and try again. (bad_signature / HTTP 401)' };
+  check('L5 Hausa: a set-aside report is explained in Hausa, not by the English hint',
+    reason(load('ha', ha), drop), `${ha['observe.err.bad-signature']} (bad_signature / HTTP 401)`);
+  check('L5 Yorùbá: a code we have no line for, with no hint, says "refused" in Yorùbá',
+    reason(load('yo', yo), { status: 400, code: 'weird_code', hint: null }), `${yo['outbox.refused']} (weird_code / HTTP 400)`);
+  check('L5 CONTROL English keeps the server hint (it can carry detail)',
+    reason(load('en', {}), drop), drop.why);
+  check('L5 CONTROL a drop recorded before this change still shows its stored reason',
+    reason(load('ha', ha), { label: 'x', why: 'old reason (x / HTTP 400)' }), 'old reason (x / HTTP 400)');
+  const src = read('outbox.js');
+  check('L5 the alert shows reasonOf(d), and a drop records status, code and hint',
+    src.includes('${reasonOf(d)}') && /status: resp\.status,\s*code:/.test(src) && /hint: body && typeof body\.hint/.test(src), true);
+  const bad = ['en', 'ha', 'ig', 'yo'].filter((l) => {
+    const v = JSON.parse(read(`i18n/${l}.json`))['outbox.refused'];
+    return typeof v !== 'string' || v !== v.normalize('NFC') || (l !== 'en' && v === 'The server refused it');
+  });
+  check('L5 outbox.refused is in en/ha/ig/yo (NFC, not English)', bad, []);
 }
 
 // ---- L7 -------------------------------------------------------------------------

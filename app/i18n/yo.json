@@ -3013,5 +3013,6 @@
   "geo.unavailable": "Ẹ̀rọ rẹ kò lè mọ ibi tí ó wà — gbiyanju lẹ́ẹ̀kan sí láìpẹ́.",
   "geo.timeout": "A kò rí ipò GPS — sún mọ́ fèrèsé tàbí jáde síta, kí o sì gbiyanju lẹ́ẹ̀kan sí.",
   "geo.error": "Ẹ̀rọ yìí kò lè sọ ibi tí ó wà báyìí — gbiyanju lẹ́ẹ̀kan sí.",
-  "capture.camera-unavailable": "Kámẹ́rà kò sí — {v0}"
+  "capture.camera-unavailable": "Kámẹ́rà kò sí — {v0}",
+  "outbox.refused": "Sáfà kọ̀ ọ́"
 }

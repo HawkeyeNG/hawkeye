@@ -269,6 +269,12 @@ const ERRORS: Record<string, string> = lazyT({
   unknown_contest: 'n.lib.submit.select-which-election-you-are-reporting',
 });
 
+/** The line above for a backend code, in the reader's language; null if there
+ *  is none. The outbox explains a set-aside report with it (outbox.ts dropReason). */
+export function errorLine(code: string | null | undefined): string | null {
+  return code && Object.prototype.hasOwnProperty.call(ERRORS, code) ? ERRORS[code] : null;
+}
+
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 
 /**

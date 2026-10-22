@@ -80,7 +80,7 @@ import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
 import { ReceiptCopy } from '@/components/receipt-copy';
 import { myRooms, type MyRoom } from '@/lib/check-in';
-import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
+import { nearbyOrOffline, nearQuery, unitFetch } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -357,6 +357,21 @@ const receiptLocation = (r: Receipt): { label: string; color: string } => {
 };
 
 /**
+ * The unit result's status in the reader's language. Keys, not text: this is
+ * module scope, and a t() here would freeze at import. The server's statuses
+ * are reported / verified / disputed (services/aggregate.js), plus pending,
+ * which the colour below already handles; anything else shows as sent.
+ */
+const RESULT_STATUS: Record<string, string> = {
+  reported: 'n.app.report.result.status-reported',
+  verified: 'n.app.report.result.status-verified',
+  disputed: 'n.app.report.result.status-disputed',
+  pending: 'n.app.report.result.status-pending',
+};
+const resultStatusLabel = (s: string): string =>
+  (Object.prototype.hasOwnProperty.call(RESULT_STATUS, s) ? i18nT(RESULT_STATUS[s]) : s);
+
+/**
  * What the ring on the map is, in words, given what actually answered.
  *
  * The ring can only ever be one circle, and the two lookups behind this screen
@@ -584,9 +599,7 @@ const NearbyRow = ({
               with room to say so can state both honestly. */}
           {!n.envelope && n.fenceEnvelope ? (
             <Text className="pt-1 text-xs text-emerald-100">
-              That area is a ~{Math.round(n.fenceEnvelope.radiusM).toLocaleString()}m circle
-              around a centre of its own — the point shown for this unit is the coordinate the
-              register holds for it, which is somewhere else.
+              {i18nT('n.app.report.result.area-centre-elsewhere', { v0: Math.round(n.fenceEnvelope.radiusM).toLocaleString() })}
             </Text>
           ) : null}
           <Pressable
@@ -970,9 +983,10 @@ export default function ReportResult() {
         // config.discoveryRadiusM and caps at config.discoveryMaxRows. Both
         // facts are load-bearing for the copy below, neither can be asked for,
         // and both are now read back out of the response instead of mirrored.
-        tryFetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`),
+        // The position is ROUNDED (lib/near-query.ts); nearbyOrOffline re-measures.
+        tryFetch(`${BASE}/api/polling-units?${nearQuery(f.lat, f.lng)}`),
         // This one does take a radius, and would otherwise default to 5km.
-        tryFetch(`${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`),
+        tryFetch(`${BASE}/api/mapping/nearby?${nearQuery(f.lat, f.lng)}&radiusM=${DISCOVERY_RADIUS_M}`),
       ]));
       setNearOffline(viaPacks);
 
@@ -1754,6 +1768,9 @@ export default function ReportResult() {
   const [readSerial, setReadSerial] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
+  /** The submit fix failed in a way only the OS settings app can fix (location
+   *  off, or permission blocked) — the review step's twin of `gpsSettings`. */
+  const [submitGpsSettings, setSubmitGpsSettings] = useState(false);
   const [done, setDone] = useState<{ title: string; line: string }>({ title: '', line: '' });
   const [receipt, setReceipt] = useState<Receipt>({});
   /** Held in the offline outbox rather than delivered — a different ending. */
@@ -1764,6 +1781,7 @@ export default function ReportResult() {
     tap();
     if (!unit || !contest || !sheet || !venue) return;
     setBusy(true);
+    setSubmitGpsSettings(false);
     setLine(i18nT('n.app.report.result.getting-your-location'));
     try {
       // Bounded, accuracy-aware fix — the server rejects accuracy >100m, and an
@@ -1777,6 +1795,7 @@ export default function ReportResult() {
       if (!got.ok) {
         const d = describeFixFailure(got);
         setLine(`${d.lead}. (${d.code})`);
+        setSubmitGpsSettings(d.settings);
         setBusy(false);
         return;
       }
@@ -2115,8 +2134,8 @@ export default function ReportResult() {
               {contests.length
                 ? electionName(contests[0])
                 : contestsFailed
-                  ? 'Election details unavailable'
-                  : 'Loading election…'}
+                  ? i18nT('n.app.report.result.election-details-unavailable')
+                  : i18nT('n.app.report.result.loading-election')}
             </Text>
             {/* A dead end needs a way out. Reporting does not depend on this
                 list — the unit steps below work regardless — so say that, and
@@ -2175,8 +2194,8 @@ export default function ReportResult() {
                 <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
                 <Text className="pb-3 text-xs text-muted">
                   {sheetGuess.code}
-                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''} · read from the sheet
-                  {sheetGuess.repaired ? ' (one digit corrected)' : ''}
+                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''}
+                  {` · ${sheetGuess.repaired ? i18nT('observe.read-from-sheet-corrected') : i18nT('observe.read-from-sheet')}`}
                 </Text>
                 <View className="flex-row gap-2.5">
                   <Pressable
@@ -2256,9 +2275,7 @@ export default function ReportResult() {
                 and the radius quoted here are its numbers, not ours. */}
             {searched?.capped && nearby.length ? (
               <Text className="pt-1 text-xs text-muted">
-                Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
-                {searched.registerM}m, and that limit was reached — if yours is not listed, browse
-                the register below.
+                {i18nT('n.app.report.result.lookup-capped', { v0: searched.maxRows, v1: searched.registerM })}
               </Text>
             ) : null}
 
@@ -2709,10 +2726,7 @@ export default function ReportResult() {
               <Text className="text-xs text-muted">{i18nT('n.app.report.result.what-happens-when-you-send')}</Text>
               <InfoDot
                 title={i18nT('n.app.report.result.what-happens-when-you-send')}
-                text={
-                  'Submitting takes a GPS fix at your position, signs the report with this device’s key, '
-                  + 'and files it for review.\n\nYour number is never attached — only your observer ID.'
-                }
+                text={i18nT('n.app.report.result.what-happens-when-you-send-body')}
               />
             </View>
           </ScrollView>
@@ -2724,6 +2738,17 @@ export default function ReportResult() {
         {step === 'review' ? (
           <View className="border-t border-line bg-surface px-4 pb-6 pt-3">
             {line ? <Text className="pb-2 text-sm font-semibold text-warn-ink">{line}</Text> : null}
+            {/* Same rule as the unit step: only for the two failures the
+                settings app cures. Sign & submit below is the retry. */}
+            {submitGpsSettings && !busy ? (
+              <Pressable
+                onPress={() => Linking.openSettings()}
+                className="mb-3 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
+              >
+                <Feather name="settings" size={14} color={ui.muted} />
+                <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
+              </Pressable>
+            ) : null}
             <Pressable
               disabled={busy}
               onPress={onSubmit}
@@ -2789,8 +2814,7 @@ export default function ReportResult() {
                   <Feather name={copied ? 'check' : 'copy'} size={15} color={BRAND.gold} />
                 </Pressable>
                 <Text className="pt-2 text-[11px] text-emerald-200/80">
-                  {copied ? 'Copied.' : 'Tap to copy.'} This fingerprint is how you prove your report
-                  is in the public ledger and has not been altered.
+                  {copied ? i18nT('n.app.report.result.fingerprint-copied') : i18nT('n.app.report.result.fingerprint-tap-to-copy')}
                 </Text>
               </View>
             ) : null}
@@ -2843,7 +2867,7 @@ export default function ReportResult() {
                       // card. text-bad-ink/text-warn-ink follow the theme.
                       className={`text-sm font-bold ${receipt.result.status === 'disputed' ? 'text-bad-ink' : receipt.result.status === 'pending' ? 'text-warn-ink' : 'text-good-ink'}`}
                     >
-                      {receipt.result.status.toUpperCase()}
+                      {resultStatusLabel(receipt.result.status).toUpperCase()}
                     </Text>
                   </View>
                 ) : null}
@@ -2859,7 +2883,7 @@ export default function ReportResult() {
                   <View className="flex-row items-center justify-between py-1.5">
                     <Text className="text-sm text-muted">{i18nT('n.app.report.result.reports-agreeing')}</Text>
                     <Text className="text-sm font-bold text-ink">
-                      {receipt.result.matchingReports ?? 0} of {receipt.result.totalReports}
+                      {i18nT('n.app.report.result.n-of-m', { v0: receipt.result.matchingReports ?? 0, v1: receipt.result.totalReports })}
                     </Text>
                   </View>
                 ) : null}
@@ -2896,7 +2920,7 @@ export default function ReportResult() {
                   <View className="flex-row items-center justify-between py-1.5">
                     <Text className="pr-3 text-sm text-muted">{i18nT('n.app.report.result.read-off-your-photo')}</Text>
                     <Text className="text-sm font-bold text-ink">
-                      {receipt.ocr.matched} of {receipt.ocr.total} counts matched
+                      {i18nT('n.app.report.result.counts-matched', { v0: receipt.ocr.matched, v1: receipt.ocr.total })}
                     </Text>
                   </View>
                 ) : null}

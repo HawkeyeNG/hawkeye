@@ -431,7 +431,7 @@ export function ContestPicker({
                 {!open ? (
                   <Text className="pt-0.5 text-[11px] font-semibold text-faint">
                     {opensTag(c)}
-                    {allowClosed ? ' · rehearsal' : ''}
+                    {allowClosed ? ` · ${i18nT('n.components.contest-picker.rehearsal')}` : ''}
                   </Text>
                 ) : null}
               </View>

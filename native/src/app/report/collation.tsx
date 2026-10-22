@@ -550,7 +550,7 @@ export default function ReportCollation() {
         {step === 'scope' ? (
           <ScrollView contentContainerClassName="px-4 pb-8 pt-4" keyboardShouldPersistTaps="handled">
             <Text className="pb-1 text-xl font-bold text-ink">
-              {contests.length ? electionName(contests[0]) : 'Loading election…'}
+              {contests.length ? electionName(contests[0]) : i18nT('n.app.report.result.loading-election')}
             </Text>
             <Text className="pb-4 text-sm text-muted">
               {i18nT('n.app.report.collation.which-collation-are-you-reporting')}
@@ -924,8 +924,7 @@ export default function ReportCollation() {
                   <Feather name={copied ? 'check' : 'copy'} size={15} color={BRAND.gold} />
                 </Pressable>
                 <Text className="pt-2 text-[11px] text-emerald-200/80">
-                  {copied ? 'Copied.' : 'Tap to copy.'} This fingerprint is how you prove your report
-                  is in the public ledger and has not been altered.
+                  {copied ? i18nT('n.app.report.result.fingerprint-copied') : i18nT('n.app.report.result.fingerprint-tap-to-copy')}
                 </Text>
               </View>
             ) : null}
@@ -967,7 +966,11 @@ export default function ReportCollation() {
                 <Text
                   className={`text-sm font-bold ${queued ? 'text-warn-ink' : receipt.entryHash ? 'text-good-ink' : 'text-muted'}`}
                 >
-                  {queued ? 'WAITING TO SEND' : receipt.entryHash ? 'RECORDED' : 'NOT FILED'}
+                  {(queued
+                    ? i18nT('n.app.report.collation.status-waiting')
+                    : receipt.entryHash
+                      ? i18nT('n.app.report.collation.status-recorded')
+                      : i18nT('n.app.report.collation.status-not-filed')).toUpperCase()}
                 </Text>
               </View>
               <View className="flex-row items-center justify-between py-1.5">
@@ -1022,8 +1025,8 @@ export default function ReportCollation() {
             <Pressable className="items-center pb-3" onPress={() => router.replace('/integrity')}>
               <Text className="text-sm font-semibold text-good-ink">
                 {receipt.entryHash
-                  ? 'See how collated figures are checked ›'
-                  : 'See the integrity checks ›'}
+                  ? i18nT('n.app.report.collation.see-how-collated-figures-are-checked')
+                  : i18nT('n.app.report.collation.see-the-integrity-checks')}
               </Text>
             </Pressable>
             <Pressable

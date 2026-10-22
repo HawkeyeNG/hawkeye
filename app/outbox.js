@@ -65,6 +65,22 @@
   const dropped = () => { try { return JSON.parse(G.localStorage.getItem(K_DROPPED) || '[]'); } catch { return []; } };
   const refusal = (status, body) =>
     `${(body && (body.hint || body.error)) || 'refused'} (${(body && body.error) || 'no code'} / HTTP ${status})`;
+  /* THE REASON IN THE READER'S LANGUAGE (review L5), built when it is SHOWN:
+     the service worker records drops with no dictionary loaded. The server's
+     hint is a fixed English sentence, so app.js explain()'s rule applies \u2014 in
+     any language but English the client's own line for the code (observe.err.*,
+     what a live submit shows) leads. The code and HTTP status stay: they are
+     identifiers. A drop recorded before this carries only its English `why`. */
+  const reasonOf = (d) => {
+    if (!d || d.status == null) return d && d.why;
+    const I = G.HawkeyeI18n;
+    const code = typeof d.code === 'string' ? d.code : '';
+    const own = I && code ? I.t('observe.err.' + code.replace(/_/g, '-'), null) : null;
+    const lang = (I && I.current) || 'en';
+    const lead = (lang !== 'en' && own) || d.hint || own
+      || (I ? I.t('outbox.refused', 'The server refused it') : 'The server refused it');
+    return `${lead} (${code ? code + ' / ' : ''}HTTP ${d.status})`;
+  };
   const tell = async (fresh) => {
     try { await G.i18nReady; } catch { /* English fallback below */ }
     const I = G.HawkeyeI18n;
@@ -72,7 +88,7 @@
       : 'A queued report was dropped \u2014 {v0}.';
     // dialog.js is loaded by every page that loads this file; without it the
     // drop is still on record (K_DROPPED) for Profile to show.
-    if (G.hkAlert) G.hkAlert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${d.why}`)).join('\n\n'));
+    if (G.hkAlert) G.hkAlert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${reasonOf(d)}`)).join('\n\n'));
   };
   // A page records a drop and says so at once. The service worker has neither
   // localStorage nor anyone to tell, so it parks the drop for the next page.
@@ -134,6 +150,7 @@
     retryDelayMs,
     parseRetryAfter,
     retryableStatus,
+    reasonOf,
     /** `entry.notBefore` (epoch ms), when given, holds the first attempt until then. */
     async queue(entry) {
       const id = await run('readwrite', (s) => s.add({ ...entry, queuedAt: Date.now() }));
@@ -267,7 +284,11 @@
           forget(it);
           const f = it.fields || {};
           fresh.push({ label: it.label || [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
-            queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body) });
+            queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body),
+            // The parts, so the alert can say it in the reader's language (reasonOf).
+            status: resp.status,
+            code: body && typeof body.error === 'string' ? body.error : null,
+            hint: body && typeof body.hint === 'string' ? body.hint : null });
         }
       }
       if (retryDirty) {

@@ -48,7 +48,7 @@ import {
 import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, lazyT } from '@/lib/i18n';
-import { nearbyOrOffline } from '@/lib/nearby-offline';
+import { nearbyOrOffline, nearQuery } from '@/lib/nearby-offline';
 
 type Unit = {
   pu_code: string;
@@ -557,12 +557,13 @@ export default function MapUnit() {
 
       // Answered from the files on the phone when the server does not (lib/nearby-offline).
       const [located, envelope, viaPacks] = await nearbyOrOffline(fix.lat, fix.lng, MAPPING_RADIUS_M, Promise.all([
-        fetch(`${BASE}/api/polling-units?lat=${fix.lat}&lng=${fix.lng}`).catch(() => null),
+        // A ROUNDED position (lib/near-query.ts); nearbyOrOffline re-measures from the exact fix.
+        fetch(`${BASE}/api/polling-units?${nearQuery(fix.lat, fix.lng)}`).catch(() => null),
         // Mapping searches 5km on purpose (see MAPPING_RADIUS_M): this screen
         // below draws, and a ring that is not the area actually searched turns
         // the map from evidence into decoration.
         fetch(
-          `${BASE}/api/mapping/nearby?lat=${fix.lat}&lng=${fix.lng}&radiusM=${MAPPING_RADIUS_M}`,
+          `${BASE}/api/mapping/nearby?${nearQuery(fix.lat, fix.lng)}&radiusM=${MAPPING_RADIUS_M}`,
         ).catch(() => null),
       ]));
       setNearOffline(viaPacks);
@@ -1132,9 +1133,7 @@ export default function MapUnit() {
             are its numbers, off the wire, not a mirror of them. */}
         {searched?.capped && nearby.length ? (
           <Text className="pt-1 text-xs text-muted">
-            Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
-            {searched.registerM}m, and that limit was reached — if yours is not listed, browse the
-            register below.
+            {i18nT('n.app.report.result.lookup-capped', { v0: searched.maxRows, v1: searched.registerM })}
           </Text>
         ) : null}
 

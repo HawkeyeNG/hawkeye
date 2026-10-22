@@ -193,15 +193,20 @@
     }
     const { latitude: lat, longitude: lng } = pos.coords;
     const get = (p) => fetch(p).then((r) => r.json()).catch(() => null);
-    const online = Promise.all([
-      get(`/api/polling-units?lat=${lat}&lng=${lng}`),
-      get(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
-    ]);
-    // Answered from the files on the phone when the server does not (register-store.js).
+    // A ROUNDED position on the wire; distances re-measured from the exact fix
+    // (register-store.js nearQuery/nearExact). Without the helper nothing is sent.
     const store = window.registerStore;
-    const [reg, near, viaPacks] = store && store.nearbyOrOffline
+    const nq = store && store.nearQuery ? store.nearQuery(lat, lng) : null;
+    const online = nq ? Promise.all([
+      get(`/api/polling-units?${nq}`),
+      get(`/api/mapping/nearby?${nq}&radiusM=800`),
+    ]) : Promise.resolve([null, null]);
+    // Answered from the files on the phone when the server does not (register-store.js).
+    const [reg0, near0, viaPacks] = store && store.nearbyOrOffline
       ? await store.nearbyOrOffline(lat, lng, 800, online)
       : [...(await online), false];
+    const reg = nq ? store.nearExact(reg0, lat, lng) : reg0;
+    const near = nq ? store.nearExact(near0, lat, lng, 800) : near0;
     if (!reg && !near) {
       say(navigator.onLine
         ? T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')

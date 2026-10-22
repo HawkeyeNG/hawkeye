@@ -12,8 +12,17 @@
  * server's own trust decisions and gated against them
  * (native/scripts/verify_register_coords_ts.mjs) — so preferring it over a slow
  * request loses nothing but the live count of observer fixes.
+ *
+ * THE SCREENS' URLS STATE A ROUNDED POSITION (lib/near-query.ts nearQuery), so
+ * the server measured from up to 79 m away. The online answers are therefore
+ * handed back RE-MEASURED from the exact fix this function is given, and
+ * trimmed to the radius each lookup meant: every screen's merge, its "m away"
+ * and its geofence warnings see full-precision distances without a change.
  */
 import { offlineNearby, unitFromPacks } from '@/lib/register';
+import { exactBody } from '@/lib/near-query';
+
+export { nearQuery } from '@/lib/near-query';
 
 type Res = Response | null;
 export type NearbyPair = [located: Res, envelope: Res, offline: boolean];
@@ -21,6 +30,11 @@ export type NearbyPair = [located: Res, envelope: Res, offline: boolean];
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 /** Just enough of a Response for the callers: `.ok`, `.status`, `.json()`. */
 const asResponse = (body: unknown) => ({ ok: true, status: 200, json: async () => body }) as unknown as Response;
+/** A good online answer, its rows re-measured from the exact fix (see the note above). */
+const exact = (res: Res, lat: number, lng: number, maxM?: number): Res =>
+  res && res.ok
+    ? ({ ok: true, status: res.status, json: async () => exactBody(await res.json(), lat, lng, maxM) } as unknown as Response)
+    : res;
 
 /**
  * @param online   the screen's own Promise.all of the two requests
@@ -40,19 +54,22 @@ export async function nearbyOrOffline(
     .then((r) => { box.v = r; return r; })
     .catch((): [Res, Res] => { box.v = [null, null]; return box.v; });
   const good = () => !!(box.v && (box.v[0]?.ok || box.v[1]?.ok));
+  // The register keeps its own radiusM; the mapping lookup the radius asked for.
+  const served = (): NearbyPair =>
+    box.v ? [exact(box.v[0], lat, lng), exact(box.v[1], lat, lng, mappingRadiusM), false] : [null, null, false];
 
   await Promise.race([tracked, sleep(graceMs)]);
-  if (good()) return [box.v![0], box.v![1], false];
+  if (good()) return served();
 
   const off = await offlineNearby(lat, lng, mappingRadiusM);
-  if (good()) return [box.v![0], box.v![1], false]; // the server answered meanwhile
+  if (good()) return served(); // the server answered meanwhile
   // An EMPTY offline answer is not trusted over a server that has not spoken:
   // the phone may simply hold another state's files.
   if (off && (off.register.units.length || off.mapping.units.length)) {
     return [asResponse(off.register), asResponse(off.mapping), true];
   }
   if (!box.v) await Promise.race([tracked, sleep(Math.max(0, capMs - graceMs))]);
-  return box.v ? [box.v[0], box.v[1], false] : [null, null, false];
+  return served();
 }
 
 /**

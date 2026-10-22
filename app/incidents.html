@@ -928,8 +928,12 @@
         const store = window.registerStore;
         let viaPacks = false;
         const sig = store && typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? { signal: AbortSignal.timeout(8000) } : undefined;
-        const got = await fetch(`/api/polling-units?lat=${c.latitude}&lng=${c.longitude}`, sig)
+        // A ROUNDED position on the wire (register-store.js nearQuery), every
+        // distance re-measured here from the exact fix. No helper, no request.
+        if (!store || !store.nearQuery) throw new Error('near_query_unavailable');
+        const got = await fetch(`/api/polling-units?${store.nearQuery(c.latitude, c.longitude)}`, sig)
           .then((x) => { if (!x.ok) throw new Error('HTTP ' + x.status); return x.json(); })
+          .then((b) => store.nearExact(b, c.latitude, c.longitude))
           .catch(async (e) => {
             const off = store && store.nearbyOffline ? await store.nearbyOffline(c.latitude, c.longitude, 500) : null;
             if (!off || !off.register.units.length) throw e;
@@ -1247,7 +1251,7 @@
       restoreIncidentDraft();
     })();
   </script>
-  <script src="register-store.js?v=5"></script>
+  <script src="register-store.js?v=6"></script>
   <script src="shell.js?v=4" defer></script>
 </body>
 </html>

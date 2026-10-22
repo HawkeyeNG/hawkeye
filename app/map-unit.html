@@ -141,7 +141,7 @@
     <p data-i18n="common.2026-inixien-llc-all-rights-reserved" class="copyright">© 2026 IniXien, LLC. All rights reserved.</p></div></footer>
 
   <script src="device.js"></script>
-  <script src="register-store.js?v=5"></script>
+  <script src="register-store.js?v=6"></script>
   <script src="pu-search.js?v=10"></script>
   <script src="vendor/leaflet/leaflet.js"></script>
   <!-- Vector basemap: our own Nigeria PMTiles, OpenFreeMap if ours fails (basemap.js).
@@ -466,7 +466,11 @@
       sayNear(() => T('map-unit.getting-your-position', 'Getting your position…'));
       navigator.geolocation.getCurrentPosition(async (pos) => {
         const { latitude: lat, longitude: lng } = pos.coords;
-        const r = await fetch(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=5000`).then((x) => x.json());
+        // A ROUNDED position on the wire (register-store.js nearQuery), distances
+        // from the exact fix. No helper, no request: the picker below still works.
+        const store = window.registerStore;
+        if (!store || !store.nearQuery) { sayNear(() => T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')); return; }
+        const r = store.nearExact(await fetch(`/api/mapping/nearby?${store.nearQuery(lat, lng)}&radiusM=5000`).then((x) => x.json()), lat, lng, 5000);
         if (!initMap()) return;
         $('map-key').hidden = false;
         lmap.setView([lat, lng], 14);

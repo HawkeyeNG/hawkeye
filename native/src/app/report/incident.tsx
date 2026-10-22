@@ -64,7 +64,7 @@ import { humanBytes, uploadWithProgress, xhrFilePart, type UploadProgress } from
 import { t as i18nT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
 import { fetchWithin, UPLOAD_DEADLINE_MS } from '@/lib/deadline';
-import { nearbyOrOffline } from '@/lib/nearby-offline';
+import { nearbyOrOffline, nearQuery } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -576,6 +576,11 @@ export default function ReportIncident() {
 
   const [busy, setBusy] = useState(false);
   const [line, setLine] = useState<string | null>(null);
+  /** Photo-library access was refused at the last Upload tap. */
+  const [libDenied, setLibDenied] = useState(false);
+  /** The gallery pick's own status (compressing, could not prepare/compress),
+   *  shown under the tray: the footer status line is not drawn on that step. */
+  const [trayLine, setTrayLine] = useState<string | null>(null);
   /**
    * The ending, and what its receipt card is drawn from: the TYPE as the
    * observer picked it, the server's reference once it has one (none while it
@@ -791,10 +796,11 @@ export default function ReportIncident() {
         // No radius parameter exists on this one — it filters at
         // config.discoveryRadiusM and caps at config.discoveryMaxRows, and
         // reports both back rather than leaving them to be guessed.
-        fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
+        // The position is ROUNDED (lib/near-query.ts); nearbyOrOffline re-measures.
+        fetch(`${BASE}/api/polling-units?${nearQuery(f.lat, f.lng)}`).catch(() => null),
         // This one does take a radius, and would otherwise default to 5km.
         fetch(
-          `${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
+          `${BASE}/api/mapping/nearby?${nearQuery(f.lat, f.lng)}&radiusM=${DISCOVERY_RADIUS_M}`,
         ).catch(() => null),
       ]));
       setNearOffline(viaPacks);
@@ -983,10 +989,11 @@ export default function ReportIncident() {
    */
   const pickFromLibrary = async () => {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) {
-      setLine(i18nT('n.app.report.incident.allow-photo-access'));
-      return;
-    }
+    // Shown beside the Upload tile with an Open settings button (the footer's
+    // status line is not on this step, so setLine here was never seen).
+    setTrayLine(null);
+    setLibDenied(!perm.granted);
+    if (!perm.granted) return;
     const res = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images', 'videos'],
       allowsMultipleSelection: true,
@@ -1011,7 +1018,7 @@ export default function ReportIncident() {
      * the size that will actually be sent, and a slow re-encode happens while
      * they are still writing the description instead of stalling the submit.
      */
-    setLine(res.assets.some((a) => a.type === 'video') ? i18nT('n.app.report.incident.compressing') : '');
+    setTrayLine(res.assets.some((a) => a.type === 'video') ? i18nT('n.app.report.incident.compressing') : null);
     let uncompressed = 0;
     let notPrivate = 0;
     const picked: Media[] = (await Promise.all(res.assets.map(async (a) => {
@@ -1028,11 +1035,11 @@ export default function ReportIncident() {
     // is missing, so a reviewer may not be able to play it at all.
     // Whole sentences per count — "a photo" / "N photos" is not a slot another
     // language can fill in the same place.
-    setLine(notPrivate
+    setTrayLine(notPrivate
       ? (notPrivate === 1
         ? i18nT('n.app.report.incident.could-not-prepare-photo')
         : i18nT('n.app.report.incident.could-not-prepare-photos', { v0: notPrivate }))
-      : uncompressed ? i18nT('n.app.report.incident.could-not-compress-video') : '');
+      : uncompressed ? i18nT('n.app.report.incident.could-not-compress-video') : null);
     if (picked.length) addMedia(picked, 'library');
   };
 
@@ -1559,9 +1566,7 @@ export default function ReportIncident() {
                 truncated, and quoting the server's own cap and radius. */}
             {searched?.capped && nearby.length ? (
               <Text className="pt-1 text-xs text-muted">
-                Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
-                {searched.registerM}m, and that limit was reached — if the one you want is not
-                listed, browse the register below.
+                {i18nT('n.app.report.incident.lookup-capped', { v0: searched.maxRows, v1: searched.registerM })}
               </Text>
             ) : null}
 
@@ -1828,6 +1833,25 @@ export default function ReportIncident() {
               ) : null}
             </View>
 
+            {trayLine ? (
+              <Text className="pb-2 text-sm font-semibold text-warn-ink">{trayLine}</Text>
+            ) : null}
+
+            {/* Photo access refused: once the OS will not ask again, Settings
+                is the only way back to the gallery. Upload above is the retry. */}
+            {libDenied && media.length < MAX_MEDIA ? (
+              <View className="pb-2">
+                <Text className="text-sm font-semibold text-warn-ink">{i18nT('n.app.report.incident.allow-photo-access')}</Text>
+                <Pressable
+                  onPress={() => Linking.openSettings()}
+                  className="mt-2 flex-row items-center self-start rounded-xl border border-line px-3 py-2 active:opacity-70"
+                >
+                  <Feather name="settings" size={14} color={ui.muted} />
+                  <Text className="pl-2 text-sm font-semibold text-ink">{i18nT('n.app.map-unit.open-phone-settings')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             {/**
              * THE VIDEO ALLOWANCE, ONLY ONCE IT IS RELEVANT.
              *
@@ -1917,14 +1941,13 @@ export default function ReportIncident() {
                 the register has never heard of. */}
             {unit && !unit.unlisted ? (
               <Text className="pt-3 text-xs text-muted">
-                Filed under {unit.name} ({unit.pu_code})
-                {unit.where ? ` — ${unit.where}` : ''}. Watchers there are alerted once a reviewer
-                approves it.
+                {unit.where
+                  ? i18nT('n.app.report.incident.filed-under-where', { v0: unit.name, v1: unit.pu_code, v2: unit.where })
+                  : i18nT('n.app.report.incident.filed-under', { v0: unit.name, v1: unit.pu_code })}
               </Text>
             ) : unit ? (
               <Text className="pt-3 text-xs text-muted">
-                Filed with the code {unit.pu_code}, which is not in the register — reviewers see
-                the code, but the report carries no state and no unit watchers are alerted.
+                {i18nT('n.app.report.incident.filed-with-unlisted-code', { v0: unit.pu_code })}
               </Text>
             ) : (
               <Text className="pt-3 text-xs text-muted">

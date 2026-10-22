@@ -38,7 +38,7 @@ import { registerReady, rememberedStateNow, rememberState } from '@/lib/register
 import * as SecureStore from '@/lib/secure-store';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
-import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
+import { nearbyOrOffline, nearQuery, unitFetch } from '@/lib/nearby-offline';
 
 const BASE = process.env.EXPO_PUBLIC_API_BASE || 'https://hawkeye.com.ng';
 const REG = `${BASE}/api/register`;
@@ -540,10 +540,11 @@ export function ChooseUnitScreen({
       // Answered from the files on the phone when the server does not (lib/nearby-offline).
       const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
         // No radius parameter exists on this one — it filters at
-        // config.discoveryRadiusM and reports that back as `radiusM`.
-        get(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`),
+        // config.discoveryRadiusM and reports that back as `radiusM`. The
+        // position is ROUNDED (lib/near-query.ts); nearbyOrOffline re-measures.
+        get(`${BASE}/api/polling-units?${nearQuery(f.lat, f.lng)}`),
         // This one does take a radius, and would otherwise default to 5km.
-        get(`${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`),
+        get(`${BASE}/api/mapping/nearby?${nearQuery(f.lat, f.lng)}&radiusM=${DISCOVERY_RADIUS_M}`),
       ]));
       setNearOffline(viaPacks);
 

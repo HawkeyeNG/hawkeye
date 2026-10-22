@@ -504,15 +504,20 @@
           const { latitude: lat, longitude: lng } = pos.coords;
           nearLine = msg('choose-unit.looking-up-nearby-units', 'Looking up nearby units…');
           paint();
-          const online = Promise.all([
-            get(`/api/polling-units?lat=${lat}&lng=${lng}`),
-            get(`/api/mapping/nearby?lat=${lat}&lng=${lng}&radiusM=800`),
-          ]);
-          // Answered from the files on the phone when the server does not (register-store.js).
+          // A ROUNDED position on the wire; distances re-measured from the exact
+          // fix (register-store.js nearQuery/nearExact). No helper, no request.
           const store = window.registerStore;
-          const [located, envelope, viaPacks] = store && store.nearbyOrOffline
+          const nq = store && store.nearQuery ? store.nearQuery(lat, lng) : null;
+          const online = nq ? Promise.all([
+            get(`/api/polling-units?${nq}`),
+            get(`/api/mapping/nearby?${nq}&radiusM=800`),
+          ]) : Promise.resolve([null, null]);
+          // Answered from the files on the phone when the server does not (register-store.js).
+          const [located0, envelope0, viaPacks] = store && store.nearbyOrOffline
             ? await store.nearbyOrOffline(lat, lng, 800, online)
             : [...(await online), false];
+          const located = nq ? store.nearExact(located0, lat, lng) : located0;
+          const envelope = nq ? store.nearExact(envelope0, lat, lng, 800) : envelope0;
           nearOffline = viaPacks;
           if (!located && !envelope) {
             nearLine = msg('choose-unit.could-not-check-nearby-units-search', 'Could not check nearby units — search by name above.', null, true);
@@ -853,7 +858,7 @@
     })();
   </script>
   <script src="device.js"></script>
-  <script src="register-store.js?v=5"></script>
+  <script src="register-store.js?v=6"></script>
   <script src="pu-search.js?v=10"></script>
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=9"></script>

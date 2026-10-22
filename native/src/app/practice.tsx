@@ -61,7 +61,7 @@ import { regFetch } from '@/lib/register-fetch';
 import { humanError } from '@/lib/errors';
 import { t as i18nT, lazyT } from '@/lib/i18n';
 import { saveReportMedia } from '@/lib/save-to-device';
-import { nearbyOrOffline, unitFetch } from '@/lib/nearby-offline';
+import { nearbyOrOffline, nearQuery, unitFetch } from '@/lib/nearby-offline';
 
 // Overridable so the app can run in a desktop browser against a local
 // backend; production blocks cross-origin calls. See lib/api.ts.
@@ -698,9 +698,10 @@ export default function Practice() {
 
       // Answered from the files on the phone when the server does not (lib/nearby-offline).
       const [located, envelope, viaPacks] = await nearbyOrOffline(f.lat, f.lng, DISCOVERY_RADIUS_M, Promise.all([
-        fetch(`${BASE}/api/polling-units?lat=${f.lat}&lng=${f.lng}`).catch(() => null),
+        // A ROUNDED position (lib/near-query.ts); nearbyOrOffline re-measures from the exact fix.
+        fetch(`${BASE}/api/polling-units?${nearQuery(f.lat, f.lng)}`).catch(() => null),
         fetch(
-          `${BASE}/api/mapping/nearby?lat=${f.lat}&lng=${f.lng}&radiusM=${DISCOVERY_RADIUS_M}`,
+          `${BASE}/api/mapping/nearby?${nearQuery(f.lat, f.lng)}&radiusM=${DISCOVERY_RADIUS_M}`,
         ).catch(() => null),
       ]));
       setNearOffline(viaPacks);
@@ -1517,8 +1518,8 @@ export default function Practice() {
                 <Text className="text-base font-semibold text-ink">{sheetGuess.name}</Text>
                 <Text className="pb-3 text-xs text-muted">
                   {sheetGuess.code}
-                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''} · read from the sheet
-                  {sheetGuess.repaired ? ' (one digit corrected)' : ''}
+                  {sheetGuess.where ? ` · ${sheetGuess.where}` : ''}
+                  {` · ${sheetGuess.repaired ? i18nT('observe.read-from-sheet-corrected') : i18nT('observe.read-from-sheet')}`}
                 </Text>
                 <View className="flex-row gap-2.5">
                   <Pressable
@@ -1560,9 +1561,7 @@ export default function Practice() {
                 the same sentence they do, off the same wire fields. */}
             {searched?.capped && nearby.length ? (
               <Text className="pt-1 text-xs text-muted">
-                Units already placed by observers are looked up {searched.maxRows} at a time within{' '}
-                {searched.registerM}m, and that limit was reached — if yours is not listed, browse
-                the register below.
+                {i18nT('n.app.report.result.lookup-capped', { v0: searched.maxRows, v1: searched.registerM })}
               </Text>
             ) : null}
 

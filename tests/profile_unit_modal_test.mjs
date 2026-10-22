@@ -43,10 +43,13 @@ const server = http.createServer((req, res) => {
     { pu_code: '37-06-02-141', name: 'Wonderland Estate', ward: 'Garki', lga: 'Municipal', state: 'FCT', distanceM: 120, locationTier: 'verified' },
     { pu_code: '37-06-01-105', name: 'No 20 Ogbomosho Street', ward: 'City Centre', lga: 'Municipal', state: 'FCT', distanceM: 220, locationTier: 'verified' },
   ] });
-  // And the second lookup's own shape: camelCase, no LGA or state.
+  // And the second lookup's own shape: camelCase, no LGA or state. Positions
+  // AGREE with their distances from the fix below (9.033, 7.49): the page now
+  // re-measures every row from the exact fix (register-store.js nearExact,
+  // review L9), so a row 1.3 km away labelled "610 m" is dropped as past 800 m.
   if (u === '/api/mapping/nearby') return json({ units: [
-    { puCode: '37-06-02-141', name: 'Wonderland Estate', ward: 'Garki', lat: 9.03, lng: 7.49, distanceM: 120, status: 'verified' },
-    { puCode: '37-06-02-150', name: 'Area 11 Junction', ward: 'Garki', lat: 9.04, lng: 7.5, distanceM: 610, status: 'approx' },
+    { puCode: '37-06-02-141', name: 'Wonderland Estate', ward: 'Garki', lat: 9.03408, lng: 7.49, distanceM: 120, status: 'verified' },
+    { puCode: '37-06-02-150', name: 'Area 11 Junction', ward: 'Garki', lat: 9.033, lng: 7.495555, distanceM: 610, status: 'approx' },
   ] });
   if (u.startsWith('/api/')) return json({});
   const f = path.join(APP, decodeURIComponent(u === '/' ? '/index.html' : u));

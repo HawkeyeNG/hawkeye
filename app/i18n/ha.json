@@ -3014,5 +3014,6 @@
   "geo.unavailable": "Na’urarka ba ta iya gane inda take ba — sake gwadawa nan da ɗan lokaci.",
   "geo.timeout": "Ba a samu matsayin GPS ba — matsa kusa da taga ko fita waje, sannan ka sake gwadawa.",
   "geo.error": "Wannan na’urar ba ta iya bayar da wurinta yanzu ba — sake gwadawa.",
-  "capture.camera-unavailable": "Babu kyamara — {v0}"
+  "capture.camera-unavailable": "Babu kyamara — {v0}",
+  "outbox.refused": "Uwar garke ta ƙi shi"
 }

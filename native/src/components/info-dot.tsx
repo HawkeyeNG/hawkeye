@@ -52,7 +52,7 @@ export function InfoDot({
       <Pressable
         onPress={() => setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={title ? i18nT('n.components.info-dot.more-information', { v0: title }) : 'More information'}
+        accessibilityLabel={title ? i18nT('n.components.info-dot.more-information', { v0: title }) : i18nT('n.components.info-dot.more-information-plain')}
         // Padding rather than size: keeps the tap target honest without pushing
         // the line it sits on around. 12pt a side makes the box 44x44 around
         // the 20pt dot; the negative margins hand all but the old px-1 back, so

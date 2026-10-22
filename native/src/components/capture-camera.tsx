@@ -353,9 +353,8 @@ export function CaptureCamera({
         <Feather name="camera-off" size={32} color="#fff" />
         <Text className="pt-4 text-center text-base text-white">
           {permission.canAskAgain
-            ? 'Hawkeye does not have camera access, so the sheet cannot be photographed in the app.'
-            : 'Camera access is off for Hawkeye, so the sheet cannot be photographed in the app. '
-              + 'You can turn it back on in Settings.'}
+            ? i18nT('n.components.capture-camera.no-camera-access')
+            : i18nT('n.components.capture-camera.camera-access-off')}
         </Text>
         {/* Still askable — offer the ask again rather than sending someone to
             Settings for a switch that is not yet off. */}
@@ -579,7 +578,7 @@ export function CaptureCamera({
       });
       setRecording(false);
       if (cancelled.current) return;
-      setLine('Saving…');
+      setLine(i18nT('map-unit.saving'));
       const got = await fixP;
       if (cancelled.current) return;
       const fix = got.ok ? got.fix : null;
@@ -604,7 +603,7 @@ export function CaptureCamera({
        * With ffmpeg missing on the server, this step is the ONLY thing making
        * a clip a reviewer can watch, so its silence was expensive.
        */
-      setLine('Compressing…');
+      setLine(i18nT('n.app.report.incident.compressing'));
       const out = await compressVideo(video.uri);
       if (cancelled.current) return;
       const uri = out.uri;
@@ -634,13 +633,13 @@ export function CaptureCamera({
             <Text className="text-lg font-bold text-white">{confirmTitle}</Text>
             <Text className="pt-1 text-sm text-neutral-200">
               {busy
-                ? 'Confirming your location — a few seconds…'
+                ? i18nT('n.components.capture-camera.confirming-your-location')
                 : fixState === 'failed'
                   ? // Name the actual cause: "move near a window" is wrong advice
                     // when location services are off or the permission is blocked.
                     fixFail
                     ? `${describeFixFailure(fixFail).lead}. (${describeFixFailure(fixFail).code})`
-                    : 'No GPS fix — move near a window or outside, then retry.'
+                    : `${i18nT('n.lib.location.could-not-get-a-gps-fix')}.`
                   : confirmHint}
             </Text>
             {/* On-device read of the sheet, as its own card: a verdict nobody
@@ -665,15 +664,16 @@ export function CaptureCamera({
                   <View className="flex-row items-center">
                     <Feather name="check-circle" size={13} color="#6ee7b7" />
                     <Text className="pl-1.5 text-xs font-bold text-emerald-200">
-                      Readable — {read.numericLines} lines with figures
+                      {i18nT('n.components.capture-camera.readable-lines', { v0: read.numericLines })}
                     </Text>
                   </View>
                   {Object.keys(read.counts).length ? (
                     <Text className="pt-1 text-xs text-emerald-100">
-                      Read:{' '}
-                      {Object.entries(read.counts)
-                        .map(([p, n]) => `${p} ${n}`)
-                        .join(' · ')}
+                      {i18nT('n.components.capture-camera.read-counts', {
+                        v0: Object.entries(read.counts)
+                          .map(([p, n]) => `${p} ${n}`)
+                          .join(' · '),
+                      })}
                     </Text>
                   ) : (
                     <Text className="pt-1 text-xs text-emerald-100/80">
@@ -925,7 +925,7 @@ export function CaptureCamera({
           {/* Both fixed: the camera chrome is always dark, so text-faint and
               bg-card (the recording dot) both went dark-on-dark with the theme. */}
           <Text className="pb-1 text-[10px] font-semibold text-neutral-300">
-            max {VIDEO_MAX_S}s
+            {i18nT('n.components.capture-camera.max-seconds', { v0: VIDEO_MAX_S })}
           </Text>
           <View className="flex-row items-center rounded-full bg-red-600 px-3 py-1.5">
             <View className="mr-1.5 h-2 w-2 rounded-full bg-white" />

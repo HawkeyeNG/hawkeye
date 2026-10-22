@@ -16,11 +16,11 @@ import { t as i18nT } from '@/lib/i18n';
 export function NoElection({ state, contest }: { state: string; contest: Contest | null }) {
   return (
     <View className="rounded-2xl bg-card px-4 py-5">
-      <Text className="text-base font-bold text-ink">No Active Election in {state}</Text>
+      <Text className="text-base font-bold text-ink">{i18nT('n.app.report.result.no-active-election-in', { v0: state })}</Text>
       <Text className="pt-1 text-sm text-muted">
         {contest
           ? i18nT('n.components.no-election.hawkeye-is-currently-covering-the-reporting', { v0: contest.election })
-          : 'No election is currently open for reporting.'}
+          : i18nT('n.components.no-election.none-open')}
       </Text>
       <Text className="pt-2 text-sm text-muted">
         {i18nT('n.components.no-election.you-can-still-map-polling-units')}

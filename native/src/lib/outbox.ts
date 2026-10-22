@@ -31,7 +31,7 @@ import { getIdentity } from '@/lib/identity';
 // Cyclic with submit.ts by design: submit queues jobs, the outbox replays them
 // with submit's multipart + session helpers. Both directions are function calls
 // made at runtime, never at module-evaluation time, so the cycle resolves.
-import { filePart, remintSession } from '@/lib/submit';
+import { errorLine, filePart, remintSession } from '@/lib/submit';
 import { isDirectBusy, isHashOnly, uploadDirect, type DirectBusy } from '@/lib/direct-upload';
 import { keepEvidence } from '@/lib/evidence';
 import { t as i18nT } from '@/lib/i18n';
@@ -86,9 +86,32 @@ export type DroppedJob = {
   label: string;
   queuedAt: number;
   droppedAt: number;
-  /** Why the server refused it, for the one person who will ask. */
+  /** Why the server refused it, for the one person who will ask. English, as
+   *  stored before dropReason existed; drops recorded then have only this. */
   why: string;
+  /** The parts dropReason() builds the reason from, in the reader's language. */
+  status?: number;
+  code?: string | null;
+  hint?: string | null;
+  /** A reason of our own (not the server's), as a key. */
+  reasonKey?: string;
 };
+
+type DropParts = Pick<DroppedJob, 'why' | 'status' | 'code' | 'hint' | 'reasonKey'>;
+
+/**
+ * Why a report was set aside, in the reader's language — built when it is
+ * SHOWN, never stored translated (web twin: app/outbox.js reasonOf). Native's
+ * live-submit rule: our own line for the code (submit.ts ERRORS) first, then
+ * the server's hint, then "The server refused it"; the code and HTTP status
+ * stay as identifiers. A drop recorded before this carries only its `why`.
+ */
+export function dropReason(d: DropParts): string {
+  if (d.reasonKey) return i18nT(d.reasonKey);
+  if (d.status == null) return d.why;
+  const lead = errorLine(d.code) ?? d.hint ?? i18nT('outbox.refused');
+  return `${lead} (${d.code ? `${d.code} / ` : ''}HTTP ${d.status})`;
+}
 
 const PATHS: Record<JobKind, string> = {
   result: '/api/submissions',
@@ -303,17 +326,17 @@ export async function listDropped(): Promise<DroppedJob[]> {
   }
 }
 
-async function recordDrop(job: StoredJob, why: string) {
+/** Log a drop; returns its reason in the reader's language. */
+async function recordDrop(job: StoredJob, parts: DropParts): Promise<string> {
+  const entry: DroppedJob = { kind: job.kind, label: job.label, queuedAt: job.queuedAt, droppedAt: Date.now(), ...parts };
   try {
-    const all = [
-      { kind: job.kind, label: job.label, queuedAt: job.queuedAt, droppedAt: Date.now(), why },
-      ...(await listDropped()),
-    ].slice(0, 20);
+    const all = [entry, ...(await listDropped())].slice(0, 20);
     await AsyncStorage.setItem(K_DROPPED, JSON.stringify(all));
     publish({ dropped: all.length });
   } catch {
     // The drop itself already happened; failing to log it changes nothing.
   }
+  return dropReason(entry);
 }
 
 /** Retire a job: forget it and release its media. */
@@ -469,10 +492,16 @@ async function isRetryable409(res: Response): Promise<boolean> {
   return body.error === 'photo_not_uploaded' || body.error === 'storage_unavailable';
 }
 
-/** The server's own words for a permanent refusal, so the drop is explicable. */
-async function refusal(res: Response): Promise<string> {
+/** The server's own words for a permanent refusal, so the drop is explicable:
+ *  the English `why` as before, plus the parts dropReason() translates. */
+async function refusal(res: Response): Promise<DropParts> {
   const body = (await res.json().catch(() => ({}))) as { error?: string; hint?: string };
-  return `${body.hint ?? body.error ?? 'refused'} (${body.error ?? 'no code'} / HTTP ${res.status})`;
+  return {
+    why: `${body.hint ?? body.error ?? 'refused'} (${body.error ?? 'no code'} / HTTP ${res.status})`,
+    status: res.status,
+    code: typeof body.error === 'string' ? body.error : null,
+    hint: typeof body.hint === 'string' ? body.hint : null,
+  };
 }
 
 let sending = false;
@@ -512,9 +541,8 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
       // reads as "still offline" — it would sit at the head of the queue
       // blocking every intact report behind it. Retire it instead, loudly.
       if (!job.files.every(readable)) {
-        const why = 'the photos are no longer on this device';
         await retire(job);
-        await recordDrop(job, why);
+        const why = await recordDrop(job, { why: 'the photos are no longer on this device', reasonKey: 'n.lib.outbox.photos-gone' });
         publish({ lastError: i18nT('n.lib.outbox.a-queued-report-was-dropped', { v0: why }) });
         continue;
       }
@@ -537,10 +565,9 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
       // the flush on every pass — holding every report queued behind it for
       // good. Dropped with the server's reason, as app/outbox.js does.
       if (!isDirectBusy(res) && res.status === 401 && !(await sessionDead401(res))) {
-        const why = await refusal(res);
+        const parts = await refusal(res);
         await retire(job);
-        await recordDrop(job, why);
-        publish({ lastError: why });
+        publish({ lastError: await recordDrop(job, parts) });
         continue;
       }
 
@@ -589,10 +616,9 @@ export async function flushOutbox(opts: { ignoreBackoff?: boolean } = {}): Promi
         holdQueue(job, `HTTP ${res.status}`, res.status, await retryAfterOf(res));
         break;
       } else if (res.status >= 400 && res.status < 500 && !retryableStatus(res.status)) {
-        const why = await refusal(res);
+        const parts = await refusal(res);
         await retire(job);
-        await recordDrop(job, why);
-        publish({ lastError: why });
+        publish({ lastError: await recordDrop(job, parts) });
       } else {
         // Other 5xx, 408, 425: keep it, jittered backoff.
         defer(job, `HTTP ${res.status}`, res.status, await retryAfterOf(res));

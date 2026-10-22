@@ -13,6 +13,9 @@
   <script src="native.js?v=128"></script>
   <script src="/monitor.js?v=6" defer></script>
   <style>
+    /* menu.js hides the H1 (the header names the page), so the first card sat
+       flush on the header (0 px) and 14 px from the footer. */
+    main.wrap { padding-top: 20px; padding-bottom: 28px; }
     .wallet-row { display: flex; align-items: center; gap: 11px; }
     .wallet-logo { flex: none; width: 26px; height: 26px; display: inline-flex; }
     .wallet-logo svg { width: 26px; height: 26px; display: block; }

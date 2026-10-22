@@ -14,6 +14,10 @@
   <script src="native.js?v=128"></script>
   <script src="/monitor.js?v=6" defer></script>
   <style>
+    /* menu.js hides the H1 (the header names the page), so the intro sat flush
+       on the header (0 px). main.wrap, not #main: the app's own 14 px
+       (html.native-app main.wrap) must still win in Lite. */
+    main.wrap { padding-top: 20px; padding-bottom: 28px; }
     /* .btn-accent and `button` set display, which beats the UA's [hidden]. */
     #main [hidden] { display: none !important; }
     .cq-progress { margin: 0 0 6px; color: var(--muted); font-size: 0.85rem; font-weight: 700; letter-spacing: 0.02em; }

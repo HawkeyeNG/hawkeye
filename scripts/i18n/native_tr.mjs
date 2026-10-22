@@ -1342,5 +1342,6 @@ export default {
     "n.app.report.result.status-pending": "Ana jira",
     "n.components.contest-picker.rehearsal": "atisaye",
     "n.lib.outbox.photos-gone": "hotunan ba sa kan wannan na'urar kuma",
+    "n.components.report-sheet.set-aside-more": "da ƙarin {v0}",
   },
 };

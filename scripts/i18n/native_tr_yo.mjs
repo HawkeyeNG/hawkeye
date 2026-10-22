@@ -1341,4 +1341,5 @@ export default {
   "n.app.report.result.status-pending": "Ń dúró",
   "n.components.contest-picker.rehearsal": "àdánwò",
   "n.lib.outbox.photos-gone": "àwọn fọ́tò náà kò sí lórí ẹ̀rọ yìí mọ́",
+  "n.components.report-sheet.set-aside-more": "àti {v0} mìíràn",
 };

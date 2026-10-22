@@ -1475,6 +1475,7 @@
   "n.components.report-sheet.every-report-is-signed-hash-chained": "Ana sanya hannu kan kowane rahoto, a haɗa shi da sarƙar hash, kuma jama'a za su iya tabbatar da shi.",
   "n.components.report-sheet.photo-or-video-of-what-you": "Hoto ko bidiyo na abin da ka gani",
   "n.components.report-sheet.photograph-the-result-sheet-at-your": "Ɗauki hoton takardar sakamako a rukuninka",
+  "n.components.report-sheet.set-aside-more": "da ƙarin {v0}",
   "n.components.report-sheet.waiting-many": "Rahotanni {v0} suna jiran aikawa. Za su aika kansu da zarar ka dawo kan layi.",
   "n.components.report-sheet.waiting-one": "Rahoto 1 yana jiran aikawa. Zai aika kansa da zarar ka dawo kan layi.",
   "n.components.report-sheet.ward-or-lga-collation-announcement": "Sanarwar tattarawa ta unguwa ko karamar hukuma",

@@ -2336,5 +2336,6 @@
   "geo.timeout": "Could not get a GPS fix — move near a window or step outside and try again.",
   "geo.error": "This device could not report its location just now — try again.",
   "capture.camera-unavailable": "Camera unavailable — {v0}",
-  "outbox.refused": "The server refused it"
+  "outbox.refused": "The server refused it",
+  "outbox.report-label": "report"
 }

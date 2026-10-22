@@ -81,6 +81,15 @@
       || (I ? I.t('outbox.refused', 'The server refused it') : 'The server refused it');
     return `${lead} (${code ? code + ' / ' : ''}HTTP ${d.status})`;
   };
+  /* The label, likewise: a drop with nothing to name it by is stored with an
+     empty label and named here, in the reader's language. 'report' is how a
+     drop recorded before this said the same thing. */
+  const labelOf = (d) => {
+    const own = d && typeof d.label === 'string' ? d.label : '';
+    if (own && own !== 'report') return own;
+    const I = G.HawkeyeI18n;
+    return I ? I.t('outbox.report-label', 'report') : 'report';
+  };
   const tell = async (fresh) => {
     try { await G.i18nReady; } catch { /* English fallback below */ }
     const I = G.HawkeyeI18n;
@@ -88,7 +97,7 @@
       : 'A queued report was dropped \u2014 {v0}.';
     // dialog.js is loaded by every page that loads this file; without it the
     // drop is still on record (K_DROPPED) for Profile to show.
-    if (G.hkAlert) G.hkAlert(fresh.map((d) => line.replace('{v0}', `${d.label}: ${reasonOf(d)}`)).join('\n\n'));
+    if (G.hkAlert) G.hkAlert(fresh.map((d) => line.replace('{v0}', `${labelOf(d)}: ${reasonOf(d)}`)).join('\n\n'));
   };
   // A page records a drop and says so at once. The service worker has neither
   // localStorage nor anyone to tell, so it parks the drop for the next page.
@@ -151,6 +160,7 @@
     parseRetryAfter,
     retryableStatus,
     reasonOf,
+    labelOf,
     /** `entry.notBefore` (epoch ms), when given, holds the first attempt until then. */
     async queue(entry) {
       const id = await run('readwrite', (s) => s.add({ ...entry, queuedAt: Date.now() }));
@@ -283,7 +293,8 @@
           await Outbox.remove(it.id);
           forget(it);
           const f = it.fields || {};
-          fresh.push({ label: it.label || [f.puCode, f.contest].filter(Boolean).join(' \u00b7 ') || 'report',
+          // No English stand-in: an unnamed drop is named when shown (labelOf).
+          fresh.push({ label: it.label || [f.puCode, f.contest].filter(Boolean).join(' \u00b7 '),
             queuedAt: it.queuedAt, droppedAt: Date.now(), why: refusal(resp.status, body),
             // The parts, so the alert can say it in the reader's language (reasonOf).
             status: resp.status,

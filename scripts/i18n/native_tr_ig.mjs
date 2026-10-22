@@ -1341,4 +1341,5 @@ export default {
   "n.app.report.result.status-pending": "Na-eche",
   "n.components.contest-picker.rehearsal": "omume",
   "n.lib.outbox.photos-gone": "foto ndị ahụ adịghịzi na ngwaọrụ a",
+  "n.components.report-sheet.set-aside-more": "na {v0} ndị ọzọ",
 };

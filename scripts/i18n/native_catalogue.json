@@ -1475,6 +1475,7 @@
   "n.components.report-sheet.every-report-is-signed-hash-chained": "Every report is signed, hash-chained and publicly verifiable.",
   "n.components.report-sheet.photo-or-video-of-what-you": "Photo or video of what you witnessed",
   "n.components.report-sheet.photograph-the-result-sheet-at-your": "Photograph the result sheet at your unit",
+  "n.components.report-sheet.set-aside-more": "and {v0} more",
   "n.components.report-sheet.waiting-many": "{v0} reports waiting to send. They send by themselves when you are back online.",
   "n.components.report-sheet.waiting-one": "1 report waiting to send. It sends by itself when you are back online.",
   "n.components.report-sheet.ward-or-lga-collation-announcement": "Ward or LGA collation announcement",

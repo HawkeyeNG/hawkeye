@@ -95,6 +95,9 @@ export type DroppedJob = {
   hint?: string | null;
   /** A reason of our own (not the server's), as a key. */
   reasonKey?: string;
+  /** The observer has acknowledged it (the report sheet's OK). Kept on record
+   *  either way, as the web keeps its list after its one alert. */
+  seen?: boolean;
 };
 
 type DropParts = Pick<DroppedJob, 'why' | 'status' | 'code' | 'hint' | 'reasonKey'>;
@@ -135,10 +138,13 @@ export type OutboxState = {
   sending: boolean;
   /** Reports the server refused outright — they are gone, and someone should know. */
   dropped: number;
+  /** Those not yet acknowledged, newest first: what the report sheet lists. */
+  setAside: DroppedJob[];
   lastError: string | null;
 };
 
-let snapshot: OutboxState = { pending: 0, sending: false, dropped: 0, lastError: null };
+let snapshot: OutboxState = { pending: 0, sending: false, dropped: 0, setAside: [], lastError: null };
+const unseen = (all: DroppedJob[]) => all.filter((d) => !d.seen);
 const listeners = new Set<() => void>();
 
 function publish(next: Partial<OutboxState>) {
@@ -181,13 +187,14 @@ function load(): Promise<void> {
       } catch {
         jobs = []; // a corrupt index must not brick the app on launch
       }
-      let dropped = 0;
+      let all: DroppedJob[] = [];
       try {
-        dropped = JSON.parse((await AsyncStorage.getItem(K_DROPPED)) || '[]').length;
+        all = JSON.parse((await AsyncStorage.getItem(K_DROPPED)) || '[]') as DroppedJob[];
+        if (!Array.isArray(all)) all = [];
       } catch {
-        dropped = 0;
+        all = [];
       }
-      publish({ pending: jobs.length, dropped });
+      publish({ pending: jobs.length, dropped: all.length, setAside: unseen(all) });
       pruneOrphans();
     })();
   }
@@ -332,11 +339,30 @@ async function recordDrop(job: StoredJob, parts: DropParts): Promise<string> {
   try {
     const all = [entry, ...(await listDropped())].slice(0, 20);
     await AsyncStorage.setItem(K_DROPPED, JSON.stringify(all));
-    publish({ dropped: all.length });
+    publish({ dropped: all.length, setAside: unseen(all) });
   } catch {
     // The drop itself already happened; failing to log it changes nothing.
   }
   return dropReason(entry);
+}
+
+/**
+ * The observer has read the set-aside list (the report sheet's OK — the web
+ * shows each drop once in an alert whose OK is the only action). Marked, not
+ * deleted: the record stays for support, as the web's does. No resend: the
+ * server refused these for good.
+ */
+export async function dismissSetAside(): Promise<void> {
+  // Only what was on screen: a drop recorded while this runs stays listed.
+  const upTo = Math.max(0, ...snapshot.setAside.map((d) => d.droppedAt));
+  publish({ setAside: snapshot.setAside.filter((d) => d.droppedAt > upTo) });
+  try {
+    const all = (await listDropped()).map((d) => (d.droppedAt <= upTo ? { ...d, seen: true } : d));
+    await AsyncStorage.setItem(K_DROPPED, JSON.stringify(all));
+    publish({ setAside: unseen(all) });
+  } catch {
+    // Unwritable storage: hidden for this session, back on the next launch.
+  }
 }
 
 /** Retire a job: forget it and release its media. */

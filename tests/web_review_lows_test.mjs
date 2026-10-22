@@ -108,6 +108,23 @@ const read = (f) => fs.readFileSync(`${APP}/${f}`, 'utf8');
     return typeof v !== 'string' || v !== v.normalize('NFC') || (l !== 'en' && v === 'The server refused it');
   });
   check('L5 outbox.refused is in en/ha/ig/yo (NFC, not English)', bad, []);
+
+  // The label too: an unnamed drop is stored with no English stand-in and
+  // named when shown. Before the fix the stored label was printed as it was.
+  const label = (O, d) => (typeof O.labelOf === 'function' ? O.labelOf(d) : d.label);
+  check('L5 Hausa: an unnamed drop is called a report in Hausa', label(load('ha', ha), { label: '' }), ha['outbox.report-label']);
+  check('L5 Yorùbá: a drop stored before this as "report" is named in Yorùbá too',
+    label(load('yo', yo), { label: 'report' }), yo['outbox.report-label']);
+  check('L5 CONTROL a real label (unit · race) is kept as it is',
+    label(load('ha', ha), { label: '01-01-01-001 · PRES' }), '01-01-01-001 · PRES');
+  check('L5 CONTROL English still says report', label(load('en', {}), { label: 'report' }), 'report');
+  check('L5 the drop stores no English "report", and the alert shows labelOf(d)',
+    !/\|\| 'report',/.test(src) && src.includes('${labelOf(d)}: ${reasonOf(d)}'), true);
+  const badLabel = ['en', 'ha', 'ig', 'yo'].filter((l) => {
+    const v = JSON.parse(read(`i18n/${l}.json`))['outbox.report-label'];
+    return typeof v !== 'string' || v !== v.normalize('NFC') || (l !== 'en' && v === 'report');
+  });
+  check('L5 outbox.report-label is in en/ha/ig/yo (NFC, not English)', badLabel, []);
 }
 
 // ---- L7 -------------------------------------------------------------------------

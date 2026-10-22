@@ -16,6 +16,9 @@
 //   (c) lib/outbox.ts — the native twin of web L5: dropReason() builds a
 //       set-aside report's reason when shown (our line for the code, then the
 //       server's hint, then outbox.refused); old stored reasons still show.
+//   (d) ...and where it is SEEN: the report sheet (under "waiting to send")
+//       lists set-aside reports with that reason until OK, the web's one
+//       action on its drop alert. OK marks them seen and keeps the record.
 //
 //   node tests/native_review_lows_test.mjs
 import fs from 'node:fs';
@@ -88,6 +91,8 @@ for (const file of Object.keys(OLD)) for (const m of read(file).matchAll(/i18nT\
 // Keys held in a map or a record rather than written inside i18nT(…).
 for (const k of ['reported', 'verified', 'disputed', 'pending']) called.add(`n.app.report.result.status-${k}`);
 called.add('n.lib.outbox.photos-gone');
+// The report sheet's set-aside card (d).
+for (const m of read('components/report-sheet.tsx').matchAll(/i18nT\(\s*['"]([a-z0-9._-]+)['"]/g)) called.add(m[1]);
 const bad = [];
 for (const k of called) for (const l of ['en', 'ha', 'ig', 'yo']) {
   const v = B[l][k];
@@ -132,6 +137,40 @@ check(`(b) all ${called.size} keys these screens call are in en/ha/ig/yo, NFC, t
   const [d] = await O.listDropped();
   check('(c) a flush records the parts beside the English why',
     [d?.label, d?.why, d?.status, d?.code, d?.hint], ['B', 'Could not verify (bad_signature / HTTP 401)', 401, 'bad_signature', 'Could not verify']);
+
+  // (d) WHERE IT IS SEEN: the report sheet lists set-aside reports until OK.
+  const aside = () => (O.useOutbox().setAside || []).map((x) => x.label);
+  const before = aside();
+  check('(d) the drop is in the outbox state the report sheet reads', before, ['B']);
+  if (typeof O.dismissSetAside === 'function') await O.dismissSetAside();
+  check('(d) OK clears the list it showed', [before, aside()], [['B'], []]);
+  const kept = await O.listDropped();
+  check('(d) ...and keeps the record, marked seen (no delete, no resend)', [kept.length, kept[0]?.label, kept[0]?.seen], [1, 'B', true]);
+}
+
+// (d) The report sheet draws that list: one row per set-aside report, its
+// reason through dropReason() inside the shared "was dropped" sentence, an
+// OK that calls dismissSetAside(), and nothing at all when the list is empty.
+{
+  const SHEET = [
+    ['the card is drawn only when there is something set aside',
+      (s) => /\{asideShown\.length \? \(\s*<View className="[^"]*bg-bad/.test(code(s)),
+      (s) => s.replace('{asideShown.length ? (', '{false ? (')],
+    ['each row says it in the reader\'s language via dropReason()',
+      (s) => /asideShown\.map\(\(d\) => \([\s\S]{0,400}i18nT\('n\.lib\.outbox\.a-queued-report-was-dropped', \{ v0: `\$\{d\.label\}: \$\{dropReason\(d\)\}` \}\)/.test(code(s)),
+      (s) => s.replace('${dropReason(d)}', '${d.why}')],
+    ['OK acknowledges through dismissSetAside()',
+      (s) => /onPress=\{\(\) => \{ void dismissSetAside\(\); \}\}[\s\S]{0,200}i18nT\('common\.ok'\)/.test(code(s)),
+      (s) => s.replace('void dismissSetAside();', 'void 0;')],
+    ['the sheet grows to hold it',
+      (s) => /asideShown\.length \? SET_ASIDE_PCT \+ asideShown\.length \* SET_ASIDE_ROW_PCT : 0/.test(code(s)),
+      (s) => s.replace('asideShown.length ? SET_ASIDE_PCT', 'false ? SET_ASIDE_PCT')],
+  ];
+  const s = read('components/report-sheet.tsx');
+  for (const [label, rule, mutate] of SHEET) {
+    check(`(d) components/report-sheet.tsx: ${label}`, rule(s), true);
+    check('CONTROL: the old shape is caught', rule(mutate(s)), false);
+  }
 }
 
 finish();

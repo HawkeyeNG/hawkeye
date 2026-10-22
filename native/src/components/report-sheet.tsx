@@ -10,7 +10,7 @@ import { assignedUnit, CheckInCard, checkedInEverywhere } from '@/components/che
 import { BRAND } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { myRooms, type MyRoom } from '@/lib/check-in';
-import { useOutbox } from '@/lib/outbox';
+import { dismissSetAside, dropReason, useOutbox } from '@/lib/outbox';
 import { useUi } from '@/lib/theme';
 import { t as i18nT } from '@/lib/i18n';
 
@@ -78,6 +78,10 @@ const SheetBackground = ({ style }: BottomSheetBackgroundProps) => (
 const BASE_PCT = 42;
 const CHECK_IN_PCT = 26;
 const OUTBOX_PCT = 7;
+/** The set-aside card: its OK row, plus each listed report (up to SET_ASIDE_ROWS). */
+const SET_ASIDE_PCT = 7;
+const SET_ASIDE_ROW_PCT = 8;
+const SET_ASIDE_ROWS = 3;
 
 export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
   { onAction },
@@ -122,11 +126,17 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
 
   /* REP-OFF-01: a report held in the outbox was invisible once its receipt
      screen was left. This sheet is where a reporter looks next. */
-  const { pending } = useOutbox();
+  const { pending, setAside } = useOutbox();
+  /* SET ASIDE: reports the server refused for good. The web says so once, in an
+     alert whose only action is OK (app/outbox.js tell()); here they are listed
+     under the waiting line until OK is tapped. No resend — the server would
+     refuse the same report again. Newest first, the rest counted. */
+  const asideShown = setAside.slice(0, SET_ASIDE_ROWS);
 
   const snapPoints = useMemo(
-    () => [`${BASE_PCT + (arrival ? CHECK_IN_PCT : 0) + (pending > 0 ? OUTBOX_PCT : 0)}%`],
-    [arrival, pending],
+    () => [`${BASE_PCT + (arrival ? CHECK_IN_PCT : 0) + (pending > 0 ? OUTBOX_PCT : 0)
+      + (asideShown.length ? SET_ASIDE_PCT + asideShown.length * SET_ASIDE_ROW_PCT : 0)}%`],
+    [arrival, pending, asideShown.length],
   );
 
   /**
@@ -207,6 +217,29 @@ export const ReportSheet = forwardRef<BottomSheet, Props>(function ReportSheet(
                 ? i18nT('n.components.report-sheet.waiting-one')
                 : i18nT('n.components.report-sheet.waiting-many', { v0: pending })}
             </Text>
+          </View>
+        ) : null}
+        {asideShown.length ? (
+          <View className="mx-4 mb-2 rounded-xl bg-bad px-3 py-2">
+            {asideShown.map((d) => (
+              <View key={`${d.droppedAt}-${d.label}`} className="flex-row pb-1">
+                <Feather name="alert-circle" size={14} color={ui.tint.bad.ink} style={{ marginTop: 1 }} />
+                <Text className="flex-1 pl-2 text-xs font-semibold text-bad-ink">
+                  {i18nT('n.lib.outbox.a-queued-report-was-dropped', { v0: `${d.label}: ${dropReason(d)}` })}
+                </Text>
+              </View>
+            ))}
+            {setAside.length > asideShown.length ? (
+              <Text className="pb-1 pl-6 text-xs text-bad-ink">
+                {i18nT('n.components.report-sheet.set-aside-more', { v0: setAside.length - asideShown.length })}
+              </Text>
+            ) : null}
+            <Pressable
+              onPress={() => { void dismissSetAside(); }}
+              className="mt-1 self-end rounded-lg border border-line px-3 py-1 active:opacity-70"
+            >
+              <Text className="text-xs font-bold text-ink">{i18nT('common.ok')}</Text>
+            </Pressable>
           </View>
         ) : null}
         {/* ON ARRIVAL, before any camera — see components/check-in-card.tsx. */}

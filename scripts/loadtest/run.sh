@@ -17,6 +17,9 @@
 #   --upload-path direct|proxy
 #   --out DIR                results directory (default results/<timestamp>)
 #   --i-know-this-is-prod    allow the READ scenario, capped, against production
+#   --execution-segment A:B --execution-segment-sequence S
+#                            this process's share when several generators split one run
+#                            (k6 reads these from its command line only, not from K6_* env)
 #
 # Production = hawkeye.com.ng or any subdomain except staging.hawkeye.com.ng,
 # OR any server whose /api/health says env=production.
@@ -36,7 +39,7 @@ case "$SCENARIO" in
 esac
 
 BASE_URL=""; PROFILE="smoke"; SCALE="1"; TIME_SCALE="1"; FIXTURES=""; SHEET=""; VENUE=""
-DIRECT=""; LEGACY=""; UPLOAD_PATH="direct"; OUT=""; PROD_FLAG=""
+DIRECT=""; LEGACY=""; UPLOAD_PATH="direct"; OUT=""; PROD_FLAG=""; SEG=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --base-url) BASE_URL="${2:-}"; shift 2 ;;
@@ -51,6 +54,9 @@ while [ $# -gt 0 ]; do
     --upload-path) UPLOAD_PATH="${2:-}"; shift 2 ;;
     --out) OUT="${2:-}"; shift 2 ;;
     --i-know-this-is-prod) PROD_FLAG=1; shift ;;
+    --execution-segment|--execution-segment-sequence)
+      [[ "${2:-}" =~ ^[0-9/:,.]+$ ]] || die "$1 wants fractions like 0:1/2 or 0,1/2,1"
+      SEG+=("$1" "$2"); shift 2 ;;
     *) die "unknown option '$1'" ;;
   esac
 done
@@ -128,5 +134,5 @@ exec k6 run \
   -e FIXTURES="$FIXTURES" -e SHEET_JPEG="$SHEET" -e VENUE_JPEG="$VENUE" \
   -e DIRECT_ORIGIN="$DIRECT" -e LEGACY="$LEGACY" -e UPLOAD_PATH="$UPLOAD_PATH" \
   -e PROD_MAX_RPS="${PROD_MAX_RPS:-25}" -e I_KNOW_THIS_IS_PROD="${I_KNOW_THIS_IS_PROD:-}" \
-  --summary-export "$OUT/summary.json" \
+  --summary-export "$OUT/summary.json" "${SEG[@]}" \
   "$SCRIPT"

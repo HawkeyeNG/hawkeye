@@ -37,6 +37,15 @@ export const options = {
     report_ok: ['rate>0.98'],
     otp_flow_ok: ['rate>0.98'],
     report_end_to_end_ms: ['p(95)<6000'],
+    // The same limits the single-class scenarios use. k6's summary carries a tagged sub-metric
+    // only when a threshold names it, so without these the mixed run had no p95 for public
+    // reads, the results board, presign/submit or sign-ins (rehearsal.sh reads them).
+    'http_req_duration{scenario:public_read}': ['p(95)<800'],
+    'http_req_duration{name:national}': ['p(95)<1000'],
+    'http_req_duration{name:presign}': ['p(95)<800'],
+    'http_req_duration{name:submit}': ['p(95)<1500'],
+    'http_req_duration{name:otp_register}': ['p(95)<1000'],
+    'http_req_duration{name:login_password}': ['p(95)<1000'],
   },
   summaryTrendStats: ['avg', 'p(50)', 'p(95)', 'p(99)', 'max'],
 };

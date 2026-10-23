@@ -1199,6 +1199,27 @@
       } catch { el.hidden = true; }
     }
 
+    // Incident media comes through the console endpoint, not /uploads: the
+    // public path serves a file only once its incident is published
+    // (backend services/uploadPrivacy.js), and an <img src> cannot carry the
+    // console secret. Each file becomes an object URL, freed on the next load.
+    let mediaUrls = [];
+    async function adminMediaUrls(incidents) {
+      mediaUrls.forEach((u) => URL.revokeObjectURL(u));
+      mediaUrls = [];
+      const names = [...new Set(incidents.flatMap((i) => (i.media || []).map((m) => String(m.file || '').split('/').pop())))];
+      const urls = {};
+      await Promise.all(names.map(async (n) => {
+        try {
+          const r = await fetch(`/api/admin/incident-media/${encodeURIComponent(n)}`, { headers: hdr() });
+          if (!r.ok) return;
+          urls[n] = URL.createObjectURL(await r.blob());
+          mediaUrls.push(urls[n]);
+        } catch { /* left unloaded; the card still shows the file name */ }
+      }));
+      return urls;
+    }
+
     async function loadIncidents() {
       const r = await fetch(`/api/admin/incidents?status=${tab}`, { headers: hdr() });
       if (r.status === 401) { logout(); return; }
@@ -1212,23 +1233,27 @@
       setCount('c-published', counts?.published);
       setCount('c-rejected', counts?.rejected);
       if (!incidents?.length) { $('list').innerHTML = `<p class="empty">Nothing ${tab}.</p>`; return; }
+      const urls = await adminMediaUrls(incidents);
+      const src = (m) => urls[String(m.file || '').split('/').pop()] || '';
       $('list').innerHTML = incidents.map((i) => {
         const media = (i.media || []).map((m) => {
           if (m.type !== 'video') {
-            return `<a href="/uploads/${m.file}" target="_blank"><img src="/uploads/${m.file}" alt="" /></a>`;
+            return `<a href="${src(m)}" target="_blank"><img src="${src(m)}" alt="" /></a>`;
           }
           // `transcoded:false` means the server kept the phone's original —
           // usually HEVC, which most desktop browsers cannot decode even though
           // the AAC audio plays. Naming that turns a black rectangle into a
           // known state with a way round it.
+          // `private`: the phone's metadata (location, device) could not be
+          // removed, so the file is kept for review only and never published.
           const warn = m.transcoded === false
-            ? `<p class="noconv">⚠ Not converted on the server${m.transcodeError ? ` (${m.transcodeError})` : ''} — this is the phone's original recording. If it will not play here, open it directly: <a href="/uploads/${m.file}" target="_blank" rel="noopener">${m.file.split('/').pop()}</a></p>`
+            ? `<p class="noconv">⚠ Not converted on the server${m.transcodeError ? ` (${m.transcodeError})` : ''} — this is the phone's original recording${m.private ? ', with its metadata still in it: kept for review only, never shown publicly' : ''}. If it will not play here, open it directly: <a href="${src(m)}" target="_blank" rel="noopener">${m.file.split('/').pop()}</a></p>`
             : '';
           // data-hk-evidence: video-player.js turns this into a poster tile that
           // opens our full-screen player — with SOUND ON, which is what a
           // reviewer judging an incident needs. `controls` stays for the case
           // where the script never loads: the browser's own player is still there.
-          return `<div class="vid">${warn}<video data-hk-evidence src="/uploads/${m.file}" controls playsinline preload="metadata"></video></div>`;
+          return `<div class="vid">${warn}<video data-hk-evidence src="${src(m)}" controls playsinline preload="metadata"></video></div>`;
         }).join('');
         const gps = (i.lat != null && i.lng != null)
           ? ` · <a href="https://maps.google.com/?q=${Number(i.lat)},${Number(i.lng)}" target="_blank" rel="noopener">📍 map</a>` : '';

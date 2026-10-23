@@ -46,6 +46,8 @@ const INCIDENTS = [
 
 /** Flipped for the control run, so the same code path decides both outcomes. */
 let HEALTHY = false;
+const MEDIA_HITS = [];
+const UPLOAD_HITS = [];
 
 const server = http.createServer((req, res) => {
   const [u] = req.url.split('?');
@@ -56,7 +58,16 @@ const server = http.createServer((req, res) => {
       ? { media: { ffmpeg: true, transcodeFailuresSinceBoot: 0, lastTranscodeFailure: null, untranscodedVideoReports: 0 } }
       : { media: { ffmpeg: false, transcodeFailuresSinceBoot: 0, lastTranscodeFailure: null, untranscodedVideoReports: 1 } });
   }
-  if (u.startsWith('/uploads/')) { res.writeHead(200, { 'content-type': 'video/mp4' }); return res.end(Buffer.alloc(64)); }
+  // Media now comes through the console endpoint (the public /uploads path
+  // serves an incident's files only once it is published). Each answer names
+  // its file, so the test can prove the right bytes reached the right player.
+  if (u.startsWith('/api/admin/incident-media/')) {
+    const name = decodeURIComponent(u.split('/').pop());
+    MEDIA_HITS.push({ name, secret: !!req.headers['x-admin-secret'] });
+    res.writeHead(200, { 'content-type': 'video/mp4' });
+    return res.end(Buffer.from(`clip:${name}`));
+  }
+  if (u.startsWith('/uploads/')) { UPLOAD_HITS.push(u); res.writeHead(200, { 'content-type': 'video/mp4' }); return res.end(Buffer.alloc(64)); }
   if (u.startsWith('/api/')) return json({});
   const f = path.join(APP, decodeURIComponent(u === '/' ? '/index.html' : u));
   if (!f.startsWith(APP) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end(); }
@@ -138,8 +149,14 @@ console.log('=== the clip opens our player, big enough to judge it by ===');
   check('every clip is a player tile', tiles.length === 2 && tiles.every(Boolean), JSON.stringify(tiles));
   const size = await page.evaluate(() => { const q = document.querySelector('.inc .m button.hk-vtile').getBoundingClientRect(); return [Math.round(q.width), Math.round(q.height)]; });
   check('the tile is the console size (240x180), not the 120x90 default', size[0] === 240 && size[1] === 180, JSON.stringify(size));
-  check('the unconverted clip keeps its direct-open link beside the tile',
-    await page.evaluate(() => !!document.querySelectorAll('.inc')[1].querySelector('.noconv a[href="/uploads/incidents/raw.mp4"]')));
+  const direct = await page.evaluate(async () => {
+    const a = document.querySelectorAll('.inc')[1].querySelector('.noconv a[href^="blob:"]');
+    return a ? (await fetch(a.href).then((r) => r.text())) : null;
+  });
+  check('the unconverted clip keeps its direct-open link beside the tile (to its own bytes)', direct === 'clip:raw.mp4', direct);
+  check('the console read both clips through /api/admin/incident-media, with the console secret',
+    ['converted.mp4', 'raw.mp4'].every((n) => MEDIA_HITS.some((h) => h.name === n && h.secret)), JSON.stringify(MEDIA_HITS));
+  check('and asked the public /uploads path for nothing', UPLOAD_HITS.length === 0, JSON.stringify(UPLOAD_HITS));
   await page.click('.inc .m button.hk-vtile');
   await page.waitForTimeout(500);
   const r = await page.evaluate(() => {
@@ -149,9 +166,10 @@ console.log('=== the clip opens our player, big enough to judge it by ===');
     return { open: !!ov && !ov.hidden, src: v && v.getAttribute('src'), w: Math.round(q.width), h: Math.round(q.height),
       fit: v && getComputedStyle(v).objectFit, muted: v && v.muted };
   });
+  r.bytes = r.src ? await page.evaluate((s) => fetch(s).then((x) => x.text()).catch(() => null), r.src) : null;
   console.log(`      overlay video renders ${r.w}x${r.h}, object-fit: ${r.fit}, muted: ${r.muted}`);
   check('a tap opens the full-screen player', r.open, JSON.stringify(r));
-  check('…on the clip itself', /\/uploads\/incidents\/converted\.mp4$/.test(r.src || ''), r.src);
+  check('…on the clip itself', /^blob:/.test(r.src || '') && r.bytes === 'clip:converted.mp4', `${r.src} -> ${r.bytes}`);
   // 160px was the broken size, and is also roughly where Chrome starts dropping
   // controls. 320 is a floor with room to spare, not a magic number.
   check('the video is at least 320px wide', r.w >= 320, `got ${r.w}px`);

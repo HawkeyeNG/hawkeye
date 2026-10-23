@@ -7,7 +7,7 @@
   },
   "plugins": {
     "CapacitorHttp": { "enabled": true },
-    "CapacitorUpdater": { "autoUpdate": false, "appReadyTimeout": 10000, "resetWhenUpdate": true },
+    "CapacitorUpdater": { "autoUpdate": false, "appReadyTimeout": 10000, "resetWhenUpdate": true, "statsUrl": "" },
     "PushNotifications": { "presentationOptions": ["badge", "sound", "alert"] }
   }
 }

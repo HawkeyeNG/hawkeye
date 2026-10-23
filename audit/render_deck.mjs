@@ -5,14 +5,22 @@ let md = fs.readFileSync(new URL('../Pitch/investor-deck.md', import.meta.url), 
 const logo = fs.readFileSync(new URL('../design/hawk-mascot.png', import.meta.url).pathname).toString('base64');
 
 // Fill the known ⟨placeholders⟩ for a presentable PDF (source .md keeps its template brackets).
+// PEOPLE'S NAMES NEVER LIVE IN THIS PUBLIC REPOSITORY (owner, 23 Oct 2026: trustees and team are
+// need-to-know only — political risk). They come from audit/deck-names.local.json (gitignored):
+//   { "founder": "...", "sister": "...", "advisorElection": "...", "advisorSecurity": "...", "coordinator": "..." }
+// Without it, the PDF keeps the ⟨placeholders⟩ and says so.
+const names = (() => {
+  try { return JSON.parse(fs.readFileSync(new URL('./deck-names.local.json', import.meta.url), 'utf8')); } catch { return {}; }
+})();
+const named = (re, key, suffix = '') => (names[key] ? [[re, names[key] + suffix]] : []);
 const fills = [
   [/⟨\$?250k⟩/g, '$250k'], [/⟨USD⟩/g, 'USD'], [/⟨contact⟩/g, 'security@hawkeye.com.ng'],
-  [/⟨Founder name⟩/g, 'Osaretin Osagie'], [/⟨Sister's name⟩/g, 'Elizabeth Usiagu'],
+  ...named(/⟨Founder name⟩/g, 'founder'), ...named(/⟨Sister's name⟩/g, 'sister'),
   [/⟨observer-world credential⟩/g, 'TMG observer coordinator, 2023'],
   [/⟨credential⟩/g, 'application-security engineer'],
-  [/⟨Advisor⟩(\*\* \(Election Integrity)/g, 'Hameed Saliu$1'],
-  [/⟨Advisor⟩(\*\* \(Security)/g, 'Kingsley Anamelechi$1'],
-  [/⟨Coordinator⟩/g, 'Otaru Junior Salau'],
+  ...named(/⟨Advisor⟩(\*\* \(Election Integrity)/g, 'advisorElection', '$1'),
+  ...named(/⟨Advisor⟩(\*\* \(Security)/g, 'advisorSecurity', '$1'),
+  ...named(/⟨Coordinator⟩/g, 'coordinator'),
   [/\s*⟨user\/observer[\s\S]*?growth⟩\.?/g, '.'], [/⟨N⟩/g, 'target'],
   [/⟨(1?[0-9]{2},[0-9]{3})⟩/g, '$1'],
 ];

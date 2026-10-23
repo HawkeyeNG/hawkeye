@@ -110,3 +110,6 @@ tests/design-audit/node_modules/
 tests/design-audit/out/
 tests/design-audit/C:*
 tests/design-audit/**/lighthouse.*
+
+# People's names for the pitch deck: need-to-know, never in this public repository
+audit/deck-names.local.json

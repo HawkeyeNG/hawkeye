@@ -84,6 +84,14 @@ rm -f "$PUB/senate_map.png" "$PUB/email-banner.png" "$PUB/logos/sources.json" \
       "$PUB/photos/candidates/adebayo.jpg" "$PUB/photos/candidates/datti.jpg" \
       "$PUB/photos/candidates/jonathan.jpg" "$PUB/photos/candidates/manifest.json"
 
+# email/ (3.5 MB, added 17 Oct): the practice-run animation and MP4 that the
+# campaign emails load off the WEBSITE by absolute URL, like email-banner.png.
+# 0 references from any page in app/. It took the iOS bundle to 16.4 MB, over
+# the 15 MB gate at the end, on the first store build after it landed (1.10).
+rm -rf "$PUB/email"
+hit=$(grep -rnE "(href|src)=[\"'][^\"']*email/" "$PUB" --include='*.js' --include='*.html' 2>/dev/null | head -3)
+[ -z "$hit" ] || { echo "GATE_FAIL: email/ was stripped but is still LINKED from: $hit"; exit 1; }
+
 # Those pages were safe to drop because NOTHING in the bundle linked to them.
 # That is a fact about today's code, not a law, so it is asserted rather than
 # trusted: the day a page adds a link to the admin console, this fails here

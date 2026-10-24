@@ -300,7 +300,7 @@ export const PAGES: Record<string, Page> = {
       { kind: 'label', text: 'Who Runs It' },
       {
         kind: 'para',
-        text: 'Built and operated by IniXien, LLC (© 2026). Observers’ reports, and the ledger they form, stay open for anyone to read and verify.',
+        text: 'Hawkeye is run by IniXien Hope Initiative, a Nigerian non-profit registered with the Corporate Affairs Commission. Its sister company, IniXien Ltd, grants it perpetual free use of Hawkeye. Observers’ reports, and the ledger they form, stay open for anyone to read and verify.',
       },
       {
         kind: 'actions',

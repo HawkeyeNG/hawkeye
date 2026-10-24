@@ -165,7 +165,7 @@ const TERMS: Page = {
     },
     {
       kind: 'para',
-      text: 'Hawkeye is an independent transparency initiative and is not affiliated with INEC. Official results are those declared by INEC. Built and operated by IniXien, LLC (© 2026).',
+      text: 'Hawkeye is an independent transparency initiative and is not affiliated with INEC. Official results are those declared by INEC. © 2026 IniXien Ltd · Run by IniXien Hope Initiative.',
     },
   ],
 };

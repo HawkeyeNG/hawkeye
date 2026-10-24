@@ -770,7 +770,7 @@ export default {
   "n.app.tabs.index.upcoming-election": "Ntuli aka na-abịa",
   "n.app.tabs.more.dark": "Ọchịchịrị",
   "n.app.tabs.more.draft-translation-being-reviewed": "Ntụgharị nnwale, a na-enyocha ya. Kọọ okwu ezighi ezi site na Gbasara Anyị.",
-  "n.app.tabs.more.inixien-llc": "© IniXien, LLC",
+  "n.app.tabs.more.inixien-llc": "© 2026 IniXien Ltd · IniXien Hope Initiative na-arụ Hawkeye",
   "n.app.tabs.more.language": "Asụsụ",
   "n.app.tabs.more.light": "Ìhè",
   "n.app.tabs.more.preferences": "Nhọrọ",

@@ -770,7 +770,7 @@ export default {
   "n.app.tabs.index.upcoming-election": "Ìdìbò tí ń bọ̀",
   "n.app.tabs.more.dark": "Òkùnkùn",
   "n.app.tabs.more.draft-translation-being-reviewed": "Ìtumọ̀ àkọ́kọ́, à ń ṣàyẹ̀wò rẹ̀. Jábọ̀ ọ̀rọ̀ tí kò tọ́ láti Nípa Wa.",
-  "n.app.tabs.more.inixien-llc": "© IniXien, LLC",
+  "n.app.tabs.more.inixien-llc": "© 2026 IniXien Ltd · IniXien Hope Initiative ni ó ń ṣàkóso Hawkeye",
   "n.app.tabs.more.language": "Èdè",
   "n.app.tabs.more.light": "Ìmọ́lẹ̀",
   "n.app.tabs.more.preferences": "Àwọn Àṣàyàn",

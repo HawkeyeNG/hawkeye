@@ -771,7 +771,7 @@ export default {
     "n.app.tabs.index.upcoming-election": "Zaɓen da ke tafe",
     "n.app.tabs.more.dark": "Duhu",
     "n.app.tabs.more.draft-translation-being-reviewed": "Fassarar gwaji, ana bita. Ka kai rahoton kalmar da ba daidai ba daga Game da Mu.",
-    "n.app.tabs.more.inixien-llc": "© IniXien, LLC",
+    "n.app.tabs.more.inixien-llc": "© 2026 IniXien Ltd · IniXien Hope Initiative ce ke gudanar da Hawkeye",
     "n.app.tabs.more.language": "Yare",
     "n.app.tabs.more.light": "Haske",
     "n.app.tabs.more.preferences": "Zaɓuɓɓuka",

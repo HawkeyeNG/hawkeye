@@ -16,6 +16,7 @@ OUT="$DEST/secrets/hawkeye-secrets-$(date +%F).tar.gpg"
 cd "$HOME"
 LIST=()
 for p in hawkeye-secrets .config/hawkeye .ssh hawkeye/backend/.env hawkeye/backend/.env.tiktok-sandbox \
+         hawkeye/backend/storage/anchor_key.json \
          hawkeye/native/.env.local hawkeye/native/credentials.json hawkeye/native/google-services.json \
          hawkeye/native/GoogleService-Info.plist hawkeye/native/ios/Hawkeye/GoogleService-Info.plist \
          hawkeye/native/android/app/google-services.json hawkeye/mobile/android/app/google-services.json \

@@ -49,13 +49,22 @@ for r in hawkeye:"$HOME/hawkeye" backend:"$HOME/hawkeye/backend"; do
 done
 
 say "2/5 working trees"
-"${RS[@]}" "${SECRET_EXCL[@]}" "${BULK_EXCL[@]}" "$HOME/hawkeye/" "$DEST/files/hawkeye/" >>"$LOG" 2>&1; say "   hawkeye rsync exit $?"
+# backend/storage holds databases, uploaded photos and the anchor key: the
+# databases go to db/ (below, on the 30-day rotation), the key into the
+# encrypted secrets archive. Neither belongs in files/ in the clear.
+"${RS[@]}" "${SECRET_EXCL[@]}" "${BULK_EXCL[@]}" --exclude='/backend/storage/' "$HOME/hawkeye/" "$DEST/files/hawkeye/" >>"$LOG" 2>&1; say "   hawkeye rsync exit $?"
 for s in inixien-site jol-site; do
   [ -d "$HOME/$s" ] && { "${RS[@]}" "${SECRET_EXCL[@]}" "${BULK_EXCL[@]}" "$HOME/$s/" "$DEST/files/$s/" >>"$LOG" 2>&1; say "   $s rsync exit $?"; }
 done
 
 say "3/5 database snapshots"
 "${RS[@]}" --include='*.db.gz' --exclude='*' "$HOME/hawkeye-backups/" "$DEST/db/" >>"$LOG" 2>&1; say "   db rsync exit $? ($(ls "$DEST"/db/*.db.gz 2>/dev/null | wc -l) snapshots)"
+# The privacy page's backup period, run by the OWNER: PRUNE_DB_DAYS=30 bash scripts/offline_backup.sh ...
+# deletes database snapshots on the drive older than N days (N >= 7). Unset: nothing is removed.
+if [[ "${PRUNE_DB_DAYS:-}" =~ ^[0-9]+$ ]] && [ "$PRUNE_DB_DAYS" -ge 7 ]; then
+  gone=$(find "$DEST/db" -maxdepth 1 -type f -name '*.db.gz' -mmin +"$((PRUNE_DB_DAYS * 1440))" -print -delete | wc -l)
+  say "   db retention: $gone snapshots older than $PRUNE_DB_DAYS days deleted ($(ls "$DEST"/db/*.db.gz 2>/dev/null | wc -l) left)"
+fi
 
 say "4/5 documents"
 mkdir -p "$DEST/docs/downloads"

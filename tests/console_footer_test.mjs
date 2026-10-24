@@ -117,7 +117,7 @@ check('nothing puts it back inside #sr-scroll', room.inScroller, false);
 check('body is the flex column that pins it', room.bodyColumn, 'column');
 check('it does not shrink away', room.flexShrink, '0');
 check('the document-footer top margin is gone', room.marginTop, '0px');
-check('and it is the copyright line', room.text, (t) => /IniXien, LLC/.test(t || ''));
+check('and it is the copyright line', room.text, (t) => /IniXien Ltd/.test(t || ''));
 
 console.log('\n=== admin console ===');
 await open('admin.html');
@@ -134,7 +134,7 @@ const admin = await page.evaluate(() => {
 check('the footer is there', admin.exists, true);
 check('pinned to the bottom of the screen', admin.position, 'sticky');
 check('at the floor, not floating', admin.bottom, '0px');
-check('and it is the same copyright line', admin.text, (t) => /IniXien, LLC/.test(t || ''));
+check('and it is the same copyright line', admin.text, (t) => /IniXien Ltd/.test(t || ''));
 
 await b.close();
 server.close();

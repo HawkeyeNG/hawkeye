@@ -51,8 +51,12 @@ android {
         // recordings (size limits apply to gallery files only), client-side
         // compression before upload, real video thumbnails, and upload
         // feedback that reports only what it actually knows.
+        //
+        // What 1.10 carries: CapacitorUpdater "statsUrl": "" in
+        // capacitor.config.json, so the updater stops sending usage statistics
+        // to Capgo. It is native config, which no live bundle can change.
         versionCode 25
-        versionName "1.9"
+        versionName "1.10"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

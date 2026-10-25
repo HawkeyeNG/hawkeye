@@ -283,6 +283,16 @@
   // CTA) with no race against page scripts.
   document.documentElement.classList.add('native-app');
 
+  // NO PAGE ZOOM IN THE APP. A WebView left zoomable drifted to a zoomed-in
+  // scale on a Galaxy Z Fold 5 while reporting (25 Oct 2026): the report cards
+  // ran off both edges and "Review ▸" was cut in half. A native screen does not
+  // zoom; text still follows the phone's own font-size setting, which is text
+  // scaling, not page zoom. The website itself stays zoomable.
+  (function lockScale() {
+    const vp = document.querySelector('meta[name="viewport"]');
+    if (vp) vp.setAttribute('content', 'width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover');
+  })();
+
   // LIVE WEB UPDATES — Lite's twin of the native app's EAS Update. The Capgo
   // updater plugin (self-hosted, autoUpdate off) lets a web deploy reach Lite
   // without a store build: scripts/publish_lite_bundle.sh zips the stripped app/

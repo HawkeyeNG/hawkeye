@@ -2415,13 +2415,20 @@ function geoLog(where, err) {
 }
 
 // ---------- locate: geofenced discovery ----------
+// ONE LIST PER SEARCH. The screen fires this on open (see autoLocateRan) and
+// the observer often taps it too while that first run still waits on GPS; both
+// cleared the list at the start and both drew at the end, so every nearby unit
+// appeared twice (iPhone, 25 Oct 2026). Only the newest run may write.
+let locateRun = 0;
 $('btn-locate').onclick = async () => {
+  const run = ++locateRun;
   $('locate-status').textContent = T('observe.getting-your-location', 'Getting your location…');
   $('pu-list').innerHTML = '';
   let pos;
   try {
     pos = await getPosition();
   } catch (err) {
+    if (run !== locateRun) return;
     // ONE SENTENCE. This used to be a 43-word paragraph that diagnosed, blamed
     // and then gave an address-bar tour — and it said the same thing whether the
     // observer had refused permission or was simply indoors with no lock yet.
@@ -2493,6 +2500,7 @@ $('btn-locate').onclick = async () => {
     return { body: { ...(reg.body || {}), radiusM: 800, units: rows, offline: viaPacks } };
   };
   const r = warm ? { body: warm } : await merged();
+  if (run !== locateRun) return; // a newer search owns the list now
   // Every exit from here on leaves the observer somewhere usable — a named
   // failure and an open register browser, never a status line that just stops.
   if (r.error) {
@@ -2525,6 +2533,7 @@ $('btn-locate').onclick = async () => {
   }
   $('locate-status').textContent = (body.offline ? T('nearme.offline-note', 'Showing units saved on this phone. No connection needed.') + ' ' : '')
     + T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:');
+  $('pu-list').innerHTML = '';
   for (const u of body.units) {
     const btn = document.createElement('button');
     btn.className = 'pu-option';

@@ -179,8 +179,12 @@
 
   /* Near me: the real step's two lookups, read-only. Every failure ends on a
      line and the other two ways in, never a status that just stops. */
+  // Only the newest run may write: two overlapping runs (a second tap while the
+  // first waits on GPS) used to draw the list twice. Same fix as app.js.
+  let locateRun = 0;
   $('btn-locate').onclick = async () => {
-    const say = (m) => { $('locate-status').textContent = m; };
+    const run = ++locateRun;
+    const say = (m) => { if (run === locateRun) $('locate-status').textContent = m; };
     $('pu-list').innerHTML = '';
     if (!navigator.geolocation) { say(T('observe.could-not-check-nearby-units-search-by', 'Could not check nearby units. Search by name below.')); return; }
     say(T('observe.getting-your-location', 'Getting your location…'));
@@ -205,6 +209,7 @@
     const [reg0, near0, viaPacks] = store && store.nearbyOrOffline
       ? await store.nearbyOrOffline(lat, lng, 800, online)
       : [...(await online), false];
+    if (run !== locateRun) return;
     const reg = nq ? store.nearExact(reg0, lat, lng) : reg0;
     const near = nq ? store.nearExact(near0, lat, lng, 800) : near0;
     if (!reg && !near) {
@@ -224,6 +229,7 @@
     rows.sort((a, b) => (a.distanceM ?? 1e9) - (b.distanceM ?? 1e9));
     if (!rows.length) { say(T('practice.no-units-near', 'No units found near you. Search below, or use the practice unit.')); return; }
     say((viaPacks ? T('nearme.offline-note', 'Showing units saved on this phone. No connection needed.') + ' ' : '') + T('observe.select-the-unit-you-are-standing-at', 'Select the unit you are standing at:'));
+    $('pu-list').innerHTML = '';
     for (const u of rows) {
       const b = document.createElement('button');
       b.type = 'button';

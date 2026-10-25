@@ -2227,7 +2227,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     panel.innerHTML = '<div id="hk-head"><span data-i18n="nav.ask-hawkeye">Ask Hawkeye</span>'
       + '<button aria-label="Close" data-i18n-attr="aria-label:common.close" id="hk-x">×</button></div>'
       + '<div id="hk-msgs"></div>'
-      + '<div id="hk-note" data-i18n="assistant.note">Crowd-reported, unofficial figures. INEC declares official results.</div>'
+      + '<div id="hk-note" data-i18n="assistant.note">Crowd-reported, unofficial figures. INEC declares official results. Don’t type personal details.</div>'
       + '<form id="hk-form"><input id="hk-in" autocomplete="off" placeholder="e.g. presidential tally so far"'
       + ' data-i18n-attr="placeholder:assistant.placeholder" /><button data-i18n="assistant.ask">Ask</button></form>';
     document.body.append(fab, panel);

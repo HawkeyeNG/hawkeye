@@ -4,7 +4,7 @@ export default {
   "n.app._layout.try-again": "Gbìyànjú lẹ́ẹ̀kan sí i",
   "n.app.assistant.ask": "Béèrè",
   "n.app.assistant.ask-about-the-results": "Béèrè nípa àwọn àbájáde…",
-  "n.app.assistant.ask-me-about-the-crowd-reported": "Béèrè lọ́wọ́ mi nípa àwọn àbájáde tí ìjọ ènìyàn jábọ̀ — ìkà orílẹ̀-èdè, ẹ̀ka ìdìbò kan, tàbí iye orílẹ̀-èdè tí a ti ṣàwòrán.",
+  "n.app.assistant.ask-me-about-the-crowd-reported": "Béèrè lọ́wọ́ mi nípa àwọn àbájáde tí ìjọ ènìyàn jábọ̀ — ìkà orílẹ̀-èdè, ẹ̀ka ìdìbò kan, tàbí iye orílẹ̀-èdè tí a ti ṣàwòrán. Ẹ má ṣe kọ ìsọfúnni ara ẹni yín.",
   "n.app.assistant.could-not-answer-that-http": "A kò lè dáhùn ìyẹn. ({v0} / HTTP {v1})",
   "n.app.assistant.could-not-reach-the-assistant": "A kò lè dé ọ̀dọ̀ olùrànlọ́wọ́ náà.",
   "n.app.assistant.how-much-of-nigeria-is-mapped": "Èló nínú Nàìjíríà ni a ti ṣàwòrán?",

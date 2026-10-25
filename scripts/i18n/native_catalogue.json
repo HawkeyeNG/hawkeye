@@ -357,7 +357,7 @@
   "n.app._layout.try-again": "Try again",
   "n.app.assistant.ask": "Ask",
   "n.app.assistant.ask-about-the-results": "Ask about the results…",
-  "n.app.assistant.ask-me-about-the-crowd-reported": "Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.",
+  "n.app.assistant.ask-me-about-the-crowd-reported": "Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped. Don’t type personal details.",
   "n.app.assistant.could-not-answer": "The assistant could not answer that. Try again.",
   "n.app.assistant.could-not-answer-that-http": "Could not answer that. ({v0} / HTTP {v1})",
   "n.app.assistant.could-not-reach-the-assistant": "Could not reach the assistant.",

@@ -633,7 +633,7 @@
   "common.about-this": "About this",
   "common.ok": "OK",
   "common.not-yet": "Not yet",
-  "assistant.note": "Crowd-reported, unofficial figures. INEC declares official results.",
+  "assistant.note": "Crowd-reported, unofficial figures. INEC declares official results. Don’t type personal details.",
   "assistant.placeholder": "e.g. presidential tally so far",
   "assistant.ask": "Ask",
   "assistant.greeting": "Hi! Ask me about the crowd-reported results — a national tally, a polling unit, or how much of the country is mapped.",

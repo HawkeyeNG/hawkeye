@@ -4,7 +4,7 @@ export default {
   "n.app._layout.try-again": "Nwaa ọzọ",
   "n.app.assistant.ask": "Jụọ",
   "n.app.assistant.ask-about-the-results": "Jụọ gbasara nsonaazụ ndị ahụ…",
-  "n.app.assistant.ask-me-about-the-crowd-reported": "Jụọ m gbasara nsonaazụ ndị obodo kọrọ — ọnụọgụ mba, otu ngalaba ntuli aka, ma ọ bụ òkè Naịjirịa e sepụtara.",
+  "n.app.assistant.ask-me-about-the-crowd-reported": "Jụọ m gbasara nsonaazụ ndị obodo kọrọ — ọnụọgụ mba, otu ngalaba ntuli aka, ma ọ bụ òkè Naịjirịa e sepụtara. Edela ozi gbasara onwe gị.",
   "n.app.assistant.could-not-answer-that-http": "Enweghị ike ịza nke ahụ. ({v0} / HTTP {v1})",
   "n.app.assistant.could-not-reach-the-assistant": "Enweghị ike iru onye enyemaka ahụ.",
   "n.app.assistant.how-much-of-nigeria-is-mapped": "Òkè ole nke Naịjirịa ka e sepụtara?",

@@ -5,7 +5,7 @@ export default {
     "n.app._layout.try-again": "Sake gwadawa",
     "n.app.assistant.ask": "Tambaya",
     "n.app.assistant.ask-about-the-results": "Tambaya game da sakamakon…",
-    "n.app.assistant.ask-me-about-the-crowd-reported": "Ka tambaye ni game da sakamakon da jama'a suka bayar — ƙidayar ƙasa baki ɗaya, rukunin zaɓe, ko yawan ƙasar da aka tsara.",
+    "n.app.assistant.ask-me-about-the-crowd-reported": "Ka tambaye ni game da sakamakon da jama'a suka bayar — ƙidayar ƙasa baki ɗaya, rukunin zaɓe, ko yawan ƙasar da aka tsara. Kada ku rubuta bayanan sirrinku.",
     "n.app.assistant.could-not-answer-that-http": "An kasa amsa hakan. ({v0} / HTTP {v1})",
     "n.app.assistant.could-not-reach-the-assistant": "An kasa isa ga mataimakin.",
     "n.app.assistant.how-much-of-nigeria-is-mapped": "Nawa ne aka tsara a Najeriya?",

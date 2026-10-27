@@ -2609,6 +2609,18 @@ dialog.sheet-modal,
   /* Android draws this bar: keep it clear of both ends. (iOS draws its own.) */
   html.native-app.has-shell #page-scroll::-webkit-scrollbar-track { margin-block: 10px; }
 }
+/* THE PAGE COLUMN FILLS THE PANE; IT DOES NOT SHRINK-WRAP ITS CONTENT.
+   #page-scroll is a flex column (desktop, and Lite on a phone), and main.wrap
+   centres itself with `margin: 0 auto`. Auto margins switch off a flex item's
+   stretch, so main was sized to fit its CONTENT: as wide as its widest
+   unbreakable thing, even past the screen, and only as narrow as its text
+   otherwise. On a Galaxy Z Fold 5's cover screen (344 px) with a large phone
+   font size, the election list's longest line ("House of Representatives —
+   Opens 16 Jan") made the report column wider than the screen, and every card
+   ran off the right edge. On desktop, a dozen pages got a column whose width
+   depended on how much text had loaded. 100% of the pane, capped by each
+   page's own max-width, is what a block `main` had before the shell. */
+html.has-shell #page-scroll > main { width: 100%; }
 
 /* SCROLLBARS THAT GET OUT OF THE WAY.
    The thumb is transparent at rest and appears while a pane is scrolled or

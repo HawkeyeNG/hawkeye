@@ -3057,6 +3057,9 @@ function fillContests(keepChoice) {
     const before = keepChoice ? sel.value : '';
     if (!keepChoice) sel.value = '';
     window.HAWKEYE_RACES.fill(sel, applicableContests, { placeholder: T('race.select-election', '— select election —') });
+    // fill() lists all five general races. An FCT unit has no governorship or
+    // state assembly, so those two sat in its list "not open yet" — for ever.
+    for (const o of [...sel.options]) if (o.value && !contestApplies(selectedPu, o.value)) o.remove();
     // fill() picks a lone race by itself, with no change event. Step 3 opens the
     // count from that event, so a race chosen silently would leave it stuck.
     if (!before && sel.value) sel.value = '';

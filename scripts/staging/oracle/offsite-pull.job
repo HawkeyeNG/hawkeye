@@ -8,13 +8,17 @@
 # matches its snapshot, and alarms the owner when a place goes 36 h stale. Failures are reported
 # too (-> owner's Telegram). GO54 holds no credential for this machine, so a break-in there cannot
 # reach these copies. Nothing to do once this server is the live one (its own backups take over).
+# Since 28 Oct 2026 the always-on Oracle standby runs it too (at :13), so the off-site copies no
+# longer hang on the election server alone; the standby's unit points the settings and the R2 tool
+# below at its own files (offsite-pull.sh push standby).
 set -uo pipefail
 SITE=${HAWKEYE_SITE:-https://hawkeye.com.ng}
 ORIGIN_HDR=${HAWKEYE_ORIGIN_HDR:-}   # only for a run against a local app (rehearsal)
 DIR=/var/lib/hawkeye-offsite
-ENVF=/run/hawkeye/app.env
-R2CLI=/opt/hawkeye/current/backend/scripts/r2cli.mjs
-NODE=/usr/local/bin/node
+ENVFILES=${OFFSITE_ENV_FILES:-/run/hawkeye/app.env}   # first file holding a name wins
+R2CLI=${OFFSITE_R2CLI:-/opt/hawkeye/current/backend/scripts/r2cli.mjs}
+NODE=${OFFSITE_NODE:-/usr/local/bin/node}
+FORCE=${OFFSITE_FORCE:-}   # a proving run: skip "already in both places" and do the work
 PREFIX=${OFFSITE_R2_PREFIX:-backup/go54-nightly/}   # a rehearsal uses its own
 KEEP=7
 UA='Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 Chrome/129.0 Mobile Safari/537.36'
@@ -25,16 +29,21 @@ flock -n 9 || { echo "$(ts) another run holds the lock — skipped"; exit 0; }
 T=$(mktemp -d); trap 'rm -rf "$T"' EXIT
 [ -f /etc/hawkeye/live ] && [ -z "$ORIGIN_HDR" ] && { echo "$(ts) this server is live — its own backups run instead"; exit 0; }
 
-envget() {  # one value from app.env (production quotes some values in single quotes)
-  python3 - "$ENVF" "$1" <<'PY'
+envget() {  # one value from the first env file that has it (production quotes some values)
+  # shellcheck disable=SC2086 — ENVFILES is a space-separated list on purpose
+  python3 - "$1" $ENVFILES <<'PY'
 import sys
-p, k = sys.argv[1], sys.argv[2]
-for line in open(p):
-    line = line.rstrip("\n")
-    if line.startswith(k + "="):
-        v = line[len(k) + 1:]
-        if len(v) >= 2 and v[0] == v[-1] == "'": v = v[1:-1]
-        print(v); break
+k, files = sys.argv[1], sys.argv[2:]
+for p in files:
+    try:
+        lines = open(p).read().splitlines()
+    except OSError:
+        continue
+    for line in lines:
+        if line.startswith(k + "="):
+            v = line[len(k) + 1:]
+            if len(v) >= 2 and v[0] == v[-1] and v[0] in "'\"": v = v[1:-1]
+            print(v); sys.exit(0)
 PY
 }
 SECRET=$(envget ADMIN_CONSOLE_SECRET 2>/dev/null)
@@ -57,10 +66,10 @@ report() {  # report <where> <file> <size> <md5>
   api "$(python3 -c 'import json,sys; print(json.dumps({"where":sys.argv[1],"file":sys.argv[2],"size":int(sys.argv[3]),"md5":sys.argv[4]}))' "$@")" \
     || fail "verify-$1" "HTTP $HTTP from /api/admin/backup/offsite: $(head -c 200 "$T/body") $(head -c 120 "$T/cerr")"
 }
-[ -n "$SECRET" ] || fail config "ADMIN_CONSOLE_SECRET not readable from $ENVF"
+[ -n "$SECRET" ] || fail config "ADMIN_CONSOLE_SECRET not readable from $ENVFILES"
 
 # 1. Nothing new? GO54's newest snapshot is already verified in both places. Any doubt: do the work.
-if curl -fsS -m 30 -A "$UA" ${ORIGIN_HDR:+-H @"$ORIGIN_HDR"} "$SITE/api/health" 2>/dev/null | python3 -c '
+if [ -z "$FORCE" ] && curl -fsS -m 30 -A "$UA" ${ORIGIN_HDR:+-H @"$ORIGIN_HDR"} "$SITE/api/health" 2>/dev/null | python3 -c '
 import json, sys
 b = json.load(sys.stdin).get("backup") or {}
 c = b.get("copies") or {}

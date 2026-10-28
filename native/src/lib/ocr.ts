@@ -33,10 +33,22 @@
 import { Platform } from 'react-native';
 
 import { recognize as visionRecognize, visionAvailable } from '@/modules/hawkeye-vision';
+import { parseCounts, type OcrLine } from './sheet-counts';
 import { parseSerial } from './sheet-serial';
 
-type MlkitResult = { text: string; blocks?: { text: string }[] };
-type Recogniser = { recognize: (uri: string) => Promise<MlkitResult> };
+/**
+ * Both readers return lines inside blocks, each with a box, in pixels with the
+ * origin top-left — Vision as `boundingBox` (converted in HawkeyeVisionModule),
+ * ML Kit as `frame`. The boxes are what pair a party with its count on a ruled
+ * sheet (see sheet-counts.ts), so they are kept, not just the text.
+ */
+type ReaderLine = {
+  text: string;
+  boundingBox?: { left: number; right: number; top: number; bottom: number };
+  frame?: { left: number; top: number; width: number; height: number };
+};
+type ReaderResult = { text: string; blocks?: { lines?: ReaderLine[] }[] };
+type Recogniser = { recognize: (uri: string) => Promise<ReaderResult> };
 
 let TextRecognition: Recogniser | null = null;
 if (Platform.OS !== 'ios') {
@@ -50,16 +62,28 @@ if (Platform.OS !== 'ios') {
 }
 
 /** Read the sheet with whichever recogniser this platform has. */
-async function recogniseText(uri: string): Promise<string | null> {
+async function recogniseText(uri: string): Promise<ReaderResult | null> {
   if (Platform.OS === 'ios') {
-    const res = await visionRecognize(uri);
-    return res?.text ?? null;
+    return (await visionRecognize(uri)) ?? null;
   }
   if (!TextRecognition) return null;
-  const res = await TextRecognition.recognize(uri);
-  return res?.text ?? '';
+  return (await TextRecognition.recognize(uri)) ?? { text: '' };
 }
 
+/** Every line that came back with a box, in the one shape the pairing reads. */
+function linesOf(res: ReaderResult): OcrLine[] {
+  const out: OcrLine[] = [];
+  for (const block of res.blocks ?? []) {
+    for (const l of block.lines ?? []) {
+      const b = l.boundingBox
+        ?? (l.frame ? { left: l.frame.left, right: l.frame.left + l.frame.width, top: l.frame.top, bottom: l.frame.top + l.frame.height } : null);
+      if (b && l.text) out.push({ text: l.text, left: b.left, right: b.right, top: b.top, bottom: b.bottom });
+    }
+  }
+  return out;
+}
+
+export { parseCounts } from './sheet-counts';
 export { parseSerial } from './sheet-serial';
 
 export const ocrAvailable = () => (Platform.OS === 'ios' ? visionAvailable() : TextRecognition != null);
@@ -69,7 +93,7 @@ export type SheetRead = {
   text: string;
   /** How many lines carried a number — the practical "is this readable" signal. */
   numericLines: number;
-  /** Party code → count, for codes that appear on the same line as a number. */
+  /** Party code (exactly as passed in) → the count read beside it. See sheet-counts.ts. */
   counts: Record<string, number>;
   /**
    * The sheet's printed serial, when one was found. NEVER authoritative — the
@@ -79,55 +103,19 @@ export type SheetRead = {
   serial: string | null;
 };
 
-/**
- * Party codes are short and collide with ordinary words on the form ("A" is a
- * party AND a column letter), so a code only counts when it stands alone as a
- * token on the line — not as a fragment of a longer word.
- */
-function tokenised(line: string) {
-  return line
-    .toUpperCase()
-    .split(/[^A-Z0-9]+/)
-    .filter(Boolean);
-}
-
-/**
- * Pull "PARTY … 123" pairs out of recognised text.
- *
- * EC8A rows read as `<party> <accreted> <score>`; the count we want is the LAST
- * number on the row. Numbers with separators ("1,204") are joined back up, and
- * anything longer than six digits is discarded as a serial or form number
- * rather than a tally.
- */
-export function parseCounts(text: string, partyCodes: string[]): Record<string, number> {
-  const codes = new Set(partyCodes.map((c) => c.toUpperCase()));
-  const out: Record<string, number> = {};
-  for (const raw of text.split(/\r?\n/)) {
-    const line = raw.replace(/(\d)[.,](?=\d{3}\b)/g, '$1'); // 1,204 -> 1204
-    const tokens = tokenised(line);
-    const code = tokens.find((t) => codes.has(t));
-    if (!code) continue;
-    const numbers = tokens.filter((t) => /^\d{1,6}$/.test(t)).map(Number);
-    if (!numbers.length) continue;
-    // Last number on the row is the score column; keep the first read per party
-    // so a repeated header row cannot overwrite a real one.
-    if (out[code] === undefined) out[code] = numbers[numbers.length - 1];
-  }
-  return out;
-}
-
 /** Recognise a sheet photo. Returns null when no recogniser is available or it fails. */
 export async function readSheet(uri: string, partyCodes: string[] = []): Promise<SheetRead | null> {
   if (!ocrAvailable()) return null;
   try {
-    const text = await recogniseText(uri);
-    if (text == null) return null;
+    const res = await recogniseText(uri);
+    if (res == null) return null;
+    const text = res.text ?? '';
     if (!text.trim()) return { text: '', numericLines: 0, counts: {}, serial: null };
     const numericLines = text.split(/\r?\n/).filter((l) => /\d/.test(l)).length;
     return {
       text,
       numericLines,
-      counts: parseCounts(text, partyCodes),
+      counts: parseCounts(text, partyCodes, linesOf(res)),
       serial: parseSerial(text),
     };
   } catch {

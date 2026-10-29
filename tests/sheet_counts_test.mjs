@@ -14,6 +14,7 @@
  * pair nothing. If it pairs something, the fixture has stopped reproducing the
  * bug and every "ok" below proves nothing.
  */
+import fs from 'node:fs';
 import { parseCounts } from '../native/src/lib/sheet-counts.ts';
 
 let failed = 0;
@@ -85,12 +86,12 @@ eq('keys are the codes exactly as passed (the fields are indexed by them)',
   Object.keys(parseCounts(textOf(S), PRACTICE, S)), PRACTICE);
 eq('without boxes, a split row cannot be paired — and is not guessed', parseCounts(textOf(S), PRACTICE, []), {});
 
-// Handwritten 0 read as a letter, and ZERO read as "2ERO". The only number left
-// in Party C's row starts the words cell; taking it would propose a 2.
+// Handwritten 0 read as a letter, and ZERO read as "2ERO". Taking the 2 that
+// starts the words cell would propose a 2; reading it as the word it is gives 0.
 const misread = { ...ROWS, C: row('3', 'Party C', 423, 'O', [418, 455, 445, 478], '2ERO', [625, 715, 445, 478]) };
 const M = sheet(misread);
-eq('"2ERO" is not a 2: Party C is left blank', parseCounts(textOf(M), PRACTICE, M),
-  { 'Party A': 42, 'Party B': 17, 'Party D': 4 });
+eq('"2ERO" is ZERO, not 2: Party C comes from its words', parseCounts(textOf(M), PRACTICE, M),
+  { 'Party A': 42, 'Party B': 17, 'Party C': 0, 'Party D': 4 });
 
 // A total written high in its row sits within one pitch of Party D's label.
 const highTotal = [L('TOTAL VALID VOTES', 155, 292, 594, 608), L('63', 404, 470, 575, 610)];
@@ -113,6 +114,17 @@ const noC = { ...ROWS, C: ROWS.C.filter((l) => l.text !== 'Party C') };
 const N = sheet(noC);
 eq('an unread label pairs nothing, and its 0 goes to no neighbour', parseCounts(textOf(N), PRACTICE, N),
   { 'Party A': 42, 'Party B': 17, 'Party D': 4 });
+
+// Rows C, D and E were read without their labels; F's label was read. The gap
+// B→F spans four rows. A row height taken as the median gap would cover C's
+// figure and words from B, and B's cell would no longer add up.
+const noCDE = [...HEADER, ...ROWS.A, ...ROWS.B,
+  ...ROWS.C.filter((l) => l.text !== 'Party C'), ...ROWS.D.filter((l) => l.text !== 'Party D'),
+  ...row('5', 'Party E', 599, '3', [420, 460, 618, 656], 'THREE', [630, 730, 618, 652]).filter((l) => l.text !== 'Party E'),
+  ...row('6', 'Party F', 687, '2', [420, 460, 706, 744], 'TWO', [630, 700, 706, 740])];
+const SIX = [...PRACTICE, 'Party E', 'Party F'];
+eq('rows nobody read do not stretch the row height', parseCounts(textOf(noCDE), SIX, noCDE),
+  { 'Party A': 42, 'Party B': 17, 'Party F': 2 });
 
 // Only one label read: the pitch falls back to four label heights.
 const onlyA = [...HEADER, ...ROWS.A];
@@ -147,6 +159,7 @@ const R = [
   ...realRow(7, 'NNPP', '9', 0),
   L('08031234567', 700, 820, 535, 552),            // an agent's phone number, APC's row
   L('2', 700, 712, 594, 606),                      // an agent's mark in LP's row, nearer LP's centre than its figure
+  L('ONYE', 700, 760, 294, 306),                   // an agent's name in A's row, one letter from ONE
   L('TOTAL VALID VOTES', 90, 230, 772, 788), L('1,423', 255, 330, 768, 794),
 ];
 eq('every row pairs with its own figure', parseCounts(textOf(R), REAL, R),
@@ -160,6 +173,54 @@ eq('the first number after the code is the figures column', parseCounts('APC 126
 // A code that also appears outside the table: the label nearest the party column wins.
 const dup = [L('SECTION A', 500, 600, 60, 76), ...R.filter((l) => l.text !== 'FORM EC8A')];
 eq('a stray "A" in a header does not move A\'s row', parseCounts(textOf(dup), REAL, dup).A, 12);
+
+console.log('\n── number words (same line, no geometry) ──');
+const one = (line) => parseCounts(line, ['APC']).APC;
+eq('words alone give the count', one('APC ONE HUNDRED AND TWENTY-SIX'), 126);
+eq('figures and words that agree', one('APC 126 ONE HUNDRED AND TWENTY-SIX'), 126);
+eq('figures and words that disagree leave it blank', one('APC 125 ONE HUNDRED AND TWENTY-SIX'), undefined);
+eq('number words that do not add up block the figure too', one('APC 10 ONE HURAREI AND'), undefined);
+eq('"ONE HUNDRED AND" with nothing after is incomplete', one('APC ONE HUNDRED AND'), undefined);
+eq('NIL is 0', one('APC NIL'), 0);
+eq('NONE is 0, not a misread ONE', one('APC NONE'), 0);
+eq('a lone smudge reads as the word it is closest to (ZERD)', one('APC ZERD'), 0);
+eq('a misspelling one letter out (NINTY)', one('APC NINTY'), 90);
+eq('a fuzzy word beside a clean one (FOURTY TWO)', one('APC FOURTY TWO'), 42);
+eq('two smudged words with no clean one are not trusted (FOURTY TWU)', one('APC FOURTY TWU'), undefined);
+eq('"OND" mid-phrase is AND', one('APC ONE HUNDRED OND FIVE'), 105);
+eq('"OND" alone is ONE or AND — refused', one('APC OND'), undefined);
+eq('"T0" (a misread 90) is not TWO', one('APC T0'), undefined);
+eq('"NINE TEEN" is a split NINETEEN — refused', one('APC NINE TEEN'), undefined);
+eq('words in the wrong order are refused', one('APC FIVE TWENTY'), undefined);
+eq('HUNDRED HUNDRED HUNDRED is not a million', one('APC HUNDRED HUNDRED HUNDRED'), undefined);
+eq('a thousands separator does not shift the words', one('APC 1,204 ONE THOUSAND TWO HUNDRED AND FOUR'), 1204);
+eq('"1OO" beside ONE HUNDRED', one('APC 1OO ONE HUNDRED'), 100);
+
+// ── Apple Vision's own output (tests/fixtures/vision/), the 29 Oct probe ──────
+// Whatever these propose must be RIGHT; a blank is acceptable, a wrong count is not.
+const fixture = (f) => JSON.parse(fs.readFileSync(new URL(`./fixtures/vision/${f}`, import.meta.url), 'utf8'));
+const wrong = (got, truth) => Object.entries(got).filter(([k, v]) => truth[k] !== v).map(([k, v]) => `${k}=${v} (sheet says ${truth[k]})`);
+
+console.log('\n── Apple Vision on a real Osun EC8A (29-01-01-001) ──');
+const OSUN_CODES = ['A', 'AA', 'AAC', 'ADC', 'ADP', 'APC', 'APGA', 'APM', 'APP', 'BP', 'NNPP', 'PRP', 'SDP', 'YPP', 'ZLP'];
+const OSUN_TRUTH = { A: 110, AA: 1, AAC: 1, ADC: 9, ADP: 0, APC: 90, APGA: 0, APM: 0, APP: 0, BP: 0, NNPP: 0, PRP: 0, SDP: 0, YPP: 1, ZLP: 1 };
+const osun = fixture('osun-29-01-01-001.json');
+// CONTROL: Vision returned almost none of the handwritten figures, so a
+// figures-only reader cannot work on this sheet; only the words make it readable.
+const figuresRead = osun.lines.filter((l) => /^\d{1,3}$/.test(l.text) && l.left > 700 && l.left < 900).length;
+eq('control: Vision read at most 2 of 15 handwritten figures', figuresRead <= 2, true);
+const osunGot = parseCounts(osun.text, OSUN_CODES, osun.lines);
+eq('nothing proposed is wrong', wrong(osunGot, OSUN_TRUTH), []);
+eq('13 of 15 parties pre-fill from the words', osunGot,
+  { AA: 1, AAC: 1, ADC: 9, ADP: 0, APC: 90, APGA: 0, APM: 0, APP: 0, NNPP: 0, PRP: 0, SDP: 0, YPP: 1, ZLP: 1 });
+eq('A stays blank: Vision read 110 as "10" and its words do not parse', osunGot.A, undefined);
+
+console.log('\n── Apple Vision on the owner\'s practice sheet (re-film frame) ──');
+const refilm = fixture('practice-specimen-refilm-frame.json');
+const refilmGot = parseCounts(refilm.text, PRACTICE, refilm.lines);
+eq('nothing proposed is wrong (Party B was read as "Panty•"; C must not take its 17)',
+  wrong(refilmGot, { 'Party A': 42, 'Party B': 17, 'Party C': 0, 'Party D': 4 }), []);
+eq('A from its figure and words, C from "26RO" (ZERO)', refilmGot, { 'Party A': 42, 'Party C': 0 });
 
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

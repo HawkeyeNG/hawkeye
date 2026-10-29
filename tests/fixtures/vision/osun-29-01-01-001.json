@@ -1,0 +1,709 @@
+{
+ "source": "Real Osun 2026 EC8A, PU 29-01-01-001, photographed; names and signatures pixelated before reading.",
+ "reader": "Apple Vision VNRecognizeTextRequest revision 3 on macOS 26 (GitHub macos-26 runner), the app's settings: accurate, en-US, language correction off; boxes converted as HawkeyeVisionModule.swift does",
+ "width": 1920,
+ "height": 2810,
+ "text": "INDEPENDENT NATIONAL ELECTORAL COMMISSION\n2026 OSUN STATE GOVERNORSHIP ELECTION\nSTATEMENT OF RESULT OF POLL FROM POLLING UNIT\nFORM EC BA\nState...\nOSUN\n...\n9\nCode\nLocal Government Area.\nATAKUMOSA EAST\nCode\n1\nRegistration Area\nIWARA\n......Code\n1\nPolling Unit..\nS/N..0000001\nNumber of Votors on the Register\n#2\nNumber of Accredited Voters\nNumber of Ballot Papers Issued\nto the Polling Unit\n#4\nNumber of Unused Ballot Papers\n147\n219\n949\n732\n#5\nNumber of Spolled Ballot Papers\n#6 Number of Rejected Ballots\n#7\nNumber of Total Valid Votes\n(Total Valld Votes cast for all parties)\n#8\n(Totdl ornee or d Bao Papers 217\n(Total of #5 + #6 + #7 above)\nS/N\n1\n2\n3\n4\n5\n8\n9\n10\n11\n12\n13\n14\n15\nPOLITICAL\nPARTY\nA\nAA\nAAC\nADC\nADP\nAPC\nAPGA\nAPM\nAPP\nBP\nNNPP\nPRP\nSDP\nYPP\nZLP\nTOWN.HALL WARA\n..Code O\nVOTES SCORED\nIN FIGURES\nIN WORDS\n10\nONE HURAREI AND\nOne\nONE\nNINE\nZERD\nT0\nNINETY\nZERO\nZERO\nZERO\nLGKC\nZERI\nZERO\nZEKO\nONE\nONE\nTOTAL VALID VOTES\n(Record Total Valld Votes under I7 above)\n213 TWO HUNARED AND THRTGEN\ncontained in this form is a true and accurate account of votes cas\n.... (Name of Presiding Officer) hereby certify that the information\nCONTESTED/NOT CONTESTED\n15/08/ 2026\nDate",
+ "lines": [
+  {
+   "text": "INDEPENDENT NATIONAL ELECTORAL COMMISSION",
+   "left": 637.3,
+   "right": 1601.4,
+   "top": 343.0,
+   "bottom": 404.3
+  },
+  {
+   "text": "2026 OSUN STATE GOVERNORSHIP ELECTION",
+   "left": 668.5,
+   "right": 1570.0,
+   "top": 381.5,
+   "bottom": 468.1
+  },
+  {
+   "text": "STATEMENT OF RESULT OF POLL FROM POLLING UNIT",
+   "left": 750.7,
+   "right": 1483.8,
+   "top": 435.9,
+   "bottom": 494.7
+  },
+  {
+   "text": "FORM EC BA",
+   "left": 1523.7,
+   "right": 1679.0,
+   "top": 510.5,
+   "bottom": 535.0
+  },
+  {
+   "text": "State...",
+   "left": 424.9,
+   "right": 502.5,
+   "top": 600.4,
+   "bottom": 629.0
+  },
+  {
+   "text": "OSUN",
+   "left": 698.6,
+   "right": 800.7,
+   "top": 592.2,
+   "bottom": 629.0
+  },
+  {
+   "text": "...",
+   "left": 976.3,
+   "right": 1000.9,
+   "top": 637.2,
+   "bottom": 657.6
+  },
+  {
+   "text": "9",
+   "left": 1152.0,
+   "right": 1176.5,
+   "top": 612.6,
+   "bottom": 637.2
+  },
+  {
+   "text": "Code",
+   "left": 1017.2,
+   "right": 1082.6,
+   "top": 624.9,
+   "bottom": 653.5
+  },
+  {
+   "text": "Local Government Area.",
+   "left": 399.7,
+   "right": 674.9,
+   "top": 699.6,
+   "bottom": 735.8
+  },
+  {
+   "text": "ATAKUMOSA EAST",
+   "left": 730.0,
+   "right": 977.3,
+   "top": 699.6,
+   "bottom": 740.0
+  },
+  {
+   "text": "Code",
+   "left": 1021.3,
+   "right": 1090.7,
+   "top": 722.9,
+   "bottom": 751.5
+  },
+  {
+   "text": "1",
+   "left": 1156.1,
+   "right": 1176.5,
+   "top": 710.7,
+   "bottom": 739.3
+  },
+  {
+   "text": "Registration Area",
+   "left": 392.2,
+   "right": 600.5,
+   "top": 792.0,
+   "bottom": 821.0
+  },
+  {
+   "text": "IWARA",
+   "left": 772.0,
+   "right": 862.0,
+   "top": 792.1,
+   "bottom": 821.2
+  },
+  {
+   "text": "......Code",
+   "left": 984.5,
+   "right": 1090.7,
+   "top": 816.9,
+   "bottom": 845.5
+  },
+  {
+   "text": "1",
+   "left": 1156.1,
+   "right": 1176.5,
+   "top": 812.8,
+   "bottom": 841.4
+  },
+  {
+   "text": "Polling Unit..",
+   "left": 384.0,
+   "right": 535.2,
+   "top": 894.3,
+   "bottom": 927.3
+  },
+  {
+   "text": "S/N..0000001",
+   "left": 1315.2,
+   "right": 1495.3,
+   "top": 550.5,
+   "bottom": 593.1
+  },
+  {
+   "text": "Number of Votors on the Register",
+   "left": 1245.4,
+   "right": 1552.9,
+   "top": 604.8,
+   "bottom": 638.9
+  },
+  {
+   "text": "#2",
+   "left": 1209.2,
+   "right": 1233.7,
+   "top": 649.4,
+   "bottom": 669.8
+  },
+  {
+   "text": "Number of Accredited Voters",
+   "left": 1254.1,
+   "right": 1523.7,
+   "top": 653.0,
+   "bottom": 678.0
+  },
+  {
+   "text": "Number of Ballot Papers Issued",
+   "left": 1246.0,
+   "right": 1544.2,
+   "top": 686.0,
+   "bottom": 711.0
+  },
+  {
+   "text": "to the Polling Unit",
+   "left": 1246.0,
+   "right": 1425.7,
+   "top": 710.7,
+   "bottom": 731.1
+  },
+  {
+   "text": "#4",
+   "left": 1205.1,
+   "right": 1237.8,
+   "top": 739.3,
+   "bottom": 755.6
+  },
+  {
+   "text": "Number of Unused Ballot Papers",
+   "left": 1246.0,
+   "right": 1556.4,
+   "top": 739.0,
+   "bottom": 764.0
+  },
+  {
+   "text": "147",
+   "left": 1601.4,
+   "right": 1687.1,
+   "top": 616.7,
+   "bottom": 657.6
+  },
+  {
+   "text": "219",
+   "left": 1597.3,
+   "right": 1683.1,
+   "top": 657.6,
+   "bottom": 682.1
+  },
+  {
+   "text": "949",
+   "left": 1597.3,
+   "right": 1699.4,
+   "top": 694.3,
+   "bottom": 743.3
+  },
+  {
+   "text": "732",
+   "left": 1593.2,
+   "right": 1703.5,
+   "top": 739.3,
+   "bottom": 788.3
+  },
+  {
+   "text": "#5",
+   "left": 1205.1,
+   "right": 1237.8,
+   "top": 784.2,
+   "bottom": 804.6
+  },
+  {
+   "text": "Number of Spolled Ballot Papers",
+   "left": 1241.5,
+   "right": 1560.8,
+   "top": 783.8,
+   "bottom": 813.7
+  },
+  {
+   "text": "#6 Number of Rejected Ballots",
+   "left": 1213.3,
+   "right": 1511.5,
+   "top": 833.0,
+   "bottom": 858.0
+  },
+  {
+   "text": "#7",
+   "left": 1209.2,
+   "right": 1237.8,
+   "top": 878.1,
+   "bottom": 898.5
+  },
+  {
+   "text": "Number of Total Valid Votes",
+   "left": 1246.0,
+   "right": 1515.6,
+   "top": 870.0,
+   "bottom": 894.5
+  },
+  {
+   "text": "(Total Valld Votes cast for all parties)",
+   "left": 1245.7,
+   "right": 1597.5,
+   "top": 890.2,
+   "bottom": 919.3
+  },
+  {
+   "text": "#8",
+   "left": 1209.2,
+   "right": 1237.8,
+   "top": 927.1,
+   "bottom": 947.6
+  },
+  {
+   "text": "(Totdl ornee or d Bao Papers 217",
+   "left": 1241.9,
+   "right": 1744.3,
+   "top": 919.0,
+   "bottom": 972.1
+  },
+  {
+   "text": "(Total of #5 + #6 + #7 above)",
+   "left": 1241.9,
+   "right": 1519.7,
+   "top": 939.0,
+   "bottom": 964.0
+  },
+  {
+   "text": "S/N",
+   "left": 384.0,
+   "right": 424.9,
+   "top": 976.1,
+   "bottom": 996.6
+  },
+  {
+   "text": "1",
+   "left": 388.1,
+   "right": 412.6,
+   "top": 1033.3,
+   "bottom": 1070.1
+  },
+  {
+   "text": "2",
+   "left": 379.9,
+   "right": 404.4,
+   "top": 1090.5,
+   "bottom": 1127.3
+  },
+  {
+   "text": "3",
+   "left": 375.8,
+   "right": 400.3,
+   "top": 1147.7,
+   "bottom": 1180.4
+  },
+  {
+   "text": "4",
+   "left": 371.7,
+   "right": 396.3,
+   "top": 1209.0,
+   "bottom": 1241.6
+  },
+  {
+   "text": "5",
+   "left": 367.7,
+   "right": 392.2,
+   "top": 1266.1,
+   "bottom": 1298.8
+  },
+  {
+   "text": "8",
+   "left": 351.3,
+   "right": 375.8,
+   "top": 1449.9,
+   "bottom": 1482.6
+  },
+  {
+   "text": "9",
+   "left": 343.1,
+   "right": 367.7,
+   "top": 1515.3,
+   "bottom": 1548.0
+  },
+  {
+   "text": "10",
+   "left": 326.8,
+   "right": 371.7,
+   "top": 1580.6,
+   "bottom": 1617.4
+  },
+  {
+   "text": "11",
+   "left": 318.6,
+   "right": 363.6,
+   "top": 1641.9,
+   "bottom": 1678.6
+  },
+  {
+   "text": "12",
+   "left": 314.6,
+   "right": 359.5,
+   "top": 1711.3,
+   "bottom": 1748.1
+  },
+  {
+   "text": "13",
+   "left": 306.4,
+   "right": 351.3,
+   "top": 1776.7,
+   "bottom": 1813.4
+  },
+  {
+   "text": "14",
+   "left": 302.3,
+   "right": 347.2,
+   "top": 1846.1,
+   "bottom": 1882.9
+  },
+  {
+   "text": "15",
+   "left": 294.1,
+   "right": 339.1,
+   "top": 1911.5,
+   "bottom": 1952.3
+  },
+  {
+   "text": "POLITICAL",
+   "left": 498.0,
+   "right": 654.6,
+   "top": 961.1,
+   "bottom": 995.1
+  },
+  {
+   "text": "PARTY",
+   "left": 527.0,
+   "right": 629.1,
+   "top": 992.5,
+   "bottom": 1025.2
+  },
+  {
+   "text": "A",
+   "left": 559.7,
+   "right": 592.3,
+   "top": 1041.5,
+   "bottom": 1074.2
+  },
+  {
+   "text": "AA",
+   "left": 543.3,
+   "right": 596.4,
+   "top": 1094.6,
+   "bottom": 1131.4
+  },
+  {
+   "text": "AAC",
+   "left": 531.1,
+   "right": 604.6,
+   "top": 1151.8,
+   "bottom": 1188.5
+  },
+  {
+   "text": "ADC",
+   "left": 527.0,
+   "right": 600.5,
+   "top": 1213.0,
+   "bottom": 1249.8
+  },
+  {
+   "text": "ADP",
+   "left": 522.9,
+   "right": 596.4,
+   "top": 1274.3,
+   "bottom": 1307.0
+  },
+  {
+   "text": "APC",
+   "left": 518.8,
+   "right": 592.3,
+   "top": 1331.5,
+   "bottom": 1368.2
+  },
+  {
+   "text": "APGA",
+   "left": 502.5,
+   "right": 600.5,
+   "top": 1392.7,
+   "bottom": 1429.5
+  },
+  {
+   "text": "APM",
+   "left": 506.6,
+   "right": 588.3,
+   "top": 1454.0,
+   "bottom": 1490.8
+  },
+  {
+   "text": "APP",
+   "left": 506.6,
+   "right": 580.1,
+   "top": 1515.3,
+   "bottom": 1552.0
+  },
+  {
+   "text": "BP",
+   "left": 514.7,
+   "right": 567.8,
+   "top": 1580.6,
+   "bottom": 1617.4
+  },
+  {
+   "text": "NNPP",
+   "left": 486.1,
+   "right": 584.2,
+   "top": 1646.0,
+   "bottom": 1682.7
+  },
+  {
+   "text": "PRP",
+   "left": 494.3,
+   "right": 567.8,
+   "top": 1711.3,
+   "bottom": 1748.1
+  },
+  {
+   "text": "SDP",
+   "left": 486.1,
+   "right": 563.7,
+   "top": 1776.7,
+   "bottom": 1813.4
+  },
+  {
+   "text": "YPP",
+   "left": 482.0,
+   "right": 555.6,
+   "top": 1846.1,
+   "bottom": 1882.9
+  },
+  {
+   "text": "ZLP",
+   "left": 477.8,
+   "right": 551.7,
+   "top": 1915.1,
+   "bottom": 1952.7
+  },
+  {
+   "text": "TOWN.HALL WARA",
+   "left": 631.2,
+   "right": 847.1,
+   "top": 898.9,
+   "bottom": 945.8
+  },
+  {
+   "text": "..Code O",
+   "left": 837.4,
+   "right": 1135.7,
+   "top": 919.0,
+   "bottom": 952.0
+  },
+  {
+   "text": "VOTES SCORED",
+   "left": 886.5,
+   "right": 1107.1,
+   "top": 976.0,
+   "bottom": 1013.0
+  },
+  {
+   "text": "IN FIGURES",
+   "left": 714.9,
+   "right": 923.2,
+   "top": 1004.7,
+   "bottom": 1033.3
+  },
+  {
+   "text": "IN WORDS",
+   "left": 1017.2,
+   "right": 1205.1,
+   "top": 1017.0,
+   "bottom": 1046.0
+  },
+  {
+   "text": "10",
+   "left": 755.7,
+   "right": 849.7,
+   "top": 1045.6,
+   "bottom": 1098.7
+  },
+  {
+   "text": "ONE HURAREI AND",
+   "left": 934.6,
+   "right": 1299.9,
+   "top": 1061.3,
+   "bottom": 1115.5
+  },
+  {
+   "text": "One",
+   "left": 980.4,
+   "right": 1139.7,
+   "top": 1115.0,
+   "bottom": 1164.0
+  },
+  {
+   "text": "ONE",
+   "left": 972.3,
+   "right": 1156.1,
+   "top": 1168.1,
+   "bottom": 1229.4
+  },
+  {
+   "text": "NINE",
+   "left": 972.3,
+   "right": 1172.4,
+   "top": 1221.2,
+   "bottom": 1282.5
+  },
+  {
+   "text": "ZERD",
+   "left": 976.3,
+   "right": 1160.2,
+   "top": 1294.7,
+   "bottom": 1335.6
+  },
+  {
+   "text": "T0",
+   "left": 735.3,
+   "right": 817.0,
+   "top": 1327.4,
+   "bottom": 1388.7
+  },
+  {
+   "text": "NINETY",
+   "left": 943.7,
+   "right": 1205.1,
+   "top": 1335.6,
+   "bottom": 1413.2
+  },
+  {
+   "text": "ZERO",
+   "left": 972.3,
+   "right": 1180.6,
+   "top": 1417.3,
+   "bottom": 1470.3
+  },
+  {
+   "text": "ZERO",
+   "left": 972.3,
+   "right": 1196.9,
+   "top": 1470.3,
+   "bottom": 1531.6
+  },
+  {
+   "text": "ZERO",
+   "left": 972.3,
+   "right": 1196.9,
+   "top": 1527.5,
+   "bottom": 1580.6
+  },
+  {
+   "text": "LGKC",
+   "left": 992.7,
+   "right": 1176.5,
+   "top": 1609.2,
+   "bottom": 1650.1
+  },
+  {
+   "text": "ZERI",
+   "left": 989.4,
+   "right": 1180.0,
+   "top": 1656.2,
+   "bottom": 1712.1
+  },
+  {
+   "text": "ZERO",
+   "left": 972.3,
+   "right": 1184.7,
+   "top": 1719.5,
+   "bottom": 1776.7
+  },
+  {
+   "text": "ZEKO",
+   "left": 996.8,
+   "right": 1221.4,
+   "top": 1797.1,
+   "bottom": 1846.1
+  },
+  {
+   "text": "ONE",
+   "left": 980.4,
+   "right": 1127.5,
+   "top": 1846.1,
+   "bottom": 1911.5
+  },
+  {
+   "text": "ONE",
+   "left": 972.3,
+   "right": 1164.3,
+   "top": 1915.5,
+   "bottom": 1980.9
+  },
+  {
+   "text": "TOTAL VALID VOTES",
+   "left": 277.8,
+   "right": 625.0,
+   "top": 1997.0,
+   "bottom": 2034.0
+  },
+  {
+   "text": "(Record Total Valld Votes under I7 above)",
+   "left": 273.7,
+   "right": 641.4,
+   "top": 2038.0,
+   "bottom": 2075.0
+  },
+  {
+   "text": "213 TWO HUNARED AND THRTGEN",
+   "left": 701.6,
+   "right": 1496.3,
+   "top": 2023.1,
+   "bottom": 2117.2
+  },
+  {
+   "text": "contained in this form is a true and accurate account of votes cas",
+   "left": 236.3,
+   "right": 1173.2,
+   "top": 2182.9,
+   "bottom": 2239.7
+  },
+  {
+   "text": ".... (Name of Presiding Officer) hereby certify that the information",
+   "left": 894.2,
+   "right": 1793.9,
+   "top": 2159.2,
+   "bottom": 2221.3
+  },
+  {
+   "text": "CONTESTED/NOT CONTESTED",
+   "left": 227.9,
+   "right": 711.7,
+   "top": 2220.1,
+   "bottom": 2271.7
+  },
+  {
+   "text": "15/08/ 2026",
+   "left": 240.7,
+   "right": 626.6,
+   "top": 2271.2,
+   "bottom": 2348.3
+  },
+  {
+   "text": "Date",
+   "left": 433.0,
+   "right": 502.5,
+   "top": 2364.8,
+   "bottom": 2401.6
+  }
+ ]
+}

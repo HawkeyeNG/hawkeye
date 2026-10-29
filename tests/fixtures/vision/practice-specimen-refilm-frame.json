@@ -1,0 +1,226 @@
+{
+ "source": "The owner's printed practice specimen as the 28 Oct re-film shows it (a 384 px screen-recording frame, so a weak read).",
+ "reader": "Apple Vision VNRecognizeTextRequest revision 3 on macOS 26 (GitHub macos-26 runner), the app's settings: accurate, en-US, language correction off; boxes converted as HawkeyeVisionModule.swift does",
+ "width": 384,
+ "height": 499,
+ "text": "0098111\nSPECIMEN _ TRAINING SHEETI\nNOT AN MIC DOL\nareтisтaнсоa Blcо\nSTATEMENT OF RESULT OF POLL FROM POLLING UNIT\nFCT\nloca ConemmensAo\nRogstraton Ane\nMing t\nMing una Cole\nMUNBEAPAL\nCOACкI\nWONDERLAND ESTATE\nBlHoHalzHiah\n85\n67\n18\n63\n67\nParty A\nPanty•\nPartyc\n42\n17\nFORTY - TwO\nSEVENTERN\n26RO\nFOUR\nSIXTY - THAGE\n63\nAultny ofces cnty soe to",
+ "lines": [
+  {
+   "text": "0098111",
+   "left": 314.0,
+   "right": 350.0,
+   "top": 4.0,
+   "bottom": 14.0
+  },
+  {
+   "text": "SPECIMEN _ TRAINING SHEETI",
+   "left": 142.0,
+   "right": 252.0,
+   "top": 10.0,
+   "bottom": 16.0
+  },
+  {
+   "text": "NOT AN MIC DOL",
+   "left": 136.0,
+   "right": 172.0,
+   "top": 18.0,
+   "bottom": 25.9
+  },
+  {
+   "text": "areтisтaнсоa Blcо",
+   "left": 174.0,
+   "right": 256.0,
+   "top": 20.0,
+   "bottom": 24.0
+  },
+  {
+   "text": "STATEMENT OF RESULT OF POLL FROM POLLING UNIT",
+   "left": 108.0,
+   "right": 286.0,
+   "top": 25.9,
+   "bottom": 35.9
+  },
+  {
+   "text": "FCT",
+   "left": 80.0,
+   "right": 112.0,
+   "top": 49.9,
+   "bottom": 65.9
+  },
+  {
+   "text": "loca ConemmensAo",
+   "left": 44.0,
+   "right": 106.0,
+   "top": 67.9,
+   "bottom": 79.8
+  },
+  {
+   "text": "Rogstraton Ane",
+   "left": 44.0,
+   "right": 88.0,
+   "top": 81.8,
+   "bottom": 91.8
+  },
+  {
+   "text": "Ming t",
+   "left": 46.0,
+   "right": 74.0,
+   "top": 95.8,
+   "bottom": 105.8
+  },
+  {
+   "text": "Ming una Cole",
+   "left": 46.0,
+   "right": 86.0,
+   "top": 109.8,
+   "bottom": 119.8
+  },
+  {
+   "text": "MUNBEAPAL",
+   "left": 110.0,
+   "right": 172.0,
+   "top": 65.8,
+   "bottom": 80.0
+  },
+  {
+   "text": "COACкI",
+   "left": 102.0,
+   "right": 142.0,
+   "top": 79.8,
+   "bottom": 93.8
+  },
+  {
+   "text": "WONDERLAND ESTATE",
+   "left": 94.0,
+   "right": 208.0,
+   "top": 93.8,
+   "bottom": 105.8
+  },
+  {
+   "text": "BlHoHalzHiah",
+   "left": 94.0,
+   "right": 212.0,
+   "top": 107.8,
+   "bottom": 127.7
+  },
+  {
+   "text": "85",
+   "left": 320.0,
+   "right": 340.0,
+   "top": 53.9,
+   "bottom": 69.9
+  },
+  {
+   "text": "67",
+   "left": 322.0,
+   "right": 342.0,
+   "top": 67.9,
+   "bottom": 77.8
+  },
+  {
+   "text": "18",
+   "left": 322.0,
+   "right": 338.0,
+   "top": 93.8,
+   "bottom": 105.8
+  },
+  {
+   "text": "63",
+   "left": 324.0,
+   "right": 338.0,
+   "top": 131.7,
+   "bottom": 143.7
+  },
+  {
+   "text": "67",
+   "left": 322.0,
+   "right": 340.0,
+   "top": 145.7,
+   "bottom": 155.7
+  },
+  {
+   "text": "Party A",
+   "left": 78.0,
+   "right": 102.0,
+   "top": 185.6,
+   "bottom": 195.6
+  },
+  {
+   "text": "Panty•",
+   "left": 78.0,
+   "right": 102.0,
+   "top": 215.6,
+   "bottom": 225.5
+  },
+  {
+   "text": "Partyc",
+   "left": 78.0,
+   "right": 102.0,
+   "top": 245.5,
+   "bottom": 255.5
+  },
+  {
+   "text": "42",
+   "left": 130.0,
+   "right": 160.0,
+   "top": 193.6,
+   "bottom": 211.6
+  },
+  {
+   "text": "17",
+   "left": 134.0,
+   "right": 158.0,
+   "top": 225.5,
+   "bottom": 239.5
+  },
+  {
+   "text": "FORTY - TwO",
+   "left": 200.0,
+   "right": 278.0,
+   "top": 191.6,
+   "bottom": 211.6
+  },
+  {
+   "text": "SEVENTERN",
+   "left": 198.0,
+   "right": 272.0,
+   "top": 221.6,
+   "bottom": 237.5
+  },
+  {
+   "text": "26RO",
+   "left": 208.0,
+   "right": 242.0,
+   "top": 255.5,
+   "bottom": 269.5
+  },
+  {
+   "text": "FOUR",
+   "left": 208.0,
+   "right": 242.0,
+   "top": 277.4,
+   "bottom": 293.4
+  },
+  {
+   "text": "SIXTY - THAGE",
+   "left": 204.0,
+   "right": 288.0,
+   "top": 307.3,
+   "bottom": 323.5
+  },
+  {
+   "text": "63",
+   "left": 134.0,
+   "right": 158.0,
+   "top": 309.4,
+   "bottom": 325.3
+  },
+  {
+   "text": "Aultny ofces cnty soe to",
+   "left": 136.0,
+   "right": 206.0,
+   "top": 339.3,
+   "bottom": 349.3
+  }
+ ]
+}

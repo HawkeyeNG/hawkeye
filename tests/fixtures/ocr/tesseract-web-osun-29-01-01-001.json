@@ -1,0 +1,273 @@
+{
+ "source": "Real Osun 2026 EC8A, PU 29-01-01-001, photographed; names and signatures pixelated before reading.",
+ "reader": "The website's own reader: Tesseract.js (app/vendor/tesseract, eng) through webOcrSheet() in app/app.js, in Chromium; boxes are Tesseract's line bboxes",
+ "text": "3 ee a ae ‘\n; oe ee\n= arate NATIONAL ELECTORAL COMMISSION =\n-— : 4\nfeo 026 OSUN STATE GOVERNORSHIP ELECTION 4\nINES / ATEMENT OF RESULT OF POLL FROM POLLING UNIT ql\nFORM EC BA\nSIN 9000004 cen\nS880 ssonnrsnnn OSUN code [2 [9 || [meron cneneasir Lupe |\na #2 | Number of Accredited Voters ksi\n43 Number of Ballot Papers Iseued ‘\nLocal Government Area,.... ATAKUMOSA EAST Code! | 1 | tothe Polling Unit______ ¢\nten CO | a\nRegistration Area IWARA ol4 = Muteet of Spelleg Pale: Cala e\n‘ SetheectensessestesssessaysenesOOUO #6 | Number of Rejected Ballots\n7 Number of Total Valid Votes\n; (Total Valid Votes cast for all partion\nPolling Unit TOWN HALL IWARA Code lo 0 1 | “8 Ce Nae oT eet\n| POLITICAL | VOTES SCORED\nane IGURRE IN WORD |\na |\n| \\ Ort HUNDREUS Any\n| One\n| ONE\n| NIN ¢\n(eos 2\n\\ 1| W¢ | ;\n\\ FE {2.1\noun om\n( ( }\nND |Gel ¢ en\n( 1) hereby certify that the information\nontained in this form i true ( ot\nCONTESTED/NOT CONTESTED\nre [ : | P ‘ ry\nIS10% 20 2 ki\nDate it aera bed\nS 2) he\n",
+ "lines": [
+  {
+   "text": "3 ee a ae ‘",
+   "left": 396,
+   "right": 1767,
+   "top": 281,
+   "bottom": 326
+  },
+  {
+   "text": "; oe ee",
+   "left": 395,
+   "right": 1765,
+   "top": 333,
+   "bottom": 373
+  },
+  {
+   "text": "= arate NATIONAL ELECTORAL COMMISSION =",
+   "left": 503,
+   "right": 1761,
+   "top": 329,
+   "bottom": 430
+  },
+  {
+   "text": "-— : 4",
+   "left": 497,
+   "right": 1759,
+   "top": 394,
+   "bottom": 431
+  },
+  {
+   "text": "feo 026 OSUN STATE GOVERNORSHIP ELECTION 4",
+   "left": 450,
+   "right": 1562,
+   "top": 387,
+   "bottom": 463
+  },
+  {
+   "text": "INES / ATEMENT OF RESULT OF POLL FROM POLLING UNIT ql",
+   "left": 464,
+   "right": 1769,
+   "top": 440,
+   "bottom": 496
+  },
+  {
+   "text": "FORM EC BA",
+   "left": 1531,
+   "right": 1677,
+   "top": 514,
+   "bottom": 530
+  },
+  {
+   "text": "SIN 9000004 cen",
+   "left": 1324,
+   "right": 1522,
+   "top": 552,
+   "bottom": 584
+  },
+  {
+   "text": "S880 ssonnrsnnn OSUN code [2 [9 || [meron cneneasir Lupe |",
+   "left": 425,
+   "right": 1777,
+   "top": 592,
+   "bottom": 661
+  },
+  {
+   "text": "a #2 | Number of Accredited Voters ksi",
+   "left": 864,
+   "right": 1649,
+   "top": 639,
+   "bottom": 695
+  },
+  {
+   "text": "43 Number of Ballot Papers Iseued ‘",
+   "left": 1204,
+   "right": 1792,
+   "top": 678,
+   "bottom": 712
+  },
+  {
+   "text": "Local Government Area,.... ATAKUMOSA EAST Code! | 1 | tothe Polling Unit______ ¢",
+   "left": 405,
+   "right": 1803,
+   "top": 683,
+   "bottom": 753
+  },
+  {
+   "text": "ten CO | a",
+   "left": 931,
+   "right": 1799,
+   "top": 740,
+   "bottom": 778
+  },
+  {
+   "text": "Registration Area IWARA ol4 = Muteet of Spelleg Pale: Cala e",
+   "left": 397,
+   "right": 1674,
+   "top": 784,
+   "bottom": 839
+  },
+  {
+   "text": "‘ SetheectensessestesssessaysenesOOUO #6 | Number of Rejected Ballots",
+   "left": 761,
+   "right": 1507,
+   "top": 820,
+   "bottom": 854
+  },
+  {
+   "text": "7 Number of Total Valid Votes",
+   "left": 1213,
+   "right": 1552,
+   "top": 865,
+   "bottom": 896
+  },
+  {
+   "text": "; (Total Valid Votes cast for all partion",
+   "left": 396,
+   "right": 1587,
+   "top": 893,
+   "bottom": 920
+  },
+  {
+   "text": "Polling Unit TOWN HALL IWARA Code lo 0 1 | “8 Ce Nae oT eet",
+   "left": 388,
+   "right": 1587,
+   "top": 888,
+   "bottom": 962
+  },
+  {
+   "text": "| POLITICAL | VOTES SCORED",
+   "left": 442,
+   "right": 1750,
+   "top": 962,
+   "bottom": 1015
+  },
+  {
+   "text": "ane IGURRE IN WORD |",
+   "left": 698,
+   "right": 1299,
+   "top": 1007,
+   "bottom": 1060
+  },
+  {
+   "text": "a |",
+   "left": 840,
+   "right": 1299,
+   "top": 1055,
+   "bottom": 1080
+  },
+  {
+   "text": "| \\ Ort HUNDREUS Any",
+   "left": 764,
+   "right": 1294,
+   "top": 1044,
+   "bottom": 1105
+  },
+  {
+   "text": "| One",
+   "left": 780,
+   "right": 1113,
+   "top": 1108,
+   "bottom": 1154
+  },
+  {
+   "text": "| ONE",
+   "left": 776,
+   "right": 1124,
+   "top": 1172,
+   "bottom": 1228
+  },
+  {
+   "text": "| NIN ¢",
+   "left": 767,
+   "right": 1129,
+   "top": 1234,
+   "bottom": 1275
+  },
+  {
+   "text": "(eos 2",
+   "left": 1035,
+   "right": 1130,
+   "top": 1297,
+   "bottom": 1325
+  },
+  {
+   "text": "\\ 1| W¢ | ;",
+   "left": 778,
+   "right": 1163,
+   "top": 1354,
+   "bottom": 1387
+  },
+  {
+   "text": "\\ FE {2.1",
+   "left": 752,
+   "right": 1149,
+   "top": 1420,
+   "bottom": 1443
+  },
+  {
+   "text": "oun om",
+   "left": 1056,
+   "right": 1151,
+   "top": 1480,
+   "bottom": 1501
+  },
+  {
+   "text": "( ( }",
+   "left": 999,
+   "right": 1085,
+   "top": 1871,
+   "bottom": 1913
+  },
+  {
+   "text": "ND |Gel ¢ en",
+   "left": 1253,
+   "right": 1486,
+   "top": 2059,
+   "bottom": 2108
+  },
+  {
+   "text": "( 1) hereby certify that the information",
+   "left": 1156,
+   "right": 1788,
+   "top": 2172,
+   "bottom": 2206
+  },
+  {
+   "text": "ontained in this form i true ( ot",
+   "left": 255,
+   "right": 1070,
+   "top": 2191,
+   "bottom": 2227
+  },
+  {
+   "text": "CONTESTED/NOT CONTESTED",
+   "left": 235,
+   "right": 708,
+   "top": 2227,
+   "bottom": 2255
+  },
+  {
+   "text": "re [ : | P ‘ ry",
+   "left": 274,
+   "right": 1035,
+   "top": 2267,
+   "bottom": 2340
+  },
+  {
+   "text": "IS10% 20 2 ki",
+   "left": 255,
+   "right": 1072,
+   "top": 2296,
+   "bottom": 2357
+  },
+  {
+   "text": "Date it aera bed",
+   "left": 439,
+   "right": 1098,
+   "top": 2357,
+   "bottom": 2413
+  },
+  {
+   "text": "S 2) he",
+   "left": 152,
+   "right": 1094,
+   "top": 2411,
+   "bottom": 2443
+  }
+ ]
+}

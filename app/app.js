@@ -3864,7 +3864,7 @@ async function webOcrSheet(blob) {
       for (const p of b.paragraphs || []) {
         for (const ln of p.lines || []) {
           const bb = ln.bbox || {};
-          lines.push({ text: (ln.text || '').trim(), left: bb.x0 || 0, top: bb.y0 || 0, bottom: bb.y1 || 0 });
+          lines.push({ text: (ln.text || '').trim(), left: bb.x0 || 0, right: bb.x1 || 0, top: bb.y0 || 0, bottom: bb.y1 || 0 });
         }
       }
     }
@@ -3985,41 +3985,24 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
   const wrap = $('vote-inputs');
   const d = e.detail;
   if (!wrap || !d || !d.tokens || !d.tokens.length) return;
-  const lines = d.lines || [];
+  // The pairing is sheet-counts.js, the same code the native app runs: the
+  // first number after a party's code on its line, else by position in the
+  // ruled table, with the WORDS column read too and required to agree. It
+  // proposes nothing it is unsure of — a blank costs a tap, a wrong count can
+  // be accepted unread. A reader that gave no right edge gets a zero-width box.
+  const inputs = [...wrap.querySelectorAll('input[data-party]')];
+  const lines = (d.lines || []).map((l) => ({ ...l, right: l.right || l.left }));
+  const read = window.HAWKEYE_SHEETCOUNTS
+    ? window.HAWKEYE_SHEETCOUNTS.parseCounts(d.text || '', inputs.map((i) => i.dataset.party), lines)
+    : {};
   const filled = [];
-  for (const input of wrap.querySelectorAll('input[data-party]')) {
+  for (const input of inputs) {
     // Only fill empty inputs or ones we filled from a previous shot — never
     // overwrite a number the observer typed themselves.
     if (input.value !== '' && !input.classList.contains('ocr-filled')) continue;
     const code = input.dataset.party;
-    const re = new RegExp(`(^|[^A-Z0-9])${code}([^A-Z0-9]|$)`, 'i');
-    const row = lines.find((l) => re.test(l.text));
-    if (!row) continue;
-    // First number AFTER the code in the same line (EC8A: the FIGURES column
-    // follows the party name; anything before the code is the serial number).
-    // Tolerate the classic O→0 misread next to digits, nothing riskier —
-    // better to leave a count blank than to suggest a wrong one.
-    const ex = re.exec(row.text);
-    const after = row.text.slice(ex.index + ex[0].length)
-      // No lookbehind — a (?<=…) regex LITERAL is a parse-time SyntaxError on
-      // Safari/WebKit < 16.4, which would blank the whole page. Two passes of
-      // the capture-group form cover consecutive O misreads ("1OO" → "100").
-      .replace(/[Oo](?=\d)/g, '0')
-      .replace(/(\d)[Oo]/g, (_, d) => `${d}0`)
-      .replace(/(\d)[Oo]/g, (_, d) => `${d}0`);
-    let m = after.match(/\d{1,6}/);
-    let val = m && m[0];
-    if (val == null) {
-      // Table layouts (ML Kit): the count is a separate digits-only line to
-      // the right in the same visual row.
-      const midY = (row.top + row.bottom) / 2;
-      const cands = lines.filter((l) => /^\d{1,6}$/.test(l.text.trim())
-        && l.left > row.left && l.top <= midY && l.bottom >= midY);
-      cands.sort((a, b) => a.left - b.left);
-      if (cands.length) val = cands[0].text.trim();
-    }
-    if (val == null) continue;
-    input.value = String(parseInt(val, 10));
+    if (read[code] === undefined) continue;
+    input.value = String(read[code]);
     input.classList.add('ocr-filled');
     filled.push(code);
   }

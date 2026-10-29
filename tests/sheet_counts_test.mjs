@@ -1,7 +1,9 @@
 /* Party counts off a recognised sheet — run: node tests/sheet_counts_test.mjs
  *
  * Imports native/src/lib/sheet-counts.ts directly (Node strips the types), so
- * this measures the code the app runs, not a copy of it.
+ * this measures the code the app runs, not a copy of it. Every check then runs
+ * a second time against app/sheet-counts.js, the website's and Lite's mirror of
+ * it, so the three cannot drift apart unnoticed.
  *
  * THE FIXTURE IS THE OWNER'S SHEET. On 28 Oct 2026 the native app read a printed
  * practice specimen on an iPhone — "Readable — 26 lines with figures" — and
@@ -15,15 +17,22 @@
  * bug and every "ok" below proves nothing.
  */
 import fs from 'node:fs';
-import { parseCounts } from '../native/src/lib/sheet-counts.ts';
+import { parseCounts as appParse } from '../native/src/lib/sheet-counts.ts';
+
+import { execFileSync } from 'node:child_process';
+
+globalThis.window = {};
+await import('../app/sheet-counts.js');
+const webParse = globalThis.window.HAWKEYE_SHEETCOUNTS.parseCounts;
 
 let failed = 0;
+let tag = '';
 const eq = (label, actual, expected) => {
   const a = JSON.stringify(actual);
   const e = JSON.stringify(expected);
   const ok = a === e;
   if (!ok) failed += 1;
-  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${label}\n        got ${a}${ok ? '' : `, want ${e}`}`);
+  console.log(`${ok ? 'ok  ' : 'FAIL'}  ${tag}${label}\n        got ${a}${ok ? '' : `, want ${e}`}`);
 };
 
 const L = (text, left, right, top, bottom) => ({ text, left, right, top, bottom });
@@ -73,10 +82,21 @@ function shippedParseCounts(text, partyCodes) {
   return out;
 }
 
+console.log('\n── the website copy is generated from the app\'s ──');
+let fresh = true;
+try {
+  execFileSync(process.execPath, ['--no-warnings', new URL('../scripts/gen_sheet_counts_web.mjs', import.meta.url).pathname, '--check'], { stdio: 'pipe' });
+} catch { fresh = false; }
+eq('app/sheet-counts.js matches native/src/lib/sheet-counts.ts (else run scripts/gen_sheet_counts_web.mjs)', fresh, true);
+
 console.log('\n── CONTROL: the shipped parser on the owner\'s sheet ──');
 eq('shipped parser pairs nothing (reproduces the video)', shippedParseCounts(textOf(sheet()), PRACTICE), {});
 eq('shipped parser pairs nothing even when the reader merges "Party A 42"',
   shippedParseCounts('Party A 42 FORTY-TWO', PRACTICE), {});
+
+for (const [copy, parseCounts] of [['app', appParse], ['web', webParse]]) {
+tag = `[${copy}] `;
+console.log(`\n════ ${copy}: ${copy === 'app' ? 'native/src/lib/sheet-counts.ts' : 'app/sheet-counts.js'} ════`);
 
 console.log('\n── the owner\'s sheet ──');
 const S = sheet();
@@ -170,9 +190,10 @@ eq('the S/N before the code is not the count', parseCounts('3 APC 126', ['APC'])
 eq('a seven-digit run is not a tally', parseCounts('APC 0000388', ['APC']), {});
 eq('the first number after the code is the figures column', parseCounts('APC 126 ONE HUNDRED AND TWENTY-SIX 2', ['APC']), { APC: 126 });
 
-// A code that also appears outside the table: the label nearest the party column wins.
-const dup = [L('SECTION A', 500, 600, 60, 76), ...R.filter((l) => l.text !== 'FORM EC8A')];
-eq('a stray "A" in a header does not move A\'s row', parseCounts(textOf(dup), REAL, dup).A, 12);
+// A code that also stands alone outside the table (a stamp's letter, a margin
+// mark): the label nearest the party column wins.
+const dup = [L('A', 300, 316, 52, 68), ...R.filter((l) => l.text !== 'FORM EC8A')];
+eq('a stray "A" outside the party column does not move A\'s row', parseCounts(textOf(dup), REAL, dup).A, 12);
 
 console.log('\n── number words (same line, no geometry) ──');
 const one = (line) => parseCounts(line, ['APC']).APC;
@@ -195,6 +216,17 @@ eq('words in the wrong order are refused', one('APC FIVE TWENTY'), undefined);
 eq('HUNDRED HUNDRED HUNDRED is not a million', one('APC HUNDRED HUNDRED HUNDRED'), undefined);
 eq('a thousands separator does not shift the words', one('APC 1,204 ONE THOUSAND TWO HUNDRED AND FOUR'), 1204);
 eq('"1OO" beside ONE HUNDRED', one('APC 1OO ONE HUNDRED'), 100);
+
+console.log('\n── what is not a party label ──');
+// The website's Tesseract read of the Osun photo: no party code survived in the
+// table, but this noise did, and the stray "a" plus "#2" made Accord a 2.
+eq('a lowercase "a" in OCR noise is not party A', parseCounts('3 ee a ae\na #2 | Number of Accredited Voters', ['A']), {});
+eq('an uppercase A that starts its row still is', parseCounts('1 A 12 TWELVE', ['A']), { A: 12 });
+eq('"#2" is an item number, not a count', one('APC #2 Number of Accredited Voters'), undefined);
+eq('a code inside a heading or address labels nothing', one('Registration Area APC 12'), undefined);
+eq('a code at the very start of the line', one('APC 126'), 126);
+eq('a misread S/N before the code is still a row number ("1O APC 7")', one('1O APC 7'), 7);
+eq('table rules before the code are fine ("| 3 | APC | 45 |")', one('| 3 | APC | 45 |'), 45);
 
 // ── Apple Vision's own output (tests/fixtures/vision/), the 29 Oct probe ──────
 // Whatever these propose must be RIGHT; a blank is acceptable, a wrong count is not.
@@ -221,6 +253,23 @@ const refilmGot = parseCounts(refilm.text, PRACTICE, refilm.lines);
 eq('nothing proposed is wrong (Party B was read as "Panty•"; C must not take its 17)',
   wrong(refilmGot, { 'Party A': 42, 'Party B': 17, 'Party C': 0, 'Party D': 4 }), []);
 eq('A from its figure and words, C from "26RO" (ZERO)', refilmGot, { 'Party A': 42, 'Party C': 0 });
+
+console.log('\n── the website\'s reader (Tesseract.js) on the same Osun photo ──');
+// It read almost nothing of the party table, so pre-filling nothing is right;
+// the first port of this parser proposed A = 2 here, from "a #2 | Number of …".
+const tess = JSON.parse(fs.readFileSync(new URL('./fixtures/ocr/tesseract-web-osun-29-01-01-001.json', import.meta.url), 'utf8'));
+const tessGot = parseCounts(tess.text, OSUN_CODES, tess.lines);
+eq('nothing proposed is wrong', wrong(tessGot, OSUN_TRUTH), []);
+
+// The hard case (29-01-04-001). The website's old pairing proposed A = 5
+// (sheet: 101) and APC = 1263 (sheet: 126) from this same read.
+const HARD_TRUTH = { A: 101, AA: 0, AAC: 1, ADC: 5, ADP: 2, APC: 126, APGA: 2, APM: 0, APP: 0, BP: 0, NNPP: 0, PRP: 0, SDP: 1, YPP: 0, ZLP: 2 };
+const hard = JSON.parse(fs.readFileSync(new URL('./fixtures/ocr/tesseract-web-osun-29-01-04-001.json', import.meta.url), 'utf8'));
+const hardGot = parseCounts(hard.text, OSUN_CODES, hard.lines);
+eq('hard case: nothing proposed is wrong', wrong(hardGot, HARD_TRUTH), []);
+eq('hard case: APGA 2 from "7 APGA =2= -TWO-"', hardGot.APGA, 2);
+}
+tag = '';
 
 console.log(failed ? `\n${failed} FAILED` : '\nall passed');
 process.exit(failed ? 1 : 0);

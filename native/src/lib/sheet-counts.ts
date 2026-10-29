@@ -55,8 +55,19 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
  */
 function codePattern(code: string): RegExp {
   const words = code.trim().split(/\s+/).map(escapeRe);
-  return new RegExp(`(?:^|[^A-Z0-9])${words.join('[\\s.:-]*')}(?![A-Z0-9])`, 'i');
+  // A one- or two-letter code must be in capitals, as the form prints it: OCR
+  // noise is full of stray lowercase "a"s, and one of them once became Accord.
+  const exact = words.length === 1 && code.trim().length <= 2;
+  return new RegExp(`(?:^|[^A-Za-z0-9])${words.join('[\\s.:-]*')}(?![A-Za-z0-9])`, exact ? '' : 'i');
 }
+
+/**
+ * A code labels a row only where it starts the line: nothing before it but the
+ * row's S/N ("3", "1O", "|"). The same letters inside a heading, an address or
+ * a line of noise ("Registration Area … a #2 | Number of …") label nothing.
+ */
+const startsRow = (before: string) =>
+  before.split(/[^A-Za-z0-9]+/).filter(Boolean).every((t) => /^[0-9OoIl]{1,3}$/.test(t));
 
 /** The two misreads worth repairing, nothing riskier: "1OO" → "100", "1,204" → "1204". */
 function repairDigits(s: string): string {
@@ -70,10 +81,10 @@ function repairDigits(s: string): string {
 /** 1–6 digits is a tally; anything longer is a serial, a phone number or a code. */
 const tally = (digits: string) => (digits.length <= 6 ? Number(digits) : null);
 
-/** The first whole number in a string, and the text after it. */
+/** The first whole number in a string, and the text after it. "#2" is an item number, not a count. */
 function firstNumber(s: string): { n: number | null; after: string } {
   const r = repairDigits(s);
-  const m = r.match(/(?:^|[^A-Za-z0-9])(\d+)(?![A-Za-z0-9])/);
+  const m = r.match(/(?:^|[^A-Za-z0-9#])(\d+)(?![A-Za-z0-9])/);
   return m ? { n: tally(m[1]), after: r.slice((m.index ?? 0) + m[0].length) } : { n: null, after: s };
 }
 
@@ -234,6 +245,8 @@ export function parseCounts(text: string, partyCodes: string[], lines: OcrLine[]
     for (const row of rows) {
       const m = re.exec(row.text);
       if (!m) continue;
+      const at = m.index + (/^[^A-Za-z0-9]/.test(m[0]) ? 1 : 0); // where the code itself starts
+      if (!startsRow(row.text.slice(0, at))) continue;
       const rest = row.text.slice(m.index + m[0].length);
       const f = firstNumber(rest);
       if (f.n != null && figure[code] === undefined) figure[code] = f.n;

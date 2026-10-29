@@ -631,7 +631,7 @@
       for (const b of (r && r.blocks) || []) {
         for (const ln of b.lines || []) {
           const bb = ln.boundingBox || {};
-          lines.push({ text: ln.text || '', left: bb.left || 0, top: bb.top || 0, bottom: bb.bottom || 0 });
+          lines.push({ text: ln.text || '', left: bb.left || 0, right: bb.right || 0, top: bb.top || 0, bottom: bb.bottom || 0 });
         }
       }
       window.HAWKEYE.sheetOcr = { text, tokens, lines, at: Date.now() };

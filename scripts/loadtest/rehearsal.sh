@@ -5,7 +5,7 @@
 #   scripts/loadtest/run.sh (the k6 scenarios and their three production locks)
 #   scripts/staging/oracle.sh --check (the host must say it is hawkeye-staging)
 #   on the host: hk-reset-staging, hawkeye-peak-mode, hawkeye-restore-test (installed by bootstrap.sh)
-#   backend/scripts/seed_staging.mjs, journal_fetch.mjs, journal_restore.mjs, services/ledger.js
+#   backend/scripts/seed_staging.mjs, journal_fetch.mjs, journal_restore.mjs, ledger_check.mjs
 #   scripts/staging/oracle/photo-machine.sh (photo machines, pushed from the target)
 #
 #   rehearsal.sh [--config FILE] [--scale S] [--time-scale T] [--run-id ID] [--dry-run] [--force] COMMAND
@@ -37,6 +37,7 @@ set -euo pipefail
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="$(cd "$HERE/../.." && pwd)"
 BASE_NAME=staging.hawkeye.com.ng          # the only name the load is ever sent to
+LEDGER_CHECK="$REPO/backend/scripts/ledger_check.mjs"   # private repo; copied to the target after each phase
 PROD_ENV="$HOME/.config/hawkeye/production-oracle.env"
 case ":$PATH:" in *":$HOME/.local/bin:"*) ;; *) PATH="$HOME/.local/bin:$PATH" ;; esac
 
@@ -431,32 +432,18 @@ R
 }
 
 remote_phase_end() {  # PHASE -> stop the sampler; ledger, journal and queue numbers into post.env
+  # The chain is re-hashed by the private repo's ledger_check.mjs: the release's deploy bundle does not ship it.
+  tssh "cat > /tmp/rehearsal-ledger_check.mjs" < "$LEDGER_CHECK"
   troot RUN="$RUN_ID" PHASE="$1" <<'R'
 set -uo pipefail
 RD="/var/lib/hawkeye/loadtest/rehearsal/$RUN/$PHASE"; [ -d "$RD" ] || { echo "  no $RD"; exit 1; }
 if [ -f "$RD/sampler.pid" ]; then p="$(cat "$RD/sampler.pid")"; grep -qs rehearsal-sampler "/proc/$p/cmdline" && kill "$p"; rm -f "$RD/sampler.pid"; fi
 REL="$(readlink -f /opt/hawkeye/current)"
 P=(); for f in $(systemctl cat hawkeye-writer.service | sed -n 's/^EnvironmentFile=-\{0,1\}//p'); do P+=(-p "EnvironmentFile=$f"); done
-cat > "$RD/ledger.mjs" <<'JS'
-// The whole chain re-hashed from genesis by services/ledger.js, on a READ-ONLY connection, plus forks.
-import { createRequire } from 'node:module';
-import { pathToFileURL } from 'node:url';
-const REL = process.env.REL;
-const Database = createRequire(`${REL}/backend/package.json`)('better-sqlite3');
-const { verifyChainAsync } = await import(pathToFileURL(`${REL}/backend/src/services/ledger.js`).href);
-const db = new Database(process.env.DBF, { readonly: true, fileMustExist: true });
-db.pragma('busy_timeout = 10000');
-const t0 = Date.now();
-const r = await verifyChainAsync(db);
-const forks = db.prepare('SELECT COUNT(*) AS c FROM (SELECT prev_hash FROM submissions GROUP BY prev_hash HAVING COUNT(*) > 1)').get().c;
-const n = db.prepare('SELECT COUNT(*) AS c, COALESCE(MAX(id), 0) AS m FROM submissions').get();
-console.log(JSON.stringify({ chainOk: r.chainOk, columnsOk: r.columnsOk ?? null, mismatched: r.columns?.mismatched ?? null,
-  entries: r.entries, count: n.c, maxId: n.m, forks, brokenAtId: r.brokenAtId ?? null, head: String(r.head || '').slice(0, 16), ms: Date.now() - t0 }));
-JS
-chown hawkeye:hawkeye "$RD/ledger.mjs"
+install -o hawkeye -g hawkeye -m 0644 /tmp/rehearsal-ledger_check.mjs "$RD/ledger.mjs"; rm -f /tmp/rehearsal-ledger_check.mjs
 systemd-run --quiet --wait --collect -u "hkreh-ledger-$RANDOM" -p User=hawkeye -p Group=hawkeye -p WorkingDirectory="$REL/backend" "${P[@]}" \
-  -E REL="$REL" -E DBF=/var/lib/hawkeye/storage/hawkeye.db -p StandardOutput=truncate:"$RD/ledger.json" -p StandardError=truncate:"$RD/ledger.err" \
-  /usr/local/bin/node "$RD/ledger.mjs" || echo "  the ledger check exited non-zero (see ledger.err)"
+  -p StandardOutput=truncate:"$RD/ledger.json" -p StandardError=truncate:"$RD/ledger.err" \
+  /usr/local/bin/node "$RD/ledger.mjs" --db /var/lib/hawkeye/storage/hawkeye.db --release "$REL" || echo "  the ledger check exited non-zero (see ledger.err)"
 jl=0; jp=0
 for u in $(systemctl list-units 'hawkeye-writer*.service' --plain --no-legend | awk '{print $1}'); do
   p="$(systemctl show -p Environment --value "$u" | tr ' ' '\n' | sed -n 's/^PORT=//p')"
@@ -585,6 +572,7 @@ echo "NOTE:   disk $(df -h / | awk 'NR==2{print $4}') free, memory $(awk '/MemAv
 R
 )"
   echo "$rout"; fails=$((fails + $(grep -c '^FAIL' <<<"$rout" || true)))
+  [ -f "$LEDGER_CHECK" ] && proved "ledger check here to copy to the target (backend/scripts/ledger_check.mjs)" || bad "$LEDGER_CHECK not found (the private backend repo)"
   echo "== generators ($GENERATORS)"
   for i in $(seq 1 "$G_N"); do
     info="$(gen_ident "$i" 2>/dev/null)" || { bad "generator $i unreachable"; continue; }
@@ -1145,6 +1133,7 @@ case "$CMD" in
   warm) warm_cmd ;;
   run)
     PH="${1:-}"; [ -n "$PH" ] || die "run what? read | upload | auth | ramp | photos-start | photos | restore | all"
+    [ -f "$LEDGER_CHECK" ] || die "$LEDGER_CHECK not found (the private backend repo): every phase ends with it"
     target_ident
     if [ "$PH" != photos ] && [ "$PH" != restore ] && [ "$PH" != photos-start ]; then
       awk "BEGIN{exit !($SCALE >= 0.5)}" && [ "$EXPECT_CORES" != 0 ] && [ "$T_CORES" -lt "$EXPECT_CORES" ] && die "REFUSED: x$SCALE needs the target at $EXPECT_CORES cores; it has $T_CORES"

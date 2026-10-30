@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v587';
+const CACHE = 'hawkeye-v588';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -51,6 +51,13 @@ const LAZY = ['/stay.html', '/stay/whatsapp.json', '/stay/flyer-en.pdf', '/stay/
 // cache in the origin, and re-opening the cache on each request adds latency to
 // the path that has to be fastest — the navigation a user just tapped.
 const cacheP = caches.open(CACHE);
+// Every lookup ignores Vary. GO54's Apache layer adds `Vary: User-Agent` to
+// every response and the Cache API honours it: install stores each entry under
+// a request with no User-Agent, a page's request carries one, so on production
+// nothing ever matched and the shell never opened offline (found 30 Oct 2026;
+// staging runs Caddy, sends no such Vary, and hid it). Nothing here varies by
+// agent or encoding.
+const ANY = { ignoreVary: true };
 
 self.addEventListener('install', (e) => {
   // skipWaiting: without it a NEW worker sits waiting while the OLD one keeps
@@ -139,7 +146,7 @@ self.addEventListener('fetch', (e) => {
           caches.open(CACHE).then((c) => c.put(e.request, copy));
           return res;
         })
-        .catch(() => caches.match(e.request).then((hit) => hit || Response.error())),
+        .catch(() => caches.match(e.request, ANY).then((hit) => hit || Response.error())),
     );
     return;
   }
@@ -152,7 +159,7 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(e.request)
         .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })
-        .catch(() => caches.match(e.request).then((hit) => hit || Response.error())),
+        .catch(() => caches.match(e.request, ANY).then((hit) => hit || Response.error())),
     );
     return;
   }
@@ -160,7 +167,7 @@ self.addEventListener('fetch', (e) => {
     e.respondWith(
       fetch(e.request)
         .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })
-        .catch(() => caches.match(e.request).then((hit) => hit || Response.error())),
+        .catch(() => caches.match(e.request, ANY).then((hit) => hit || Response.error())),
     );
     return;
   }
@@ -169,7 +176,7 @@ self.addEventListener('fetch', (e) => {
   // like the packs. The report page shows the party code when one is missing.
   if (url.pathname.startsWith('/reg/') || url.pathname.startsWith('/logos/')) {
     e.respondWith(cacheP.then(async (c) => {
-      const hit = await c.match(e.request);
+      const hit = await c.match(e.request, ANY);
       if (hit) return hit;
       const res = await fetch(e.request);
       if (res.ok) c.put(e.request, res.clone());
@@ -182,7 +189,7 @@ self.addEventListener('fetch', (e) => {
     // fetched only when a page actually asks for them, then cached so repeat
     // visits and toggles are instant.
     e.respondWith(cacheP.then(async (c) => {
-      const hit = await c.match(e.request);
+      const hit = await c.match(e.request, ANY);
       if (hit) return hit;
       const res = await fetch(e.request);
       if (res.ok) c.put(e.request, res.clone());
@@ -196,7 +203,7 @@ self.addEventListener('fetch', (e) => {
   // served from the previous build.
   // The bare origin is Home: answered from the /index.html entry, so the shell
   // carries one copy of the page instead of two.
-  const opts = e.request.mode === 'navigate' ? { ignoreSearch: true } : undefined;
+  const opts = e.request.mode === 'navigate' ? { ignoreSearch: true, ...ANY } : ANY;
   const key = e.request.mode === 'navigate' && url.pathname === '/' ? '/index.html' : e.request;
   // A SHELL entry the install missed is stored from the first ok answer, under
   // the same key install uses (the exact URL; a navigation's page; '/' as

@@ -14,6 +14,11 @@
  * (the previous one from git, say) as the control: it must FAIL this check.
  * Observed live on 30 Oct 2026: a fresh install held 40/45 with every missing
  * URL answering 200, and kept the holes until the next CACHE bump.
+ *
+ * Responses carry production's `Vary: Accept-Encoding,User-Agent` (GO54's
+ * Apache adds it; staging's Caddy does not). With it, a worker that matches
+ * without ignoreVary never serves offline at all — the same day's second find.
+ * --vary none serves staging's headers instead.
  */
 import http from 'node:http';
 import fs from 'node:fs';
@@ -32,6 +37,7 @@ const SW = path.resolve(arg('sw', path.join(APP, 'sw.js')));
 const FAIL = arg('fail', '/sheet-counts.js?v=1');
 const PAGE = arg('page', '/observe.html'); // a SHELL page that loads FAIL
 const PROBE = arg('probe', 'HAWKEYE_SHEETCOUNTS'); // a global FAIL defines
+const VARY = arg('vary', 'Accept-Encoding,User-Agent'); // what production sends
 
 const swSrc = fs.readFileSync(SW, 'utf8');
 const CACHE = swSrc.match(/const CACHE = '([^']+)'/)[1];
@@ -63,7 +69,11 @@ function serve(failFirst) {
     fs.readFile(file, (err, buf) => {
       if (err) { res.writeHead(404, { 'cache-control': 'no-store' }); res.end(); return; }
       if (exact === FAIL) s.n200++;
-      res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream', 'cache-control': 'no-store' });
+      res.writeHead(200, {
+        'content-type': TYPES[path.extname(file)] || 'application/octet-stream',
+        'cache-control': 'no-store',
+        ...(VARY === 'none' ? {} : { vary: VARY }),
+      });
       res.end(buf);
     });
   });
@@ -105,8 +115,10 @@ async function scenario(browser, label, failFirst) {
     await srv.kill();
     // Control: a URL the cache cannot hold must fail now, or "offline" proves nothing.
     r.serverGone = await page.evaluate(() => fetch('/about.html?probe=' + Date.now()).then(() => false, () => true));
-    await page.goto(base + PAGE, { waitUntil: 'domcontentloaded' });
-    r.offlineWorks = await page.evaluate((g) => typeof window[g] !== 'undefined', PROBE);
+    // A page that will not open offline is the failure under test, not a broken run.
+    r.offlineWorks = await page.goto(base + PAGE, { waitUntil: 'domcontentloaded' })
+      .then(() => page.evaluate((g) => typeof window[g] !== 'undefined', PROBE))
+      .catch((err) => { r.offlineError = String(err.message || err).split('\n')[0]; return false; });
   } catch (err) {
     r.error = String(err.message || err).split('\n')[0];
   } finally {
@@ -117,7 +129,7 @@ async function scenario(browser, label, failFirst) {
 }
 
 const browser = await chromium.launch();
-console.log(`worker ${SW}\nCACHE ${CACHE}, SHELL ${SHELL.length}, fault on ${FAIL}, page ${PAGE}\n`);
+console.log(`worker ${SW}\nCACHE ${CACHE}, SHELL ${SHELL.length}, fault on ${FAIL}, page ${PAGE}, Vary ${VARY}\n`);
 const once = await scenario(browser, 'once', 1);
 const install = await scenario(browser, 'install', Infinity);
 await browser.close();
@@ -133,6 +145,7 @@ for (const r of [once, install]) {
   if (!pass) ok = false;
   console.log(`${pass ? 'PASS' : 'FAIL'}  ${r.label.padEnd(8)} 503s=${r.n503}  after install ${r.afterInstall}/${N}`
     + `  after 1 online view ${r.afterView}/${N}  online page ok=${r.onlineWorks}`
-    + `  server gone=${r.serverGone}  offline page ok=${r.offlineWorks}${valid ? '' : '  (INVALID RUN)'}${r.error ? '  ' + r.error : ''}`);
+    + `  server gone=${r.serverGone}  offline page ok=${r.offlineWorks}${r.offlineError ? ' (' + r.offlineError + ')' : ''}`
+    + `${valid ? '' : '  (INVALID RUN)'}${r.error ? '  ' + r.error : ''}`);
 }
 process.exit(ok ? 0 : 1);

@@ -95,7 +95,7 @@
     el.hidden = true;
     el.innerHTML =
       '<div class="lang-card" role="dialog" aria-modal="true" aria-labelledby="lang-modal-title">'
-      + '<div class="lang-brand"><img src="/logo.svg" alt="" width="28" height="28">'
+      + '<div class="lang-brand"><img src="/logo.svg?v=101" alt="" width="28" height="28">'
       + '<strong>Hawkeye</strong></div>'
       + '<h2 id="lang-modal-title" style="margin-top:8px" data-i18n="lang.title">'
       + esc(I18N.t('lang.title', 'Choose your language')) + '</h2>'

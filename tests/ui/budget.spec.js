@@ -56,6 +56,8 @@ const { APP_DIR, readApp, appFileExists } = require('./helpers');
 // is a product cut, not a budget fix. Only the web/PWA installs this worker —
 // native and Lite carry their files — and 658 KB gzip is ~5 s at 1 Mbit/s,
 // in the background. 1453 measured, 1500 budgeted.
+// 2026-10-30: + logos/manifest.json (0.6 KB) so the report page knows its
+// emblems offline -> 1454 KB / 45 entries.
 const PRECACHE_BUDGET_KB = 1500;
 
 // Per-item cap. NOT raised to fit — the three files that exceed it ARE the
@@ -166,6 +168,33 @@ test.describe('cache-busting pins', () => {
       }
     }
     expect([...missing], [...missing].join('\n')).toEqual([]);
+  });
+
+  // A precache entry only answers offline if it is the EXACT URL asked for.
+  // 2026-10-30: the shell held '/logo.svg' while every header asked for
+  // 'logo.svg?v=101' (no page had its logo offline), and menu.js injected
+  // 'share.js?v=1' while the shell held ?v=4. The check above could see
+  // neither: it reads HTML only, and only pins the shell itself carries. This
+  // one reads every precached page, script and stylesheet, and wherever the
+  // FILE is in the shell, demands the exact URL is too. Pages are compared by
+  // path (navigations ignore the query string; see sw.js).
+  test('precached pages and scripts ask for the exact URLs the shell holds', () => {
+    const shellSet = new Set(SHELL);
+    const pathOf = (u) => u.split('?')[0];
+    const shellFiles = new Set(SHELL.map(pathOf));
+    const REF = /(?:src|href)\s*=\s*["']([^"'\s]+)["']|(?:fetch\(|url\()\s*["']?([^"')\s]+)/g;
+    const misses = new Set();
+    for (const s of SHELL.map(pathOf).filter((u) => /\.(html|js|css)$/.test(u))) {
+      for (const m of readApp(s.slice(1)).matchAll(REF)) {
+        const ref = m[1] || m[2];
+        if (/^([a-z]+:|\/\/|#)/i.test(ref) || ref.includes('${')) continue;
+        const u = new URL(ref, 'https://hawkeye.invalid/');
+        const want = u.pathname + (u.pathname.endsWith('.html') ? '' : u.search);
+        if (!shellFiles.has(u.pathname) || shellSet.has(want)) continue;
+        misses.add(`${s} asks for ${want}; the shell holds ${SHELL.filter((x) => pathOf(x) === u.pathname).join(', ')}`);
+      }
+    }
+    expect([...misses], [...misses].join('\n')).toEqual([]);
   });
 });
 

@@ -33,7 +33,14 @@ try { importScripts('/outbox.js'); } catch { /* outbox unavailable in this worke
 // /index.html entry), choose-unit.html and invite.html (saving a unit and
 // accepting an invitation both need the server), map-label.js and webpush.js
 // (no page in this list loads them).
-const SHELL = ['/index.html', '/observe.html', '/profile.html', '/collation.html', '/incidents.html', '/app.js?v=213', '/scan.js?v=9', '/capture.js?v=6', '/save-media.js?v=1', '/video-player.js?v=2', '/dialog.js?v=1', '/passkey.js?v=1', '/direct-upload.js?v=3', '/geo-msg.js?v=2', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=4', '/referral.js?v=2', '/invite-unit.js?v=2', '/receipt.js?v=3', '/shell.js?v=4', '/monitor.js?v=6', '/menu.js?v=203', '/practice-day.js?v=1', '/authgate.js?v=6', '/pu-code.js?v=3', '/sheet-counts.js?v=1', '/pu-search.js?v=10', '/register-store.js?v=6', '/reg/manifest.json', '/reg/manifest.sig', '/tg.js?v=95', '/styles.css?v=202', '/manifest.webmanifest', '/logo.svg', '/i18n.js?v=10', '/lang.js?v=9', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
+//
+// 2026-10-30: an entry is only offline if it is the EXACT URL the page asks
+// for. The header logo is '/logo.svg?v=101' on every page, but the shell held
+// the bare '/logo.svg', so no page had its logo offline (budget.spec.js now
+// checks every reference). logos/manifest.json is in so the report page knows
+// which emblem goes with which party; the emblems themselves are cached on
+// first view (see /logos/ below).
+const SHELL = ['/index.html', '/observe.html', '/profile.html', '/collation.html', '/incidents.html', '/app.js?v=214', '/scan.js?v=9', '/capture.js?v=6', '/save-media.js?v=1', '/video-player.js?v=2', '/dialog.js?v=1', '/passkey.js?v=1', '/direct-upload.js?v=3', '/geo-msg.js?v=2', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=4', '/referral.js?v=2', '/invite-unit.js?v=2', '/receipt.js?v=4', '/shell.js?v=4', '/monitor.js?v=6', '/menu.js?v=204', '/practice-day.js?v=1', '/authgate.js?v=6', '/pu-code.js?v=3', '/sheet-counts.js?v=1', '/pu-search.js?v=10', '/register-store.js?v=6', '/reg/manifest.json', '/reg/manifest.sig', '/logos/manifest.json', '/tg.js?v=95', '/styles.css?v=202', '/manifest.webmanifest', '/logo.svg?v=101', '/i18n.js?v=10', '/lang.js?v=10', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.
@@ -132,9 +139,11 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // logos/manifest.json too: it is precached (above) for offline, and a new
+  // party's emblem must reach installed clients without waiting for a bump.
   if (url.pathname === '/political_data.json' || url.pathname === '/members.json'
       || url.pathname === '/party_changes.json' || url.pathname === '/ballots-2027.json'
-      || url.pathname.startsWith('/candidates-2027/')) {
+      || url.pathname.startsWith('/candidates-2027/') || url.pathname === '/logos/manifest.json') {
     e.respondWith(
       fetch(e.request)
         .then((r) => { if (r.ok) cacheP.then((c) => c.put(e.request, r.clone())); return r; })
@@ -150,7 +159,10 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-  if (url.pathname.startsWith('/reg/')) {
+  // PARTY EMBLEMS (~390 KB for the ones the manifest names): too heavy for the
+  // shell, so each is cached the first time a page shows it, matched by prefix
+  // like the packs. The report page shows the party code when one is missing.
+  if (url.pathname.startsWith('/reg/') || url.pathname.startsWith('/logos/')) {
     e.respondWith(cacheP.then(async (c) => {
       const hit = await c.match(e.request);
       if (hit) return hit;

@@ -467,9 +467,9 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       // for [data-share] ran before this link existed, so mount it by hand.
       // Otherwise load it — its sweep then finds this link on arrival.
       if (window.mountShare) window.mountShare(sh);
-      else if (!document.querySelector('script[src^="share.js"]')) {
+      else if (!document.querySelector('script[src*="share.js"]')) {
         var ss = document.createElement('script');
-        ss.src = 'share.js?v=1';
+        ss.src = 'share.js?v=4';
         document.head.appendChild(ss);
       }
     }

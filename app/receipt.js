@@ -387,7 +387,7 @@
       var img = new Image();
       img.onload = function () { res(img); };
       img.onerror = function () { res(null); };
-      img.src = '/logo.svg';
+      img.src = '/logo.svg?v=101';
       setTimeout(function () { res(img.complete ? img : null); }, 1200);
     });
   }

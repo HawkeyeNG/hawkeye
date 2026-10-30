@@ -2994,6 +2994,17 @@ async function prepareReportUI() {
       : `<span class="party-mark mono">${p.code.slice(0, 3)}</span>`;
     row.innerHTML = `<span class="party-label">${mark}<span><strong>${p.code}</strong><br /><small>${p.name}</small></span></span>
       <input type="number" min="0" step="1" inputmode="numeric" placeholder="0" data-party="${p.code}" />`;
+    // Offline, an emblem nobody has viewed yet is not cached: show the code
+    // instead of an empty box.
+    const img = row.querySelector('img.party-mark');
+    if (img) {
+      img.addEventListener('error', () => {
+        const mono = document.createElement('span');
+        mono.className = 'party-mark mono';
+        mono.textContent = p.code.slice(0, 3);
+        img.replaceWith(mono);
+      }, { once: true });
+    }
     row.dataset.q = `${p.code} ${p.name}`.toLowerCase();
     wrap.appendChild(row);
   }

@@ -131,7 +131,12 @@ test.describe('service worker precache', () => {
   test('LAZY entries exist and are not also precached', () => {
     const missing = LAZY.filter((u) => !appFileExists(u));
     expect(missing, `LAZY entries with no file: ${missing.join(', ')}`).toEqual([]);
-    const both = LAZY.filter((u) => SHELL.includes(u));
+    // By PATH: sw.js matches LAZY on url.pathname, and SHELL entries carry
+    // their ?v= pin. Compared as whole strings, '/webpush.js?v=1' in SHELL and
+    // '/webpush.js' in LAZY passed this check (2026-10-29) while the file was
+    // still being precached.
+    const shellPaths = new Set(SHELL.map((u) => u.split('?')[0]));
+    const both = LAZY.filter((u) => shellPaths.has(u.split('?')[0]));
     expect(both, `listed in BOTH SHELL and LAZY: ${both.join(', ')}`).toEqual([]);
   });
 });

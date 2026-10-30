@@ -58,7 +58,15 @@ const { APP_DIR, readApp, appFileExists } = require('./helpers');
 // in the background. 1453 measured, 1500 budgeted.
 // 2026-10-30: + logos/manifest.json (0.6 KB) so the report page knows its
 // emblems offline -> 1454 KB / 45 entries.
-const PRECACHE_BUDGET_KB = 1500;
+//
+// 2026-10-30, later: + native.js (59 KB, 22 KB gzip) -> 1513 KB / 46 entries,
+// 1550 budgeted. Audit first, as above: every entry is loaded by a precached
+// page or script (scan-worker.js and the register manifests by URLs built at
+// run time), so nothing came out. native.js is the first script on every
+// precached page and keeps the last /me: without it Profile and Home could not
+// paint offline and the report page could not offer the saved unit. What was
+// missing offline and stays out is listed, with why, in OFFLINE_EXEMPT below.
+const PRECACHE_BUDGET_KB = 1550;
 
 // Per-item cap. NOT raised to fit — the three files that exceed it ARE the
 // shell (the stylesheet, the site script and the menu), and nothing is gained
@@ -73,6 +81,11 @@ function parseArray(src, name) {
   if (!m) throw new Error(`${name} not found in sw.js`);
   return m[1].split(',').map((s) => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
 }
+
+// Lines that open or continue a comment (//, /*, *) are prose, not loads: once
+// native.js was precached, its comment quoting <script src="/i18n.js"> read as
+// a request. A line starting that way is never code, so this hides no real one.
+const codeOf = (text) => text.split('\n').filter((l) => !/^\s*(\/\/|\/\*|\*)/.test(l)).join('\n');
 
 const sw = readApp('sw.js');
 const SHELL = parseArray(sw, 'SHELL');
@@ -190,7 +203,7 @@ test.describe('cache-busting pins', () => {
     const REF = /(?:src|href)\s*=\s*["']([^"'\s]+)["']|(?:fetch\(|url\()\s*["']?([^"')\s]+)/g;
     const misses = new Set();
     for (const s of SHELL.map(pathOf).filter((u) => /\.(html|js|css)$/.test(u))) {
-      for (const m of readApp(s.slice(1)).matchAll(REF)) {
+      for (const m of codeOf(readApp(s.slice(1))).matchAll(REF)) {
         const ref = m[1] || m[2];
         if (/^([a-z]+:|\/\/|#)/i.test(ref) || ref.includes('${')) continue;
         const u = new URL(ref, 'https://hawkeye.invalid/');
@@ -200,6 +213,57 @@ test.describe('cache-busting pins', () => {
       }
     }
     expect([...misses], [...misses].join('\n')).toEqual([]);
+  });
+});
+
+// Files a precached page loads that may be missing offline, and why. Matched by
+// path. Add one only with a reason a reviewer can check; a name nothing loads
+// any more fails the test below, so the list cannot quietly grow.
+const OFFLINE_EXEMPT = {
+  '/chat.js': 'the support chat (Intercom) needs the network to do anything',
+  '/logo-crest.svg': "76 KB: Home's copy is in the app-only welcome (hidden on the web); observe's is on the sign-in pane, and signing in needs the network",
+  '/store-play.png': 'a store link, which needs the network; alt="" so a miss draws nothing',
+  '/store-apple.svg': 'a store link, which needs the network; alt="" so a miss draws nothing',
+  '/apple-touch-icon.png': 'read by iOS on Add to Home Screen and as the notification icon, both online',
+  '/splash-icon.png': 'requested only inside the Capacitor app, which carries its own files',
+  '/ballots-2027.json': '164 KB, network-first; app.js keeps the last copy in localStorage and shows every party without one',
+  '/vendor/tesseract/tesseract.min.js': 'the OCR engine, ~6 MB with its data: lazy on first sheet capture by design (sw.js); the counts are typed without it',
+  '/i18n/political.json': 'the non-English overlay: translations are network-first and cached on first use (2026-09-19, above)',
+  '/sw.js': 'the worker script: the browser fetches it, never from the cache; native.js reads it only inside Lite, for its version',
+};
+const OFFLINE_EXEMPT_PREFIX = ['/download/']; // APK links: a download needs the network
+
+test.describe('offline completeness', () => {
+  // The exact-URL test above only checks files the shell already holds, so a
+  // file the shell does NOT hold is invisible to it. 2026-10-30: every
+  // precached page loaded native.js first and the shell lacked it — Profile and
+  // Home had no last /me to paint offline, and the report page could not offer
+  // the saved unit. Every file a precached page or script loads is precached,
+  // LAZY (a decision: cached on first use), or exempt above with its reason.
+  test('every file a precached page loads is precached, LAZY or exempt', () => {
+    const pathOf = (u) => u.split('?')[0];
+    const shellFiles = new Set(SHELL.map(pathOf));
+    const lazy = new Set(LAZY);
+    const REF = /(?:src|href)\s*=\s*["']([^"'\s]+)["']|(?:fetch\(|url\()\s*["']?([^"')\s]+)|importScripts\(\s*["']([^"']+)/g;
+    const missing = new Map();
+    const exemptSeen = new Set();
+    for (const s of SHELL.map(pathOf).filter((u) => /\.(html|js|css)$/.test(u))) {
+      for (const m of codeOf(readApp(s.slice(1))).matchAll(REF)) {
+        const ref = m[1] || m[2] || m[3];
+        if (/^([a-z]+:|\/\/|#)/i.test(ref) || ref.includes('${')) continue;
+        const p = new URL(ref, 'https://hawkeye.invalid/').pathname;
+        if (/^\/(api|uploads)\//.test(p)) continue;                          // network only (sw.js)
+        if (/\.html$|\/$/.test(p) || !/\.[a-z0-9]+$/i.test(p)) continue;     // a page, not a file
+        if (shellFiles.has(p) || lazy.has(p)) continue;                     // pins: the test above
+        if (OFFLINE_EXEMPT[p] || OFFLINE_EXEMPT_PREFIX.some((x) => p.startsWith(x))) { exemptSeen.add(p); continue; }
+        if (!missing.has(p)) missing.set(p, new Set());
+        missing.get(p).add(s);
+      }
+    }
+    const lines = [...missing].map(([p, from]) => `${p} <- ${[...from].join(', ')}`);
+    expect(lines, `loaded by precached pages, missing offline (precache it, or exempt it with a reason):\n${lines.join('\n')}`).toEqual([]);
+    const stale = Object.keys(OFFLINE_EXEMPT).filter((p) => !exemptSeen.has(p));
+    expect(stale, `exempt but no precached page loads it any more: ${stale.join(', ')}`).toEqual([]);
   });
 });
 

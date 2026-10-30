@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v588';
+const CACHE = 'hawkeye-v589';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -40,7 +40,13 @@ try { importScripts('/outbox.js'); } catch { /* outbox unavailable in this worke
 // checks every reference). logos/manifest.json is in so the report page knows
 // which emblem goes with which party; the emblems themselves are cached on
 // first view (see /logos/ below).
-const SHELL = ['/index.html', '/observe.html', '/profile.html', '/collation.html', '/incidents.html', '/app.js?v=214', '/scan.js?v=9', '/capture.js?v=6', '/save-media.js?v=1', '/video-player.js?v=2', '/dialog.js?v=1', '/passkey.js?v=1', '/direct-upload.js?v=3', '/geo-msg.js?v=2', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=4', '/referral.js?v=2', '/invite-unit.js?v=2', '/receipt.js?v=4', '/shell.js?v=4', '/monitor.js?v=6', '/menu.js?v=204', '/practice-day.js?v=1', '/authgate.js?v=6', '/pu-code.js?v=3', '/sheet-counts.js?v=1', '/pu-search.js?v=10', '/register-store.js?v=6', '/reg/manifest.json', '/reg/manifest.sig', '/logos/manifest.json', '/tg.js?v=95', '/styles.css?v=202', '/manifest.webmanifest', '/logo.svg?v=101', '/i18n.js?v=10', '/lang.js?v=10', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
+//
+// 2026-10-30, later: native.js?v=129 joined. Every precached page loads it
+// first, and it holds the last /me this phone saw (lastMe): Profile and Home
+// paint from it offline, and the report page offers the saved unit from it.
+// Without it all three quietly found nothing. budget.spec.js now fails on any
+// file a precached page loads that is neither here, in LAZY, nor exempt there.
+const SHELL = ['/native.js?v=129', '/index.html', '/observe.html', '/profile.html', '/collation.html', '/incidents.html', '/app.js?v=214', '/scan.js?v=9', '/capture.js?v=6', '/save-media.js?v=1', '/video-player.js?v=2', '/dialog.js?v=1', '/passkey.js?v=1', '/direct-upload.js?v=3', '/geo-msg.js?v=2', '/scan-worker.js?v=3', '/device.js', '/outbox.js', '/share.js?v=4', '/referral.js?v=2', '/invite-unit.js?v=2', '/receipt.js?v=4', '/shell.js?v=4', '/monitor.js?v=6', '/menu.js?v=204', '/practice-day.js?v=1', '/authgate.js?v=6', '/pu-code.js?v=3', '/sheet-counts.js?v=1', '/pu-search.js?v=10', '/register-store.js?v=6', '/reg/manifest.json', '/reg/manifest.sig', '/logos/manifest.json', '/tg.js?v=95', '/styles.css?v=202', '/manifest.webmanifest', '/logo.svg?v=101', '/i18n.js?v=10', '/lang.js?v=10', '/fonts/inter-400.woff2?v=1', '/fonts/inter-500.woff2?v=1', '/fonts/inter-600.woff2?v=1', '/fonts/inter-700.woff2?v=1', '/fonts/spline-600.woff2?v=1', '/fonts/spline-700.woff2?v=1'];
 
 // Heavy, page-specific assets: NEVER precached (they'd tax every install for
 // every user), cached on first successful fetch so revisits are instant.

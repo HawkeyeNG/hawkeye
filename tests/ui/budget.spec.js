@@ -33,7 +33,30 @@ const { APP_DIR, readApp, appFileExists } = require('./helpers');
 //
 // TO RAISE THIS AGAIN: do the audit first, in that order, and say what is in
 // the number. A budget nobody can account for is not a budget.
-const PRECACHE_BUDGET_KB = 1150;
+//
+// 2026-10-29: red on every push since 26 Sep (choose-unit.html joined the
+// shell at 1153 KB), which also kept layout.spec.js from running at all. The
+// shell reached 1605 KB. Audit first, as above:
+//
+//   1. OUT (150 KB): '/' (the same file as /index.html, fetched twice; sw.js
+//      now answers '/' from the /index.html entry), choose-unit.html and
+//      invite.html (their actions need the server), map-label.js and
+//      webpush.js (no precached page loads them).
+//   2. WHAT IS LEFT, 1453 KB / 44 entries (658 KB gzip on the wire):
+//        observe.html and what it loads    895 KB  (app.js 242 of it — it
+//                                                   doubled since September)
+//        fonts                             239 KB
+//        incidents.html + video-player.js   98 KB
+//        Home (index.html + practice-day)   93 KB  — every filing flow exits here
+//        Profile (+ share, invite-unit)     77 KB  — paints offline from the last /me
+//        collation.html                     52 KB
+//
+// 1150 now fits observe.html and the fonts (1134 KB) and nothing else, so
+// holding it means taking incident or collation filing offline-unready. That
+// is a product cut, not a budget fix. Only the web/PWA installs this worker —
+// native and Lite carry their files — and 658 KB gzip is ~5 s at 1 Mbit/s,
+// in the background. 1453 measured, 1500 budgeted.
+const PRECACHE_BUDGET_KB = 1500;
 
 // Per-item cap. NOT raised to fit — the three files that exceed it ARE the
 // shell (the stylesheet, the site script and the menu), and nothing is gained

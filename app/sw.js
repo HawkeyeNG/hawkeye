@@ -10,7 +10,7 @@
 // are network-first below, so they update on their own. Nothing else volatile
 // belongs in LAZY either — if a file can change between deploys, it goes in the
 // network-first branch, not here.
-const CACHE = 'hawkeye-v586';
+const CACHE = 'hawkeye-v587';
 // The offline outbox, so a Background Sync can send queued reports with every
 // tab closed (Chrome/Android) — see outbox.js. Optional: failing to load it
 // must never cost the service worker itself.
@@ -61,8 +61,13 @@ self.addEventListener('install', (e) => {
   // page, a stale ?v= pin) aborts the whole install and the client then caches
   // NOTHING — every navigation silently falls back to the network forever.
   // allSettled degrades to "one file missing" instead.
+  // A failed entry is retried ONCE, 2 s later. A transient 5xx or a dropped
+  // connection otherwise left that file out until the next CACHE bump: on
+  // 30 Oct 2026 a fresh install held 40/45 while every missing URL answered 200.
+  // Whatever still fails is filled on first use (the default branch below).
+  const add = (c, u) => c.add(u).catch(() => new Promise((r) => { setTimeout(r, 2000); }).then(() => c.add(u)));
   e.waitUntil(caches.open(CACHE).then((c) => Promise.allSettled(
-    SHELL.map((u) => c.add(u).catch((err) => { console.warn('[sw] precache miss', u, err); throw err; })),
+    SHELL.map((u) => add(c, u).catch((err) => { console.warn('[sw] precache miss', u, err); throw err; })),
   )));
 });
 
@@ -193,7 +198,19 @@ self.addEventListener('fetch', (e) => {
   // carries one copy of the page instead of two.
   const opts = e.request.mode === 'navigate' ? { ignoreSearch: true } : undefined;
   const key = e.request.mode === 'navigate' && url.pathname === '/' ? '/index.html' : e.request;
-  e.respondWith(cacheP.then((c) => c.match(key, opts)).then((hit) => hit || fetch(e.request)));
+  // A SHELL entry the install missed is stored from the first ok answer, under
+  // the same key install uses (the exact URL; a navigation's page; '/' as
+  // /index.html). Without this the network answered every time and the file
+  // stayed missing offline until the next CACHE bump.
+  const entry = e.request.mode === 'navigate' ? (url.pathname === '/' ? '/index.html' : url.pathname) : url.pathname + url.search;
+  const fill = url.origin === self.location.origin && SHELL.includes(entry);
+  e.respondWith(cacheP.then(async (c) => {
+    const hit = await c.match(key, opts);
+    if (hit) return hit;
+    const res = await fetch(e.request);
+    if (fill && res.ok) e.waitUntil(c.put(entry, res.clone()));
+    return res;
+  }));
 });
 
 // --- Web Push (VAPID). Backend sends { title, body, data:{ url? } }. Independent

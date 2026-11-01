@@ -10,7 +10,8 @@
  * Asserted:
  *   - the register has each code once, alphabetical by code;
  *   - app.js FALLBACK_PARTIES (the bundled floor for an offline counts step)
- *     equals it entry for entry;
+ *     equals it entry for entry, and so does collation.html's copy (its
+ *     offline floor since 2026-10-31);
  *   - every party a declared result names is registered;
  *   - the emblem manifest's own codes are registered, and its spelled-out
  *     aliases point at a registered party's emblem;
@@ -49,6 +50,11 @@ check('app.js FALLBACK_PARTIES equals the register', same(fallback, register), t
 check('CONTROL: a copy missing one party is caught', same(fallback.slice(1), register), false);
 check('CONTROL: a copy with one name changed is caught',
   same(fallback.map((p, i) => (i === 0 ? { ...p, name: p.name + 'x' } : p)), register), false);
+const collationHtml = fs.readFileSync(`${ROOT}/app/collation.html`, 'utf8');
+const cBlock = (collationHtml.match(/const FALLBACK_PARTIES = \[([\s\S]*?)\]\.map\(/) || [])[1] || '';
+const cFallback = [...cBlock.matchAll(/\['([^']+)',\s*'([^']+)'\]/g)].map((m) => ({ code: m[1], name: m[2] }));
+check('CONTROL: collation.html FALLBACK_PARTIES was found and parsed', cFallback.length > 0, true);
+check('collation.html FALLBACK_PARTIES equals the register', same(cFallback, register), true);
 
 /* Every party a contest names — on its ballot or in its declared result, or in
    a recorded declaration — must be one the register knows. */

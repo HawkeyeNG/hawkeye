@@ -713,13 +713,51 @@ INEC IReV — official result sheets|https://www.inecelectionresults.ng"></butto
     };
 
     // ---- boot ----
+    /* EACH LIST STANDS ALONE, AND OFFLINE HAS A FLOOR (2026-10-31).
+       The three fetches were one Promise.all with no catch: offline — or one
+       5xx, or an HTML error page — rejected the lot, and the form never got an
+       election, a state or a party row, though this page is precached and a
+       report files offline through the outbox. Each now falls back on its own,
+       as app.js does: contests to the last good list (hk_contests1, shared with
+       the report page); states to the register manifest the shell precaches
+       (the register's own names, the list the API serves); parties to the last
+       good list (hawkeye_parties, shared), then the bundled register below. */
     (async () => {
       if (!token) { $('need-auth').hidden = false; return; }
       $('form').hidden = false;
+      // Must equal backend/src/data/parties.json, as app.js's copy must:
+      // tests/party_register_test.mjs holds all three together.
+      const FALLBACK_PARTIES = [
+        ['A', 'Accord'], ['AA', 'Action Alliance'], ['AAC', 'African Action Congress'],
+        ['ADC', 'African Democratic Congress'], ['ADP', 'Action Democratic Party'],
+        ['APC', 'All Progressives Congress'], ['APGA', 'All Progressives Grand Alliance'],
+        ['APM', 'Allied Peoples Movement'], ['APP', 'Action Peoples Party'], ['BP', 'Boot Party'],
+        ['DLA', 'Democratic Leadership Alliance'], ['LP', 'Labour Party'],
+        ['NDC', 'Nigeria Democratic Congress'], ['NDP', 'National Democratic Party'],
+        ['NNPP', 'New Nigeria Peoples Party'], ['NRM', 'National Rescue Movement'],
+        ['PDP', 'Peoples Democratic Party'], ['PRP', 'Peoples Redemption Party'],
+        ['SDP', 'Social Democratic Party'], ['YP', 'Youth Party'],
+        ['YPP', 'Young Progressives Party'], ['ZLP', 'Zenith Labour Party'],
+      ].map(([code, name]) => ({ code, name }));
+      const okJson = (u) => fetch(u).then((r) => (r.ok ? r.json() : Promise.reject(new Error(r.status))));
+      const listOf = (test) => (v) => Array.isArray(v) && v.length > 0 && v.every(test);
+      const goodContests = listOf((c) => c && typeof c.code === 'string');
+      const goodParties = listOf((p) => p && typeof p.code === 'string');
+      const goodStates = listOf((s) => typeof s === 'string' && s !== '');
+      // Validated on write AND on read, as app.js does: a cached {} from a 500
+      // must not empty a dropdown for good.
+      const stored = (k, good) => { try { const v = JSON.parse(localStorage.getItem(k) || 'null'); return good(v) ? v : null; } catch (e) { return null; } };
+      const live = (u, good, k) => okJson(u).then((v) => {
+        if (!good(v)) throw new Error('shape');
+        if (k) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* quota / private mode */ } }
+        return v;
+      });
       const [contests, states, parties] = await Promise.all([
-        fetch('/api/contests').then((r) => r.json()),
-        fetch('/api/register/states').then((r) => r.json()),
-        fetch('/api/parties').then((r) => r.json()),
+        live('/api/contests', goodContests, 'hk_contests1').catch(() => stored('hk_contests1', goodContests) || []),
+        live('/api/register/states', goodStates).catch(() => okJson('/reg/manifest.json')
+          .then((m) => Object.values((m && m.states) || {}).map((s) => s && s.name).filter(Boolean).sort())
+          .catch(() => [])),
+        live('/api/parties', goodParties, 'hawkeye_parties').catch(() => stored('hawkeye_parties', goodParties) || FALLBACK_PARTIES),
       ]);
       CONTESTS = contests;
       fillContests();

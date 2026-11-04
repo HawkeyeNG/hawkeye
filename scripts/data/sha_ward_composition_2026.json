@@ -8,6 +8,14 @@
   "sha256": "e38e71c7e4203a2a31b512e50092035e183990c33a6888cc664fbbdbc0adb667",
   "note": "Ward names are the register's spellings. INEC's table covers the 10 June 2026 restorations except Gboko and the two Warri LGAs; the 14 August ones are not in it."
  },
+ "_sourceWarri": {
+  "title": "Composition of New State Constituencies and Registration Areas in Warri Federal Constituency of Delta State",
+  "publisher": "INEC",
+  "created": "2026-06-17",
+  "archived": "https://web.archive.org/web/20260815130345/https://wp1.inecnigeria.org/wp-content/uploads/Composition-of-New-State-Constituencies-and-Registration-Areas-in-Warri-Federal-Constituency-of-Delta-State.pdf",
+  "sha256": "a9803d1525a23253d7c4370b3dc9ca0f75f08c0ff79334c9405b5681530e2dce",
+  "note": "Registration areas only, no unit counts; matched to the register's Warri wards (INEC's public polling-unit directory, applied 4 Nov 2026) by name. The document's RA codes are not the directory's ward numbers, so codes were not compared. Unit counts are the register's."
+ },
  "lgas": {
   "Kogi|Adavi": {
    "Adavi": {
@@ -777,6 +785,195 @@
      "10-06-06"
     ],
     "pollingUnits": 103
+   }
+  },
+  "Delta|Warri North": {
+   "Warri North": {
+    "inecLabel": "WARRI NORTH 1",
+    "wards": [
+     "Aja Ometan/Tisun/Kolokolo/Sagharate/Ughotosa",
+     "Beresibi/Ureju/Eghoro/Obonteghareda",
+     "Ebrohimi",
+     "Gbokoda",
+     "Jakpa",
+     "Koko I",
+     "Koko III",
+     "Koko Ii",
+     "Oboghoro",
+     "Ogheye"
+    ],
+    "wardCodes": [
+     "10-23-01",
+     "10-23-02",
+     "10-23-03",
+     "10-23-04",
+     "10-23-05",
+     "10-23-06",
+     "10-23-12",
+     "10-23-15",
+     "10-23-16",
+     "10-23-17"
+    ],
+    "pollingUnits": 199,
+    "source": "warri",
+    "unitsFrom": "register",
+    "byElimination": [
+     "Jakpa"
+    ]
+   },
+   "Warri North II": {
+    "inecLabel": "WARRI NORTH 2",
+    "wards": [
+     "Abadigbene/Okifamba /Asantuwagbene",
+     "Asigborodo",
+     "Awanba",
+     "Ogbinbiri",
+     "Ogbinbiri Azama/Asisabubotie/Idebagbene",
+     "Ogbudugbudu",
+     "Opuama I",
+     "Opuama II",
+     "Polobubo I",
+     "Polobubo II"
+    ],
+    "wardCodes": [
+     "10-23-07",
+     "10-23-08",
+     "10-23-09",
+     "10-23-10",
+     "10-23-11",
+     "10-23-13",
+     "10-23-14",
+     "10-23-18",
+     "10-23-19",
+     "10-23-20"
+    ],
+    "pollingUnits": 168,
+    "source": "warri",
+    "unitsFrom": "register"
+   }
+  },
+  "Delta|Warri South": {
+   "Warri South I": {
+    "inecLabel": "WARRI SOUTH I",
+    "wards": [
+     "Bowen",
+     "Ekpene/Esisi",
+     "Eruvwharan Otovwodo/Omoine",
+     "G.R.A. I",
+     "Igbudu- Essi",
+     "Obodo/Omadino",
+     "Ode-Itsekiri",
+     "Ogbedengbe",
+     "Pessu",
+     "Ugbuwangue/Ekurede-Itsekiri"
+    ],
+    "wardCodes": [
+     "10-24-01",
+     "10-24-02",
+     "10-24-04",
+     "10-24-05",
+     "10-24-06",
+     "10-24-07",
+     "10-24-09",
+     "10-24-14",
+     "10-24-15",
+     "10-24-19"
+    ],
+    "pollingUnits": 243,
+    "source": "warri",
+    "unitsFrom": "register"
+   },
+   "Warri South II": {
+    "inecLabel": "WARRI SOUTH 2",
+    "wards": [
+     "Edjeba",
+     "Egborodje",
+     "Ewein",
+     "G.R.A. II",
+     "Itifo/Markro",
+     "Ogbe-Ijoh Warri Urban",
+     "Ogunu/Okurode/Urhobo/Ukpotiti/Oteghele",
+     "Okere",
+     "Okumagba I",
+     "Okumagba Ii"
+    ],
+    "wardCodes": [
+     "10-24-03",
+     "10-24-08",
+     "10-24-10",
+     "10-24-11",
+     "10-24-12",
+     "10-24-13",
+     "10-24-16",
+     "10-24-17",
+     "10-24-18",
+     "10-24-20"
+    ],
+    "pollingUnits": 205,
+    "source": "warri",
+    "unitsFrom": "register"
+   }
+  },
+  "Delta|Warri South West": {
+   "Warri South-West": {
+    "inecLabel": "WARRI SOUTH WEST 1",
+    "wards": [
+     "Azama/Igoba/Inikoroogha",
+     "Benikrukru/Kokodiagbene",
+     "Diebiri",
+     "Isaba",
+     "Izansa-Ijelejele/Ikeremor",
+     "Kunukunuma/Kantu/Kurutie/Pepe-Ama",
+     "Ogbeijoh",
+     "Okerenkoko/Egwa",
+     "Okoroware",
+     "Oporoza",
+     "Oporoza-Amaseikumor"
+    ],
+    "wardCodes": [
+     "10-25-01",
+     "10-25-02",
+     "10-25-03",
+     "10-25-04",
+     "10-25-11",
+     "10-25-12",
+     "10-25-13",
+     "10-25-14",
+     "10-25-16",
+     "10-25-17",
+     "10-25-18"
+    ],
+    "pollingUnits": 293,
+    "source": "warri",
+    "unitsFrom": "register"
+   },
+   "Warri South West II": {
+    "inecLabel": "WARRI SOUTH WEST 2",
+    "wards": [
+     "Ajaudaibo",
+     "Akpikpa",
+     "Madangho",
+     "Ogidigben I",
+     "Ogidigben II",
+     "Orere I",
+     "Orere II",
+     "Ugborodo I",
+     "Ugborodo II"
+    ],
+    "wardCodes": [
+     "10-25-05",
+     "10-25-06",
+     "10-25-07",
+     "10-25-08",
+     "10-25-09",
+     "10-25-10",
+     "10-25-15",
+     "10-25-19",
+     "10-25-20"
+    ],
+    "pollingUnits": 220,
+    "source": "warri",
+    "unitsFrom": "register"
    }
   }
  }

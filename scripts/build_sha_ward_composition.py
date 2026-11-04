@@ -15,6 +15,18 @@ An LGA that fails either test is reported and left out, and keeps its whole-LGA
 figures. INEC's lists are sometimes cut short or repeat a ward; the unit counts
 decide those cases, and only when exactly one reading fits.
 
+THE THREE WARRI LGAs COME FROM A SECOND DOCUMENT, WITH NO UNIT COUNTS. INEC's
+"Composition of New State Constituencies and Registration Areas in Warri
+Federal Constituency" (also 17 June 2026) lists each seat's registration areas
+and nothing else, and the register only carried the new Warri wards from 4 Nov
+2026 (backend register update delta-2026-11). With no count to settle a doubt,
+the test is stricter on names instead: every ward INEC lists must match exactly
+one register ward (key, difflib, or an ALIAS written out below with its
+reason), every register ward must land in exactly one seat, each seat must get
+as many wards as INEC lists, and at most ONE ward may be placed by elimination
+(the one unmatched name and the one unclaimed ward), which the notes and the
+output both record. Unit counts for these seats are the register's own.
+
     python3 scripts/build_sha_ward_composition.py            # report only
     python3 scripts/build_sha_ward_composition.py --write
 """
@@ -39,6 +51,26 @@ SOURCE = {
     "sha256": "e38e71c7e4203a2a31b512e50092035e183990c33a6888cc664fbbdbc0adb667",
     "note": "Ward names are the register's spellings. INEC's table covers the 10 June 2026 "
             "restorations except Gboko and the two Warri LGAs; the 14 August ones are not in it.",
+}
+
+WARRI_SOURCE = {
+    "title": "Composition of New State Constituencies and Registration Areas in Warri Federal Constituency of Delta State",
+    "publisher": "INEC",
+    "created": "2026-06-17",
+    "archived": "https://web.archive.org/web/20260815130345/https://wp1.inecnigeria.org/wp-content/uploads/Composition-of-New-State-Constituencies-and-Registration-Areas-in-Warri-Federal-Constituency-of-Delta-State.pdf",
+    "sha256": "a9803d1525a23253d7c4370b3dc9ca0f75f08c0ff79334c9405b5681530e2dce",
+    "note": "Registration areas only, no unit counts; matched to the register's Warri wards (INEC's public "
+            "polling-unit directory, applied 4 Nov 2026) by name. The document's RA codes are not the "
+            "directory's ward numbers, so codes were not compared. Unit counts are the register's.",
+}
+WARRI_LGAS = {("Delta", "Warri North"), ("Delta", "Warri South"), ("Delta", "Warri South West")}
+
+# A name INEC's list spells so differently that neither the key nor difflib can join it, mapped by
+# hand to the register ward it means — each with the reason, since nothing else checks it.
+ALIASES = {
+    # The document lists one RA "Asigborodo I/Asigborodo II"; the directory has a single ward,
+    # "Asigborodo" (13 units, 10-23-13). No other Warri North ward carries the name.
+    ("Delta", "Warri North", "ASIGBORODO I/ASIGBORODO II"): "Asigborodo",
 }
 
 # (state, register LGA) -> [(seat as Hawkeye names it, INEC's label in the table, INEC's wards, INEC's units)]
@@ -102,6 +134,16 @@ TABLE = {
     ("Delta", "Ethiope West"): [
         ("Ethiope West", "ETHIOPE WEST I", "OGHARA I, OGHARA II, OGHARA III, OGHARA IV, OGHARA V", 117),
         ("Ethiope West II", "ETHIOPE WEST II (New)", "MOSOGAR I, MOSOGAR II, JESSE I, JESSE II, JESSE III, JESSE IV", 103)],
+    # From WARRI_SOURCE: registration areas as INEC lists them, no unit counts (None).
+    ("Delta", "Warri North"): [
+        ("Warri North", "WARRI NORTH 1", "AJA ITORI/OKOGHO, AJA OMETAN/TISUN/KOLOKOLO/SAGHARATE/UGHOTOSA, BERESIBI/UREJU/EGHORO/OBONTEGHAREDA, EBROHIMI, GBOKODA, KOKO I, KOKO II, KOKO III, OBAGHORO, OGHEYE", None),
+        ("Warri North II", "WARRI NORTH 2", "ABADIGBENE/OKIFAMBA/ASANTUWAGBENE, ASIGBORODO I/ASIGBORODO II, OGBINBIRI, OGBINBIRI AZAMA/ASISABUBOTIE/IDEBAGBENE, OGBUDUGBUDU, AWAMBA, OPUAMA I, OPUAMA II, POLOBUBO I, POLOBUBO II", None)],
+    ("Delta", "Warri South"): [
+        ("Warri South I", "WARRI SOUTH I", "BOWEN, ERUOGWARAN OTOVWODO/OMOINE, EKPEN/ESISI, GRA 1, IGBUDU-ESSI, OBODO/OMADINO, ODE-ITSEKIRI, PESSU, OGEDENGBE, UGBUWANGUE/EKUREDE-ITSEKIRI", None),
+        ("Warri South II", "WARRI SOUTH 2", "OKUMAGBA I, OKUMAGBA II, EDJEBA, OKERE, OGUNU/OKURODE-URHOBO/UKPOTITI/OTEGHELE, ITIFO/MARKRO, EGBORODJE, GRA 2, EWEIN, OGBE-IJOH WARRI URBAN", None)],
+    ("Delta", "Warri South West"): [
+        ("Warri South-West", "WARRI SOUTH WEST 1", "AZAMA/IGOBA/INIKOROOGHA, BENIKRUKRU/KOKODIAGBENE, DIEBIRI, IZANSA-IJELEJELE/IKEREMOR, ISABA, KUNUKUNUMA/KANTU/KURUTIE/PEPE-AMA, OGBE-IJOH, OKERENKOKO/EGWA, OKOROWARE, OPOROZA, OPOROZA-AMASEIKUMOR", None),
+        ("Warri South West II", "WARRI SOUTH WEST 2", "AJA-DAIBOR, AKPAKPA, MANDANGHO, OGIDIGBEN I, OGIDIGBEN II, ORERE I, ORERE II, UGBORODO I, UGBORODO II", None)],
 }
 
 ROMAN = {"1": "I", "2": "II", "3": "III", "4": "IV", "5": "V", "6": "VI", "7": "VII", "8": "VIII"}
@@ -114,12 +156,18 @@ def key(s):
 
 
 def solve(state, lga, seats, wards):
-    """wards: {register ward: units}. Returns (assignment or None, notes)."""
-    notes, claims = [], {w: [] for w in wards}
+    """wards: {register ward: units}. Returns (assignment or None, notes, wards placed by elimination)."""
+    notes, claims, unmatched = [], {w: [] for w in wards}, []
     by_key = {key(w): w for w in wards}
     for seat, _label, names, _n in seats:
         for name in [x.strip() for x in names.split(",") if x.strip()]:
-            w = by_key.get(key(name))
+            w = None
+            alias = ALIASES.get((state, lga, name.upper()))
+            if alias:
+                w = by_key.get(key(alias))
+                notes.append(f"'{name}' read as register ward '{alias}' (ALIASES)" if w else f"ALIAS '{alias}' is not a register ward")
+            if not w:
+                w = by_key.get(key(name))
             if not w:
                 best = sorted(((difflib.SequenceMatcher(None, key(name), k).ratio(), k) for k in by_key), reverse=True)
                 if best and best[0][0] >= 0.72 and (len(best) == 1 or best[0][0] - best[1][0] >= 0.08):
@@ -127,9 +175,12 @@ def solve(state, lga, seats, wards):
                     notes.append(f"'{name}' read as register ward '{w}' ({best[0][0]:.2f})")
             if not w:
                 notes.append(f"'{name}' ({seat}) matches no register ward")
+                unmatched.append((seat, name))
                 continue
             if seat not in claims[w]:
                 claims[w].append(seat)
+    if any(n is None for _s, _l, _names, n in seats):
+        return solve_by_names(seats, claims, unmatched, notes)
     want = {seat: n for seat, _l, _names, n in seats}
     fixed = {w: c[0] for w, c in claims.items() if len(c) == 1}
     open_wards = [(w, c if c else list(want)) for w, c in claims.items() if len(c) != 1]
@@ -153,7 +204,34 @@ def solve(state, lga, seats, wards):
             notes.append(f"ward '{w}' ({'listed twice' if c != list(want) else 'not listed'}) placed in {fits[0][w]} by the unit counts")
     else:
         notes.append(f"{len(fits)} readings fit the unit counts for {[w for w, _c in open_wards]}: left whole")
-    return (fits[0] if len(fits) == 1 else None), notes
+    return (fits[0] if len(fits) == 1 else None), notes, []
+
+
+def solve_by_names(seats, claims, unmatched, notes):
+    """No unit counts (WARRI_SOURCE): names alone must settle every ward, one elimination at most."""
+    twice = [w for w, c in claims.items() if len(c) > 1]
+    if twice:
+        notes.append(f"claimed by two seats: {twice}: left whole")
+        return None, notes, []
+    got = {w: c[0] for w, c in claims.items() if c}
+    unclaimed = [w for w, c in claims.items() if not c]
+    eliminated = []
+    if len(unmatched) == 1 and len(unclaimed) == 1:
+        seat, name = unmatched[0]
+        got[unclaimed[0]] = seat
+        eliminated = [unclaimed[0]]
+        notes.append(f"ward '{unclaimed[0]}' placed in {seat} BY ELIMINATION: the only register ward left, "
+                     f"for the only name left ('{name}')")
+    elif unmatched or unclaimed:
+        notes.append(f"names unmatched {[n for _s, n in unmatched]}, register wards unclaimed {unclaimed}: left whole")
+        return None, notes, []
+    for seat, _label, names, _n in seats:
+        listed = len([x for x in names.split(",") if x.strip()])
+        placed = sum(1 for s in got.values() if s == seat)
+        if listed != placed:
+            notes.append(f"{seat}: INEC lists {listed} wards, {placed} placed: left whole")
+            return None, notes, []
+    return got, notes, eliminated
 
 
 def main():
@@ -166,8 +244,11 @@ def main():
         if not wards:
             report.append(f"SKIP {state} / {lga}: the register has no such LGA")
             continue
-        got, notes = solve(state, lga, seats, wards)
-        head = f"{'ok  ' if got else 'SKIP'} {state} / {lga}: " + ", ".join(f"{s} {n}" for s, _l, _w, n in seats)
+        got, notes, eliminated = solve(state, lga, seats, wards)
+        units = {seat: (n if n is not None else sum(wards[w] for w, s in (got or {}).items() if s == seat))
+                 for seat, _l, _w, n in seats}
+        head = f"{'ok  ' if got else 'SKIP'} {state} / {lga}: " + ", ".join(
+            f"{s} {units[s]}{'' if n is not None else ' (register count; INEC gives none)'}" for s, _l, _w, n in seats)
         report.append(head)
         report += [f"       {n}" for n in notes]
         if not got:
@@ -177,14 +258,17 @@ def main():
             seat: {"inecLabel": label,
                    "wards": sorted(w for w, s in got.items() if s == seat),
                    "wardCodes": sorted(codes[w] for w, s in got.items() if s == seat),
-                   "pollingUnits": n}
+                   "pollingUnits": units[seat],
+                   **({} if n is not None else {"source": "warri", "unitsFrom": "register"}),
+                   **({"byElimination": sorted(w for w in eliminated if got[w] == seat)}
+                      if any(got[w] == seat for w in eliminated) else {})}
             for seat, label, _names, n in seats}
     print("\n".join(report))
     print(f"{ok} of {len(TABLE)} LGAs verified; {sum(len(v) for v in out.values())} constituencies")
     if "--write" in sys.argv:
         os.makedirs(os.path.dirname(OUT), exist_ok=True)
         with open(OUT, "w", encoding="utf8") as f:
-            json.dump({"_source": SOURCE, "lgas": out}, f, indent=1, ensure_ascii=False)
+            json.dump({"_source": SOURCE, "_sourceWarri": WARRI_SOURCE, "lgas": out}, f, indent=1, ensure_ascii=False)
             f.write("\n")
         print(f"wrote {os.path.relpath(OUT, ROOT)}")
 

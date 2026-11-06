@@ -2970,7 +2970,7 @@
       const code = (b && b.error) || ('HTTP ' + status);
       const m = {
         unknown_party: 'That is not a party acronym Hawkeye knows.',
-        party_taken: 'Another organisation is already marked as this party' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '.',
+        party_taken: 'Another organisation is already marked as this party for an overlapping race and area' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '. A party can have one per race and area: set this one’s race and area first, then its party.',
         has_coordinators: 'Remove this organisation’s coordinators before changing or clearing its party or organisation link.',
         issuer_not_party: 'Mark it as a party, or link it to a listed organisation, first.',
         unknown_org: 'That organisation is not on the list (app/cso/manifest.json).',
@@ -3056,6 +3056,7 @@
         seat_not_in_state: 'That seat is in ' + ((b && b.state) || 'another state') + ', not the state picked.',
         lga_needs_state: 'Pick the state before the LGA.',
         empty_scope: 'That race has no polling units in this area.',
+        party_taken: 'This party already has an organisation for an overlapping race and area' + (b && b.issuer ? ' (' + b.issuer.name + ')' : '') + '. A party can have one per race and area.',
       };
       return m[code] || fill(T('orgcode.admin.error', 'Could not complete ({error}).'), { error: code });
     };

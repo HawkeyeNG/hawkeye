@@ -910,8 +910,7 @@ function heldText(g, code) {
     return T('situation-room.org-pending-banner', 'Hawkeye is checking that this room speaks for {v0} — every organisation is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
       { v0: g.org_claim });
   }
-  return T('situation-room.pending-banner', 'Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.',
-    { v0: (g && (g.party_claim || g.party)) || '' });
+  return T('situation-room.pending-banner', 'Hawkeye is approving this campaign room. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.');
 }
 /* The refusals the name rule and the request limit produce, at create and at rename. */
 function nameError(body) {

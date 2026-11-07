@@ -1057,7 +1057,7 @@
   "situation-room.none-from-your-observers-yet": "None from your observers yet",
   "situation-room.not-saying": "Not saying",
   "situation-room.party-pending": "{v0} (pending verification)",
-  "situation-room.pending-banner": "Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
+  "situation-room.pending-banner": "Hawkeye is approving this campaign room. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
   "situation-room.name-block-banner": "This room’s name names a party it is not verified for, so nobody new can join. Rename the room to open it.",
   "situation-room.name-names-party": "That name names a party ({v0}). Only a room verified for that party may use it — choose the party when you set the room up, or pick another name.",
   "situation-room.too-many-party-rooms": "You have asked for several party rooms today. Try again tomorrow.",

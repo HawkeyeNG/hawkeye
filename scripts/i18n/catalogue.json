@@ -2049,7 +2049,7 @@
   "situation-room.party-check-note": "Hawkeye checks a party room before its invite links work — every party the same way.",
   "situation-room.party-pending": "{v0} (pending verification)",
   "situation-room.party-totals": "Party totals",
-  "situation-room.pending-banner": "Hawkeye is verifying the {v0} label on this room — every party is checked the same way. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
+  "situation-room.pending-banner": "Hawkeye is approving this campaign room. Until then invite links do not work and nobody new can join. You can set the room up meanwhile.",
   "situation-room.pending-many": "{v0} people have been asked and have not answered yet.",
   "situation-room.pending-one": "{v0} person has been asked and has not answered yet.",
   "situation-room.pick-a-campaign": "Pick the campaign to bring observers from.",

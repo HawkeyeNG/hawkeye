@@ -3014,5 +3014,12 @@
   "geo.error": "Ngwaọrụ a enweghị ike ịkọ ebe ọ nọ ugbu a — nwaa ọzọ.",
   "capture.camera-unavailable": "Igwefoto adịghị — {v0}",
   "outbox.refused": "Sava jụrụ ya",
-  "outbox.report-label": "akụkọ"
+  "outbox.report-label": "akụkọ",
+  "observe.result-sheet-or-poster": "Mpempe akwụkwọ nsonaazụ ma ọ bụ pọsta",
+  "observe.ec8a-sheet-or-ec60e-poster": "Mpempe akwụkwọ EC8A, ma ọ bụ pọsta EC60E a madoro n'ngalaba ntuli aka",
+  "observe.capture-result": "See foto nsonaazụ",
+  "observe.parts-hint": "Pọsta ahụ ọ buru oke ibu maka otu foto doro anya, ma ọ bụ ọ dị n'ọtụtụ mpempe akwụkwọ? Tinye ndị fọdụrụ n'usoro, site n'elu.",
+  "observe.add-next-part": "Tinye akụkụ na-esote",
+  "observe.parts-joined": "E jikọtara foto {n} ka ha bụrụ otu",
+  "observe.parts-join-failed": "Enweghị ike ijikọ foto ndị ahụ. See ha ọzọ."
 }

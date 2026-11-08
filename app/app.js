@@ -603,7 +603,16 @@ function cachedParties() {
 let contests = [];
 let logos = null; // party code -> official emblem path (logos/manifest.json)
 // cameraStream/capturing now live in capture.js — the single camera owner.
-const shots = { sheet: null, venue: null }; // { blob, capturedAt }
+const shots = { sheet: null, venue: null }; // { blob, capturedAt } — a joined sheet also has { parts }
+/* SEVERAL PHOTOS OF ONE SHEET (sheet-parts.js). The camera's own frames of the
+   sheet, top first, kept in memory so each join starts from the originals
+   rather than re-compressing an already-joined JPEG. Not in the draft: a
+   restored draft keeps its joined photo, and a part added after a restore is
+   joined onto that. `sheetAppending` holds while the observer is adding parts:
+   the sheet's unit code is read from the FIRST photo only, so a later part's
+   OCR (which has no code on it) cannot replace that offer with "unread". */
+let sheetPartFrames = null;
+let sheetAppending = false;
 
 // ---------- registration (single pane: phone first, then OTP in the same input) ----------
 /* ONE ORDER ON EVERY SURFACE (flow walkthrough ONB-03, R-ORG-CODE-ORDER):
@@ -2793,6 +2802,9 @@ $('sel-ward').onchange = async () => {
 function resetReportState() {
   shots.sheet = null;
   shots.venue = null;
+  sheetPartFrames = null;
+  sheetAppending = false;
+  paintSheetParts();
   selectedPu = null;
   window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
   const oldHint = document.getElementById('ocr-hint');
@@ -3355,6 +3367,11 @@ async function restoreDraft(d) {
       keyedText($(`btn-cam-${t}`), 'observe.retake-photo', 'Retake photo');
       if (t === 'sheet') showSheetReference(img.src);
     }
+    // A joined sheet comes back joined (its `parts` rode in the draft); the
+    // original frames do not, so a part added now is joined onto this photo.
+    sheetPartFrames = null;
+    sheetAppending = false;
+    paintSheetParts();
     updateSubmitState(); // folds step 1 when both photos are back
     if (d.unit && d.unit.pu_code) selectUnit(d.unit);
     const sel = $('sel-contest');
@@ -3816,20 +3833,28 @@ function updateSubmitState() {
 // A function, so the labels are in the language of the moment the camera
 // opens (capture.js paints them on every open).
 const targetLabels = () => ({
-  sheet: { title: T('observe.results-sheet-ec8a', 'Results sheet (EC8A)'), action: T('observe.capture-ec8a', 'Capture EC8A') },
+  // The agents' EC8A, or the EC60(E) poster the public can photograph.
+  sheet: { title: T('observe.result-sheet-or-poster', 'Results sheet or poster'), action: T('observe.capture-result', 'Capture the result') },
   venue: { title: T('observe.polling-venue', 'Polling venue'), action: T('observe.capture-polling-venue', 'Capture Polling Venue') },
 });
 const closeCamera = () => window.HAWKEYE_CAPTURE.close();
-const openCamera = (target) => window.HAWKEYE_CAPTURE.open(target, {
+const openCamera = (target, { append = false } = {}) => window.HAWKEYE_CAPTURE.open(target, {
   // Truthy closes the camera; falsy keeps it open for a retake, which is what
   // finalizeShot already signals.
-  onShot: (blob, t) => finalizeShot(t, blob),
+  onShot: (blob, t) => finalizeShot(t, blob, { append }),
   onError: (m) => { $('submit-status').textContent = m; },
   labels: targetLabels(),
 });
 
-$('btn-cam-sheet').onclick = () => openCamera('sheet');
+// "Take photo" / "Retake photo" always starts the sheet again from one photo.
+$('btn-cam-sheet').onclick = () => { sheetAppending = false; openCamera('sheet'); };
 $('btn-cam-venue').onclick = () => openCamera('venue');
+$('btn-add-part').onclick = () => {
+  const P = window.HAWKEYE_SHEETPARTS;
+  if (!P || !shots.sheet || (shots.sheet.parts || 1) >= P.MAX) return;
+  sheetAppending = true;
+  openCamera('sheet', { append: true });
+};
 
 // Web OCR — gives the browser the same sheet read-back the app shell gets from
 // ML Kit, via Tesseract.js (WASM, self-hosted under vendor/tesseract, lazy-
@@ -3992,7 +4017,9 @@ async function resolveUnitFromSheet(text) {
 }
 
 window.addEventListener('hawkeye-sheet-ocr', (e) => {
-  if (e.detail && e.detail.text) resolveUnitFromSheet(e.detail.text);
+  // The unit code is read off the FIRST photo of a sheet; a later part carries
+  // none, and its "could not read a code" would replace the first one's offer.
+  if (e.detail && e.detail.text && !sheetAppending) resolveUnitFromSheet(e.detail.text);
   const wrap = $('vote-inputs');
   const d = e.detail;
   if (!wrap || !d || !d.tokens || !d.tokens.length) return;
@@ -4115,32 +4142,86 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !zoom.hidden) shut(); });
 });
 
-async function finalizeShot(target, blob) {
+/**
+ * The "Add the next part" block under the sheet photo (sheet-parts.js): shown
+ * once a sheet photo exists, with the count once there is more than one, and
+ * no Add button once the photo holds as many parts as it can.
+ */
+function paintSheetParts() {
+  const box = $('sheet-parts');
+  if (!box) return;
+  const P = window.HAWKEYE_SHEETPARTS;
+  const n = (shots.sheet && shots.sheet.parts) || 1;
+  box.hidden = !(P && shots.sheet);
+  const count = $('sheet-parts-count');
+  if (count) {
+    count.hidden = n < 2;
+    count.textContent = n >= 2 ? T('observe.parts-joined', '{n} photos joined into one', { n }) : '';
+  }
+  const add = $('btn-add-part');
+  if (add) add.hidden = !P || n >= P.MAX;
+}
+window.addEventListener('hawkeye-lang', paintSheetParts);
+
+async function finalizeShot(target, blob, { append = false } = {}) {
+  // ANOTHER PART OF THE SAME SHEET: joined onto what is already there.
+  const joining = target === 'sheet' && append && !!shots.sheet && !!window.HAWKEYE_SHEETPARTS;
   // SHOW THE PHOTO FIRST. The preview used to be set only after compression AND
   // the GPS await, so between the shutter and the fix there was nothing on screen
   // at all — the app looked frozen, and on a slow indoor lock that lasted several
   // seconds. Painting the raw frame costs nothing and is replaced below by the
-  // compressed bytes, which are the ones actually signed and uploaded.
+  // compressed bytes, which are the ones actually signed and uploaded. An added
+  // part keeps the joined photo on screen until the new join is ready.
   const img = $(`preview-${target}`);
   const raw = URL.createObjectURL(blob);
-  img.src = raw;
-  img.hidden = false;
+  if (!joining) {
+    img.src = raw;
+    img.hidden = false;
+  }
+  const frame = blob; // the camera's own frame: what a join is made from
 
   blob = await compressCapture(blob, target === 'sheet' ? 1500 : 1280, target === 'sheet' ? 0.76 : 0.72);
   const fix = await getCaptureFix();
   if (!fix) {
     // Nothing was stored, so the optimistic preview has to come back off.
-    img.hidden = true;
-    img.removeAttribute('src');
+    if (!joining) {
+      img.hidden = true;
+      img.removeAttribute('src');
+    }
     URL.revokeObjectURL(raw);
     hkAlert(T('observe.no-gps-fix-retake', 'No GPS fix — photos must be location-stamped. Move to open sky and retake.'));
     return false;
   }
-  shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
-  if (target === 'sheet') webOcrSheet(blob); // fire-and-forget read-back (no-op in the app shell — ML Kit covers it there)
-  img.src = URL.createObjectURL(blob);
-  URL.revokeObjectURL(raw);
-  img.hidden = false;
+  if (joining) {
+    // From the original frames where this page still has them; after a restored
+    // draft, from the joined photo it kept.
+    const base = sheetPartFrames && sheetPartFrames.length ? sheetPartFrames : [shots.sheet.blob];
+    let joined = null;
+    try { joined = await window.HAWKEYE_SHEETPARTS.join([...base, frame]); } catch { joined = null; }
+    URL.revokeObjectURL(raw);
+    if (!joined) {
+      hkAlert(T('observe.parts-join-failed', 'Could not join the photos. Take them again.'));
+      return false;
+    }
+    // The FIRST photo's time and place stand for the sheet: that is when and
+    // where it was found. The joined bytes are what is hashed, signed and sent.
+    shots.sheet = { ...shots.sheet, blob: joined, parts: (shots.sheet.parts || 1) + 1 };
+    sheetPartFrames = [...base, frame];
+    webOcrSheet(blob); // this part's counts, as for any sheet photo (the unit code is not re-read: sheetAppending)
+    img.src = URL.createObjectURL(joined);
+    img.hidden = false;
+  } else {
+    shots[target] = { blob, capturedAt: Date.now(), lat: fix.coords.latitude, lng: fix.coords.longitude };
+    if (target === 'sheet') {
+      sheetPartFrames = [frame];
+      sheetAppending = false;
+      webOcrSheet(blob); // fire-and-forget read-back (no-op in the app shell — ML Kit covers it there)
+    }
+    img.src = URL.createObjectURL(blob);
+    URL.revokeObjectURL(raw);
+    img.hidden = false;
+  }
+  if (target === 'sheet') paintSheetParts();
   // The counts step gets the sheet too. By the time the figures are typed the
   // observer has usually left the crowd, and their own photo was two collapsed
   // steps up the page — while the step said to copy the figures off it.
@@ -4240,6 +4321,10 @@ $('btn-submit').onclick = async () => {
   form.set('signature', signature);
   const serialEl = $('sheet-serial');
   if (serialEl && serialEl.value.trim()) form.set('sheetSerial', serialEl.value.trim());
+  // Unsigned, like the serial: how many photos the sheet photo was joined from.
+  // It changes only how the server reads the photo; it rides the direct body
+  // and the outbox with every other string field of this form.
+  if ((shots.sheet.parts || 1) >= 2) form.set('sheetParts', String(shots.sheet.parts));
   // Device signals (device.js getDeviceSignals): unsigned, advisory — the server
   // counts one phone running both Hawkeye apps once, and one phone as one
   // counting account per election (a report asks for a DeviceCheck token too,
@@ -4360,6 +4445,8 @@ $('btn-submit').onclick = async () => {
     keepCopies(); // here, not when the outbox flushes it later
     clearDraft(); // handed off — the outbox holds it now
     shots.sheet = null; shots.venue = null;
+    sheetPartFrames = null; sheetAppending = false;
+    paintSheetParts();
     const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
     let offlineVotes = [];
     try { offlineVotes = JSON.parse(fields.votes); } catch { /* card just omits them */ }

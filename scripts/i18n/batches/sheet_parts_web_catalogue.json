@@ -1,0 +1,9 @@
+{
+  "observe.result-sheet-or-poster": "Results sheet or poster",
+  "observe.ec8a-sheet-or-ec60e-poster": "The EC8A sheet, or the EC60E poster pasted up at the unit",
+  "observe.capture-result": "Capture the result",
+  "observe.parts-hint": "Poster too big for one clear photo, or on several sheets? Add the rest in order, from the top.",
+  "observe.add-next-part": "Add the next part",
+  "observe.parts-joined": "{n} photos joined into one",
+  "observe.parts-join-failed": "Could not join the photos. Take them again."
+}

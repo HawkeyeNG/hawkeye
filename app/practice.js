@@ -315,6 +315,51 @@
       : T('collation.parties-entered', '✔ {v0} parties entered', { v0: n }));
   };
 
+  // ---- several photos of one sheet (sheet-parts.js), as in the real report ----
+  // A poster too big for one clear photo, or printed across sheets, is shot in
+  // parts, top first, and joined into one photo. Practice rehearses exactly
+  // that (the lockstep rule, docs/REPORT-FLOW-CAPTURE-FIRST.md).
+  let sheetParts = 1;      // photos the practice sheet photo is joined from
+  let sheetFrames = null;  // their frames, top first (Blobs or data: URLs)
+  let appendNext = false;  // the next sheet shot is another part of the same sheet
+  function paintSheetParts() {
+    const box = $('sheet-parts');
+    if (!box) return;
+    const P = window.HAWKEYE_SHEETPARTS;
+    box.hidden = !(P && photos.sheet);
+    const count = $('sheet-parts-count');
+    if (count) {
+      count.hidden = sheetParts < 2;
+      count.textContent = sheetParts >= 2 ? T('observe.parts-joined', '{n} photos joined into one', { n: sheetParts }) : '';
+    }
+    const add = $('btn-add-part');
+    if (add) add.hidden = !P || sheetParts >= P.MAX;
+  }
+  document.addEventListener('hawkeye-lang', paintSheetParts);
+  /** Keep a new sheet shot — the first photo, or the next part joined on. Resolves to its preview src, or null. */
+  async function keepSheetShot(frame) {
+    const P = window.HAWKEYE_SHEETPARTS;
+    if (appendNext && photos.sheet && P) {
+      appendNext = false;
+      const base = sheetFrames && sheetFrames.length ? sheetFrames : [photos.sheet];
+      let joined = null;
+      try { joined = await P.join([...base, frame]); } catch { joined = null; }
+      if (!joined) {
+        hkAlert(T('observe.parts-join-failed', 'Could not join the photos. Take them again.'));
+        return null;
+      }
+      sheetFrames = [...base, frame];
+      sheetParts += 1;
+      photos.sheet = joined;
+      return URL.createObjectURL(joined);
+    }
+    appendNext = false;
+    sheetFrames = [frame];
+    sheetParts = 1;
+    photos.sheet = frame;
+    return typeof frame === 'string' ? frame : URL.createObjectURL(frame);
+  }
+
   // ---- lightweight camera (practice only; no GPS, no upload) ----
   let stream = null; let target = null;
   async function openCamera(which) {
@@ -328,12 +373,19 @@
       try {
         const blob = await window.HAWKEYE.capturePhoto(which);
         const img = $(`preview-${which}`);
-        img.src = URL.createObjectURL(blob);
-        img.hidden = false;
-        photos[which] = blob;
+        if (which === 'sheet') {
+          const src = await keepSheetShot(blob);
+          if (src) { img.src = src; img.hidden = false; }
+          paintSheetParts();
+        } else {
+          img.src = URL.createObjectURL(blob);
+          img.hidden = false;
+          photos[which] = blob;
+        }
         markSlot(which);
       } catch (e) {
         /* user backed out of the scanner/camera — leave the slot unchanged */
+        appendNext = false;
       }
       return;
     }
@@ -367,12 +419,27 @@
     c.width = v.videoWidth || 640; c.height = v.videoHeight || 480;
     c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
     const img = $(`preview-${target}`);
-    img.src = c.toDataURL('image/jpeg', 0.6); img.hidden = false;
-    photos[target] = img.src;
+    const data = c.toDataURL('image/jpeg', 0.6);
+    if (target === 'sheet') {
+      keepSheetShot(data).then((src) => {
+        if (src) { img.src = src; img.hidden = false; }
+        paintSheetParts();
+      });
+    } else {
+      img.src = data; img.hidden = false;
+      photos[target] = data;
+    }
     markSlot(target);
     closeCamera();
   }
-  $('btn-cam-sheet').onclick = () => openCamera('sheet');
+  // "Take photo" starts the sheet again from one photo; "Add the next part" joins one on.
+  $('btn-cam-sheet').onclick = () => { appendNext = false; openCamera('sheet'); };
+  $('btn-add-part').onclick = () => {
+    const P = window.HAWKEYE_SHEETPARTS;
+    if (!P || !photos.sheet || sheetParts >= P.MAX) return;
+    appendNext = true;
+    openCamera('sheet');
+  };
   $('btn-cam-venue').onclick = () => openCamera('venue');
   $('btn-skip-sheet').onclick = (e) => { e.preventDefault(); markSlot('sheet'); };
   $('btn-skip-venue').onclick = (e) => { e.preventDefault(); markSlot('venue'); };

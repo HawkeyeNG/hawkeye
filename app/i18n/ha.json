@@ -3015,5 +3015,12 @@
   "geo.error": "Wannan na’urar ba ta iya bayar da wurinta yanzu ba — sake gwadawa.",
   "capture.camera-unavailable": "Babu kyamara — {v0}",
   "outbox.refused": "Uwar garke ta ƙi shi",
-  "outbox.report-label": "rahoto"
+  "outbox.report-label": "rahoto",
+  "observe.result-sheet-or-poster": "Takardar sakamako ko fosta",
+  "observe.ec8a-sheet-or-ec60e-poster": "Takardar EC8A, ko fostar EC60E da aka liƙa a rukunin zaɓe",
+  "observe.capture-result": "Ɗauki hoton sakamako",
+  "observe.parts-hint": "Fostar ta fi girma ga hoto ɗaya mai kyau, ko tana kan takardu da yawa? Ƙara sauran a jere, daga sama.",
+  "observe.add-next-part": "Ƙara kashi na gaba",
+  "observe.parts-joined": "An haɗa hotuna {n} zuwa ɗaya",
+  "observe.parts-join-failed": "Ba a iya haɗa hotunan ba. Sake ɗaukar su."
 }

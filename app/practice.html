@@ -136,11 +136,17 @@
         <p data-i18n="practice.on-election-day-you-take-two" class="hint">On election day you take two live photos here — the results sheet and the venue.
         Try it now (or tap “Use a sample” if you’d rather skip the camera in practice).</p>
         <div class="capture-slot">
-          <div class="slot-head"><div><strong data-i18n="observe.results-sheet-ec8a">Results sheet (EC8A)</strong><small data-i18n="practice.the-announced-results-form">The announced results form</small></div>
+          <div class="slot-head"><div><strong data-i18n="observe.result-sheet-or-poster">Results sheet or poster</strong><small data-i18n="observe.ec8a-sheet-or-ec60e-poster">The EC8A sheet, or the EC60E poster pasted up at the unit</small></div>
             <span data-i18n="common.required" class="slot-status" id="status-sheet">Required</span></div>
           <img id="preview-sheet" alt="" hidden style="max-width:100%;border-radius:8px;margin:8px 0" />
           <div class="row"><button data-i18n="common.take-photo" id="btn-cam-sheet" class="secondary" style="width:auto">Take photo</button>
             <button data-i18n="practice.use-a-sample" id="btn-skip-sheet" class="btn-link" style="width:auto">Use a sample</button></div>
+          <!-- Several photos of one sheet, as in observe.html (sheet-parts.js). -->
+          <div id="sheet-parts" hidden style="margin-top:10px">
+            <p class="hint" data-i18n="observe.parts-hint" style="margin:0 0 6px">Poster too big for one clear photo, or on several sheets? Add the rest in order, from the top.</p>
+            <p class="hint" id="sheet-parts-count" hidden style="margin:0 0 6px"></p>
+            <button data-i18n="observe.add-next-part" id="btn-add-part" class="secondary" style="width:auto">Add the next part</button>
+          </div>
         </div>
         <div class="capture-slot">
           <div class="slot-head"><div><strong data-i18n="observe.polling-venue">Polling venue</strong><small data-i18n="practice.the-building-or-surroundings">The building or surroundings</small></div>
@@ -314,7 +320,8 @@
   <!-- The real step 2's search box, on the same offline packs. -->
   <script src="register-store.js?v=6"></script>
   <script src="pu-search.js?v=10"></script>
-  <script src="practice.js?v=17"></script>
+  <script src="sheet-parts.js?v=1"></script>
+  <script src="practice.js?v=18"></script>
   <script src="invite-unit.js?v=2"></script>
   <script>
     /* The second-observer card on the completion screen. Not a real report —

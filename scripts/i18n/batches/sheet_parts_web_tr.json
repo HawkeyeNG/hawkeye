@@ -1,0 +1,44 @@
+{
+  "observe.result-sheet-or-poster": {
+    "en": "Results sheet or poster",
+    "ha": "Takardar sakamako ko fosta",
+    "ig": "Mpempe akwụkwọ nsonaazụ ma ọ bụ pọsta",
+    "yo": "Ìwé àbájáde tàbí pósítà"
+  },
+  "observe.ec8a-sheet-or-ec60e-poster": {
+    "en": "The EC8A sheet, or the EC60E poster pasted up at the unit",
+    "ha": "Takardar EC8A, ko fostar EC60E da aka liƙa a rukunin zaɓe",
+    "ig": "Mpempe akwụkwọ EC8A, ma ọ bụ pọsta EC60E a madoro n'ngalaba ntuli aka",
+    "yo": "Ìwé EC8A, tàbí pósítà EC60E tí wọ́n lẹ̀ mọ́ ògiri ní ẹ̀ka ìdìbò"
+  },
+  "observe.capture-result": {
+    "en": "Capture the result",
+    "ha": "Ɗauki hoton sakamako",
+    "ig": "See foto nsonaazụ",
+    "yo": "Ya fọ́tò àbájáde"
+  },
+  "observe.parts-hint": {
+    "en": "Poster too big for one clear photo, or on several sheets? Add the rest in order, from the top.",
+    "ha": "Fostar ta fi girma ga hoto ɗaya mai kyau, ko tana kan takardu da yawa? Ƙara sauran a jere, daga sama.",
+    "ig": "Pọsta ahụ ọ buru oke ibu maka otu foto doro anya, ma ọ bụ ọ dị n'ọtụtụ mpempe akwụkwọ? Tinye ndị fọdụrụ n'usoro, site n'elu.",
+    "yo": "Ṣé pósítà náà tóbi jù fún fọ́tò kan tó ṣe kedere, tàbí ó wà lórí ìwé púpọ̀? Fi àwọn yòókù kún un ní tẹ̀lé-n-tẹ̀lé, láti òkè."
+  },
+  "observe.add-next-part": {
+    "en": "Add the next part",
+    "ha": "Ƙara kashi na gaba",
+    "ig": "Tinye akụkụ na-esote",
+    "yo": "Fi apá tó kàn kún un"
+  },
+  "observe.parts-joined": {
+    "en": "{n} photos joined into one",
+    "ha": "An haɗa hotuna {n} zuwa ɗaya",
+    "ig": "E jikọtara foto {n} ka ha bụrụ otu",
+    "yo": "A ti so fọ́tò {n} pọ̀ di ọ̀kan"
+  },
+  "observe.parts-join-failed": {
+    "en": "Could not join the photos. Take them again.",
+    "ha": "Ba a iya haɗa hotunan ba. Sake ɗaukar su.",
+    "ig": "Enweghị ike ijikọ foto ndị ahụ. See ha ọzọ.",
+    "yo": "A kò lè so àwọn fọ́tò náà pọ̀. Tún wọn yà."
+  }
+}

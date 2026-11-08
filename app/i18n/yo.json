@@ -3014,5 +3014,12 @@
   "geo.error": "Ẹ̀rọ yìí kò lè sọ ibi tí ó wà báyìí — gbiyanju lẹ́ẹ̀kan sí.",
   "capture.camera-unavailable": "Kámẹ́rà kò sí — {v0}",
   "outbox.refused": "Sáfà kọ̀ ọ́",
-  "outbox.report-label": "ìròyìn"
+  "outbox.report-label": "ìròyìn",
+  "observe.result-sheet-or-poster": "Ìwé àbájáde tàbí pósítà",
+  "observe.ec8a-sheet-or-ec60e-poster": "Ìwé EC8A, tàbí pósítà EC60E tí wọ́n lẹ̀ mọ́ ògiri ní ẹ̀ka ìdìbò",
+  "observe.capture-result": "Ya fọ́tò àbájáde",
+  "observe.parts-hint": "Ṣé pósítà náà tóbi jù fún fọ́tò kan tó ṣe kedere, tàbí ó wà lórí ìwé púpọ̀? Fi àwọn yòókù kún un ní tẹ̀lé-n-tẹ̀lé, láti òkè.",
+  "observe.add-next-part": "Fi apá tó kàn kún un",
+  "observe.parts-joined": "A ti so fọ́tò {n} pọ̀ di ọ̀kan",
+  "observe.parts-join-failed": "A kò lè so àwọn fọ́tò náà pọ̀. Tún wọn yà."
 }

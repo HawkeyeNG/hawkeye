@@ -38,8 +38,10 @@
     const k = Math.min(1, room / hs.reduce((a, b) => a + b, 0));
     const width = Math.max(1, Math.round(w * k));
     let y = 0;
+    // DOWN, not to nearest: rounding each part up by half a pixel added up to a
+    // join 1-2 px taller than the box (17 of 400 random part sets).
     const rows = hs.map((h) => {
-      const r = { y, h: Math.max(1, Math.round(h * k)) };
+      const r = { y, h: Math.max(1, Math.floor(h * k)) };
       y += r.h + BAND;
       return r;
     });

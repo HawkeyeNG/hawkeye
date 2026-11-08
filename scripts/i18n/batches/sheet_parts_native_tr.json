@@ -1,0 +1,17 @@
+{
+  "n.app.report.result.fit-sheet-or-poster": {
+    "ha": "Saka takardar EC8A, ko fostar EC60E da ke bango, cikin firam ɗin. Dole kowace lamba ta zama mai karantuwa.",
+    "ig": "Tinye mpempe akwụkwọ EC8A, ma ọ bụ pọsta EC60E dị na mgbidi, n'ime okpokolo ahụ. Ọnụọgụ ọ bụla ga-agụrịrị nke ọma.",
+    "yo": "Fi ìwé EC8A, tàbí pósítà EC60E tó wà lára ògiri, sínú férémù náà. Gbogbo nọ́ńbà gbọ́dọ̀ ṣeé kà."
+  },
+  "n.components.capture-camera.joining-photos": {
+    "ha": "Ana haɗa hotunan…",
+    "ig": "A na-ejikọ foto ndị ahụ…",
+    "yo": "À ń so àwọn fọ́tò náà pọ̀…"
+  },
+  "n.components.capture-camera.part-n": {
+    "ha": "Kashi na {v0} na takardar",
+    "ig": "Akụkụ {v0} nke mpempe akwụkwọ",
+    "yo": "Apá {v0} ti ìwé náà"
+  }
+}

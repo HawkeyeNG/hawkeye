@@ -27,7 +27,7 @@ const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
  * keep this off the string-encoding options, which differ between the legacy
  * and current expo-file-system APIs.
  */
-function bytesFromBase64(b64: string): Uint8Array {
+export function bytesFromBase64(b64: string): Uint8Array {
   const clean = b64.replace(/^data:[^,]*,/, '').replace(/[^A-Za-z0-9+/]/g, '');
   const out = new Uint8Array(Math.floor((clean.length * 3) / 4));
   let o = 0;

@@ -12,6 +12,8 @@ import { describeFixFailure, trySubmitFix, type FixFailure } from '@/lib/locatio
 import { BRAND } from '@/lib/api';
 import { MAX_VIDEO_SECONDS, compressVideo } from '@/lib/media-compress';
 import { t as i18nT } from '@/lib/i18n';
+import { MAX_SHEET_PARTS, mergeReads } from '@/lib/sheet-parts';
+import { SheetJoiner, type SheetJoinerHandle } from '@/components/sheet-joiner';
 
 /**
  * In-app capture with a GPS stamp taken at capture time — the property the
@@ -25,7 +27,12 @@ import { t as i18nT } from '@/lib/i18n';
  * GPS acquisition never hangs — bounded tiers live in lib/location. A failed
  * fix is a clear error with retry; Cancel is NEVER disabled.
  */
-export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null };
+/** `parts` >= 2: the photo was joined on the phone from that many photos of one
+ *  sheet (lib/sheet-parts.ts); sent as the unsigned `sheetParts`. */
+export type Media = Shot & { type: 'image' | 'video'; read?: SheetRead | null; parts?: number };
+
+/** A photo kept as one part of a sheet while the next part is taken. */
+type Part = { uri: string; capturedAt: number; fix: { lat: number; lng: number }; read: SheetRead | null | undefined };
 
 /**
  * Video compression happens AT THE ENCODER, not by cutting recordings short:
@@ -133,6 +140,9 @@ type Props = {
   /** Loud yellow banner for the VENUE step — observers routinely mistake it for
    *  "re-shoot the sheet". Set on the venue step only (never on incidents). */
   venueGuide?: string;
+  /** The result-sheet step: a poster too big for one clear photo, or printed
+   *  across sheets, may be shot in parts and joined (lib/sheet-parts.ts). */
+  allowParts?: boolean;
 };
 
 /**
@@ -173,6 +183,7 @@ export function CaptureCamera({
   partyCodes,
   extraAction,
   venueGuide,
+  allowParts = false,
 }: Props) {
   const [permission, requestPermission] = useCameraPermissions();
   const [micPermission, requestMic] = useMicrophonePermissions();
@@ -230,6 +241,31 @@ export function CaptureCamera({
   /** Lets the mount effect call scanDoc, which is declared below it. */
   const scanDocRef = useRef<(() => Promise<void>) | null>(null);
   useEffect(() => () => void (cancelled.current = true), []);
+  /**
+   * SEVERAL PHOTOS OF ONE SHEET (allowParts): the earlier parts, top first,
+   * while the next one is taken. A ref beside the state, because scanDoc and
+   * cancel run from closures made before the state update lands.
+   */
+  const [parts, setPartsState] = useState<Part[]>([]);
+  const partsRef = useRef<Part[]>([]);
+  const setParts = (p: Part[]) => { partsRef.current = p; setPartsState(p); };
+  const joinerRef = useRef<SheetJoinerHandle>(null);
+  /** "Joining the photos…" / "Could not join…" — on the confirm screen, where
+   *  the join happens (`line` is the camera screen's). */
+  const [partNote, setPartNote] = useState<string | null>(null);
+  /** Back to the last part kept, as the photo on screen: the observer backed out
+   *  of shooting the next part, which must not throw the earlier parts away. */
+  const restoreLastPart = () => {
+    const all = partsRef.current;
+    const last = all[all.length - 1];
+    if (!last) return false;
+    setParts(all.slice(0, -1));
+    fixRef.current = Promise.resolve(last.fix);
+    setFixState('ok');
+    setRead(last.read);
+    setPreview({ uri: last.uri, capturedAt: last.capturedAt });
+    return true;
+  };
 
   // Live elapsed counter while recording — an observer filming under pressure
   // needs to see time passing and how close the 90s cap is, not guess.
@@ -311,6 +347,9 @@ export function CaptureCamera({
   }, [permission, requestPermission]);
 
   const cancel = () => {
+    // Backing out of the NEXT part of a sheet returns to the parts already
+    // taken; only with none kept does Cancel leave the step.
+    if (partsRef.current.length && restoreLastPart()) return;
     cancelled.current = true;
     if (recording) cam.current?.stopRecording();
     onCancel();
@@ -447,6 +486,9 @@ export function CaptureCamera({
       return;
     }
     if (out.reason === 'cancelled') {
+      // Backing out of the scanner while shooting the NEXT part of a sheet
+      // goes back to the parts already taken, not out of the step.
+      if (partsRef.current.length && restoreLastPart()) return;
       // Backing out of a WORKING scanner means backing out of the step. Dropping
       // the observer into a different capture mode they did not ask for is how
       // you end up with an uncropped sheet nobody intended to take.
@@ -507,6 +549,7 @@ export function CaptureCamera({
     setPreview(null);
     setRead(undefined);
     setLine(null);
+    setPartNote(null);
     setBusy(false);
     setFixState('pending');
     // Retaking a document means scanning it again, not falling back to the raw
@@ -526,6 +569,43 @@ export function CaptureCamera({
     if (!fix && requireFix) {
       setBusy(false);
       setFixState('failed');
+      return;
+    }
+    // SEVERAL PHOTOS OF ONE SHEET: join them into the ONE photo that is hashed
+    // and signed. The join is a fresh canvas JPEG inside the 1500 x 2250 box
+    // (no EXIF survives it), so it does not go through downscaleForUpload. The
+    // FIRST part's time and place stand for the sheet: that is when and where
+    // it was found.
+    if (partsRef.current.length) {
+      const kept = partsRef.current;
+      setPartNote(i18nT('n.components.capture-camera.joining-photos'));
+      let joined: { uri: string } | null = null;
+      try {
+        joined = joinerRef.current ? await joinerRef.current.join([...kept.map((p) => p.uri), preview.uri]) : null;
+      } catch {
+        joined = null;
+      }
+      if (cancelled.current || g !== gen.current) return;
+      if (!joined) {
+        // The parts and this photo stay, so they can try again or start again.
+        setBusy(false);
+        setPartNote(i18nT('observe.parts-join-failed'));
+        return;
+      }
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      const first = kept[0];
+      setPartNote(null);
+      setPreview(null);
+      setBusy(false);
+      setParts([]);
+      onCapture({
+        uri: joined.uri,
+        capturedAt: first.capturedAt,
+        ...first.fix,
+        type: 'image',
+        read: mergeReads([...kept.map((p) => p.read), read]),
+        parts: kept.length + 1,
+      });
       return;
     }
     // Re-save to the shared upload target before the bytes are hashed/signed, so
@@ -552,6 +632,36 @@ export function CaptureCamera({
       type: 'image',
       read,
     });
+  };
+
+  /** Keep this photo as one part of the sheet and shoot the next, top first. */
+  const addPart = async () => {
+    if (!preview || busy || !allowParts || partsRef.current.length + 1 >= MAX_SHEET_PARTS) return;
+    const g = gen.current;
+    setBusy(true);
+    setLine(i18nT('n.components.capture-camera.confirming-your-location'));
+    const fix = await fixRef.current;
+    if (cancelled.current || g !== gen.current) return;
+    if (!fix && requireFix) {
+      setBusy(false);
+      setFixState('failed');
+      return;
+    }
+    setParts([...partsRef.current, { uri: preview.uri, capturedAt: preview.capturedAt, fix: fix ?? { lat: 0, lng: 0 }, read }]);
+    gen.current++;
+    setPreview(null);
+    setRead(undefined);
+    setLine(null);
+    setPartNote(null);
+    setBusy(false);
+    setFixState('pending');
+    // The scanner again for a document step; otherwise the camera is already there.
+    if (scanState === 'scanning') void scanDocRef.current?.();
+  };
+  /** Drop every part and take the sheet again from one photo. */
+  const startAgain = () => {
+    setParts([]);
+    retake();
   };
 
   const toggleVideo = async () => {
@@ -626,11 +736,24 @@ export function CaptureCamera({
     return (
       <View className="flex-1 bg-black">
         <Image source={{ uri: preview.uri }} style={{ flex: 1 }} contentFit="contain" />
+        {/* The joiner lives where the join is asked for: Use photo, on this screen. */}
+        {allowParts ? <SheetJoiner ref={joinerRef} /> : null}
         {/* Scrim card: white-on-photo is unreadable against a bright result
             sheet — this text is an instruction, so it must always win. */}
         <View className="absolute inset-x-0 top-0 px-4 pt-14">
           <View className="rounded-2xl bg-black/75 px-4 py-3">
             <Text className="text-lg font-bold text-white">{confirmTitle}</Text>
+            {parts.length ? (
+              <View className="flex-row flex-wrap items-center pt-1">
+                <Text className="text-sm font-semibold text-amber-300">
+                  {i18nT('n.components.capture-camera.part-n', { v0: parts.length + 1 })}
+                </Text>
+                <Pressable onPress={startAgain} disabled={busy} hitSlop={8} className="pl-3">
+                  <Text className="text-sm font-semibold text-white underline">{i18nT('n.app.report.result.draft-start-again')}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+            {partNote ? <Text className="pt-1 text-sm font-semibold text-amber-300">{partNote}</Text> : null}
             <Text className="pt-1 text-sm text-neutral-200">
               {busy
                 ? i18nT('n.components.capture-camera.confirming-your-location')
@@ -691,7 +814,19 @@ export function CaptureCamera({
             ) : null}
           </View>
         </View>
-        <View className="absolute inset-x-0 bottom-0 flex-row items-center justify-between px-6 pb-12">
+        <View className="absolute inset-x-0 bottom-0 px-6 pb-12">
+          {/* SEVERAL PHOTOS OF ONE SHEET: keep this one and shoot the next part. */}
+          {allowParts && fixState !== 'failed' && parts.length + 1 < MAX_SHEET_PARTS ? (
+            <View className="mb-3 rounded-2xl bg-black/75 px-3 py-2.5">
+              {parts.length === 0 ? (
+                <Text className="pb-2 text-xs text-neutral-200">{i18nT('observe.parts-hint')}</Text>
+              ) : null}
+              <Pressable className="items-center rounded-xl border border-white/40 px-4 py-2.5" onPress={addPart} disabled={busy}>
+                <Text className="text-sm font-semibold text-white">{i18nT('observe.add-next-part')}</Text>
+              </Pressable>
+            </View>
+          ) : null}
+          <View className="flex-row items-center justify-between">
           {/* The camera chrome is always dark, so its scrims are fixed white at
               low alpha — bg-card/15 turned into a near-invisible dark-on-dark
               plate once --card followed the theme. */}
@@ -720,6 +855,7 @@ export function CaptureCamera({
               )}
             </Pressable>
           )}
+          </View>
         </View>
       </View>
     );

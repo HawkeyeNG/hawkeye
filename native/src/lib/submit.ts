@@ -148,6 +148,8 @@ export type Shot = {
   capturedAt: number;
   lat: number;
   lng: number;
+  /** >= 2: a sheet joined on the phone from this many photos (lib/sheet-parts.ts). */
+  parts?: number;
 };
 
 export type SubmitInput = {
@@ -494,6 +496,10 @@ export async function submitResult(input: SubmitInput): Promise<SubmitResult> {
     imageSha256,
     venueImageSha256,
     ...(input.sheetSerial ? { sheetSerial: input.sheetSerial } : {}),
+    // Unsigned, like the serial: how many photos the sheet photo was joined
+    // from. It only changes how the server reads the photo, and rides the
+    // outbox with every other field here.
+    ...((input.sheet.parts ?? 1) >= 2 ? { sheetParts: String(input.sheet.parts) } : {}),
     ...(signals ? { signals } : {}),
   };
   // The outbox copies these files verbatim, so the hashes above — and therefore

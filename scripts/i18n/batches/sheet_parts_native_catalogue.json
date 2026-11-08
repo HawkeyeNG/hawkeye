@@ -1,0 +1,8 @@
+{
+  "n.app.report.result.fit-sheet-or-poster": "Fit the EC8A sheet, or the EC60E poster on the wall, inside the frame. Every figure must be readable.",
+  "n.components.capture-camera.joining-photos": "Joining the photos…",
+  "n.components.capture-camera.part-n": "Part {v0} of the sheet",
+  "observe.add-next-part": "Add the next part",
+  "observe.parts-hint": "Poster too big for one clear photo, or on several sheets? Add the rest in order, from the top.",
+  "observe.parts-join-failed": "Could not join the photos. Take them again."
+}

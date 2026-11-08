@@ -2006,7 +2006,7 @@ export default function ReportResult() {
         venueGuide={isSheet ? undefined : i18nT("n.app.report.result.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
-            ? i18nT('n.app.report.result.fit-the-ec8a-in-the-frame')
+            ? i18nT('n.app.report.result.fit-sheet-or-poster')
             : i18nT("n.app.report.result.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
@@ -2016,6 +2016,9 @@ export default function ReportResult() {
             : i18nT("n.app.report.result.is-the-polling-unit-itself-visible-the")
         }
         readDocument={isSheet}
+        // A poster too big for one clear photo, or on several sheets, shot in
+        // parts and joined (lib/sheet-parts.ts); `shot.parts` says how many.
+        allowParts={isSheet}
         partyCodes={parties.map((p) => p.code)}
         onCapture={(shot) => {
           if (isSheet) {

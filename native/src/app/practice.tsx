@@ -1254,6 +1254,8 @@ export default function Practice() {
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
         readDocument={isSheet}
+        // In lockstep with the report: a big poster in parts, joined (lib/sheet-parts.ts).
+        allowParts={isSheet}
         partyCodes={parties.map((p) => p.code)}
         confirmHint={
           isSheet

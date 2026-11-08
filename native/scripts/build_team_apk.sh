@@ -15,6 +15,10 @@ export PATH="$JAVA_HOME/bin:$PATH"
 # The env vars cover an active injector; the guarded pause covers a repopulated
 # /etc/ld.so.preload (currently empty, so this branch is skipped and no sudo runs).
 export DD_TRACE_ENABLED=false DD_PROFILING_ENABLED=false DD_INJECTION_ENABLED=false
+# A team APK uploads no source maps unless a token is present. The Sentry gradle
+# step needs an org auth token (CI has it as a secret; this machine does not) and,
+# without one, fails the WHOLE build at its very end — 25 minutes in, on 8 Nov 2026.
+[ -n "${SENTRY_AUTH_TOKEN:-}" ] || export SENTRY_DISABLE_AUTO_UPLOAD=true
 if [ -s /etc/ld.so.preload ]; then
   sudo cp /etc/ld.so.preload /etc/ld.so.preload.tb && sudo truncate -s 0 /etc/ld.so.preload && echo PRELOAD_PAUSED
 fi

@@ -88,7 +88,7 @@ const room = await page.evaluate(() => {
     marginTop: cs && cs.marginTop,
     flexShrink: cs && cs.flexShrink,
     bodyColumn: getComputedStyle(document.body).flexDirection,
-    text: f && f.textContent.trim().slice(0, 40),
+    text: f && f.textContent.trim().slice(0, 400),
   };
 });
 check('CONTROL the scroller still exists, so the next check means something',
@@ -117,7 +117,7 @@ check('nothing puts it back inside #sr-scroll', room.inScroller, false);
 check('body is the flex column that pins it', room.bodyColumn, 'column');
 check('it does not shrink away', room.flexShrink, '0');
 check('the document-footer top margin is gone', room.marginTop, '0px');
-check('and it is the copyright line', room.text, (t) => /IniXien Ltd/.test(t || ''));
+check('and it is the copyright line: the not-for-profit first, the software owner after (Ad Grants, 9 Nov 2026)', room.text, (t) => /IniXien Hope Initiative[\s\S]*IniXien Ltd/.test(t || ''));
 
 console.log('\n=== admin console ===');
 await open('admin.html');
@@ -128,13 +128,13 @@ const admin = await page.evaluate(() => {
     exists: !!f,
     position: cs && cs.position,
     bottom: cs && cs.bottom,
-    text: f && f.textContent.trim().slice(0, 40),
+    text: f && f.textContent.trim().slice(0, 400),
   };
 });
 check('the footer is there', admin.exists, true);
 check('pinned to the bottom of the screen', admin.position, 'sticky');
 check('at the floor, not floating', admin.bottom, '0px');
-check('and it is the same copyright line', admin.text, (t) => /IniXien Ltd/.test(t || ''));
+check('and it is the same copyright line', admin.text, (t) => /IniXien Hope Initiative[\s\S]*IniXien Ltd/.test(t || ''));
 
 await b.close();
 server.close();

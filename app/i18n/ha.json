@@ -3022,5 +3022,16 @@
   "observe.parts-hint": "Fostar ta fi girma ga hoto ɗaya mai kyau, ko tana kan takardu da yawa? Ƙara sauran a jere, daga sama.",
   "observe.add-next-part": "Ƙara kashi na gaba",
   "observe.parts-joined": "An haɗa hotuna {n} zuwa ɗaya",
-  "observe.parts-join-failed": "Ba a iya haɗa hotunan ba. Sake ɗaukar su."
+  "observe.parts-join-failed": "Ba a iya haɗa hotunan ba. Sake ɗaukar su.",
+  "common.footer-nonprofit": "Hawkeye shiri ne na kyauta, marar goyon bayan wata jam'iyya, na IniXien Hope Initiative, ƙungiya mai zaman kanta da ba ta neman riba, da aka yi wa rijista a Corporate Affairs Commission a matsayin Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Najeriya · Manhaja © 2026 IniXien Ltd, an ba da lasisinta kyauta",
+  "index.hero-mission": "Hawkeye shiri ne na kyauta, marar goyon bayan wata jam'iyya, na <a href=\"about.html\">IniXien Hope Initiative</a>, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba. Manufarmu: tarihin jama'a na sakamakon da aka sanar a kowane rukunin zaɓe, wanda kowane ɗan ƙasa zai iya tantancewa.",
+  "about.our-mission": "Manufarmu",
+  "about.mission-statement": "Mu ba kowane ɗan Najeriya tarihin jama'a, wanda za a iya tantancewa, na sakamakon da aka sanar a rukunin zaɓensa, domin a iya kwatanta ƙidayar a fili a kowane mataki na tattarawa. Hawkeye kyauta ce, kuma tana yi wa masu zaɓe, masu lura, 'yan jarida da kowace jam'iyya hidima bisa sharuɗɗa ɗaya.",
+  "about.what-we-do": "Abin da Muke Yi",
+  "about.wwd-observers": "Manhajojin masu lura kyauta don yanar gizo, Android da iPhone, domin duk wanda ke rukunin zaɓe ya iya ɗaukar hoton sakamakon da aka sanar ya kuma sa hannu a kai.",
+  "about.wwd-practice": "Gwaje-gwaje da ranakun gwaji na ƙasa, domin masu lura su koyi matakan kafin ranar zaɓe.",
+  "about.wwd-ledger": "Littafin rikodi na jama'a na kowane rahoto, wanda kowa zai iya tabbatarwa, da kundin jama'a inda ake nazarin sakamakon da ake jayayya a kai a fili.",
+  "about.wwd-information": "Bayanai masu sauƙi ga masu zaɓe: zaɓuɓɓukan, 'yan takarar da INEC ta wallafa, da inda ake buƙatar masu lura har yanzu.",
+  "about.registered-address": "Adireshin rijista: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Najeriya</strong>.",
+  "about.run-by-registered": "<strong>IniXien Hope Initiative</strong> ce ke gudanar da Hawkeye, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba, da aka yi wa rijista a Corporate Affairs Commission (CAC) a matsayin Incorporated Trustees, <strong>IT No. 9958777</strong>. Kamfanin 'yar'uwarta, <strong>IniXien Ltd</strong>, ya ba ta damar amfani da Hawkeye kyauta har abada. Rahotannin masu lura, da littafin rikodin da suke samarwa, suna nan a bude ga kowa ya karanta ya kuma tabbatar."
 }

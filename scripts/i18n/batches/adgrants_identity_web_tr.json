@@ -1,0 +1,68 @@
+{
+  "common.footer-nonprofit": {
+    "en": "Hawkeye is a free, nonpartisan programme of IniXien Hope Initiative, a not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Nigeria · Software © 2026 IniXien Ltd, licensed free of charge",
+    "ha": "Hawkeye shiri ne na kyauta, marar goyon bayan wata jam'iyya, na IniXien Hope Initiative, ƙungiya mai zaman kanta da ba ta neman riba, da aka yi wa rijista a Corporate Affairs Commission a matsayin Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Najeriya · Manhaja © 2026 IniXien Ltd, an ba da lasisinta kyauta",
+    "ig": "Hawkeye bụ mmemme n'efu, nke na-akwadoghị pati ọ bụla, nke IniXien Hope Initiative, otu na-anaghị achọ uru, nke edebanyere aha ya na Corporate Affairs Commission dị ka Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Naịjirịa · Sọftwụ © 2026 IniXien Ltd, e nyere ikike ya n'efu",
+    "yo": "Hawkeye jẹ́ ètò ọ̀fẹ́ tí kò ṣe ti ẹgbẹ́ kankan, ti IniXien Hope Initiative, àjọ tí kì í ṣe fún èrè, tí a forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission gẹ́gẹ́ bí Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Nàìjíríà · Sọ́fítíwià © 2026 IniXien Ltd, a fún un ní ìwé àṣẹ lọ́fẹ̀ẹ́"
+  },
+  "index.hero-mission": {
+    "en": "Hawkeye is a free, nonpartisan programme of <a href=\"about.html\">IniXien Hope Initiative</a>, a Nigerian not-for-profit. Our mission: a public record of the result announced at every polling unit, one any citizen can check.",
+    "ha": "Hawkeye shiri ne na kyauta, marar goyon bayan wata jam'iyya, na <a href=\"about.html\">IniXien Hope Initiative</a>, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba. Manufarmu: tarihin jama'a na sakamakon da aka sanar a kowane rukunin zaɓe, wanda kowane ɗan ƙasa zai iya tantancewa.",
+    "ig": "Hawkeye bụ mmemme n'efu, nke na-akwadoghị pati ọ bụla, nke <a href=\"about.html\">IniXien Hope Initiative</a>, otu Naịjirịa na-anaghị achọ uru. Ebumnuche anyị: ndekọ ọha nke nsonaazụ a kwupụtara na ngalaba ntuli aka ọ bụla, nke nwa amaala ọ bụla nwere ike inyocha.",
+    "yo": "Hawkeye jẹ́ ètò ọ̀fẹ́ tí kò ṣe ti ẹgbẹ́ kankan, ti <a href=\"about.html\">IniXien Hope Initiative</a>, àjọ tí kì í ṣe fún èrè ní Nàìjíríà. Èrò wa: àkọsílẹ̀ gbangba ti àbájáde tí a kéde ní ẹ̀ka ìdìbò kọ̀ọ̀kan, èyí tí ọmọ orílẹ̀-èdè èyíkéyìí lè ṣàyẹ̀wò."
+  },
+  "about.our-mission": {
+    "en": "Our Mission",
+    "ha": "Manufarmu",
+    "ig": "Ebumnuche Anyị",
+    "yo": "Èrò Wa"
+  },
+  "about.mission-statement": {
+    "en": "To give every Nigerian a public, checkable record of the result announced at their polling unit, so that the count can be compared openly at every stage of collation. Hawkeye is free to use and serves voters, observers, journalists and every party on the same terms.",
+    "ha": "Mu ba kowane ɗan Najeriya tarihin jama'a, wanda za a iya tantancewa, na sakamakon da aka sanar a rukunin zaɓensa, domin a iya kwatanta ƙidayar a fili a kowane mataki na tattarawa. Hawkeye kyauta ce, kuma tana yi wa masu zaɓe, masu lura, 'yan jarida da kowace jam'iyya hidima bisa sharuɗɗa ɗaya.",
+    "ig": "Inye onye Naịjirịa ọ bụla ndekọ ọha, nke enwere ike inyocha, nke nsonaazụ a kwupụtara na ngalaba ntuli aka ya, ka e wee nwee ike iji ọnụọgụ ahụ tụnyere n'ihu ọha na nkebi nchịkọta ọ bụla. Hawkeye bụ n'efu, ọ na-ejekwa ozi nye ndị ntuli aka, ndị na-ekiri ihe, ndị nta akụkọ na pati ọ bụla n'otu ụzọ.",
+    "yo": "Láti fún gbogbo ọmọ Nàìjíríà ní àkọsílẹ̀ gbangba, tí a lè ṣàyẹ̀wò, ti àbájáde tí a kéde ní ẹ̀ka ìdìbò wọn, kí a lè fi ìkà náà wéra ní gbangba ní gbogbo ìpele ṣíṣe àkójọpọ̀. Hawkeye jẹ́ ọ̀fẹ́, ó sì ń sin àwọn olùdìbò, àwọn olùwòran, àwọn oníròyìn àti gbogbo ẹgbẹ́ òṣèlú lórí òfin kan náà."
+  },
+  "about.what-we-do": {
+    "en": "What We Do",
+    "ha": "Abin da Muke Yi",
+    "ig": "Ihe Anyị Na-eme",
+    "yo": "Ohun Tí A Ń Ṣe"
+  },
+  "about.wwd-observers": {
+    "en": "Free observer apps for the web, Android and iPhone, so anyone at a polling unit can photograph and sign the announced result.",
+    "ha": "Manhajojin masu lura kyauta don yanar gizo, Android da iPhone, domin duk wanda ke rukunin zaɓe ya iya ɗaukar hoton sakamakon da aka sanar ya kuma sa hannu a kai.",
+    "ig": "Ngwa ndị na-ekiri ihe n'efu maka weebụ, Android na iPhone, ka onye ọ bụla nọ na ngalaba ntuli aka nwee ike ise foto nsonaazụ a kwupụtara ma bịanye aka na ya.",
+    "yo": "Àwọn áàpù olùwòran ọ̀fẹ́ fún wẹ́ẹ̀bù, Android àti iPhone, kí ẹnikẹ́ni ní ẹ̀ka ìdìbò lè ya fọ́tò àbájáde tí a kéde, kí ó sì fọwọ́ sí i."
+  },
+  "about.wwd-practice": {
+    "en": "Practice runs and national practice days, so observers learn the steps before election day.",
+    "ha": "Gwaje-gwaje da ranakun gwaji na ƙasa, domin masu lura su koyi matakan kafin ranar zaɓe.",
+    "ig": "Ọzụzụ omume na ụbọchị omume mba, ka ndị na-ekiri ihe mụta usoro ndị ahụ tupu ụbọchị ntuli aka.",
+    "yo": "Ìdánrawò àti àwọn ọjọ́ ìdánrawò orílẹ̀-èdè, kí àwọn olùwòran lè kọ́ àwọn ìgbésẹ̀ ṣáájú ọjọ́ ìdìbò."
+  },
+  "about.wwd-ledger": {
+    "en": "A public ledger of every report, which anyone can verify, and a public docket where disputed results are reviewed in the open.",
+    "ha": "Littafin rikodi na jama'a na kowane rahoto, wanda kowa zai iya tabbatarwa, da kundin jama'a inda ake nazarin sakamakon da ake jayayya a kai a fili.",
+    "ig": "Ndekọ ọha nke akụkọ ọ bụla, nke onye ọ bụla nwere ike inyocha, na ndekọ ikpe ọha ebe a na-enyocha nsonaazụ a na-arụrịta ụka banyere ha n'ihu ọha.",
+    "yo": "Ìwé àkọsílẹ̀ gbangba ti gbogbo ìròyìn, tí ẹnikẹ́ni lè ṣàyẹ̀wò, àti ìwé ẹjọ́ gbangba níbi tí a ti ń ṣàyẹ̀wò àwọn àbájáde tí a ń jiyàn lé lórí ní gbangba."
+  },
+  "about.wwd-information": {
+    "en": "Plain information for voters: the races, the candidates INEC has published, and where observers are still needed.",
+    "ha": "Bayanai masu sauƙi ga masu zaɓe: zaɓuɓɓukan, 'yan takarar da INEC ta wallafa, da inda ake buƙatar masu lura har yanzu.",
+    "ig": "Ozi doro anya maka ndị ntuli aka: asọmpi ndị ahụ, ndị na-azọ ọkwa INEC bipụtara, na ebe a ka chọrọ ndị na-ekiri ihe.",
+    "yo": "Ìsọfúnni tó ṣe kedere fún àwọn olùdìbò: àwọn ìdíje, àwọn olùdíje tí INEC ti tẹ̀ jáde, àti ibi tí a ṣì nílò àwọn olùwòran."
+  },
+  "about.registered-address": {
+    "en": "Registered address: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Nigeria</strong>.",
+    "ha": "Adireshin rijista: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Najeriya</strong>.",
+    "ig": "Adreesị edebanyere aha: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Naịjirịa</strong>.",
+    "yo": "Àdírẹ́sì tí a forúkọ sílẹ̀: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Nàìjíríà</strong>."
+  },
+  "about.run-by-registered": {
+    "en": "Hawkeye is run by <strong>IniXien Hope Initiative</strong>, a Nigerian not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees, <strong>IT No. 9958777</strong>. Its sister company, <strong>IniXien Ltd</strong>, grants it perpetual free use of Hawkeye. Observers' reports, and the ledger they form, stay open for anyone to read and verify.",
+    "ha": "<strong>IniXien Hope Initiative</strong> ce ke gudanar da Hawkeye, ƙungiya mai zaman kanta ta Najeriya da ba ta neman riba, da aka yi wa rijista a Corporate Affairs Commission (CAC) a matsayin Incorporated Trustees, <strong>IT No. 9958777</strong>. Kamfanin 'yar'uwarta, <strong>IniXien Ltd</strong>, ya ba ta damar amfani da Hawkeye kyauta har abada. Rahotannin masu lura, da littafin rikodin da suke samarwa, suna nan a bude ga kowa ya karanta ya kuma tabbatar.",
+    "ig": "<strong>IniXien Hope Initiative</strong> na-arụ Hawkeye, otu Naịjirịa na-anaghị achọ uru, nke edebanyere aha ya na Corporate Affairs Commission (CAC) dị ka Incorporated Trustees, <strong>IT No. 9958777</strong>. Ụlọ ọrụ nwanne ya, <strong>IniXien Ltd</strong>, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi. Akụkọ ndị na-ekiri ihe, na ndekọ ha na-ewu, na-anọgide ghe oghe ka onye ọ bụla gụọ ma nyochaa.",
+    "yo": "<strong>IniXien Hope Initiative</strong> ni ó ń ṣàkóso Hawkeye, àjọ tí kì í ṣe fún èrè ní Nàìjíríà, tí a forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission (CAC) gẹ́gẹ́ bí Incorporated Trustees, <strong>IT No. 9958777</strong>. Ilé-iṣẹ́ ìbátan rẹ̀, <strong>IniXien Ltd</strong>, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé. Àwọn ìròyìn olùwòran, àti ìwé àkọsílẹ̀ tí wọ́n ń kọ́, ń wà ní ṣíṣí fún ẹnikẹ́ni láti kà kí ó sì ṣàyẹ̀wò."
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "observe.sheet-whole-in-frame": {
+    "en": "Get the whole sheet in: all four corners, every row.",
+    "ha": "Saka dukan takardar a hoton: kusurwoyinta huɗu duka, da kowane layi.",
+    "ig": "Tinye mpempe akwụkwọ ahụ dum na foto: nkuku anọ ya niile, na ahịrị ọ bụla.",
+    "yo": "Jẹ́ kí gbogbo ìwé náà wà nínú fọ́tò: igun mẹ́rẹ̀ẹ̀rin, àti gbogbo ìlà."
+  },
+  "observe.sheet-other-race": {
+    "en": "This photo looks like the {v0} result, not {v1}. Check it is the right sheet.",
+    "ha": "Wannan hoton kamar sakamakon zaɓen {v0} ne, ba na {v1} ba. Ka tabbata takardar da ta dace ce.",
+    "ig": "Foto a dị ka nsonaazụ ntuli aka {v0}, ọ bụghị nke {v1}. Lelee na ọ bụ mpempe akwụkwọ kwesịrị ekwesị.",
+    "yo": "Fọ́tò yìí jọ àbájáde ìdìbò {v0}, kì í ṣe ti {v1}. Ṣàyẹ̀wò pé ìwé tó tọ́ ni."
+  },
+  "observe.sheet-parties-not-found": {
+    "en": "Not found on the photo: {v0}. If part of the sheet is cut off, add the next part.",
+    "ha": "Ba a same su a hoton ba: {v0}. Idan wani ɓangare na takardar ya yanke, ƙara kashi na gaba.",
+    "ig": "Ahụghị ha na foto ahụ: {v0}. Ọ bụrụ na akụkụ nke mpempe akwụkwọ ahụ bịpụrụ, tinye akụkụ na-esote.",
+    "yo": "A kò rí wọn nínú fọ́tò náà: {v0}. Bí apá kan ìwé náà bá ti gé kúrò, fi apá tó kàn kún un."
+  }
+}

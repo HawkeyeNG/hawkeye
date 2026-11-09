@@ -1,0 +1,5 @@
+{
+  "observe.sheet-whole-in-frame": "Get the whole sheet in: all four corners, every row.",
+  "observe.sheet-other-race": "This photo looks like the {v0} result, not {v1}. Check it is the right sheet.",
+  "observe.sheet-parties-not-found": "Not found on the photo: {v0}. If part of the sheet is cut off, add the next part."
+}

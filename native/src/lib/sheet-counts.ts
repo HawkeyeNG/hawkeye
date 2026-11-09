@@ -362,3 +362,71 @@ export function parseCounts(text: string, partyCodes: string[], lines: OcrLine[]
   }
   return out;
 }
+
+// ── what else the photo says: its election, and which parties it shows ──────
+//
+// The EC60(E) poster INEC pastes up is one sheet PER RACE (PRES, SEN and REP on
+// 16 Jan), and the public photographs whichever one is nearest. So the phone
+// checks two things a person can still fix while standing at the unit
+// (docs/private/EC60E-RESULT-POSTER.md): that the photo is the race being
+// reported, and that every party on that race's ballot is on it. Both only WARN.
+// OCR misses words, an officer's hand-filled grid may list only some parties, and
+// the observer is the one looking at the wall.
+
+/**
+ * The words that name each office, as INEC prints them: the EC8A's own heading,
+ * its area line ("Senatorial District", "Federal Constituency", "State
+ * Constituency"), and the poster's "Election to the office of …". Whole words:
+ * "Presiding Officer" is on every form and is never PRESIDENT.
+ */
+const OFFICE_WORDS: [string, RegExp][] = [
+  ['PRES', /\bPRESIDENT(?:IAL)?\b/i],
+  ['SEN', /\bSENAT(?:E|OR|ORIAL)\b/i],
+  ['REP', /\bHOUSE OF REPRESENTATIVES\b|\bFEDERAL CONSTITUENCY\b/i],
+  ['GOV', /\bGOVERNOR(?:SHIP)?\b/i],
+  ['SHA', /\bHOUSE OF ASSEMBLY\b|\bSTATE ASSEMBLY\b|\bSTATE CONSTITUENCY\b/i],
+];
+
+/**
+ * The election a recognised sheet names: 'PRES', 'SEN', 'REP', 'GOV' or 'SHA'.
+ * Null when it names none, or more than one: two offices on one photo is not a
+ * reading anyone should act on.
+ */
+export function sheetOffice(text: string): string | null {
+  const t = String(text || '').replace(/\s+/g, ' ');
+  const found = OFFICE_WORDS.filter(([, re]) => re.test(t)).map(([office]) => office);
+  return found.length === 1 ? found[0] : null;
+}
+
+/** The office a race code is for: 'SEN' → 'SEN', 'REP_BYE_GOMBE_2026' → 'REP'. Null for anything else. */
+export function raceOffice(code: string): string | null {
+  const head = String(code || '').split('_')[0];
+  return OFFICE_WORDS.some(([office]) => office === head) ? head : null;
+}
+
+/** The ballot's parties whose code labels a row on the photo, by the same rule parseCounts pairs counts with. */
+export function partiesSeen(text: string, partyCodes: string[]): string[] {
+  const rows = String(text || '').split(/\r?\n/);
+  return [...new Set(partyCodes.filter((c) => c.trim()))].filter((code) => {
+    const re = codePattern(code);
+    return rows.some((row) => {
+      const m = re.exec(row);
+      if (!m) return false;
+      const at = m.index + (/^[^A-Za-z0-9]/.test(m[0]) ? 1 : 0);
+      return startsRow(row.slice(0, at));
+    });
+  });
+}
+
+/**
+ * The ballot's parties NOT on the photo, once the photo has shown it can be
+ * read: at least three rows found, and at least half the ballot. Below that the
+ * reader failed, and listing "missing" parties would blame the photo for it.
+ */
+export function partiesMissing(seen: string[], partyCodes: string[]): string[] {
+  const on = new Set(seen);
+  const ballot = [...new Set(partyCodes.filter((c) => c.trim()))];
+  const missing = ballot.filter((c) => !on.has(c));
+  const found = ballot.length - missing.length;
+  return missing.length && found >= Math.max(3, Math.ceil(ballot.length / 2)) ? missing : [];
+}

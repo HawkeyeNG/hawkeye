@@ -613,6 +613,10 @@ const shots = { sheet: null, venue: null }; // { blob, capturedAt } — a joined
    OCR (which has no code on it) cannot replace that offer with "unread". */
 let sheetPartFrames = null;
 let sheetAppending = false;
+/* Everything the reader recognised on the sheet photo, every part of a joined
+   one, for paintSheetChecks. Not in the draft: the checks are a nudge at the
+   wall, not part of the report. */
+let sheetText = '';
 
 // ---------- registration (single pane: phone first, then OTP in the same input) ----------
 /* ONE ORDER ON EVERY SURFACE (flow walkthrough ONB-03, R-ORG-CODE-ORDER):
@@ -2804,7 +2808,9 @@ function resetReportState() {
   shots.venue = null;
   sheetPartFrames = null;
   sheetAppending = false;
+  sheetText = '';
   paintSheetParts();
+  paintSheetChecks();
   selectedPu = null;
   window.HAWKEYE && (window.HAWKEYE.sheetOcr = null);
   const oldHint = document.getElementById('ocr-hint');
@@ -2920,7 +2926,53 @@ function ballotNoteText(n, all, shared) {
     ? T('observe.ballot-note-all', "Every registered party is shown. INEC's final list has {v0} in this race.", { v0: n })
     : T('observe.ballot-note', "INEC's final list has {v0} parties in this race. The others are hidden.", { v0: n });
 }
+/**
+ * WHAT THE SHEET PHOTO SAYS BESIDES ITS COUNTS (sheet-counts.js, the same code
+ * the native app runs): the election it names, and which of this race's ballot
+ * parties it shows. INEC pastes one result poster PER RACE, and the public
+ * photographs whichever is nearest, so a Senate poster sent as the Presidential
+ * result is caught here, while the observer can still walk back to the wall.
+ * Warns, never blocks: OCR misses words, and the observer is the one looking at
+ * the sheet. Repainted with the ballot (race, unit, language) and on each read.
+ */
+function paintSheetChecks() {
+  const box = $('sheet-checks');
+  if (!box) return;
+  const SC = window.HAWKEYE_SHEETCOUNTS;
+  const name = {
+    PRES: () => T('contest.presidential', 'Presidential'),
+    SEN: () => T('contest.senate', 'Senate'),
+    REP: () => T('contest.house-of-representatives', 'House of Representatives'),
+    GOV: () => T('contest.governorship', 'Governorship'),
+    SHA: () => T('contest.state-house-of-assembly', 'State House of Assembly'),
+  };
+  const out = [];
+  if (SC && SC.sheetOffice && sheetText) {
+    const contest = ($('sel-contest') && $('sel-contest').value) || '';
+    const found = SC.sheetOffice(sheetText);
+    const race = SC.raceOffice(contest);
+    if (found && race && found !== race) {
+      out.push(T('observe.sheet-other-race', 'This photo looks like the {v0} result, not {v1}. Check it is the right sheet.',
+        { v0: name[found](), v1: name[race]() }));
+    }
+    const b = raceBallot(contest, selectedPu);
+    const missing = b ? SC.partiesMissing(SC.partiesSeen(sheetText, b), b) : [];
+    if (missing.length) {
+      out.push(T('observe.sheet-parties-not-found', 'Not found on the photo: {v0}. If part of the sheet is cut off, add the next part.',
+        { v0: missing.join(', ') }));
+    }
+  }
+  // One line per warning: two different things to fix are not one sentence.
+  box.replaceChildren(...out.map((s, i) => {
+    const line = document.createElement('span');
+    line.style.cssText = `display:block${i ? ';margin-top:6px' : ''}`;
+    line.textContent = s;
+    return line;
+  }));
+  box.hidden = !out.length;
+}
 function applyBallot() {
+  paintSheetChecks();
   const wrap = $('vote-inputs');
   if (!wrap) return;
   const sel = $('sel-contest');
@@ -4022,6 +4074,11 @@ window.addEventListener('hawkeye-sheet-ocr', (e) => {
   if (e.detail && e.detail.text && !sheetAppending) resolveUnitFromSheet(e.detail.text);
   const wrap = $('vote-inputs');
   const d = e.detail;
+  // A later part adds to the sheet's text; a new first photo replaces it.
+  if (d && typeof d.text === 'string') {
+    sheetText = sheetAppending && sheetText ? `${sheetText}\n${d.text}` : d.text;
+    paintSheetChecks();
+  }
   if (!wrap || !d || !d.tokens || !d.tokens.length) return;
   // The pairing is sheet-counts.js, the same code the native app runs: the
   // first number after a party's code on its line, else by position in the
@@ -4215,6 +4272,7 @@ async function finalizeShot(target, blob, { append = false } = {}) {
     if (target === 'sheet') {
       sheetPartFrames = [frame];
       sheetAppending = false;
+      sheetText = ''; paintSheetChecks(); // the last sheet's read says nothing about this one
       webOcrSheet(blob); // fire-and-forget read-back (no-op in the app shell — ML Kit covers it there)
     }
     img.src = URL.createObjectURL(blob);
@@ -4445,8 +4503,9 @@ $('btn-submit').onclick = async () => {
     keepCopies(); // here, not when the outbox flushes it later
     clearDraft(); // handed off — the outbox holds it now
     shots.sheet = null; shots.venue = null;
-    sheetPartFrames = null; sheetAppending = false;
+    sheetPartFrames = null; sheetAppending = false; sheetText = '';
     paintSheetParts();
+    paintSheetChecks();
     const offlineContest = (contests.find((c) => c.code === fields.contest) || {}).name || fields.contest || '';
     let offlineVotes = [];
     try { offlineVotes = JSON.parse(fields.votes); } catch { /* card just omits them */ }

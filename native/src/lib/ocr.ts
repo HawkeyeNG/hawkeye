@@ -101,6 +101,9 @@ export type SheetRead = {
    * parseSerial).
    */
   serial: string | null;
+  /** A sheet shot in parts: every part's text, top first (lib/sheet-parts.ts
+   *  mergeReads). `text` stays the first part's, which names the unit. */
+  allText?: string;
 };
 
 /** Recognise a sheet photo. Returns null when no recogniser is available or it fails. */

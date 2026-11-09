@@ -20,6 +20,7 @@ import { NoElection } from '@/components/no-election';
 import { useNotice, NoticeSheet } from '@/components/notice-sheet';
 import { RekorAnchor } from '@/components/rekor-anchor';
 import { SerialField } from '@/components/serial-field';
+import { SheetChecks } from '@/components/sheet-checks';
 import { SheetReference } from '@/components/sheet-reference';
 import {
   envelopeText,
@@ -1672,6 +1673,9 @@ export default function ReportResult() {
   /** Party codes the on-device read proposed, so the UI can say which
    *  figures came off the sheet rather than from the observer. */
   const [readCodes, setReadCodes] = useState<string[]>([]);
+  /** Everything the reader recognised on the sheet photo, every part of a
+   *  joined one, for the photo checks on the counts step (SheetChecks). */
+  const [sheetText, setSheetText] = useState('');
   const [venue, setVenue] = useState<Shot | null>(null);
   /** True while re-shooting a single photo from the review step. */
   const [retaking, setRetaking] = useState(false);
@@ -2006,7 +2010,7 @@ export default function ReportResult() {
         venueGuide={isSheet ? undefined : i18nT("n.app.report.result.venue-photo-aim-at-the-polling-unit")}
         hint={
           isSheet
-            ? i18nT('n.app.report.result.fit-sheet-or-poster')
+            ? i18nT('n.app.report.result.fit-sheet-or-poster-corners')
             : i18nT("n.app.report.result.step-back-and-capture-the-polling-unit")
         }
         confirmTitle={isSheet ? i18nT('n.app.report.result.check-the-result-sheet') : i18nT('n.app.report.collation.check-the-venue-photo')}
@@ -2023,6 +2027,7 @@ export default function ReportResult() {
         onCapture={(shot) => {
           if (isSheet) {
             setSheet(shot);
+            setSheetText(shot.read?.allText ?? shot.read?.text ?? '');
             // Propose what the sheet said; never overwrite anything already
             // typed, and leave every field editable.
             const proposed = shot.read?.counts ?? {};
@@ -2562,6 +2567,8 @@ export default function ReportResult() {
               proposed={readSerial}
               editable={!busy}
             />
+            {/* Another race's sheet, or ballot parties missing from the photo. */}
+            <SheetChecks text={sheet ? sheetText : ''} race={contest?.code} ballot={ballot} />
             <TextInput
               className="mb-3 rounded-2xl bg-card px-4 py-3 text-base text-ink"
               placeholder={i18nT("n.app.report.result.search-party-apc-pdp-lp")}

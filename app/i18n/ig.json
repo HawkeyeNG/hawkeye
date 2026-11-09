@@ -3032,5 +3032,8 @@
   "about.wwd-ledger": "Ndekọ ọha nke akụkọ ọ bụla, nke onye ọ bụla nwere ike inyocha, na ndekọ ikpe ọha ebe a na-enyocha nsonaazụ a na-arụrịta ụka banyere ha n'ihu ọha.",
   "about.wwd-information": "Ozi doro anya maka ndị ntuli aka: asọmpi ndị ahụ, ndị na-azọ ọkwa INEC bipụtara, na ebe a ka chọrọ ndị na-ekiri ihe.",
   "about.registered-address": "Adreesị edebanyere aha: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Naịjirịa</strong>.",
-  "about.run-by-registered": "<strong>IniXien Hope Initiative</strong> na-arụ Hawkeye, otu Naịjirịa na-anaghị achọ uru, nke edebanyere aha ya na Corporate Affairs Commission (CAC) dị ka Incorporated Trustees, <strong>IT No. 9958777</strong>. Ụlọ ọrụ nwanne ya, <strong>IniXien Ltd</strong>, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi. Akụkọ ndị na-ekiri ihe, na ndekọ ha na-ewu, na-anọgide ghe oghe ka onye ọ bụla gụọ ma nyochaa."
+  "about.run-by-registered": "<strong>IniXien Hope Initiative</strong> na-arụ Hawkeye, otu Naịjirịa na-anaghị achọ uru, nke edebanyere aha ya na Corporate Affairs Commission (CAC) dị ka Incorporated Trustees, <strong>IT No. 9958777</strong>. Ụlọ ọrụ nwanne ya, <strong>IniXien Ltd</strong>, na-enye ya ikike iji Hawkeye n'efu ruo mgbe ebighị ebi. Akụkọ ndị na-ekiri ihe, na ndekọ ha na-ewu, na-anọgide ghe oghe ka onye ọ bụla gụọ ma nyochaa.",
+  "observe.sheet-whole-in-frame": "Tinye mpempe akwụkwọ ahụ dum na foto: nkuku anọ ya niile, na ahịrị ọ bụla.",
+  "observe.sheet-other-race": "Foto a dị ka nsonaazụ ntuli aka {v0}, ọ bụghị nke {v1}. Lelee na ọ bụ mpempe akwụkwọ kwesịrị ekwesị.",
+  "observe.sheet-parties-not-found": "Ahụghị ha na foto ahụ: {v0}. Ọ bụrụ na akụkụ nke mpempe akwụkwọ ahụ bịpụrụ, tinye akụkụ na-esote."
 }

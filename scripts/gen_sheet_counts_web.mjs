@@ -20,7 +20,7 @@ export function generate() {
   const js = stripTypeScriptTypes(fs.readFileSync(SRC, 'utf8'), { mode: 'strip' })
     .replace(/^[\s\S]*?\*\//, '') // the web file gets its own header
     .replace(/^\/\*\* One recognised line.*\*\/\n/m, '') // documented a type that is gone
-    .replace(/^export function /m, 'function ')
+    .replace(/^export function /gm, 'function ')
     .replace(/ +\)/g, ')')
     .replace(/ +,/g, ',')
     .replace(/ +;/g, ';')
@@ -40,12 +40,14 @@ export function generate() {
  * the rules are documented in the TypeScript.
  *
  * Exposes window.HAWKEYE_SHEETCOUNTS.parseCounts(text, partyCodes, lines), where
- * lines are {text, left, right, top, bottom} in pixels, origin top-left.
+ * lines are {text, left, right, top, bottom} in pixels, origin top-left, and the
+ * photo checks sheetOffice(text), raceOffice(code), partiesSeen(text, codes) and
+ * partiesMissing(seen, codes).
  */
 (function () {
 ${js.split('\n').map((l) => (l ? '  ' + l : l)).join('\n')}
 
-  window.HAWKEYE_SHEETCOUNTS = { parseCounts };
+  window.HAWKEYE_SHEETCOUNTS = { parseCounts, sheetOffice, raceOffice, partiesSeen, partiesMissing };
 })();
 `;
 }

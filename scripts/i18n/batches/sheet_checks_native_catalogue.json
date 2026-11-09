@@ -1,0 +1,5 @@
+{
+  "n.app.report.result.fit-sheet-or-poster-corners": "Fit the whole EC8A sheet, or the EC60E poster on the wall, inside the frame: all four corners, every row readable.",
+  "n.components.sheet-checks.other-race": "This photo looks like the {v0} result, not {v1}. Check it is the right sheet.",
+  "n.components.sheet-checks.parties-not-found": "Not found on the photo: {v0}. If part of the sheet was cut off, retake it and add the next part."
+}

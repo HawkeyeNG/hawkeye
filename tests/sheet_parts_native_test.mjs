@@ -95,6 +95,8 @@ check('mergeReads: the FIRST part\'s text stands (the unit code is read from it)
 check('mergeReads: counts pooled, an earlier part wins on overlap', JSON.stringify(m.counts) === JSON.stringify({ APC: 32, PDP: 1, LP: 7, SDP: 167 }), m.counts);
 check('mergeReads: readable lines summed; the first serial found', m.numericLines === 7 && m.serial === 'A123', m);
 check('mergeReads: nothing read -> null', N.mergeReads([null, undefined]) === null);
+check('mergeReads: allText holds every part, top first (the photo checks read it)', m.allText === `${r1.text}\n${r2.text}`, m.allText);
+check('mergeReads: a merged read merged again keeps every part', N.mergeReads([m, { text: 'ZLP 2', numericLines: 1, counts: {} }]).allText === `${r1.text}\n${r2.text}\nZLP 2`);
 
 // wiring: both flows turn parts on, and the count reaches the form
 const result = fs.readFileSync(path.join(ROOT, 'native/src/app/report/result.tsx'), 'utf8');

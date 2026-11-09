@@ -3006,5 +3006,8 @@
   "about.wwd-ledger": "A public ledger of every report, which anyone can verify, and a public docket where disputed results are reviewed in the open.",
   "about.wwd-information": "Plain information for voters: the races, the candidates INEC has published, and where observers are still needed.",
   "about.registered-address": "Registered address: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Nigeria</strong>.",
-  "about.run-by-registered": "Hawkeye is run by <strong>IniXien Hope Initiative</strong>, a Nigerian not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees, <strong>IT No. 9958777</strong>. Its sister company, <strong>IniXien Ltd</strong>, grants it perpetual free use of Hawkeye. Observers' reports, and the ledger they form, stay open for anyone to read and verify."
+  "about.run-by-registered": "Hawkeye is run by <strong>IniXien Hope Initiative</strong>, a Nigerian not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees, <strong>IT No. 9958777</strong>. Its sister company, <strong>IniXien Ltd</strong>, grants it perpetual free use of Hawkeye. Observers' reports, and the ledger they form, stay open for anyone to read and verify.",
+  "observe.sheet-whole-in-frame": "Get the whole sheet in: all four corners, every row.",
+  "observe.sheet-other-race": "This photo looks like the {v0} result, not {v1}. Check it is the right sheet.",
+  "observe.sheet-parties-not-found": "Not found on the photo: {v0}. If part of the sheet is cut off, add the next part."
 }

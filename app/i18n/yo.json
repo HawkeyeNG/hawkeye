@@ -3032,5 +3032,8 @@
   "about.wwd-ledger": "Ìwé àkọsílẹ̀ gbangba ti gbogbo ìròyìn, tí ẹnikẹ́ni lè ṣàyẹ̀wò, àti ìwé ẹjọ́ gbangba níbi tí a ti ń ṣàyẹ̀wò àwọn àbájáde tí a ń jiyàn lé lórí ní gbangba.",
   "about.wwd-information": "Ìsọfúnni tó ṣe kedere fún àwọn olùdìbò: àwọn ìdíje, àwọn olùdíje tí INEC ti tẹ̀ jáde, àti ibi tí a ṣì nílò àwọn olùwòran.",
   "about.registered-address": "Àdírẹ́sì tí a forúkọ sílẹ̀: <strong>ND12 Abubakar Kigo Road, Kaduna 800283, Nàìjíríà</strong>.",
-  "about.run-by-registered": "<strong>IniXien Hope Initiative</strong> ni ó ń ṣàkóso Hawkeye, àjọ tí kì í ṣe fún èrè ní Nàìjíríà, tí a forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission (CAC) gẹ́gẹ́ bí Incorporated Trustees, <strong>IT No. 9958777</strong>. Ilé-iṣẹ́ ìbátan rẹ̀, <strong>IniXien Ltd</strong>, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé. Àwọn ìròyìn olùwòran, àti ìwé àkọsílẹ̀ tí wọ́n ń kọ́, ń wà ní ṣíṣí fún ẹnikẹ́ni láti kà kí ó sì ṣàyẹ̀wò."
+  "about.run-by-registered": "<strong>IniXien Hope Initiative</strong> ni ó ń ṣàkóso Hawkeye, àjọ tí kì í ṣe fún èrè ní Nàìjíríà, tí a forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission (CAC) gẹ́gẹ́ bí Incorporated Trustees, <strong>IT No. 9958777</strong>. Ilé-iṣẹ́ ìbátan rẹ̀, <strong>IniXien Ltd</strong>, fún un ní ẹ̀tọ́ láti lo Hawkeye lọ́fẹ̀ẹ́ títí láé. Àwọn ìròyìn olùwòran, àti ìwé àkọsílẹ̀ tí wọ́n ń kọ́, ń wà ní ṣíṣí fún ẹnikẹ́ni láti kà kí ó sì ṣàyẹ̀wò.",
+  "observe.sheet-whole-in-frame": "Jẹ́ kí gbogbo ìwé náà wà nínú fọ́tò: igun mẹ́rẹ̀ẹ̀rin, àti gbogbo ìlà.",
+  "observe.sheet-other-race": "Fọ́tò yìí jọ àbájáde ìdìbò {v0}, kì í ṣe ti {v1}. Ṣàyẹ̀wò pé ìwé tó tọ́ ni.",
+  "observe.sheet-parties-not-found": "A kò rí wọn nínú fọ́tò náà: {v0}. Bí apá kan ìwé náà bá ti gé kúrò, fi apá tó kàn kún un."
 }

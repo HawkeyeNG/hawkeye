@@ -114,8 +114,10 @@ export async function joinInDocument(parts: string[]): Promise<{ b64: string; wi
 }
 
 /** What a recognised part read becomes when several are joined: the FIRST part
- *  names the unit (its text and serial); counts are pooled, earlier parts first. */
-export function mergeReads<R extends { text: string; numericLines: number; counts: Record<string, number>; serial?: string | null }>(
+ *  names the unit (its text and serial); counts are pooled, earlier parts first.
+ *  `allText` is every part's text, top first, for the photo checks (which
+ *  parties are on the sheet, which election it names: lib/sheet-counts.ts). */
+export function mergeReads<R extends { text: string; numericLines: number; counts: Record<string, number>; serial?: string | null; allText?: string }>(
   reads: (R | null | undefined)[],
 ): R | null {
   const got = reads.filter((r): r is R => !!r);
@@ -127,5 +129,6 @@ export function mergeReads<R extends { text: string; numericLines: number; count
     numericLines: got.reduce((a, r) => a + (r.numericLines || 0), 0),
     counts,
     serial: got.find((r) => r.serial)?.serial ?? got[0].serial ?? null,
+    allText: got.map((r) => r.allText ?? r.text).filter(Boolean).join('\n'),
   };
 }

@@ -1817,8 +1817,12 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     c.innerHTML = '<img src="logo.svg?v=101" alt="" style="width:36px;height:36px;display:block" />';
   }
 
-  // Accessibility: skip-to-content link, first in the tab order.
-  const main = document.querySelector('main');
+  // Accessibility: skip-to-content link, first in the tab order. Target the main
+  // landmark actually ON SCREEN: index.html's first <main> is the signed-in
+  // Observer Home, display:none for a visitor, whose landing is
+  // div.home-public[role=main]. Falls back to the first <main> as before.
+  const main = [...document.querySelectorAll('main, [role="main"]')].find((m) => m.offsetParent !== null)
+    || document.querySelector('main');
   if (main && !document.querySelector('.skip-link')) {
     if (!main.id) main.id = 'main';
     const skip = document.createElement('a');

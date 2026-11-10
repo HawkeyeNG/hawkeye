@@ -92,6 +92,8 @@
     .home-obs { display: none; }
     .obs-home .home-obs { display: block; }
     .obs-home .hero, .obs-home .how-sec, .obs-home .trust, .obs-home .cta-band { display: none; }
+    /* Exactly one main landmark at a time: the landing's wrapper goes with its sections. */
+    .obs-home .home-public { display: none; }
 
     .home-hero { background: linear-gradient(160deg, var(--green-950, #00251a), #00482b); color: #fff; padding: 26px 0 20px; }
     .home-hero h1 { margin: 0 0 2px; font-size: 1.45rem; line-height: 1.25; }
@@ -459,6 +461,16 @@
     </main>
   </div>
 
+  <!-- THE SIGNED-OUT LANDING, as one main landmark. The only <main> above belongs
+       to the signed-in Observer Home (display:none for a visitor), so without
+       this wrapper a stranger, a screen reader and Google's reviewers saw a page
+       with no main content at all (Lighthouse: "Document does not have a main
+       landmark"; Ad Grants asked for clear navigation). A div with role=main,
+       not a second <main>: html.native-app main h1 would shrink the Lite welcome
+       title, and outbox.js and the header title look up "the first <main>".
+       Signed in, .obs-home hides this whole wrapper (style block in <head>). -->
+  <div class="home-public" role="main">
+
   <!-- APP-ONLY welcome screen. The web landing has to sell Hawkeye to a stranger;
        someone who installed the app already decided, so this is a straight
        welcome + auth screen in the standard app shape. Shown only for
@@ -728,6 +740,7 @@
       <a data-i18n="index.become-an-observer" class="btn-primary" href="observe.html?intent=observe">Become an observer</a>
     </div>
   </section>
+  </div>
 
   <footer class="gov-footer">
     <div class="wrap">
@@ -1333,7 +1346,7 @@
   <script src="/i18n.js?v=10"></script>
   <script src="/lang.js?v=10"></script>
   <script src="practice-day.js?v=1"></script>
-  <script src="menu.js?v=205"></script>
+  <script src="menu.js?v=206"></script>
   <script src="shell.js?v=4" defer></script>
 </body>
 </html>

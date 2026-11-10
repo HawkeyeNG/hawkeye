@@ -113,8 +113,9 @@ async function readChrome(lang, page = 'index.html', shell = false) {
 console.log('=== the chrome renders in English (control: every selector resolves) ===');
 const en = await readChrome('en');
 check('html lang is en', en.htmlLang === 'en', en.htmlLang);
-check('the footer rebuilt with 8 links', en.footer.length === 8, en.footer);
-check('  ...and they are the English labels', en.footer.join('|') === 'About|How Hawkeye Works|Privacy Policy|Terms of Service|FAQ|Observer Guide|Support|My Profile', en.footer);
+// 10 since c1833f2d7 (10 Nov 2026): News and Contact joined the footer for the Ad Grants review.
+check('the footer rebuilt with 10 links', en.footer.length === 10, en.footer);
+check('  ...and they are the English labels', en.footer.join('|') === 'About|News|How Hawkeye Works|Privacy Policy|Terms of Service|FAQ|Observer Guide|Support|Contact|My Profile', en.footer);
 check('the header names the page', en.headerName === 'HAWKEYE', en.headerName);
 check('the skip link exists', en.skip === 'Skip to content', en.skip);
 check('the ☰ panel has group headings', en.groups.length >= 4, en.groups);
@@ -150,7 +151,7 @@ check('html lang is ha', ha.htmlLang === 'ha', ha.htmlLang);
  */
 const moved = (name, a, b) => check(name, a !== b && !!b, { en: a, ha: b });
 
-check('the footer still has 8 links', ha.footer.length === 8, ha.footer);
+check('the footer still has 10 links', ha.footer.length === 10, ha.footer);
 for (let i = 0; i < en.footer.length; i++) {
   moved(`footer[${i}] "${en.footer[i]}" translated`, en.footer[i], ha.footer[i]);
 }

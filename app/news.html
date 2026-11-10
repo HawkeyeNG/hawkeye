@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#00482b">
+  <meta name="description" content="News and updates from Hawkeye, the free, nonpartisan polling-unit results monitor run by IniXien Hope Initiative: what has changed, newest first, and the 2027 election days.">
+  <title data-i18n="news.page-title">Hawkeye — News &amp; updates</title>
+  <link rel="icon" type="image/svg+xml" href="logo.svg?v=101">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <script>/*hk-theme-init*/(function(){try{var t=localStorage.getItem("hawkeye_theme");if(t!=="dark"&&t!=="light"){t=(window.matchMedia&&window.matchMedia("(prefers-color-scheme: light)").matches)?"light":"dark";}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme="dark";}})();</script>
+  <link rel="stylesheet" href="styles.css?v=202">
+  <script src="native.js?v=129"></script>
+  <script src="/monitor.js?v=6" defer></script>
+  <style>
+    main.doc { padding-top: 20px; padding-bottom: 28px; }
+    .news-list { list-style: none; margin: 18px 0 0; padding: 0; display: grid; gap: 14px; }
+    .news-item { margin: 0; }
+    .news-item h2 { margin: 2px 0 6px; font-size: 1.15rem; }
+    .news-item p { margin: 0; }
+    .news-date { font-size: 0.82rem; font-weight: 700; letter-spacing: 0.02em; color: var(--muted); }
+  </style>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Hawkeye">
+  <meta property="og:title" content="Hawkeye — News & updates">
+  <meta property="og:description" content="What has changed in Hawkeye, newest first, and the 2027 election days.">
+  <meta property="og:url" content="https://hawkeye.com.ng/news.html">
+  <meta property="og:image" content="https://hawkeye.com.ng/og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <!-- No authgate.js: news is public information, like coverage.html. With it,
+       a signed-out visitor (a reviewer, a journalist) was sent to sign-in,
+       because news.html is not in its WEB_PUBLIC list. -->
+</head>
+<body>
+  <header class="gov-header">
+    <div class="wrap brand-row">
+      <a class="brand" href="index.html"><span class="crest" aria-hidden="true"><img src="logo.svg?v=101" alt="" width="30" height="30" style="display:block" /></span>
+        <div class="brand-text"><strong>HAWKEYE</strong><span data-i18n="common.independent-election-results-monitor">Independent Election Results Monitor</span></div></a>
+      <button data-i18n-attr="aria-label:common.menu" class="menu-btn" aria-label="Menu" aria-expanded="false" onclick="const m=document.getElementById('menu-panel');const o=m.hidden;m.hidden=!o;this.setAttribute('aria-expanded',String(o));">☰</button>
+      <nav id="menu-panel" class="menu-panel" hidden>
+        <a data-i18n="common.report-a-result" href="observe.html">Report a Result</a>
+        <a data-i18n="common.report-a-collation-result" href="collation.html">Report a Collation Result</a>
+        <a data-i18n="common.leaderboard" href="results.html">Leaderboard</a>
+        <a data-i18n="common.public-reports-log" href="dashboard.html">Public Reports Log</a>
+        <a data-i18n="common.verify-the-ledger" href="ledger.html">Verify the Ledger</a>
+        <a data-i18n="common.election-integrity" href="integrity.html">Election Integrity</a>
+        <a data-i18n="common.public-docket" href="docket.html">Public Docket</a>
+        <a data-i18n="common.map-a-polling-unit" href="map-unit.html">Map a Polling Unit</a>
+        <a data-i18n="common.report-an-incident" href="incidents.html">Report an Incident</a>
+        <a data-i18n="common.2027-candidates" href="candidates.html">2027 Candidates</a>
+        <a data-i18n="common.political-data" href="political.html">Political Data</a>
+        <a data-i18n="common.how-hawkeye-works" href="how.html">How Hawkeye Works</a>
+        <a data-i18n="common.observer-guide" href="guide.html">Observer Guide</a>
+        <a href="faq.html">FAQ</a>
+        <a data-i18n="common.about-contact" href="about.html">About &amp; Contact</a>
+        <a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a>
+      </nav>
+    </div>
+  </header>
+
+  <!-- NEWS & UPDATES (Google Ad Grants website policy, 10 Nov 2026: "substantial,
+       up-to-date content"). Dated, factual, nonpartisan: what changed in Hawkeye
+       and why it matters to an observer. Newest first. The homepage shows the
+       three newest (index.html, "Latest updates"), with the same keys and dates:
+       add an item HERE, then move the homepage's three along. Dates are written
+       in English in the markup and re-drawn in the reader's language below. -->
+  <main class="wrap doc">
+    <h1 data-i18n="news.title">News &amp; updates</h1>
+    <p data-i18n="news.lede" class="lede">What has changed in Hawkeye, newest first.</p>
+
+    <div class="card">
+      <h2 data-i18n="news.election-days" style="margin-top:0">Election days</h2>
+      <p data-i18n-html="news.election-days-body" style="margin:0"><strong>16 January 2027:</strong> President, Senate and House of Representatives. <strong>6 February 2027:</strong> Governorship and State Houses of Assembly.</p>
+    </div>
+
+    <ol class="news-list" reversed>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-11-09">9 November 2026</time>
+        <h2 data-i18n="news.n1-title">Photograph a big result poster in parts</h2>
+        <p data-i18n="news.n1-body">The result poster INEC pastes up at each polling unit (Form EC60E) can be too big for one clear photo. Observers can now take up to three photos of it, top to bottom, and the app joins them into one before it is signed.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-11-04">4 November 2026</time>
+        <h2 data-i18n="news.n2-title">177,299 polling units</h2>
+        <p data-i18n="news.n2-body">INEC's polling-unit directory now lists 453 more units, all in Delta State. Hawkeye's register, maps and unit search carry all 177,299.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-10-29">29 October 2026</time>
+        <h2 data-i18n="news.n3-title">Counts read off the sheet photo, on the website too</h2>
+        <p data-i18n="news.n3-body">The website and Hawkeye Lite now suggest each party's count from the result-sheet photo, with the same reader as the app. The observer still checks every figure before sending.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-10-23">23 October 2026</time>
+        <h2 data-i18n="news.n4-title">IniXien Hope Initiative is registered</h2>
+        <p data-i18n="news.n4-body">The not-for-profit that runs Hawkeye is registered with the Corporate Affairs Commission as Incorporated Trustees, IT No. 9958777.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-10-14">14 October 2026</time>
+        <h2 data-i18n="news.n5-title">Hawkeye on WhatsApp</h2>
+        <p data-i18n-html="news.n5-body">Follow the <a href="https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h" target="_blank" rel="noopener">Hawkeye WhatsApp channel</a> for updates about the app and the 2027 elections.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-10-11">11 October 2026</time>
+        <h2 data-i18n="news.n6-title">Each race shows INEC's final list</h2>
+        <p data-i18n-html="news.n6-body">Each race now shows the parties on INEC's final list of candidates, so observers see only the parties on their own ballot. See <a href="races.html">all races</a>.</p>
+      </li>
+      <li class="card news-item">
+        <time class="news-date" datetime="2026-10-10">10 October 2026</time>
+        <h2 data-i18n="news.n7-title">Find your polling unit offline</h2>
+        <p data-i18n="news.n7-body">On the website and in Hawkeye Lite, "Near me" now works without a network once your state's units have downloaded.</p>
+      </li>
+    </ol>
+  </main>
+
+  <footer class="gov-footer"><div class="wrap">
+    <nav><a data-i18n="common.privacy-data" href="privacy.html">Privacy &amp; Data</a><a data-i18n="index.how-it-works" href="how.html">How It Works</a><a href="faq.html">FAQ</a></nav>
+    <p data-i18n="common.hawkeye-is-an-independent-transparency-initiative-2">Hawkeye is an independent transparency initiative. Official results remain INEC's.</p>
+    <p data-i18n="common.footer-nonprofit" class="copyright">Hawkeye is a free, nonpartisan programme of IniXien Hope Initiative, a not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees (IT No. 9958777) · ND12 Abubakar Kigo Road, Kaduna 800283, Nigeria · Software &copy; 2026 IniXien Ltd, licensed free of charge</p>
+  </div></footer>
+  <script>
+    // Each date in the reader's language (the markup's English is the fallback).
+    (function () {
+      function draw() {
+        // The site's own month names (as certificate.js and practice-day.js use):
+        // a phone's browser may not know Hausa, Igbo or Yoruba dates.
+        var EN = 'January,February,March,April,May,June,July,August,September,October,November,December';
+        var M = String(window.HawkeyeI18n ? window.HawkeyeI18n.t('practiceday.months', EN) : EN).split(',');
+        document.querySelectorAll('time.news-date[datetime]').forEach(function (t) {
+          try {
+            var d = new Date(t.getAttribute('datetime') + 'T12:00:00');
+            t.textContent = d.getDate() + ' ' + (M[d.getMonth()] || '') + ' ' + d.getFullYear();
+          } catch (e) { /* keep the English */ }
+        });
+      }
+      document.addEventListener('hawkeye-lang', draw);
+      draw();
+    })();
+  </script>
+  <script src="tg.js?v=95"></script>
+  <script src="/i18n.js?v=10"></script>
+  <script src="/lang.js?v=10"></script>
+  <script src="menu.js?v=205"></script>
+  <script src="shell.js?v=4" defer></script>
+</body>
+</html>

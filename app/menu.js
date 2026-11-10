@@ -195,6 +195,17 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   // If a link is ever added back here, re-measure at 900px rather than at a
   // desktop window: the collision this guards against is invisible above ~940px.
   const PRIMARY = ['how.html', 'observe.html'];
+  // WIDE SCREENS ADD THE ORGANISATION'S OWN PAGES (Google Ad Grants website
+  // policy, 10 Nov 2026: "clear navigation"). A reviewer looking for About,
+  // News and Contact found them only as items ~20 of a 29-item ☰ panel. They
+  // show from 1200px, where the row has room (the 900px budget above stands:
+  // between 900 and 1199px the header is exactly what it was).
+  const WIDE = [
+    ['about.html', 'nav.about', 'About', 'before'],
+    ['results.html', 'nav.results', 'Results', 'after'],
+    ['news.html', 'nav.news', 'News', 'after'],
+    ['about.html#contact', 'about.contact', 'Contact', 'after'],
+  ];
   if (panel && btn && !document.querySelector('.desktop-primary')) {
     const nav = document.createElement('nav');
     nav.className = 'desktop-primary';
@@ -205,6 +216,36 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // Primary action rendered as a pill CTA at the end of the quick-nav.
     const cta = nav.querySelector('a[href="observe.html"]');
     if (cta) { cta.classList.add('nav-cta'); nav.appendChild(cta); }
+    const how = nav.querySelector('a[href="how.html"]');
+    for (const [href, key, english, where] of WIDE) {
+      const a = document.createElement('a');
+      a.href = href;
+      a.className = 'dp-wide';
+      i18nSet(a, key, english);
+      nav.insertBefore(a, where === 'before' && how ? how : (cta || null));
+    }
+    if (!document.getElementById('dp-wide-css')) {
+      const st = document.createElement('style');
+      st.id = 'dp-wide-css';
+      st.textContent = '.desktop-primary .dp-wide{display:none}@media (min-width:1200px){.desktop-primary .dp-wide{display:inline-block}}'
+        + '.desktop-primary.dp-tight .dp-wide{display:none}';
+      document.head.appendChild(st);
+    }
+    // ONLY WHILE THEY FIT. Hausa and Igbo labels run a third longer than English,
+    // and at 1280px in Hausa the brand gave way first: "HAWKEYE" became "H…"
+    // (.brand-text strong ellipsises). So the extra links show only while the
+    // brand keeps its whole name, re-measured on resize and language change.
+    const fitWide = () => {
+      nav.classList.remove('dp-tight');
+      const name = document.querySelector('.gov-header .brand-text strong');
+      if (name && name.scrollWidth > name.clientWidth + 1) nav.classList.add('dp-tight');
+    };
+    let fitTimer = 0;
+    const fitSoon = () => { clearTimeout(fitTimer); fitTimer = setTimeout(fitWide, 120); };
+    window.addEventListener('resize', fitSoon);
+    document.addEventListener('hawkeye-lang', fitSoon);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitWide, () => {});
+    requestAnimationFrame(fitWide);
     // My Profile lives under "Take part" in the ☰ panel, but that whole section
     // is hidden on desktop (≥900px, .tp-hide) on the theory its links moved to
     // this header — and profile.html never did. Signed-in desktop users had NO
@@ -306,7 +347,7 @@ document.addEventListener('hawkeye-lang', i18nSweep);
     // Take part because that group is hidden on desktop.
     // "Stay for the count" (stay.html), the page every recruitment message
     // points at, sits just before it: the ask, then the job of spreading it.
-    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'stay.html', 'captain-guide.html', 'faq.html', 'about.html', 'press.html', 'support.html', 'privacy.html', 'terms.html']],
+    ['Learn & about', ['#tour', 'how.html', 'guide.html', 'stay.html', 'captain-guide.html', 'faq.html', 'about.html', 'news.html', 'press.html', 'support.html', 'privacy.html', 'terms.html']],
     /**
      * Where native puts it too — the app's More screen ends with a "Find
      * Hawkeye" section (components/social-row.tsx) and the share control sits
@@ -337,6 +378,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
       cv.href = 'coverage.html';
       i18nSet(cv, 'coverage.observer-coverage', 'Observer Coverage');
       panel.appendChild(cv);
+    }
+    // News & updates (news.html, 10 Nov 2026), under Learn & about beside About.
+    // Injected like coverage: no page static-lists it.
+    if (!panel.querySelector('a[href="news.html"]')) {
+      const nw = document.createElement('a');
+      nw.href = 'news.html';
+      i18nSet(nw, 'nav.news-updates', 'News & Updates');
+      panel.appendChild(nw);
     }
     // The ward captain's guide (captain-guide.html), under Learn & about.
     // Injected for the same reason as coverage: no page static-lists it. Public;
@@ -1792,12 +1841,14 @@ document.addEventListener('hawkeye-lang', i18nSweep);
   const foot = document.querySelector('.gov-footer:not(.console-foot) nav');
   if (foot) {
     foot.innerHTML = '<a href="about.html" data-i18n="nav.about">About</a>'
+      + '<a href="news.html" data-i18n="nav.news">News</a>'
       + '<a href="how.html" data-i18n="common.how-hawkeye-works">How Hawkeye Works</a>'
       + '<a href="privacy.html" data-i18n="nav.privacy-policy">Privacy Policy</a>'
       + '<a href="terms.html" data-i18n="nav.terms-of-service">Terms of Service</a>'
       + '<a href="faq.html" data-i18n="nav.faq">FAQ</a>'
       + '<a href="guide.html" data-i18n="common.observer-guide">Observer Guide</a>'
       + '<a href="support.html" data-i18n="nav.support">Support</a>'
+      + '<a href="about.html#contact" data-i18n="about.contact">Contact</a>'
       + (localStorage.getItem('hawkeye_token') ? '<a href="profile.html" data-i18n="profile.my-profile">My Profile</a>' : '');
     // The privacy/terms PAGES stay English by policy (_meta.englishOnlyPages);
     // their nav LABELS are chrome, and get nav.* keys of their own.

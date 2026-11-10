@@ -1,0 +1,224 @@
+{
+  "nav.news": {
+    "en": "News",
+    "ha": "Labarai",
+    "ig": "Akụkọ",
+    "yo": "Ìròyìn"
+  },
+  "nav.news-updates": {
+    "en": "News & Updates",
+    "ha": "Labarai da Sabuntawa",
+    "ig": "Akụkọ na Mmelite",
+    "yo": "Ìròyìn àti Àtúnṣe"
+  },
+  "news.page-title": {
+    "en": "Hawkeye — News & updates",
+    "ha": "Hawkeye — Labarai da sabuntawa",
+    "ig": "Hawkeye — Akụkọ na mmelite",
+    "yo": "Hawkeye — Ìròyìn àti àtúnṣe"
+  },
+  "news.title": {
+    "en": "News & updates",
+    "ha": "Labarai da sabuntawa",
+    "ig": "Akụkọ na mmelite",
+    "yo": "Ìròyìn àti àtúnṣe"
+  },
+  "news.lede": {
+    "en": "What has changed in Hawkeye, newest first.",
+    "ha": "Abin da ya canza a Hawkeye, mafi sabo a farko.",
+    "ig": "Ihe gbanwere na Hawkeye, nke kachasị ọhụrụ na mbụ.",
+    "yo": "Ohun tó ti yí padà nínú Hawkeye, tuntun jùlọ ní àkọ́kọ́."
+  },
+  "news.election-days": {
+    "en": "Election days",
+    "ha": "Ranakun zaɓe",
+    "ig": "Ụbọchị ntuli aka",
+    "yo": "Àwọn ọjọ́ ìdìbò"
+  },
+  "news.election-days-body": {
+    "en": "<strong>16 January 2027:</strong> President, Senate and House of Representatives. <strong>6 February 2027:</strong> Governorship and State Houses of Assembly.",
+    "ha": "<strong>16 Janairu 2027:</strong> Shugaban ƙasa, Majalisar Dattawa da Majalisar Wakilai. <strong>6 Faburairu 2027:</strong> Gwamna da Majalisun Dokokin Jihohi.",
+    "ig": "<strong>16 Jenụwarị 2027:</strong> Onye isi ala, Sineti na Ụlọ Nnọchiteanya. <strong>6 Febrụwarị 2027:</strong> Ọchịchị gọvanọ na Ụlọ Omebe Iwu Steeti.",
+    "yo": "<strong>16 Ṣẹ́rẹ́ 2027:</strong> Ààrẹ, Ìgbìmọ̀ Aṣòfin Àgbà àti Ilé Aṣojú. <strong>6 Èrèlè 2027:</strong> Gómìnà àti àwọn Ilé Ìgbìmọ̀ Aṣòfin Ìpínlẹ̀."
+  },
+  "news.n1-title": {
+    "en": "Photograph a big result poster in parts",
+    "ha": "Ɗauki hoton babban fostar sakamako kashi-kashi",
+    "ig": "See foto pọsta nsonaazụ buru ibu n'akụkụ n'akụkụ",
+    "yo": "Ya fọ́tò pósítà àbájáde ńlá ní apá-apá"
+  },
+  "news.n1-body": {
+    "en": "The result poster INEC pastes up at each polling unit (Form EC60E) can be too big for one clear photo. Observers can now take up to three photos of it, top to bottom, and the app joins them into one before it is signed.",
+    "ha": "Fostar sakamako da INEC ke liƙawa a kowane rukunin zaɓe (Fom EC60E) na iya fi girma ga hoto ɗaya mai kyau. Yanzu masu lura za su iya ɗaukar hotunanta har uku, daga sama zuwa ƙasa, kuma manhajar za ta haɗa su zuwa ɗaya kafin a sa hannu.",
+    "ig": "Pọsta nsonaazụ INEC na-amado n'ngalaba ntuli aka ọ bụla (Fọm EC60E) nwere ike ibu oke ibu maka otu foto doro anya. Ugbu a, ndị na-ekiri ihe nwere ike ise foto ya ruo atọ, site n'elu ruo n'ala, ngwa ahụ ga-ejikọkwa ha ka ha bụrụ otu tupu e binye aka na ya.",
+    "yo": "Pósítà àbájáde tí INEC ń lẹ̀ mọ́ ògiri ní ẹ̀ka ìdìbò kọ̀ọ̀kan (Fọ́ọ̀mù EC60E) lè tóbi jù fún fọ́tò kan tó ṣe kedere. Báyìí, àwọn olùwòran lè ya fọ́tò rẹ̀ tó mẹ́ta, láti òkè dé ìsàlẹ̀, áàpù náà yóò sì so wọ́n pọ̀ di ọ̀kan kí a tó buwọ́lù ú."
+  },
+  "news.n2-title": {
+    "en": "177,299 polling units",
+    "ha": "Rukunonin zaɓe 177,299",
+    "ig": "Ngalaba ntuli aka 177,299",
+    "yo": "Ẹ̀ka ìdìbò 177,299"
+  },
+  "news.n2-body": {
+    "en": "INEC's polling-unit directory now lists 453 more units, all in Delta State. Hawkeye's register, maps and unit search carry all 177,299.",
+    "ha": "Jerin rukunonin zaɓe na INEC yanzu yana da ƙarin rukunoni 453, duk a Jihar Delta. Rijistar Hawkeye, taswirori da binciken rukuni suna da dukkan 177,299.",
+    "ig": "Ndepụta ngalaba ntuli aka INEC ugbu a nwere ngalaba 453 ọzọ, ha niile dị na Steeti Delta. Ndebanye aha, maapụ na nchọta ngalaba Hawkeye nwere ha niile, 177,299.",
+    "yo": "Àkójọ ẹ̀ka ìdìbò INEC ní ẹ̀ka 453 sí i báyìí, gbogbo wọn ní Ìpínlẹ̀ Delta. Ìforúkọsílẹ̀, àwọn máàpù àti ìwádìí ẹ̀ka Hawkeye ní gbogbo 177,299."
+  },
+  "news.n3-title": {
+    "en": "Counts read off the sheet photo, on the website too",
+    "ha": "Ana karanta ƙidaya daga hoton takarda, har a shafin yanar gizo",
+    "ig": "A na-agụ ọnụọgụ site na foto mpempe akwụkwọ, na weebụsaịtị kwa",
+    "yo": "A ń ka ìkà láti inú fọ́tò ìwé, lórí ìkànnì náà pẹ̀lú"
+  },
+  "news.n3-body": {
+    "en": "The website and Hawkeye Lite now suggest each party's count from the result-sheet photo, with the same reader as the app. The observer still checks every figure before sending.",
+    "ha": "Shafin yanar gizo da Hawkeye Lite yanzu suna ba da shawarar ƙidayar kowace jam'iyya daga hoton takardar sakamako, da mai karatu iri ɗaya da na manhajar. Mai lura yana ci gaba da duba kowace lamba kafin aikawa.",
+    "ig": "Weebụsaịtị na Hawkeye Lite na-atụ aro ugbu a ọnụọgụ otu ndọrọ ndọrọ ọchịchị ọ bụla site na foto mpempe akwụkwọ nsonaazụ, jiri otu ihe ọgụgụ dị ka ngwa ahụ. Onye na-ekiri ihe ka na-enyocha ọnụọgụ ọ bụla tupu o zipu.",
+    "yo": "Ìkànnì náà àti Hawkeye Lite ń dábàá ìkà ẹgbẹ́ òṣèlú kọ̀ọ̀kan láti inú fọ́tò ìwé àbájáde báyìí, pẹ̀lú olùkà kan náà bí áàpù. Olùwòran ṣì ń ṣàyẹ̀wò gbogbo nọ́ńbà kí ó tó fi ránṣẹ́."
+  },
+  "news.n4-title": {
+    "en": "IniXien Hope Initiative is registered",
+    "ha": "An yi wa IniXien Hope Initiative rijista",
+    "ig": "E debanyela IniXien Hope Initiative aha",
+    "yo": "A ti forúkọ IniXien Hope Initiative sílẹ̀"
+  },
+  "news.n4-body": {
+    "en": "The not-for-profit that runs Hawkeye is registered with the Corporate Affairs Commission as Incorporated Trustees, IT No. 9958777.",
+    "ha": "Ƙungiya mai zaman kanta da ba ta neman riba wadda ke gudanar da Hawkeye an yi mata rijista a Corporate Affairs Commission a matsayin Incorporated Trustees, IT No. 9958777.",
+    "ig": "Otu na-anaghị achọ uru nke na-elekọta Hawkeye ka edebanyere aha ya na Corporate Affairs Commission dị ka Incorporated Trustees, IT No. 9958777.",
+    "yo": "Àjọ tí kì í ṣe fún èrè tó ń ṣiṣẹ́ Hawkeye ni a ti forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission gẹ́gẹ́ bí Incorporated Trustees, IT No. 9958777."
+  },
+  "news.n5-title": {
+    "en": "Hawkeye on WhatsApp",
+    "ha": "Hawkeye a WhatsApp",
+    "ig": "Hawkeye na WhatsApp",
+    "yo": "Hawkeye lórí WhatsApp"
+  },
+  "news.n5-body": {
+    "en": "Follow the <a href=\"https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h\" target=\"_blank\" rel=\"noopener\">Hawkeye WhatsApp channel</a> for updates about the app and the 2027 elections.",
+    "ha": "Bi <a href=\"https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h\" target=\"_blank\" rel=\"noopener\">tashar WhatsApp ta Hawkeye</a> don samun sabbin labarai game da manhajar da zaɓukan 2027.",
+    "ig": "Soro <a href=\"https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h\" target=\"_blank\" rel=\"noopener\">ọwa WhatsApp Hawkeye</a> maka mmelite gbasara ngwa ahụ na ntuli aka 2027.",
+    "yo": "Tẹ̀lé <a href=\"https://whatsapp.com/channel/0029VbDv2UzInlqHPRMST92h\" target=\"_blank\" rel=\"noopener\">ìkànnì WhatsApp Hawkeye</a> fún ìròyìn tuntun nípa áàpù náà àti àwọn ìdìbò 2027."
+  },
+  "news.n6-title": {
+    "en": "Each race shows INEC's final list",
+    "ha": "Kowane zaɓe yana nuna jerin ƙarshe na INEC",
+    "ig": "Ntuli aka ọ bụla na-egosi ndepụta ikpeazụ INEC",
+    "yo": "Ìdìbò kọ̀ọ̀kan ń fi àkójọ ìkẹyìn INEC hàn"
+  },
+  "news.n6-body": {
+    "en": "Each race now shows the parties on INEC's final list of candidates, so observers see only the parties on their own ballot. See <a href=\"races.html\">all races</a>.",
+    "ha": "Kowane zaɓe yanzu yana nuna jam'iyyun da ke cikin jerin ƙarshe na 'yan takara na INEC, don masu lura su ga jam'iyyun da ke kan takardar zaɓensu kawai. Duba <a href=\"races.html\">dukkan zaɓuka</a>.",
+    "ig": "Ntuli aka ọ bụla na-egosi ugbu a otu ndọrọ ndọrọ ọchịchị dị na ndepụta ikpeazụ INEC nke ndị na-azọ ọkwa, ka ndị na-ekiri ihe hụ naanị otu ndị dị na akwụkwọ ntuli aka ha. Lee <a href=\"races.html\">ntuli aka niile</a>.",
+    "yo": "Ìdìbò kọ̀ọ̀kan ń fi àwọn ẹgbẹ́ òṣèlú tó wà nínú àkójọ ìkẹyìn àwọn olùdíje INEC hàn báyìí, kí àwọn olùwòran lè rí àwọn ẹgbẹ́ tó wà lórí ìwé ìdìbò wọn nìkan. Wo <a href=\"races.html\">gbogbo ìdìbò</a>."
+  },
+  "news.n7-title": {
+    "en": "Find your polling unit offline",
+    "ha": "Nemo rukunin zaɓenka ba tare da intanet ba",
+    "ig": "Chọta ngalaba ntuli aka gị na-enweghị ịntanetị",
+    "yo": "Wá ẹ̀ka ìdìbò rẹ láìsí íńtánẹ́ẹ̀tì"
+  },
+  "news.n7-body": {
+    "en": "On the website and in Hawkeye Lite, \"Near me\" now works without a network once your state's units have downloaded.",
+    "ha": "A shafin yanar gizo da a Hawkeye Lite, \"Kusa da ni\" yanzu yana aiki ba tare da hanyar sadarwa ba da zarar rukunonin jiharka sun sauko.",
+    "ig": "Na weebụsaịtị na na Hawkeye Lite, \"Nso m\" na-arụ ọrụ ugbu a na-enweghị netwọk ozugbo ngalaba steeti gị budatara.",
+    "yo": "Lórí ìkànnì àti nínú Hawkeye Lite, \"Nítòsí mi\" ń ṣiṣẹ́ báyìí láìsí nẹ́tíwọ́ọ̀kì ní kété tí àwọn ẹ̀ka ìpínlẹ̀ rẹ bá ti wọlé sórí fóònù rẹ."
+  },
+  "index.get-involved-kicker": {
+    "en": "Get involved",
+    "ha": "Ka Shiga",
+    "ig": "Sonye",
+    "yo": "Kópa"
+  },
+  "index.get-involved-title": {
+    "en": "Help make every polling unit's result public",
+    "ha": "Taimaka a bayyana sakamakon kowane rukunin zaɓe ga jama'a",
+    "ig": "Nyere aka ka nsonaazụ ngalaba ntuli aka ọ bụla pụta ìhè n'ihu ọha",
+    "yo": "Ṣèrànwọ́ kí àbájáde gbogbo ẹ̀ka ìdìbò di gbangba"
+  },
+  "index.gi-observer-body": {
+    "en": "Photograph and sign the result at your own polling unit on election day.",
+    "ha": "Ɗauki hoto ka sa hannu kan sakamakon a rukunin zaɓenka a ranar zaɓe.",
+    "ig": "See foto ma binye aka na nsonaazụ na ngalaba ntuli aka gị n'ụbọchị ntuli aka.",
+    "yo": "Ya fọ́tò àbájáde kí o sì buwọ́lù ú ní ẹ̀ka ìdìbò rẹ ní ọjọ́ ìdìbò."
+  },
+  "index.gi-practice-body": {
+    "en": "Learn every step on a sample result sheet before election day. No sign-up needed.",
+    "ha": "Koyi kowane mataki a kan samfurin takardar sakamako kafin ranar zaɓe. Ba sai ka yi rijista ba.",
+    "ig": "Mụta usoro ọ bụla na mpempe akwụkwọ nsonaazụ atụ tupu ụbọchị ntuli aka. Ọ dịghị mkpa ịdebanye aha.",
+    "yo": "Kọ́ gbogbo ìgbésẹ̀ lórí àpẹẹrẹ ìwé àbájáde ṣáájú ọjọ́ ìdìbò. Kò sí ìforúkọsílẹ̀."
+  },
+  "index.gi-captain-body": {
+    "en": "Help the observers in your ward reach every polling unit, so no unit is left without one.",
+    "ha": "Taimaka wa masu lura a unguwarka su kai kowane rukunin zaɓe, don kada wani rukuni ya rasa mai lura.",
+    "ig": "Nyere ndị na-ekiri ihe nọ na ward gị aka iru ngalaba ntuli aka ọ bụla, ka ngalaba ọ bụla ghara ịnọ na-enweghị onye.",
+    "yo": "Ran àwọn olùwòran ní àgọ́ rẹ lọ́wọ́ láti dé gbogbo ẹ̀ka ìdìbò, kí ẹ̀ka kankan má ṣe wà láìní olùwòran."
+  },
+  "index.gi-partner-title": {
+    "en": "Partner with us",
+    "ha": "Yi haɗin gwiwa da mu",
+    "ig": "Soro anyị rụkọọ ọrụ",
+    "yo": "Bá wa ṣiṣẹ́ pọ̀"
+  },
+  "index.gi-partner-body": {
+    "en": "Civil-society groups, newsrooms and funders: write to us about working together.",
+    "ha": "Ƙungiyoyin farar hula, kafafen yaɗa labarai da masu ba da tallafi: ku rubuto mana game da aiki tare.",
+    "ig": "Otu obodo, ụlọ ọrụ akụkọ na ndị na-enye ego: deere anyị gbasara ịrụkọ ọrụ ọnụ.",
+    "yo": "Àwọn àjọ aráàlú, iléeṣẹ́ ìròyìn àti àwọn tó ń pèsè owó: kọ̀wé sí wa nípa ṣíṣiṣẹ́ pọ̀."
+  },
+  "index.latest-updates": {
+    "en": "Latest updates",
+    "ha": "Sabbin labarai",
+    "ig": "Mmelite kachasị ọhụrụ",
+    "yo": "Ìròyìn tuntun"
+  },
+  "index.all-news": {
+    "en": "All news →",
+    "ha": "Dukkan labarai →",
+    "ig": "Akụkọ niile →",
+    "yo": "Gbogbo ìròyìn →"
+  },
+  "support.nonprofit-body": {
+    "en": "Hawkeye is a free, nonpartisan programme of IniXien Hope Initiative, a Nigerian not-for-profit registered with the Corporate Affairs Commission as Incorporated Trustees (IT No. 9958777). It takes no political money and carries no advertising.",
+    "ha": "Hawkeye shiri ne na kyauta, marar goyon bayan wata jam'iyya, na IniXien Hope Initiative, ƙungiyar Najeriya mai zaman kanta da ba ta neman riba, da aka yi wa rijista a Corporate Affairs Commission a matsayin Incorporated Trustees (IT No. 9958777). Ba ta karɓar kuɗin siyasa kuma ba ta ɗauke da tallace-tallace.",
+    "ig": "Hawkeye bụ mmemme n'efu, nke na-akwadoghị pati ọ bụla, nke IniXien Hope Initiative, otu Naịjirịa na-anaghị achọ uru, nke edebanyere aha ya na Corporate Affairs Commission dị ka Incorporated Trustees (IT No. 9958777). Ọ naghị anara ego ndọrọ ndọrọ ọchịchị, ọ dịghịkwa mgbasa ozi n'ime ya.",
+    "yo": "Hawkeye jẹ́ ètò ọ̀fẹ́ tí kò ṣe ti ẹgbẹ́ kankan, ti IniXien Hope Initiative, àjọ Nàìjíríà tí kì í ṣe fún èrè, tí a forúkọ rẹ̀ sílẹ̀ ní Corporate Affairs Commission gẹ́gẹ́ bí Incorporated Trustees (IT No. 9958777). Kì í gba owó òṣèlú, kò sì sí ìpolówó nínú rẹ̀."
+  },
+  "support.way-partner": {
+    "en": "<strong>Partner with us.</strong> Civil-society groups, newsrooms and universities can work with us on training observers and publishing polling-unit results.",
+    "ha": "<strong>Yi haɗin gwiwa da mu.</strong> Ƙungiyoyin farar hula, kafafen yaɗa labarai da jami'o'i za su iya aiki tare da mu wajen horar da masu lura da wallafa sakamakon rukunonin zaɓe.",
+    "ig": "<strong>Soro anyị rụkọọ ọrụ.</strong> Otu obodo, ụlọ ọrụ akụkọ na mahadum nwere ike iso anyị rụọ ọrụ n'ịzụ ndị na-ekiri ihe na ibipụta nsonaazụ ngalaba ntuli aka.",
+    "yo": "<strong>Bá wa ṣiṣẹ́ pọ̀.</strong> Àwọn àjọ aráàlú, iléeṣẹ́ ìròyìn àti àwọn yunifásítì lè bá wa ṣiṣẹ́ lórí kíkọ́ àwọn olùwòran àti títẹ̀jáde àbájáde ẹ̀ka ìdìbò."
+  },
+  "support.way-fund": {
+    "en": "<strong>Fund the work.</strong> Grants and donations pay for the servers, the phones and the people who keep Hawkeye running.",
+    "ha": "<strong>Ku ɗauki nauyin aikin.</strong> Tallafi da gudummawa suna biyan kuɗin sabobi, wayoyi da mutanen da ke ci gaba da tafiyar da Hawkeye.",
+    "ig": "<strong>Kwado ọrụ ahụ n'ego.</strong> Onyinye na enyemaka ego na-akwụ ụgwọ maka sava, ekwentị na ndị na-eme ka Hawkeye na-arụ ọrụ.",
+    "yo": "<strong>Ṣètìlẹ́yìn owó fún iṣẹ́ náà.</strong> Àwọn ẹ̀bùn àti ọrẹ ń sanwó fún àwọn sáfà, àwọn fóònù àti àwọn èèyàn tó ń jẹ́ kí Hawkeye máa ṣiṣẹ́."
+  },
+  "support.way-observe": {
+    "en": "<strong>Volunteer.</strong> The most useful help of all is free: <a href=\"observe.html?intent=observe\">become an observer</a> at your own polling unit on election day.",
+    "ha": "<strong>Ka ba da kai.</strong> Taimako mafi amfani kyauta ne: <a href=\"observe.html?intent=observe\">zama mai lura</a> a rukunin zaɓenka a ranar zaɓe.",
+    "ig": "<strong>Wepụta onwe gị.</strong> Enyemaka kachasị baa uru bụ n'efu: <a href=\"observe.html?intent=observe\">bụrụ onye na-ekiri ihe</a> na ngalaba ntuli aka gị n'ụbọchị ntuli aka.",
+    "yo": "<strong>Yọ̀ǹda ara rẹ.</strong> Ìrànlọ́wọ́ tó wúlò jù lọ jẹ́ ọ̀fẹ́: <a href=\"observe.html?intent=observe\">di olùwòran</a> ní ẹ̀ka ìdìbò rẹ ní ọjọ́ ìdìbò."
+  },
+  "support.write-to-us": {
+    "en": "To partner with us or fund the work, write to <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>, or see <a href=\"about.html#contact\">About &amp; Contact</a>.",
+    "ha": "Don yin haɗin gwiwa da mu ko ɗaukar nauyin aikin, rubuta wa <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>, ko duba <a href=\"about.html#contact\">Game da Mu &amp; Tuntuɓe Mu</a>.",
+    "ig": "Iji soro anyị rụkọọ ọrụ ma ọ bụ kwado ọrụ ahụ n'ego, dee na <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>, ma ọ bụ lee <a href=\"about.html#contact\">Gbasara Anyị &amp; Kpọtụrụ Anyị</a>.",
+    "yo": "Láti bá wa ṣiṣẹ́ pọ̀ tàbí láti ṣètìlẹ́yìn owó fún iṣẹ́ náà, kọ̀wé sí <a href=\"mailto:info@hawkeye.com.ng\">info@hawkeye.com.ng</a>, tàbí wo <a href=\"about.html#contact\">Nípa Wa &amp; Ìbánisọ̀rọ̀</a>."
+  },
+  "support.never-ask-for-funds": {
+    "en": "Hawkeye will never message you asking for money, passwords or one-time codes.",
+    "ha": "Hawkeye ba za ta taɓa aiko maka da saƙo tana neman kuɗi, kalmomin sirri ko lambobin tabbatarwa ba.",
+    "ig": "Hawkeye agaghị ezitere gị ozi ọ bụla na-arịọ ego, okwuntughe ma ọ bụ koodu otu ugboro.",
+    "yo": "Hawkeye kò ní fi ọ̀rọ̀ ránṣẹ́ sí ọ láé láti béèrè owó, ọ̀rọ̀ aṣínà tàbí kóòdù ìgbà-kan."
+  },
+  "about.funding-nonprofit": {
+    "en": "Hawkeye takes no political money and carries no advertising. Partners, funders and volunteers keep it running: <a class=\"btn-link\" href=\"support.html\">Support Hawkeye →</a>",
+    "ha": "Hawkeye ba ta karɓar kuɗin siyasa kuma ba ta ɗauke da tallace-tallace. Abokan haɗin gwiwa, masu ba da tallafi da masu sa kai ne ke ci gaba da tafiyar da ita: <a class=\"btn-link\" href=\"support.html\">Tallafa wa Hawkeye →</a>",
+    "ig": "Hawkeye anaghị anara ego ndọrọ ndọrọ ọchịchị, ọ dịghịkwa mgbasa ozi n'ime ya. Ndị mmekọ, ndị na-enye ego na ndị ọrụ afọ ofufo na-eme ka ọ na-arụ ọrụ: <a class=\"btn-link\" href=\"support.html\">Kwado Hawkeye →</a>",
+    "yo": "Hawkeye kì í gba owó òṣèlú, kò sì sí ìpolówó nínú rẹ̀. Àwọn alábàáṣiṣẹ́pọ̀, àwọn olùṣètìlẹ́yìn owó àti àwọn olùyọ̀ǹda ló ń jẹ́ kí ó máa ṣiṣẹ́: <a class=\"btn-link\" href=\"support.html\">Ṣàtìlẹ́yìn fún Hawkeye →</a>"
+  }
+}

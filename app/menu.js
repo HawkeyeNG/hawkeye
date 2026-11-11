@@ -9,6 +9,47 @@
   document.head.appendChild(s);
 })();
 
+/* GOOGLE AD GRANTS: THE CLICK CODE ON AN AD'S LINK (backend routes/ads.js).
+   Google adds ?gclid= (or ?gbraid= / ?wbraid= from some iOS apps) to the link
+   of a Hawkeye ad. It is parked here for up to 90 days, the newest click
+   winning as it does in Google's own counting, and taken out of the address bar
+   so a forwarded link does not carry it. app.js hands it over after a sign-up;
+   the server records it only for a new account. No Google code runs anywhere.
+   On every page, because an ad may land on any of them. */
+(function () {
+  var KEY = 'hawkeye_adclick';
+  var KINDS = ['gclid', 'gbraid', 'wbraid'];
+  var KEEP = 90 * 864e5;
+  var RE = /^[A-Za-z0-9_-]{10,250}$/;
+  function pending() {
+    try {
+      var v = JSON.parse(localStorage.getItem(KEY) || 'null');
+      if (v && KINDS.indexOf(v.kind) >= 0 && RE.test(String(v.id)) && Date.now() - Number(v.at) < KEEP) return v;
+      localStorage.removeItem(KEY);
+    } catch (e) { /* no storage: nothing parked */ }
+    return null;
+  }
+  function clear() { try { localStorage.removeItem(KEY); } catch (e) { /* nothing to clear */ } }
+  try {
+    var p = new URLSearchParams(location.search);
+    var found = null;
+    var strip = false;
+    KINDS.forEach(function (k) {
+      var v = p.get(k);
+      if (v === null) return;
+      strip = true;
+      p.delete(k);
+      if (!found && RE.test(v)) found = { kind: k, id: v, at: Date.now() };
+    });
+    if (found) localStorage.setItem(KEY, JSON.stringify(found));
+    if (strip && history.replaceState) {
+      var q = p.toString();
+      history.replaceState(history.state, '', location.pathname + (q ? '?' + q : '') + location.hash);
+    }
+  } catch (e) { /* an ad click is never worth an error */ }
+  window.HAWKEYE_ADCLICK = { pending: pending, clear: clear, KEY: KEY };
+})();
+
 // Resolve the effective theme before anything paints: a user-forced choice wins;
 // otherwise follow the system, DEFAULTING TO DARK when the system expresses no
 // (or a non-light) preference. A pre-paint inline copy of this lives in each

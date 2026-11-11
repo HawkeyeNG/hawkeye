@@ -1177,6 +1177,27 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
   paintAuthStep();
 };
 
+/* GOOGLE AD GRANTS (backend routes/ads.js). A new account whose browser
+   arrived from a Hawkeye ad (menu.js parked the click code) tells the server
+   once, and the server tells Google "this click led to a sign-up". Called only
+   when /verify, /wa-status, /call-status or /org-signup said isNew; the server
+   checks again (an account made in the last 30 minutes, once). keepalive, so
+   a page change right after cannot cancel it. The code is forgotten after any
+   answer but a failure to reach the server or a refused session. */
+function reportAdSignup(token) {
+  const ad = window.HAWKEYE_ADCLICK;
+  const click = ad && ad.pending();
+  if (!click || !token) return;
+  try {
+    fetch(API + '/api/ads/signup', {
+      method: 'POST',
+      keepalive: true,
+      headers: { 'content-type': 'application/json', authorization: 'Bearer ' + token },
+      body: JSON.stringify({ kind: click.kind, id: click.id }),
+    }).then((r) => { if (r.status < 500 && r.status !== 401) ad.clear(); }).catch(() => { /* kept for the next sign-in */ });
+  } catch { /* an ad click is never worth an error */ }
+}
+
 /* ---------- After the proof: the password step (ONB-03) ----------
  * THE PHONE IS PROVED — a typed code (/verify), the observer's own WhatsApp
  * message (/wa-status) or an organisation code (/org-signup). ONE tail for all
@@ -1185,6 +1206,7 @@ if ($('pw-link')) $('pw-link').onclick = (e) => {
  * they came with. */
 function adoptProof(body, { org = false } = {}) {
   localStorage.setItem('hawkeye_token', body.token);
+  if (body.isNew === true) reportAdSignup(body.token);
   clearSignedOutElsewhere();
   // Register for push NOW. initPush ran once at launch and never again,
   // so signing in afterwards left this install permanently unregistered —
